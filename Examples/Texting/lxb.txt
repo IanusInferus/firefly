@@ -1,0 +1,23 @@
+Kung Fu Panda lxb文件格式
+1stplaya.lxb
+
+124	Byte()		Fixed
+05 00 00 00 00 00 00 00 01 00 00 00 C7 A7 8B 3B 18 00 00 00 78 00 00 00
+09 00 00 00 08 00 00 00 0C 00 00 00 0C 00 00 00 CF 2C 42 EF 0C 00 00 00
+06 00 00 00 02 00 00 00 A9 AB 90 8A 20 00 00 00 00 00 00 00 C7 A7 8B 3B
+3C 00 00 00 04 00 00 00 0C 00 00 00 5E D3 AB AF 0C 00 00 00 00 00 00 00
+00 00 00 00 FF FF FF FF 04 00 00 00 04 00 00 00 C7 A7 8B 3B A8 FF FF FF
+08 00 00 00
+
+4	Int32		NumText			2F 00 00 00
+
+(
+4	Int32		Key?			17 83 38 C8
+4	Int32		Offset			74 01 00 00
+			相对于Offset自身的起始地址
+){NumText}
+
+(
+*	String		Text			"I know you're trying to be all mysterious and Kung-Fu-ey, but where are we going?" 00
+			UTF-8, 以00结束
+)
