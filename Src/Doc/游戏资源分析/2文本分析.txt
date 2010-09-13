@@ -1,0 +1,437 @@
+﻿游戏资源分析2——文本分析
+地狱门神
+
+
+摘要：游戏汉化或者修改中，经常需要进行数据文件格式分析，而其中的文本分析是最有用的部分。文本的种类很多，难易不同。本文主要介绍文本分析的几种常见思路、示例。
+
+声明：本文档按现状提供，仅用于研究和学习，因为使用本文档造成的任何损失，本人概不负责。
+
+
+1.概述
+
+游戏汉化或者修改中，经常需要进行如下几种数据文件格式分析：
+文件包分析
+文本分析
+图片分析
+字符映射表和字库分析
+压缩文件分析
+模型分析
+
+这里介绍文本分析。
+
+
+2.文本的作用和特征
+
+游戏中需要修改的文本，通常为游戏的内容中的文本，而不包括测试用的文本。
+近年来，由于国际化的需要，大部分游戏的游戏内容文本是单独分离出来的，提供几个语言的版本。
+欧美的游戏，通常提供西欧几种语言。查找文件的时候，通常可以在各语言的文件夹或者文件包内找到对应的文本的文件。文件中的文本的编码，通常是UTF-16、UTF-8或者Windows 1252(西欧)。其中前两种编码的可以导入中文，后一种无法导入中文。
+日本的游戏通常没有国际化，查找文本的位置稍微要复杂一些。日本游戏中的文本的编码，以Shift-JIS为主，有时候会出现UTF-8。其中前一种无法完整导入中文，但可能通过生成伪Shift-JIS编码表和字库来导入中文，这个以后如果有机会在字库分析中提到。
+
+文本的特征，目前最常见的模型如下：
+文件中有若干条文本，每句文本由一个索引和文本本身组成。
+变种包含：
+(1)使用树状文本代替列表式文本
+(2)不使用索引，直接使用文本的自然数组编号来索引文本
+这些变种很少见。
+
+
+3.一般分析步骤
+
+分析文本的文件的步骤，一般是这样的：
+(1)分析文本是否是纯文本或者xml文件等，如果是，则按相应的语法解析。
+(2)找到文本所在块，分析文本的编码，尝试UTF-16、UTF-8、Windows 1252、Shift-JIS等。
+(3)分析文件结构。如索引结构等。
+
+
+4.示例1
+
+Velvet Assassin文本eng.loc
+
+首先在UltraEdit下查看文档。
+文本编码很容易确定是UTF-16，因为有很多文字之间有00。这是UTF-16的特征，即每个字符为两个或四个字节。
+如果文本编码无法直接看出，可以使用MadEdit或者CrystalTile2切换到其他的编码进行查看。
+文本中还有一些连续的英文，应该是ASCII编码的，可能是索引。
+
+这个文件是所有的部分都是文本，所以无需分析外层结构。
+文件的首尾都没有类似地址的东西，可以确定不存在关于字符串地址的索引表。
+
+那么开始分析每条文本的结构。
+
+00000000h: 42 1C 06 00 00 1B 00 00 00 47 41 4D 45 50 4C 41 ; B........GAMEPLA
+00000010h: 59 5F 45 56 45 4E 54 53 5C 44 4F 4F 52 5F 4C 4F ; Y_EVENTS\DOOR_LO
+00000020h: 43 4B 45 44 1F 00 00 00 54 00 68 00 65 00 20 00 ; CKED....T.h.e. .
+00000030h: 64 00 6F 00 6F 00 72 00 20 00 69 00 73 00 20 00 ; d.o.o.r. .i.s. .
+00000040h: 6C 00 6F 00 63 00 6B 00 65 00 64 00 2E 00 7C 00 ; l.o.c.k.e.d...|.
+00000050h: 28 00 6E 00 6F 00 20 00 61 00 75 00 64 00 69 00 ; (.n.o. .a.u.d.i.
+00000060h: 6F 00 29 00 7C 00 2B 00 00 00 47 41 4D 45 50 4C ; o.).|.+...GAMEPL
+00000070h: 41 59 5F 45 56 45 4E 54 53 5C 44 4F 4F 52 5F 4C ; AY_EVENTS\DOOR_L
+00000080h: 4F 43 4B 45 44 5F 46 52 4F 4D 5F 4F 54 48 45 52 ; OCKED_FROM_OTHER
+00000090h: 5F 53 49 44 45 33 00 00 00 54 00 68 00 65 00 20 ; _SIDE3...T.h.e. 
+000000a0h: 00 64 00 6F 00 6F 00 72 00 20 00 69 00 73 00 20 ; .d.o.o.r. .i.s. 
+000000b0h: 00 6C 00 6F 00 63 00 6B 00 65 00 64 00 20 00 66 ; .l.o.c.k.e.d. .f
+000000c0h: 00 72 00 6F 00 6D 00 20 00 74 00 68 00 65 00 20 ; .r.o.m. .t.h.e. 
+000000d0h: 00 6F 00 74 00 68 00 65 00 72 00 20 00 73 00 69 ; .o.t.h.e.r. .s.i
+000000e0h: 00 64 00 65 00 2E 00 7C 00 28 00 6E 00 6F 00 20 ; .d.e...|.(.n.o. 
+000000f0h: 00 61 00 75 00 64 00 69 00 6F 00 29 00 7C 00 1A ; .a.u.d.i.o.).|..
+00000100h: 00 00 00 47 41 4D 45 50 4C 41 59 5F 45 56 45 4E ; ...GAMEPLAY_EVEN
+00000110h: 54 53 5C 45 58 50 5F 47 41 49 4E 45 44 0F 00 00 ; TS\EXP_GAINED...
+00000120h: 00 45 00 58 00 50 00 7C 00 28 00 6E 00 6F 00 20 ; .E.X.P.|.(.n.o. 
+00000130h: 00 61 00 75 00 64 00 69 00 6F 00 29 00 7C 00 15 ; .a.u.d.i.o.).|..
+00000140h: 00 00 00 47 41 4D 45 50 4C 41 59 5F 45 56 45 4E ; ...GAMEPLAY_EVEN
+00000150h: 54 53 5C 46 4F 55 4E 44 17 00 00 00 59 00 6F 00 ; TS\FOUND....Y.o.
+00000160h: 75 00 20 00 66 00 6F 00 75 00 6E 00 64 00 20 00 ; u. .f.o.u.n.d. .
+00000170h: 61 00 7C 00 28 00 6E 00 6F 00 20 00 61 00 75 00 ; a.|.(.n.o. .a.u.
+00000180h: 64 00 69 00 6F 00 29 00 7C 00 19 00 00 00 47 41 ; d.i.o.).|.....GA
+
+可以发现索引字符串和文本字符串相间出现，而索引字符串和文本字符串之间还存在一些00。
+仔细观察，可以发现索引字符串和文本字符串之间存在的是整数。
+
+42
+
+1C 06 00 00
+
+1B 00 00 00
+;GAMEPLAY_EVENTS\DOOR_LOCKED
+47 41 4D 45 50 4C 41 59 5F 45 56 45 4E 54 53 5C 44 4F 4F 52 5F 4C 4F 43
+4B 45 44
+
+1F 00 00 00
+; T.h.e. .d.o.o.r. .i.s. .l.o.c.k.e.d...|. (.n.o. .a.u.d.i. o.).|.
+54 00 68 00 65 00 20 00 64 00 6F 00 6F 00 72 00 20 00 69 00 73 00 20 00
+6C 00 6F 00 63 00 6B 00 65 00 64 00 2E 00 7C 00 28 00 6E 00 6F 00 20 00
+61 00 75 00 64 00 69 00 6F 00 29 00 7C 00
+
+2B 00 00 00
+; GAMEPLAY_EVENTS\DOOR_LOCKED_FROM_OTHER_SIDE3
+47 41 4D 45 50 4C 41 59 5F 45 56 45 4E 54 53 5C 44 4F 4F 52 5F 4C 4F 43
+4B 45 44 5F 46 52 4F 4D 5F 4F 54 48 45 52 5F 53 49 44 45
+
+33 00 00 00
+; T.h.e. 
+54 00 68 00 65 00 20
+
+将文件的最开始分开，可以做上面的划分。
+可以发现索引字符串“GAMEPLAY_EVENTS\DOOR_LOCKED”前面的整数1B 00 00 00是其字节长度。
+而文本字符串“T.h.e. .d.o.o.r. .i.s. .l.o.c.k.e.d...|. (.n.o. .a.u.d.i. o.).|.”前面的整数1F 00 00 00则是其字节长度的一半，也就是双字节长度。
+验证后面的几条文本，也符合该假设。
+
+文本开始前有一个1C 06 00 00，这个数据的最大可能是文本的条数。这个东西可以在写好程序之后验证。
+
+文本开始和结束的位置均各有一个多余的42这么个字节，基本上可以认为是无需更改的特殊标记。
+
+最后得出文本的结构如下：
+
+Velvet Assassin loc文件格式
+eng.loc
+
+1	Byte		?			42
+4	Int32		NumText			1C 06 00 00
+
+(
+4	Int32		IndexLength		1B 00 00 00
+IndexLength
+	String		Index(ASCII)		"GAMEPLAY_EVENTS\DOOR_LOCKED"
+4	Int32		TextLength		1F 00 00 00
+TextLength * 2
+	String		Text(UTF-16L)		"The door is locked.|(no audio)|"
+){NumText}
+
+1	Byte		?			42
+
+对此格式的读写都很容易。
+
+
+5.示例2
+
+Kung Fu Panda文本1stplaya.lxb
+
+翻阅文件，发现文本中有几处乱码，使用MadEdit打开，切换到UTF-8编码，发现文本中的几处乱码正常显示，即文本为UTF-8编码。
+
+00000000h: 05 00 00 00 00 00 00 00 01 00 00 00 C7 A7 8B 3B ; ............Ç§‹;
+00000010h: 18 00 00 00 78 00 00 00 09 00 00 00 08 00 00 00 ; ....x...........
+00000020h: 0C 00 00 00 0C 00 00 00 CF 2C 42 EF 0C 00 00 00 ; ........Ï,Bï....
+00000030h: 06 00 00 00 02 00 00 00 A9 AB 90 8A 20 00 00 00 ; ........©«Š ...
+00000040h: 00 00 00 00 C7 A7 8B 3B 3C 00 00 00 04 00 00 00 ; ....Ç§‹;<.......
+00000050h: 0C 00 00 00 5E D3 AB AF 0C 00 00 00 00 00 00 00 ; ....^Ó«¯........
+00000060h: 00 00 00 00 FF FF FF FF 04 00 00 00 04 00 00 00 ; ....ÿÿÿÿ........
+00000070h: C7 A7 8B 3B A8 FF FF FF 08 00 00 00 2F 00 00 00 ; Ç§‹;¨ÿÿÿ..../...
+00000080h: 17 83 38 C8 74 01 00 00 AD D2 31 51 BE 01 00 00 ; .ƒ8Èt...­Ò1Q¾...
+00000090h: 3B E2 36 26 CF 01 00 00 6A 57 E2 D2 18 02 00 00 ; ;â6&Ï...jWâÒ....
+000000a0h: FC 67 E5 A5 9C 02 00 00 98 77 52 B8 03 03 00 00 ; ügå¥œ...˜wR¸....
+000000b0h: 0E 47 55 CF 1F 03 00 00 B4 16 5C 56 34 03 00 00 ; .GUÏ....´.\V4...
+000000c0h: 22 26 5B 21 33 03 00 00 B3 3B E4 B1 4A 03 00 00 ; "&[!3...³;ä±J...
+000000d0h: 25 0B E3 C6 65 03 00 00 9F 5A EA 5F 6D 03 00 00 ; %.ãÆe...ŸZê_m...
+000000e0h: 09 6A ED 28 7A 03 00 00 AA FF 89 B6 C8 03 00 00 ; .jí(z...ªÿ‰¶È...
+000000f0h: 3C CF 8E C1 EB 03 00 00 86 9E 87 58 28 04 00 00 ; <ÏŽÁë...†ž‡X(...
+00000100h: 10 AE 80 2F 51 04 00 00 E5 A3 88 A2 4E 04 00 00 ; .®€/Q...å£ˆ¢N...
+00000110h: 73 93 8F D5 08 05 00 00 C9 C2 86 4C 0A 05 00 00 ; s“Õ....ÉÂ†L....
+00000120h: 5F F2 81 3B 21 05 00 00 A2 A7 81 69 34 05 00 00 ; _ò;!...¢§i4...
+00000130h: 18 F6 88 F0 83 05 00 00 8E C6 8F 87 EC 05 00 00 ; .öˆðƒ...ŽÆ‡ì...
+00000140h: 2D 53 EB 19 08 06 00 00 ED 66 A5 7A 01 06 00 00 ; -Së.....íf¥z....
+00000150h: 57 37 AC E3 29 06 00 00 C1 07 AB 94 7F 06 00 00 ; W7¬ã)...Á.«”...
+00000160h: F0 32 48 12 BD 06 00 00 4A 63 41 8B EA 06 00 00 ; ð2H.½...JcA‹ê...
+00000170h: 4D 38 4D 07 FD 06 00 00 F7 69 44 9E 06 07 00 00 ; M8M.ý...÷iDž....
+00000180h: 61 59 43 E9 C8 05 00 00 C1 A0 99 A9 10 07 00 00 ; aYCéÈ...Á ™©....
+00000190h: C3 D1 9D CC 17 07 00 00 79 80 94 55 41 07 00 00 ; ÃÑÌ....y€”UA...
+000001a0h: EF B0 93 22 40 07 00 00 4C 25 F7 BC 43 07 00 00 ; ï°“"@...L%÷¼C...
+000001b0h: DA 15 F0 CB 4D 07 00 00 38 A9 45 CF 52 07 00 00 ; Ú.ðËM...8©EÏR...
+000001c0h: DC C3 F4 4B 06 08 00 00 76 E3 20 F2 72 08 00 00 ; ÜÃôK....vã òr...
+000001d0h: 84 E7 16 C4 D7 08 00 00 7F 56 90 D5 2D 09 00 00 ; „ç.Ä×...VÕ-...
+000001e0h: 37 70 81 71 A0 09 00 00 55 FD F5 BC D3 09 00 00 ; 7pq ...Uýõ¼Ó...
+000001f0h: 5A 0C 2D 0E 79 0A 00 00 49 20 6B 6E 6F 77 20 79 ; Z.-.y...I know y
+00000200h: 6F 75 27 72 65 20 74 72 79 69 6E 67 20 74 6F 20 ; ou're trying to 
+00000210h: 62 65 20 61 6C 6C 20 6D 79 73 74 65 72 69 6F 75 ; be all mysteriou
+00000220h: 73 20 61 6E 64 20 4B 75 6E 67 2D 46 75 2D 65 79 ; s and Kung-Fu-ey
+00000230h: 2C 20 62 75 74 20 77 68 65 72 65 20 61 72 65 20 ; , but where are 
+00000240h: 77 65 20 67 6F 69 6E 67 3F 00 4A 75 73 74 20 6F ; we going?.Just o
+00000250h: 6E 65 20 6D 6F 72 65 20 6C 65 64 67 65 2C 20 50 ; ne more ledge, P
+00000260h: 6F 2E 00 42 65 68 6F 6C 64 2E 2E 2E 20 57 75 64 ; o..Behold... Wud
+00000270h: 61 6E 67 20 54 65 6D 70 6C 65 2E 20 42 75 69 6C ; ang Temple. Buil
+00000280h: 74 20 69 6E 20 68 6F 6E 6F 72 20 6F 66 20 4D 61 ; t in honor of Ma
+
+文件由三部分组成，最开始是一部分未知数据，中间有一部分整齐的索引状数据，最后一部分是文本数据。每条文本后有00结束。
+
+通过对比该游戏的其他文本，可以发现前124字节是完全固定的。
+索引状数据从80h开始到1F8h结束，长度为0x178，看作8个字节为一个索引，则共有0x2F个索引，正好和7Ch处的Int32数据一致，说明该数据为索引个数，即文本条数。对照其他文件可以验证。
+
+00000080h: 17 83 38 C8 74 01 00 00
+00000088h: AD D2 31 51 BE 01 00 00
+00000090h: 3B E2 36 26 CF 01 00 00
+00000098h: 6A 57 E2 D2 18 02 00 00
+000000a0h: FC 67 E5 A5 9C 02 00 00
+000000a8h: 98 77 52 B8 03 03 00 00
+
+对比各索引，发现后四个字节明显递增，可以认为是文本地址。这里使用的方法和文件包分析中的索引分析的方法是一样的，也是差分分析。
+将文本的地址作差，可得0x4A、0x11、0x49、0x84、0x67。
+而实际文本的长度，各为0x52、0x19、0x51、0x8C、0x6F。似乎有一些差别。
+再作差，可以看到此结果   8、   8、   8、   8、   8。
+可以计算出每个文本的实际位置为
+0x84+索引中地址+索引序号*8
+
+但是这样的解释并不自然，所以可以寻求其他的解释。
+一个更简单的解释是这样的：每个文本的实际位置为
+索引中地址的位置+索引中地址
+比如第一条文本索引中地址的位置是0x84，地址的值为0x174，第一条文本的实际位置为0x1F8。
+第二条文本索引中地址的位置为0x8C，地址的值为0x1BE，第二条文本的实际位置为0x24A。
+
+解释越简单，越接近真相。
+
+最后得出文本结构如下：
+
+Kung Fu Panda lxb文件格式
+1stplaya.lxb
+
+124	Byte()		Fixed
+05 00 00 00 00 00 00 00 01 00 00 00 C7 A7 8B 3B 18 00 00 00 78 00 00 00
+09 00 00 00 08 00 00 00 0C 00 00 00 0C 00 00 00 CF 2C 42 EF 0C 00 00 00
+06 00 00 00 02 00 00 00 A9 AB 90 8A 20 00 00 00 00 00 00 00 C7 A7 8B 3B
+3C 00 00 00 04 00 00 00 0C 00 00 00 5E D3 AB AF 0C 00 00 00 00 00 00 00
+00 00 00 00 FF FF FF FF 04 00 00 00 04 00 00 00 C7 A7 8B 3B A8 FF FF FF
+08 00 00 00
+
+4	Int32		NumText			2F 00 00 00
+
+(
+4	Int32		Key?			17 83 38 C8
+4	Int32		Offset			74 01 00 00
+			相对于Offset自身的起始地址
+){NumText}
+
+(
+*	String		Text			"I know you're trying to be all mysterious and Kung-Fu-ey, but where are we going?" 00
+			UTF-8, 以00结束
+)
+
+
+6.编写程序
+
+文本部分的编写很容易。当然，如果使用C/C++，可能会陷入到编码问题，因为C/C++中选择系统的代码页是个非常麻烦的事情。我们这里使用.Net，不存在这种问题。
+
+除了文本的解析，我们还要考虑将文本存为何种格式。
+这里我推荐如下几种格式：
+
+(1)Agemo文本
+此格式的文本如下：
+
+#### 1 ####
+I know you're trying to be all mysterious and Kung-Fu-ey, but where are we going?
+
+#### 2 ####
+Just one more ledge, Po.
+
+#### 3 ####
+Behold... Wudang Temple. Built in honor of Master Oogway's discovery of Kung Fu.
+
+此格式可以直接存储多行文本。使用此格式可以直接分发txt文件，最后只需使用专用工具检测格式错误即可，不会出现无法察觉的错误。
+此格式的文本编号是连续的，因此不可能出现合并文本时误删除文本或重复复制文本而无法察觉的状况。当然，这个不一定是优点，有些游戏文本会升级，使用此格式，必须要导出文本时制作专门的差异比较工具，生成差异文件，并在导入时进行相应的修改。其他一些格式可能只需要一个通用的文本差异比较工具即可。总之，文本条数固定不可修改是一个特性。
+
+此格式不方便直接存放索引。所以我们可以采取如下措施：使用两个文件，一个文件存放索引(.idx)，另一个文件存放文本(.txt)。这样就可以在享受该格式的所有好处的时候，仍然可以存放索引。
+
+后面所述示例2的示例程序就使用该格式。
+
+(2)WQSG文本
+此格式的文本如下：
+
+000001F8,82,I know you're trying to be all mysterious and Kung-Fu-ey, but where are we going?
+
+0000024A,25,Just one more ledge, Po.
+
+00000263,81,Behold... Wudang Temple. Built in honor of Master Oogway's discovery of Kung Fu.
+
+此格式中，每一行为<绝对地址>,<文本字节长度>,<文本>
+此格式无法直接存储多行文本，需要对换行符进行转义(如用“\n”替代)。直接分发这种文本翻译可能在翻译中出现无法察觉的格式错误，比如地址中或者长度中某个数字被删掉。
+此格式的另一个缺点是每条文本长度不能超过原始长度，小于原始长度需要使用空格或00等字符填充。
+此格式的优点是可以人工删除一些文本，适用于暴力导出的文本。
+暴力导出是指使用《WQSG导出(导入)》等工具自动搜索文本导出，这种情况下经常会出现一些乱码，所以人工删除文本是必须的。
+如果文本能够完全分析，则不推荐使用该格式，应使用前述Agemo格式。
+
+(3)其他
+由于一些特殊需求，还有一些其他的格式，但并不通用。
+一种可能的情况是文本的编码为自制编码，此时需要直接从字库获得每个字符的图形，然后在翻译工具中显示。
+这种情况请参见萤火虫汉化框架文档LOC.zh.htm。
+以后如果有机会，应该会再具体说明这类型的格式。
+
+除了考虑格式问题，还需要考虑到换行的方式，有些文本的换行方式是Windows的CrLf(0D 0A，回车换行)，有些文本的换行方式是Unix的Lf(0A，换行)。
+其实回车是从机械打字机上传过来的概念，是指将打字机的光标位置回退到一行的开始，而换行是指将纸筒旋转一行。在电子化之后，保留回车符还是不保留回车符，造成了这两种做法。
+总之，一般是在导出时统一转换为一种，之后在导入的时候统一还原。
+
+下面给出示例2的VB代码。仍然需要引用前一篇文章提到的萤火虫汉化框架，因为框架内已经内置了Agemo等格式的读写函数。
+
+'==========================================================================
+'
+'  File:        LXB.vb
+'  Location:    Firefly.Examples <Visual Basic .Net>
+'  Description: Kung Fu Panda lxb文件格式
+'  Version:     2009.08.24.
+'  Author:      F.R.C.
+'  Copyright(C) Public Domain
+'
+'==========================================================================
+
+Imports System
+Imports System.Collections.Generic
+Imports System.Linq
+Imports System.Text.Encoding
+Imports Firefly
+
+Public NotInheritable Class LXB
+    Private Sub New()
+    End Sub
+
+    Public Shared Function Read(ByVal Path As String) As KeyValuePair(Of Int32, String)()
+        Using s As New StreamEx(Path, IO.FileMode.Open, IO.FileAccess.Read)
+            Return Read(s)
+        End Using
+    End Function
+
+    Public Shared Sub Write(ByVal Path As String, ByVal Text As IEnumerable(Of KeyValuePair(Of Int32, String)))
+        Using s As New StreamEx(Path, IO.FileMode.Create, IO.FileAccess.ReadWrite)
+            Write(s, Text)
+        End Using
+    End Sub
+
+    Public Shared Function Read(ByVal sp As ZeroPositionStreamPasser) As KeyValuePair(Of Int32, String)()
+        Dim s = sp.GetStream
+
+        s.Position = &H7C
+        Dim Num As Int32 = s.ReadInt32
+        Dim Key = New Int32(Num - 1) {}
+        Dim Address = New Int32(Num - 1) {}
+        For n = 0 To Num - 1
+            Key(n) = s.ReadInt32
+            Address(n) = s.Position
+            Address(n) += s.ReadInt32
+        Next
+
+        Dim Encoding = UTF8
+        Dim Text = New KeyValuePair(Of Int32, String)(Num - 1) {}
+        For n = 0 To Num - 1
+            Dim TextBytes As New List(Of Byte)
+            s.Position = Address(n)
+            While s.Position < s.Length
+                Dim b = s.ReadByte
+                If b = 0 Then Exit While
+                TextBytes.Add(b)
+            End While
+            Text(n) = New KeyValuePair(Of Int32, String)(Key(n), Encoding.GetChars(TextBytes.ToArray))
+        Next
+        Return Text
+    End Function
+
+    Public Shared Sub Write(ByVal sp As ZeroLengthStreamPasser, ByVal Text As IEnumerable(Of KeyValuePair(Of Int32, String)))
+        Dim s = sp.GetStream
+
+        s.Position = 0
+        Dim Header = New Byte() {&H5, &H0, &H0, &H0, &H0, &H0, &H0, &H0, &H1, &H0, &H0, &H0, &HC7, &HA7, &H8B, &H3B, &H18, &H0, &H0, &H0, &H78, &H0, &H0, &H0, &H9, &H0, &H0, &H0, &H8, &H0, &H0, &H0, &HC, &H0, &H0, &H0, &HC, &H0, &H0, &H0, &HCF, &H2C, &H42, &HEF, &HC, &H0, &H0, &H0, &H6, &H0, &H0, &H0, &H2, &H0, &H0, &H0, &HA9, &HAB, &H90, &H8A, &H20, &H0, &H0, &H0, &H0, &H0, &H0, &H0, &HC7, &HA7, &H8B, &H3B, &H3C, &H0, &H0, &H0, &H4, &H0, &H0, &H0, &HC, &H0, &H0, &H0, &H5E, &HD3, &HAB, &HAF, &HC, &H0, &H0, &H0, &H0, &H0, &H0, &H0, &H0, &H0, &H0, &H0, &HFF, &HFF, &HFF, &HFF, &H4, &H0, &H0, &H0, &H4, &H0, &H0, &H0, &HC7, &HA7, &H8B, &H3B, &HA8, &HFF, &HFF, &HFF, &H8, &H0, &H0, &H0}
+        Dim Num As Int32 = Text.Count
+        s.Write(Header)
+        s.WriteInt32(Num)
+
+        Dim Address = New Int32(Num - 1) {}
+        s.Position = 128 + Num * 8
+        For n = 0 To Num - 1
+            Address(n) = s.Position
+            s.Write(UTF8.GetBytes(Text(n).Value))
+            s.WriteByte(0)
+        Next
+
+        Dim EndPosition = s.Position
+        s.Position = 128
+        For n = 0 To Num - 1
+            s.WriteInt32(Text(n).Key)
+            s.WriteInt32(Address(n) - s.Position)
+        Next
+    End Sub
+End Class
+
+'==========================================================================
+'
+'  File:        Main.vb
+'  Location:    Firefly.Examples <Visual Basic .Net>
+'  Description: Kung Fu Panda lxb文件导入导出器
+'  Version:     2009.08.24.
+'  Author:      F.R.C.
+'  Copyright(C) Public Domain
+'
+'==========================================================================
+
+Imports System
+Imports System.Collections.Generic
+Imports System.Linq
+Imports Firefly
+Imports Firefly.TextEncoding
+Imports Firefly.Texting
+
+Public Module Main
+    Public Sub Main(ByVal argv As String())
+#If Not DEBUG Then
+        Try
+#End If
+        For Each f In argv
+            Dim Dir = GetFileDirectory(f)
+            Dim FileName = GetFileName(f)
+            If IsMatchFileMask(FileName, "*.lxb") Then
+                Dim Pairs = LXB.Read(f)
+                Agemo.WriteFile(ChangeExtension(f, "idx"), UTF16, From p In Pairs Select p.Key.ToString("X8"))
+                Agemo.WriteFile(ChangeExtension(f, "txt"), UTF16, From p In Pairs Select p.Value)
+            ElseIf IsMatchFileMask(FileName, "*.txt") Then
+                Dim Keys = Agemo.ReadFile(ChangeExtension(f, "idx"))
+                Dim Values = Agemo.ReadFile(f)
+                Dim Pairs = Keys.Select(Function(s, i) New KeyValuePair(Of Int32, String)(Int32.Parse(s, Globalization.NumberStyles.HexNumber), Values(i)))
+                LXB.Write(ChangeExtension(f, "lxb"), Pairs)
+            End If
+        Next
+#If Not DEBUG Then
+        Catch ex As Exception
+            ExceptionHandler.PopupException(ex, "发生以下异常:", My.Application.Info.ProductName)
+        End Try
+#End If
+    End Sub
+End Module
+
+
+7.结论
+很多文本可以按前述方式进行解析。但是也有一些文本格式过于复杂的，可能需要使用暴力导出手段。
+总体的分析思路仍然和文件包分析中一样：
+(1)先大后小，先分析编码，再分析具体的结构。
+(2)差分分析法，分析索引就用差分法……
