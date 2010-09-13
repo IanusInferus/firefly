@@ -1,0 +1,482 @@
+﻿游戏资源分析1——文件包分析
+地狱门神
+
+
+摘要：游戏汉化或者修改中，经常需要进行数据文件格式分析，而其中的文件包分析往往是第一步。文件包分析的步骤非常固定，也比较容易掌握。本文主要介绍文件包分析的思路、示例，并介绍一种快速实现文件包文件导出替换程序的方法。
+
+声明：本文档按现状提供，仅用于研究和学习，因为使用本文档造成的任何损失，本人概不负责。
+
+
+1.概述
+
+游戏汉化或者修改中，经常需要进行如下几种数据文件格式分析：
+文件包分析
+文本分析
+图片分析
+字符映射表和字库分析
+压缩文件分析
+模型分析
+
+其中文件包分析和文本分析一般比较简单，图片和字库分析一般比较复杂，压缩文件复杂度跟具体的文件有关，模型等其他文件分析则非常复杂。
+
+这里介绍文件包分析。
+
+所谓文件包，就是用来集中存放游戏中的多个资源文件的文件。
+
+
+2.文件包的作用和特征
+
+现在的各种游戏，资源文件数量非常多，将资源集中存放到几个文件包中，能够有效加快游戏的安装速度。当然，文件包的作用不仅仅如此，有一部分游戏也使用文件包来实现压缩、加密等功能。
+文件包中的文件，一般是顺序的，不存在一个文件数据分成几块的情况。这种设计是适用于只读的文件系统的情况的。
+
+一个游戏的文件包中，一般有几个比较大的文件包，所以，要确定哪些文件是文件包很容易。
+
+文件包的格式的设计余地比较小。无论怎样写，一个文件包总是由索引和文件数据两部分组成的。
+最近常见的文件包一般都没有文件夹格式，或者文件夹名称直接写入到文件名中。这样设计，可以直接使用散列表来优化文件访问，快速从文件路径映射到文件索引。文件夹名称直接写入文件名中有个缺陷，就是不容易枚举一个文件夹下的所有文件，所以在磁盘分区格式中一般没有这种设计。但这在游戏文件包格式中不存在问题。
+
+索引一般是集中到文件包的头部。不过也有索引在文件尾(如Maxis的游戏)、索引独立成文件和索引分布到各文件数据之前的情况。
+
+索引一般由文件地址、文件长度、文件名三部分组成。
+
+如果索引中包含文件地址和文件长度，我们把这种文件包称为离散文件包。这种文件包能够很容易的在尾部扩展数据。这种文件最常见。
+如果索引中不包含文件地址，仅包含文件长度，我们把这种文件包称为连续文件包。这种文件包读取时，文件地址是它之前的文件的长度之和(或者对齐的长度之和)。向这种文件包导入文件，必须要移动导入的文件之后的所有文件。这种设计在光荣等厂商的游戏中有出现。
+索引中不包含文件长度，仅包含文件地址的文件包也存在，不过一般是在日系游戏机游戏中。一般文件都很小，可以按实际情况转化为上述两种之一。
+
+文件名的情况比较复杂。一些游戏使用正常的文件名。一些游戏使用正常的文件路径。
+这两种情况都很好处理。比较复杂的是，某些游戏使用文件名或文件路径的散列值来表示文件名。这种情况下，经常无法获得文件名。这时候，一般按照出现顺序将文件编号。
+
+文件类型是很重要的信息。在缺乏文件名或者缺乏文件扩展名的情况下，判断文件类型，一般通过文件的前4个字节猜测。可以在程序中寻找这4个字节中的不少于两个连续字符的英文字母和数字，作为扩展名，来表示文件类型。
+有的时候，游戏索引中会包含一个文件类型号(如Maxis的游戏)。这时候可以根据网上的记录来判断一些类型。
+
+有时候，文件包中的数据是压缩的，索引可能包含压缩前后的大小、
+
+
+3.分析需要的工具
+
+分析时需要使用16进制编辑器。
+常见的有UltraEdit和WinHex。不过我推荐使用MadEdit。MadEdit支持切换编码显示，而且对正则表达式、多文件替换等的支持更为正统。
+
+
+4.一般分析步骤
+
+分析文件包的步骤，一般是这样的：
+(1)从文件包头部判断文件包是否是已知格式，如PK是zip文件的标记。许多游戏使用zip文件来作为文件包。
+(2)根据游戏的背景和文件包扩展名、头部等信息在网上搜查是否已有人完成了相应的工具。同一公司的游戏和同一系列的游戏文件包经常有类似之处。如果能找到有用的工具或者信息，可能就不需要再分析了。
+(3)分析文件的大体结构，如索引的位置、文件数据有没有被压缩等。如果一个文件包中的文件数据大部分是以78开头的，那说明这个文件包使用的Deflate压缩，可以用zlib来进行解压和压缩。如果数据很奇怪，说明这个游戏可能加密或者使用了自定义压缩，困难比较大。
+(4)确定包内文件数量、单个索引长度、索引边界。如果文件索引是对齐的，那么可以从文件索引的大致数据长度除以单个索引长度来获取大致的文件数量。在文件包的头部，一般能找到近似的一个整数，这就是包内文件数量。确定了包内文件数量，从单个索引长度，可以获取整体的索引长度。这样就能更正确的确定索引边界。
+(5)确定索引中的文件地址和文件长度数据。一般通过对比相邻的索引的内容来完成。大部分包中文件索引的顺序和文件地址的顺序是一样的，因此一般有一个明显递增的整数，如果两条相邻的索引A、B，递增数据a的旁边有另外一个数据b，A.a + A.b = B.a，通常说明a是地址，b是长度。这种方法，可以称为差分分析法。很多文件包中文件地址是对齐的，最常见的是0x800对齐。0x800是CD的最小读写块大小。确定了地址和长度之后，应该对几个文件按照地址转到文件数据，以确认是否存在地址的整体偏移。有时候地址记录的是块地址，需要乘以块大小才能获得真实地址。
+(6)确定索引中的文件名。文件名可能直接包含在索引中，或者在集中的文件表中。后一种情况下，索引中应该有文件名的地址和长度。这里的分析和第四步类似。
+(7)分析索引中的其他数据。
+
+
+5.文件包程序制作
+
+文件包程序的制作，推荐使用萤火虫汉化框架(Firefly Localization Framework)。
+http://www.cnblogs.com/Rex/archive/2008/11/08/1329759.html
+
+这个框架在文件包管理方面，进行了最大化的抽象。
+符合模型的文件包，只需要书写少量关于文件格式的代码，即可得到一个完整的界面支持。
+对于离散文件包和连续文件包，文件包的扩容都已经默认支持。无需手写大量易错代码。
+
+这个框架是.Net Framework上的库。支持.Net上的各语言。
+
+具体示例代码参见Examples\Packaging。请使用最新版本的Visual Studio来查看。
+该示例用于处理PSP上的游戏《プリニ》(普里尼)。
+示例有F#、VB、C#、C++/CLI这四个语言的版本。
+本文第一个示例是就是プリニ的文件包。
+
+本文的两个示例的数据均包含于Examples\Packaging中。
+
+
+6.示例1
+
+プリニ文件包SCRIPT.DAT
+
+(1)分析
+
+首先用16进制编辑器打开文件。
+
+如果你从来没分析过文件的二进制结构，也不要紧张。
+在16进制编辑器的16进制编辑模式(Hex)中，最左边一栏是该行最开始的字节的偏移量，中间一栏是文件的所有的字节数据，每一字节用两位16进制数表示。最右边一栏是这些字节数据的ANSI码解释。在UltraEdit和中文的系统中，是GBK的编码解释。因为中文是借用了128-255的扩展ASCII码的空间来表示的，所以可能会出现一些中文字的乱码，这纯粹是巧合。00用点表示，不存在的符号用问号表示。使用MadEdit可以切换最右边一栏的编码。
+
+打开文件后，发现文件包头部有几个文件名，之后是一片空白，直到800h(这里的800h即是最左边一栏00000800h的位置，为16进制值，表示位置2048。)有一段数据，数据结束后又有一片空白，之后1000h处又有数据。基本确定文件包是按0x800对齐的。往后翻，发现包中的文件数据有比较多的00，不像是压缩过或者加密过的。
+
+然后分析文件头和索引部分。
+
+00000000h: 4E 49 53 50 41 43 4B 00 00 00 00 00 07 00 00 00 ; NISPACK.........
+00000010h: 64 65 62 75 67 2E 6E 73 66 00 00 00 00 00 00 00 ; debug.nsf.......
+00000020h: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ; ................
+00000030h: 00 08 00 00 F5 03 00 00 E8 03 47 39 64 65 6D 6F ; ....?...è.G9demo
+00000040h: 2E 6E 73 66 00 00 00 00 00 00 00 00 00 00 00 00 ; .nsf............
+00000050h: 00 00 00 00 00 00 00 00 00 00 00 00 00 10 00 00 ; ................
+00000060h: 80 3B 03 00 E6 03 47 39 44 4C 30 30 30 2E 6E 73 ; €;..?.G9DL000.ns
+00000070h: 66 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ; f...............
+00000080h: 00 00 00 00 00 00 00 00 00 50 03 00 36 01 00 00 ; .........P..6...
+00000090h: 05 4B D3 38 65 66 66 65 63 74 2E 6E 73 66 00 00 ; .Kó8effect.nsf..
+000000a0h: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ; ................
+000000b0h: 00 00 00 00 00 58 03 00 54 05 00 00 E8 03 47 39 ; .....X..T...è.G9
+000000c0h: 65 6E 65 6D 79 2E 6E 73 66 00 00 00 00 00 00 00 ; enemy.nsf.......
+000000d0h: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ; ................
+000000e0h: 00 60 03 00 48 2C 09 00 E8 03 47 39 70 72 65 76 ; .`..H,..è.G9prev
+000000f0h: 69 65 77 2E 6E 73 66 00 00 00 00 00 00 00 00 00 ; iew.nsf.........
+00000100h: 00 00 00 00 00 00 00 00 00 00 00 00 00 90 0C 00 ; .............?..
+00000110h: 8A 14 00 00 E8 03 47 39 73 79 73 74 65 6D 2E 6E ; ?...è.G9system.n
+00000120h: 73 66 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ; sf..............
+00000130h: 00 00 00 00 00 00 00 00 00 A8 0C 00 18 38 00 00 ; .........¨...8..
+00000140h: E5 03 47 39 00 00 00 00 00 00 00 00 00 00 00 00 ; ?.G9............
+00000150h: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ; ................
+00000160h: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ; ................
+00000170h: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ; ................
+00000180h: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ; ................
+
+首先我们注意到索引部分大致是从10h处开始，到144h处结束。开始位置也可以提前到Ch或者8h，但是具体情况并不清楚。
+我们可以估计，文件索引段的长度大致在134h左右。
+然后，我们可以看到，第一个文件名“debug.nsf”(10h)，从文件名开始经过44(0x2C)个字节到第二文件名“demo.nsf”，不过我们并不清楚“G9”是不是文件名的一部分。但是我们可以观察到有很多“G9”，并且在最后一个“G9”之后没有数据，第一个文件名之前也没有“G9”，这说明“G9”位于每个文件索引的末尾，并不是文件名的一部分。
+我们看到，从10h开始每隔44字节就到一个文件名开始，7个文件名的开始位置分别是10h、3Ch、68h、94h、C0h、ECh、118h。这样能够确定文件索引的长度是44。
+我们现在可以数出有7个文件。在某些文件包中文件很多，并且文件索引也和这个包一样是固定长度的，我们可以通过文件索引段长度/索引长度来获得文件数。这里134h/44=7。如果我们认为文件索引段的长度为138h，则138h/44=7.09..，接近7。因此文件数为7。我们可以注意到文件数越多，文件索引段判断错误造成的误差越小。
+当我们知道文件索引长度和文件数之后，可以得到精确的文件索引段长度，即44*7=134h。这样我们可以得到精确的文件索引段，即10h-144h。
+同时，我们还可以确定文件标志NISPACK之后的整数7(07 00 00 00)是文件数量。
+现在，我们已经确定了文件数量、单个索引长度、索引边界。
+对于文件索引长度不一致的情况，会复杂一些，但是也可以写程序或者通过经验来判断。
+
+如果你对07 00 00 00表示7不理解，我在这里简单解释一下。
+目前的计算机中，一般用到8位、16位、32位、64位的二进制整数，且有有符号和无符号两种。
+不妨按下表标记：
+        8位     16位    32位    64位
+无符号  Byte    UInt16  UInt32  UInt64
+有符号  SByte   Int16   Int32   Int64
+最常见的整数是Int32类型的，其次是Byte、UInt16和Int16，其余的很少见。
+除了8位整数是直接一字节以外。其余的整数都是多字节的，每8位分割成一字节。Byte、UInt16、UInt32、UInt64分别占用1字节、2字节、4字节、8字节。这里有一个字节序的问题，也就是说，高字节优先(big-endian)还是低字节优先(little-endian)。对于16进制整数0x2EDA(十进制为11994)，表示成高字节优先，则其字节形式为00 00 2E DA，低字节优先则是DA 2E 00 00。
+在x86和Windows上的格式，通常是低字节优先。以后，我们默认这些类型是指的低字节优先的，如果遇到高字节优先的，我们用UInt16B、UInt32B、UInt64B、Int16B、Int32B、Int64B来标记。
+所以，07 00 00 00就是指7。
+
+对当前的已知的结构写成文档，如下：
+
+Header 00h
+12      String          Identifier      "NISPACK" 00 00 00 00
+4       Int32           NumFile         07 00 00 00
+
+Index 10h
+(
+44      ?               ?               "debug.nsf" ..
+){NumFile}
+
+Data 800h
+(
+*       Byte()          FileData        00 00 00 00 A5 ..
+0x800对齐
+){NumFile}
+
+其中，从左到右四栏按重要性排列，分别是字段的长度、类型、名称或注解、示例数据。
+( ... ){NumFile}表示这种结构重复了NumFile次。
+*表示0或多。
+
+现在需要详细的分析索引本身的内容。
+
+ 0  1  2  3  4  5  6  7  8  9 10 11           32 33 34 35  36 37 38 39  40 41 42 43
+64 65 62 75 67 2E 6E 73 66 00 00 00 (20个00)  00 08 00 00  F5 03 00 00  E8 03 47 39
+64 65 6D 6F 2E 6E 73 66 00 00 00 00 (20个00)  00 10 00 00  80 3B 03 00  E6 03 47 39
+44 4C 30 30 30 2E 6E 73 66 00 00 00 (20个00)  00 50 03 00  36 01 00 00  05 4B D3 38
+65 66 66 65 63 74 2E 6E 73 66 00 00 (20个00)  00 58 03 00  54 05 00 00  E8 03 47 39
+65 6E 65 6D 79 2E 6E 73 66 00 00 00 (20个00)  00 60 03 00  48 2C 09 00  E8 03 47 39
+70 72 65 76 69 65 77 2E 6E 73 66 00 (20个00)  00 90 0C 00  8A 14 00 00  E8 03 47 39
+73 79 73 74 65 6D 2E 6E 73 66 00 00 (20个00)  00 A8 0C 00  18 38 00 00  E5 03 47 39
+
+把7个索引的数据都提取出来，排列整齐，如上，每行一个索引的数据。
+现在要在这些数据中找到文件地址、文件长度。
+
+  35..32   35..32的差分   39..36
+0x00000800  0x00000800  0x000003F5
+0x00001000  0x00034000  0x00033B80
+0x00035000  0x00000800  0x00000136
+0x00035800  0x00000800  0x00000554
+0x00036000  0x00093000  0x00092C48
+0x000C9000  0x00001800  0x0000148A
+0x000CA800              0x00003818
+
+使用差分分析法。32-35的Int32很明显的递增，36-39的Int32，都是略小于递增的整数的差。因此可以判断，32-35是文件地址，36-39是文件长度。
+40-43的数据不清楚有什么用处，就不管了。
+有时候，文件地址和文件长度是乱序的，这时候可以考虑值域分析法或者直方图分析法。
+所谓值域分析法，是指通过获取所有文件索引中疑似为文件地址和文件长度的数据的取值范围来分析。文件地址通常的取值范围接近[0,文件结束]，而文件长度通常范围要小很多。该方法可以使用萤火虫汉化框架中的RangeAnalyzer来进行。
+所谓直方图分析法，即通过作所有文件索引中疑似为文件地址和文件长度的数据的出现概率直方图来分析。通常文件地址的值出现次数为1(有时候会有0长度文件和特殊值出现，可能会超过0)，而文件长度的值出现次数发生重复的概率较大。表现在直方图上，就是文件地址的直方图通常很平，而文件长度的直方图通常有很多震荡。该方法目前缺少对应的软件实现。
+
+索引的结构如下：
+32      String          Name            "debug.nsf" 00 00 .. 00
+4       Int32           Address         00 08 00 00
+4       Int32           Length          F5 03 00 00
+4       Int32           ?               E8 03 47 39
+
+对寻找的文件地址进行验证，发现这些地址都是文件的直接地址，没有偏移等情况。文件长度也吻合。
+
+文件包分析终了。
+
+完整文件格式文档如下：
+
+プリニ DAT格式
+
+Header 00h
+12      String          Identifier      "NISPACK" 00 00 00 00
+4       Int32           NumFile         07 00 00 00
+
+Index 10h
+(
+32      String          Name            "debug.nsf" 00 00 .. 00
+4       Int32           Address         00 08 00 00
+4       Int32           Length          F5 03 00 00
+4       Int32           ?               E8 03 47 39
+){NumFile}
+
+Data 800h
+(
+*       Byte()          FileData        00 00 00 00 A5 ..
+0x800对齐
+){NumFile}
+
+(2)程序
+这里以VB为例讲解。
+使用Visual Studio 2010创建WinForm项目。删去所有源文件。去掉框架，将启动对象改为Sub Main。
+添加对Firefly.Core.dll和Firefly.GUI.dll的引用。
+
+创建一个DAT.vb来处理该格式。内容如下：
+
+Imports System
+Imports System.Collections.Generic
+Imports System.IO
+Imports Firefly
+Imports Firefly.Packaging
+
+Public Class DAT
+    Inherits PackageDiscrete '使用离散文件包接口，表示文件数据不一定非要连续，即通过位置和长度来确定，连续文件一般只有长度一个数值
+
+    '在构造函数中填入文件包读取的部分，对每个文件需要调用PushFile以构造路径信息和各种映射信息
+    Public Sub New(ByVal sp As ZeroPositionStreamPasser)
+        MyBase.New(sp)
+
+        Dim s = sp.GetStream
+
+        '判断文件头部是否正常
+        If s.ReadSimpleString(12) <> "NISPACK" Then Throw New InvalidDataException
+
+        Dim NumFile = s.ReadInt32
+
+        For n = 0 To NumFile - 1
+
+            '读取索引的各部分
+            Dim Name = s.ReadSimpleString(32) '读取简单字符串
+            Dim Address = s.ReadInt32
+            Dim Length = s.ReadInt32
+            Dim Unknown = s.ReadInt32
+
+            '创建一个文件描述信息，包括文件名、文件长度、文件地址
+            Dim f As New FileDB(Name, FileDB.FileType.File, Length, Address)
+
+            '将文件描述信息传递到框架内部
+            '框架内部能够自动创建文件树(将文件名中以'\'或者'/'表示的文件路径拆开)
+            '框架内部能够自动创建IndexOfFile映射表，能够将文件描述信息映射到文件索引的出现顺序
+            '框架内部还记录一些数据用于寻找能放下数据的空洞
+            PushFile(f)
+        Next
+
+        '离散文件在打开的时候应该寻找空洞，以供导入文件使用
+        '寻找的起始地址是从当前位置的下一个块开始的位置
+        ScanHoles(GetSpace(s.Position))
+    End Sub
+
+    '提供格式在打开文件包窗口中的过滤器
+    Public Shared ReadOnly Property Filter() As String
+        Get
+            Return "プリニ DAT格式(*.DAT)|*.DAT"
+        End Get
+    End Property
+
+    '打开文件包的函数
+    Public Shared Function Open(ByVal Path As String) As Package
+        Dim s As StreamEx
+        Try
+            s = New StreamEx(Path, FileMode.Open, FileAccess.ReadWrite)
+        Catch
+            s = New StreamEx(Path, FileMode.Open, FileAccess.Read)
+        End Try
+        Return New DAT(s)
+    End Function
+
+    '读取文件在索引中的地址信息，所有索引中的地址信息应该在这里更新
+    Public Overrides Property FileAddressInPhysicalFileDB(ByVal File As FileDB) As Int64
+        Get
+            BaseStream.Position = 16 + 44 * IndexOfFile(File) + 32
+            Return BaseStream.ReadInt32
+        End Get
+        Set(ByVal Value As Int64)
+            BaseStream.Position = 16 + 44 * IndexOfFile(File) + 32
+            BaseStream.WriteInt32(Value)
+        End Set
+    End Property
+
+    '读取文件在索引中的长度信息，所有索引中的长度信息应该在这里更新
+    Public Overrides Property FileLengthInPhysicalFileDB(ByVal File As FileDB) As Int64
+        Get
+            BaseStream.Position = 16 + 44 * IndexOfFile(File) + 36
+            Return BaseStream.ReadInt32
+        End Get
+        Set(ByVal Value As Int64)
+            BaseStream.Position = 16 + 44 * IndexOfFile(File) + 36
+            BaseStream.WriteInt32(Value)
+        End Set
+    End Property
+
+    '提供文件数据的对齐的计算函数
+    Protected Overrides Function GetSpace(ByVal Length As Int64) As Int64
+        Return ((Length + &H800 - 1) \ &H800) * &H800
+    End Function
+End Class
+
+创建Main函数：
+
+Imports System
+Imports System.IO
+Imports System.Windows.Forms
+Imports Firefly
+Imports Firefly.Packaging
+
+Public Module Program
+
+    Public Sub Main(ByVal argv As String())
+        '在这里添加所有需要的文件包类型
+        PackageRegister.Register(DAT.Filter, AddressOf DAT.Open)
+        PackageRegister.Register(ISO.Filter, AddressOf ISO.Open)
+
+        Application.EnableVisualStyles()
+        Application.Run(New GUI.PackageManager())
+    End Sub
+End Module
+
+这样就能够对这种类型的文件包进行文件导出、替换等操作了。
+
+
+7.示例2
+
+文件包boot.pack
+
+(1)分析
+打开文件包，发现文件头部分有很多文件路径。
+最后一个文件路径之后有一个“DDS”，说明这是一个DDS文件，文件数据从这里开始。
+经过分析，可以发现，每个文件路径后面跟有一个00，两个文件路径之间除了这个00以外，还有一个Int32。
+最后一个文件路径后面没有跟Int32，说明Int32位于文件路径之前。
+索引格式如下：
+4       Int32           Length                  D4 00 00 00
+*       String          FileName                "commontextures\default_black.dds"
+                        Null-terminated Ascii String
+
+这一个单个的Int32，没有什么规律，只能假设是长度。对比第一个文件，似乎不能确定。
+总之先猜测文件结构如下：
+
+pack文件格式
+boot.pack
+
+Header 00h
+4       String          Identifier              "PFH0"
+4       Int32           PackageIndex?           00 00 00 00
+4       Int32           ?                       00 00 00 00
+4       Int32           ?                       00 00 00 00
+4       Int32           NumFile                 0A 00 00 00
+4       Int32           IndexTableLength        E4 01 00 00
+
+IndexTable 18h
+(
+4       Int32           Length                  D4 00 00 00
+*       String          FileName                "commontextures\default_black.dds"
+                        Null-terminated Ascii String
+){NumFile}
+
+Data 1FCh
+(
+*       Byte()          FileData                "DDS" 20 ..
+                        Continuous File Data Without Alignment
+){NumFile}
+
+(2)程序
+这次需要使用连续文件的模型。
+
+Public Class PACK
+    Inherits PackageContinuous
+
+    Private PhysicalLengthAddressOfFile As New Dictionary(Of FileDB, Int64)
+
+    Public Sub New(ByVal sp As ZeroPositionStreamPasser)
+        MyBase.New(sp)
+
+        Dim s = sp.GetStream
+
+        If s.ReadSimpleString(4) <> "PFH0" Then Throw New InvalidDataException
+
+        Dim PackageIndex = s.ReadInt32
+        Dim Unknown1 = s.ReadInt32
+        Dim Unknown2 = s.ReadInt32
+
+        Dim NumFile = s.ReadInt32
+        Dim IndexTableLength = s.ReadInt32
+        Dim Address = 24 + IndexTableLength
+
+        For n = 0 To NumFile - 1
+            Dim PhysicalLengthAddress = s.Position
+            Dim Length = s.ReadInt32
+            Dim l As New List(Of Byte)
+            Dim b = s.ReadByte
+            While b <> 0
+                l.Add(b)
+                b = s.ReadByte
+            End While
+            Dim Path = System.Text.Encoding.ASCII.GetChars(l.ToArray)
+
+            Dim f As New FileDB(Path, FileDB.FileType.File, Length, Address)
+            PushFile(f)
+            PhysicalLengthAddressOfFile.Add(f, PhysicalLengthAddress)
+
+            Address += Length
+        Next
+
+        Assert(s.Position = 24 + IndexTableLength)
+    End Sub
+
+    Public Shared ReadOnly Property Filter() As String
+        Get
+            Return "PACK文件(*.PACK)|*.PACK"
+        End Get
+    End Property
+
+    Public Shared Function Open(ByVal Path As String) As Package
+        Dim s As StreamEx
+        Try
+            s = New StreamEx(Path, FileMode.Open, FileAccess.ReadWrite)
+        Catch
+            s = New StreamEx(Path, FileMode.Open, FileAccess.Read)
+        End Try
+        Return New PACK(s)
+    End Function
+
+    Protected Overrides Function GetSpace(ByVal Length As Int64) As Int64
+        Return Length
+    End Function
+
+    Public Overrides Property FileLengthInPhysicalFileDB(ByVal File As FileDB) As Int64
+        Get
+            BaseStream.Position = PhysicalLengthAddressOfFile(File)
+            Return BaseStream.ReadInt32
+        End Get
+        Set(ByVal Value As Int64)
+            BaseStream.Position = PhysicalLengthAddressOfFile(File)
+            BaseStream.WriteInt32(Value)
+        End Set
+    End Property
+End Class
+
+另外就是此次的文件在索引中的地址信息难以通过计算来获取，需要事先生成映射PhysicalLengthAddressOfFile，之后在FileLengthInPhysicalFileDB中直接调用。
+也可以对FileDB进行继承，向其中保存新的信息。
+
+
+8.结论
+大部分文件包按照前述步骤都能够解析。核心思想只有两个：
+(1)先大后小，先分析外层的、宏观的结构，再分析细部的、微观的结构。
+(2)差分分析法，这种方法对很多索引都有作用，不仅仅是文件索引。
+
+解析后的文件包，使用前述框架，能够很容易的实现文件导出和替换。

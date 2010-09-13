@@ -1,0 +1,722 @@
+﻿<html xmlns:v="urn:schemas-microsoft-com:vml"
+xmlns:o="urn:schemas-microsoft-com:office:office"
+xmlns:w="urn:schemas-microsoft-com:office:word"
+xmlns:st1="urn:schemas-microsoft-com:office:smarttags"
+xmlns="http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=gb2312">
+<meta name=ProgId content=Word.Document>
+<meta name=Generator content="Microsoft Word 11">
+<meta name=Originator content="Microsoft Word 11">
+<title>BMP文件格式表</title>
+<o:SmartTagType namespaceuri="urn:schemas-microsoft-com:office:smarttags"
+ name="chmetcnv" downloadurl=""/>
+<!--[if gte mso 9]><xml>
+ <o:DocumentProperties>
+  <o:Author>Rex</o:Author>
+  <o:LastAuthor>Rex</o:LastAuthor>
+  <o:Revision>68</o:Revision>
+  <o:TotalTime>144</o:TotalTime>
+  <o:Created>2006-10-03T12:31:00Z</o:Created>
+  <o:LastSaved>2007-01-25T07:05:00Z</o:LastSaved>
+  <o:Pages>1</o:Pages>
+  <o:Words>1326</o:Words>
+  <o:Characters>7560</o:Characters>
+  <o:Company>Green Headquaters 2 - FLT</o:Company>
+  <o:Lines>63</o:Lines>
+  <o:Paragraphs>17</o:Paragraphs>
+  <o:CharactersWithSpaces>8869</o:CharactersWithSpaces>
+  <o:Version>11.5606</o:Version>
+ </o:DocumentProperties>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <w:WordDocument>
+  <w:Zoom>150</w:Zoom>
+  <w:SpellingState>Clean</w:SpellingState>
+  <w:GrammarState>Clean</w:GrammarState>
+  <w:ValidateAgainstSchemas/>
+  <w:SaveIfXMLInvalid>false</w:SaveIfXMLInvalid>
+  <w:IgnoreMixedContent>false</w:IgnoreMixedContent>
+  <w:AlwaysShowPlaceholderText>false</w:AlwaysShowPlaceholderText>
+  <w:Compatibility>
+   <w:UseFELayout/>
+  </w:Compatibility>
+  <w:BrowserLevel>MicrosoftInternetExplorer4</w:BrowserLevel>
+ </w:WordDocument>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <w:LatentStyles DefLockedState="false" LatentStyleCount="156">
+ </w:LatentStyles>
+</xml><![endif]-->
+<style>
+<!--
+ /* Font Definitions */
+ @font-face
+	{font-family:宋体;
+	panose-1:2 1 6 0 3 1 1 1 1 1;
+	mso-font-alt:SimSun;
+	mso-font-charset:134;
+	mso-generic-font-family:auto;
+	mso-font-pitch:variable;
+	mso-font-signature:3 135135232 16 0 262145 0;}
+@font-face
+	{font-family:"\@宋体";
+	panose-1:2 1 6 0 3 1 1 1 1 1;
+	mso-font-charset:134;
+	mso-generic-font-family:auto;
+	mso-font-pitch:variable;
+	mso-font-signature:3 135135232 16 0 262145 0;}
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{mso-style-parent:"";
+	margin:0cm;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:宋体;
+	mso-bidi-font-family:宋体;}
+p
+	{mso-margin-top-alt:auto;
+	margin-right:0cm;
+	mso-margin-bottom-alt:auto;
+	margin-left:0cm;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:宋体;
+	mso-bidi-font-family:宋体;}
+p.j, li.j, div.j
+	{mso-style-name:j;
+	mso-margin-top-alt:auto;
+	margin-right:0cm;
+	mso-margin-bottom-alt:auto;
+	margin-left:0cm;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:宋体;
+	mso-bidi-font-family:宋体;}
+p.j1, li.j1, div.j1
+	{mso-style-name:j1;
+	mso-margin-top-alt:auto;
+	margin-right:0cm;
+	mso-margin-bottom-alt:auto;
+	margin-left:0cm;
+	line-height:120%;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:宋体;
+	mso-bidi-font-family:宋体;}
+span.SpellE
+	{mso-style-name:"";
+	mso-spl-e:yes;}
+span.GramE
+	{mso-style-name:"";
+	mso-gram-e:yes;}
+@page Section1
+	{size:595.3pt 841.9pt;
+	margin:72.0pt 90.0pt 72.0pt 90.0pt;
+	mso-header-margin:42.55pt;
+	mso-footer-margin:49.6pt;
+	mso-paper-source:0;}
+div.Section1
+	{page:Section1;}
+-->
+</style>
+<!--[if gte mso 10]>
+<style>
+ /* Style Definitions */
+ table.MsoNormalTable
+	{mso-style-name:普通表格;
+	mso-tstyle-rowband-size:0;
+	mso-tstyle-colband-size:0;
+	mso-style-noshow:yes;
+	mso-style-parent:"";
+	mso-padding-alt:0cm 5.4pt 0cm 5.4pt;
+	mso-para-margin:0cm;
+	mso-para-margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:"Times New Roman";
+	mso-ansi-language:#0400;
+	mso-fareast-language:#0400;
+	mso-bidi-language:#0400;}
+</style>
+<![endif]-->
+<meta http-equiv=Content-Language content=zh-cn>
+<!--[if gte mso 9]><xml>
+ <o:shapelayout v:ext="edit">
+  <o:idmap v:ext="edit" data="1"/>
+ </o:shapelayout></xml><![endif]-->
+</head>
+
+<body lang=ZH-CN style='tab-interval:21.0pt'>
+
+<div class=Section1>
+
+<p>BMP文件格式表</p>
+
+<p>地狱门神（<span lang=EN-US>F.R.C.</span>）整理</p>
+<p>
+概述：BMP文件大家都知道是什么东西，但是网上虽然有很多讲到BMP格式的文章，但都不是很全，所以我整理了这个比较全的BMP文件格式表，其中指出了一些不再使用的参数。</p>
+
+<table class=MsoNormalTable border=1 cellpadding=0 style='width:939px;
+ mso-cellspacing:1.5pt;mso-padding-alt:0cm 5.4pt 0cm 5.4pt' id=table1>
+ <tr style='mso-yfti-irow:0;mso-yfti-firstrow:yes'>
+  <td width=53 style='width:39.8pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span
+  style='color:black'>数据区</span></p>
+  </td>
+  <td width=124 style='width:93.0pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span
+  style='color:black'>数据块</span></p>
+  </td>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span
+  style='color:black'>数据</span></p>
+  </td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span
+  style='color:black'>数据类型</span></p>
+  </td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span
+  style='color:black'>长度</span></p>
+  </td>
+  <td style='width:364px;padding:.75pt; '>
+  <p class=MsoNormal align=center style='text-align:center'><span
+  style='color:black'>描述</span></p>
+  </td>
+  <td style='width:137px;padding:.75pt; '>
+  <p class=MsoNormal align=center style='text-align:center'><span
+  style='color:black'>样例数据</span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:1'>
+  <td width=53 rowspan=22 style='width:39.8pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+  style='color:black'>Header DA<o:p></o:p></span></p>
+  </td>
+  <td width=124 rowspan=15 style='width:93.0pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class=MsoNormal align=center style='text-align:center'>Info DB<o:p></o:p></p>
+  </td>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class=MsoNormal align=center style='text-align:center'>Identifier</p>
+  </td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class=MsoNormal align=center style='text-align:center'>String<o:p></o:p></p>
+  </td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class=MsoNormal align=center style='text-align:center'>2</p>
+  </td>
+  <td style='width:364px;padding:.75pt; '>
+  <p class=MsoNormal align="left">标志符</p>
+  </td>
+  <td style='width:137px;padding:.75pt; '>
+  <p class=MsoNormal align=center style='text-align:center'>424D(BM)<o:p></o:p></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:2'>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class=MsoNormal align=center style='text-align:center'>File
+  Size</p>
+  </td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class=MsoNormal align=center style='text-align:center'>Int32<o:p></o:p></p>
+  </td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class=MsoNormal align=center style='text-align:center'>4</p>
+  </td>
+  <td style='width:364px;padding:.75pt; '>
+  <p class=MsoNormal align="left">文件大小</p>
+  </td>
+  <td style='width:137px;padding:.75pt; '>
+  <p class=MsoNormal align=center style='text-align:center'>931F0000</p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:3'>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class=MsoNormal align=center style='text-align:center'>Reserved</p>
+  </td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class=MsoNormal align=center style='text-align:center'>Int32<o:p></o:p></p>
+  </td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class=MsoNormal align=center style='text-align:center'>4<o:p></o:p></p>
+  </td>
+  <td style='width:364px;padding:.75pt; '>
+  <p class=MsoNormal align="left">为0</p>
+  </td>
+  <td style='width:137px;padding:.75pt; '>
+  <p class=MsoNormal align=center style='text-align:center'>00000000</p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:4'>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class=MsoNormal align=center style='text-align:center'>Bitmap
+  Data Offset<o:p></o:p></p>
+  </td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class=MsoNormal align=center style='text-align:center'>Int32<o:p></o:p></p>
+  </td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class=MsoNormal align=center style='text-align:center'>4<o:p></o:p></p>
+  </td>
+  <td style='width:364px;padding:.75pt; '>
+  <p class=MsoNormal align="left">从文件开始到位图数据开始之间的偏移量<span lang=EN-US><o:p></o:p></span></p>
+  </td>
+  <td style='width:137px;padding:.75pt; '>
+  <p class=MsoNormal align=center style='text-align:center'>FE050000<span
+  lang=EN-US><o:p></o:p></span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:5'>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Bitmap Header Size</td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Int32<o:p></o:p></td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">4</td>
+  <td style='width:364px;padding:.75pt; '>
+  <p class="MsoNormal" align="left">位图信息头的长度，固定为0x28</td>
+  <td style='width:137px;padding:.75pt; '>
+  <p class="MsoNormal" align="center">28000000</td>
+ </tr>
+ <tr style='mso-yfti-irow:5'>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Width</td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Int32<o:p></o:p></td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">4</td>
+  <td style='width:364px;padding:.75pt; '>
+  <p class="MsoNormal" align="left">位图的宽度</td>
+  <td style='width:137px;padding:.75pt; '>
+  <p class="MsoNormal" align="center">70000000</td>
+ </tr>
+ <tr style='mso-yfti-irow:5'>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Height</td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Int32<o:p></o:p></td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">4</td>
+  <td style='width:364px;padding:.75pt; '>
+  <p class="MsoNormal" align="left">位图的高度</td>
+  <td style='width:137px;padding:.75pt; '>
+  <p class="MsoNormal" align="center">6F000000</td>
+ </tr>
+ <tr style='mso-yfti-irow:5'>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Planes</td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Int16</td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">2</td>
+  <td style='width:364px;padding:.75pt; '>
+  <p class="MsoNormal" align="left">位图位面数，固定为1</td>
+  <td style='width:137px;padding:.75pt; '>
+  <p class="MsoNormal" align="center">0100</td>
+ </tr>
+ <tr style='mso-yfti-irow:5'>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Bits Per Pixel</td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Int16</td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">2</td>
+  <td style='width:364px;padding:.75pt; '>
+  <p class="MsoNormal" align="left">每个像素的位数，色深<br>
+	1 - Monochrome bitmap<br>
+	4 - 16 color bitmap<br>
+	8 - 256 color bitmap<br>
+	16 - 16bit (high color) bitmap<br>
+	24 - 24bit (true color) bitmap<br>
+	32 - 32bit (true color) bitmap</td>
+  <td style='width:137px;padding:.75pt; '>
+  <p class="MsoNormal" align="center">0800</td>
+ </tr>
+ <tr style='mso-yfti-irow:5'>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Compression</td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Int32<o:p></o:p></td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">4</td>
+  <td style='width:364px;padding:.75pt; '>
+  <p class="MsoNormal" align="left">压缩方法：<br>
+	0 - none (也使用BI_RGB表示)<br>
+	1 - RLE 8-bit / pixel (也使用BI_RLE4表示)<br>
+	2 - RLE 4-bit / pixel (也使用BI_RLE8表示)<br>
+	3 - Bitfields (也使用BI_BITFIELDS表示)</td>
+  <td style='width:137px;padding:.75pt; '>
+  <p class="MsoNormal" align="center">01000000</td>
+ </tr>
+ <tr style='mso-yfti-irow:5'>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Bitmap Data Size</td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Int32<o:p></o:p></td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">4</td>
+  <td style='width:364px;padding:.75pt; '>
+  <p class="MsoNormal" align="left">位图数据的字节数。必须是4的倍数</td>
+  <td style='width:137px;padding:.75pt; '>
+  <p class="MsoNormal" align="center">00000000</td>
+ </tr>
+ <tr style='mso-yfti-irow:5'>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">HResolution</td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Int32<o:p></o:p></td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">4</td>
+  <td style='width:364px;padding:.75pt; '>
+  <p class="MsoNormal" align="left">水平分辨率，通常不用，为0</td>
+  <td style='width:137px;padding:.75pt; '>
+  <p class="MsoNormal" align="center">00000000</td>
+ </tr>
+ <tr style='mso-yfti-irow:5'>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">VResolution</td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Int32<o:p></o:p></td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">4</td>
+  <td style='width:364px;padding:.75pt; '>
+  <p class="MsoNormal" align="left">垂直分辨率，通常不用，为0</td>
+  <td style='width:137px;padding:.75pt; '>
+  <p class="MsoNormal" align="center">00000000</td>
+ </tr>
+ <tr style='mso-yfti-irow:5'>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Colors</td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Int32<o:p></o:p></td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">4</td>
+  <td style='width:364px;padding:.75pt; '>
+  <p class="MsoNormal" align="left">位图颜色数（调色板大小），通常不用，为0，表示自动决定大小</td>
+  <td style='width:137px;padding:.75pt; '>
+  <p class="MsoNormal" align="center">00000000</td>
+ </tr>
+ <tr style='mso-yfti-irow:5'>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Important Colors</td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Int32<o:p></o:p></td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">4</td>
+  <td style='width:364px;padding:.75pt; '>
+  <p class="MsoNormal" align="left">重要颜色数，通常不用，为0</td>
+  <td style='width:137px;padding:.75pt; '>
+  <p class="MsoNormal" align="center">00000000</td>
+ </tr>
+ <tr style='mso-yfti-irow:5'>
+  <td style='padding:0cm 5.4pt 0cm 5.4pt' rowspan="2">
+  <p class="MsoNormal" align="center">Palette DB</td>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Color</td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Int32</td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">4</td>
+  <td style='width:364px;padding:.75pt; '>
+  <p class="MsoNormal" align="left">蓝、绿、红各8位，高8位当色深为32时为Alpha值，否则固定为0</td>
+  <td style='width:137px;padding:.75pt; '>
+  <p class="MsoNormal" align="center">0C040C00</td>
+ </tr>
+ <tr style='mso-yfti-irow:5'>
+  <td style='padding:.75pt; ' colspan="5">
+  <p class=MsoNormal align=center>当色深为1、4、8时才有，数量为2^Bits Per Pixel</p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:7'>
+  <td width=124 style='width:93.0pt;padding:.75pt .75pt .75pt .75pt' rowspan="5">
+  <p class="MsoNormal" align="center">Mask DB</td>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Red Mask</td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Int32</td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">4</td>
+  <td style='width:364px;padding:.75pt; '>
+  <p class="MsoNormal" align="left">红色的掩码</td>
+  <td style='width:137px;padding:.75pt; '>
+  <p class="MsoNormal" align="center">00F80000</td>
+ </tr>
+ <tr style='mso-yfti-irow:7'>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Green Mask</td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Int32</td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">4</td>
+  <td style='width:364px;padding:.75pt; '>
+  <p class="MsoNormal" align="left">绿色的掩码</td>
+  <td style='width:137px;padding:.75pt; '>
+  <p class="MsoNormal" align="center">E0070000</td>
+ </tr>
+ <tr style='mso-yfti-irow:7'>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Blue Mask</td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Int32</td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">4</td>
+  <td style='width:364px;padding:.75pt; '>
+  <p class="MsoNormal" align="left">蓝色的掩码</td>
+  <td style='width:137px;padding:.75pt; '>
+  <p class="MsoNormal" align="center">1F000000</td>
+ </tr>
+ <tr style='mso-yfti-irow:7'>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Reserved</td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Int32</td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">4</td>
+  <td style='width:364px;padding:.75pt; '>
+  <p class="MsoNormal" align="left">固定为0</td>
+  <td style='width:137px;padding:.75pt; '>
+  <p class="MsoNormal" align="center">00000000</td>
+ </tr>
+ <tr style='mso-yfti-irow:7'>
+  <td style='padding:.75pt; ' colspan="5">
+  <p class="MsoNormal" align="center">当色深为16时才有，此时Compression应为3</td>
+ </tr>
+ <tr style='mso-yfti-irow:7'>
+  <td width=53 style='width:39.8pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Data DA<o:p></o:p></td>
+  <td width=124 style='width:93.0pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang="en-us">B</span><span lang=EN-US
+  style='color:black'>itmap DB<o:p></o:p></span></p>
+  </td>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class=MsoNormal align=center style='text-align:center'>　</p>
+  </td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang="en-us">
+	Byte</span></p>
+  </td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class=MsoNormal align=center style='text-align:center'>不定</p>
+  </td>
+  <td style='width:364px;padding:.75pt; '>
+  <p class=MsoNormal align="left">位图数据，大小与色深和压缩方法有关</p>
+  </td>
+  <td style='width:137px;padding:.75pt; '>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-US
+  style='color:black'><o:p>&nbsp;</o:p></span></p>
+  </td>
+ </tr>
+ </table>
+
+<p>　</p>
+
+<p>注意<span lang=EN-US>:</span></p>
+
+<p><span lang=EN-US>1</span>、所有的整数数据类型都是<span lang=EN-US>little-endian</span>的。</p>
+<p>2、压缩方法：</p><font lang="ZH-CN" face="宋体"><b>
+<p>① BI_RLE8：</b>每个像素为8位的RLE压缩编码，可使用编码方式和绝对方式中的任何一种进行压缩，这两种方式可在同一幅图中的任何地方使用。</p>
+<b>
+<p>编码方式</b>：由2个字节组成，第一个字节指定使用相同颜色的像素数目，第二个字节指定使用的颜色索引。此外，这个字节对中的第一个字节可设置为0，联合使用第二个字节的值表示：</p>
+<ul>
+	<li>第二个字节的值为0：行的结束。 
+	</li>
+	<li>第二个字节的值为1：图像结束。 
+	</li>
+	<li>第二个字节的值为2：其后的两个字节表示下一个像素从当前开始的水平和垂直位置的偏移量。</li>
+</ul>
+<b>
+<p>绝对方式</b>：第一个字节设置为0，而第二个字节设置为0x03～0xFF之间的一个值。在这种方式中，第二个字节表示跟在这个字节后面的字节数，每个字节包含单个像素的颜色索引。压缩数据格式需要字边界(word 
+boundary)对齐。</p>
+<b>
+<p>[例1] </b>用十六进制表示的8位压缩图像数据如下：</p>
+<p>03 04 05 06 00 03 45 56 67 00 02 78 00 02 05 01 02 78 00 00 09 1E 00 01<br>
+这些压缩数据可解释为 ：</p>
+</font>
+<p align="center">　</p>
+<center>
+<table width="352" border="1" id="table4">
+	<tr>
+		<td vAlign="top" width="32%"><font lang="ZH-CN" face="宋体">
+		<p align="center">压缩数据 </font></td>
+		<td vAlign="top" width="68%"><font lang="ZH-CN" face="宋体">
+		<p align="center">扩展数据</font></td>
+	</tr>
+	<tr>
+		<td vAlign="top" width="32%"><font lang="ZH-CN" face="宋体">03 04</font></td>
+		<td vAlign="top" width="68%"><font lang="ZH-CN" face="宋体">04 04 04
+		</font></td>
+	</tr>
+	<tr>
+		<td vAlign="top" width="32%"><font lang="ZH-CN" face="宋体">05 06</font></td>
+		<td vAlign="top" width="68%"><font lang="ZH-CN" face="宋体">06 06 06 06 06
+		</font></td>
+	</tr>
+	<tr>
+		<td vAlign="top" width="32%"><font lang="ZH-CN" face="宋体">00 03 45 56 67 
+		00</font></td>
+		<td vAlign="top" width="68%"><font lang="ZH-CN" face="宋体">45 56 67
+		</font></td>
+	</tr>
+	<tr>
+		<td vAlign="top" width="32%"><font lang="ZH-CN" face="宋体">02 78</font></td>
+		<td vAlign="top" width="68%"><font lang="ZH-CN" face="宋体">78 78 </font>
+		</td>
+	</tr>
+	<tr>
+		<td vAlign="top" width="32%"><font lang="ZH-CN" face="宋体">00 02 05 01</font></td>
+		<td vAlign="top" width="68%"><font lang="ZH-CN" face="宋体">
+		从当前位置右移5个位置后向下移一行</font></td>
+	</tr>
+	<tr>
+		<td vAlign="top" width="32%"><font lang="ZH-CN" face="宋体">02 78</font></td>
+		<td vAlign="top" width="68%"><font lang="ZH-CN" face="宋体">78 78 </font>
+		</td>
+	</tr>
+	<tr>
+		<td vAlign="top" width="32%"><font lang="ZH-CN" face="宋体">00 00</font></td>
+		<td vAlign="top" width="68%"><font lang="ZH-CN" face="宋体">行结束</font></td>
+	</tr>
+	<tr>
+		<td vAlign="top" width="32%"><font lang="ZH-CN" face="宋体">09 1E</font></td>
+		<td vAlign="top" width="68%"><font lang="ZH-CN" face="宋体">1E 1E 1E 1E 1E 
+		1E 1E 1E 1E </font></td>
+	</tr>
+	<tr>
+		<td vAlign="top" width="32%"><font lang="ZH-CN" face="宋体">00 01</font></td>
+		<td vAlign="top" width="68%"><font lang="ZH-CN" face="宋体">RLE编码图像结束 
+		</font></td>
+	</tr>
+</table>
+</center>
+<p>　</p>
+<font lang="ZH-CN" face="宋体"><b>
+<p>② BI_RLE4：</b>每个像素为4位的RLE压缩编码，同样也可使用编码方式和绝对方式中的任何一种进行压缩，这两种方式也可在同一幅图中的任何地方使用。这两种方式是：</p>
+<p>
+编码方式：由2个字节组成，第一个字节指定像素数目，第二个字节包含两种颜色索引，一个在高4位，另一个在低4位。第一个像素使用高4位的颜色索引，第二个使用低4位的颜色索引，第3个使用高4位的颜色索引，依此类推。</p>
+<p>
+绝对方式：这个字节对中的第一个字节设置为0，第二个字节包含有颜色索引数，其后续字节包含有颜色索引，颜色索引存放在该字节的高、低4位中，一个颜色索引对应一个像素。此外，BI_RLE4也同样联合使用第二个字节中的值表示：</p>
+<ul>
+	<li>第二个字节的值为0：行的结束。 
+	</li>
+	<li>第二个字节的值为1：图像结束。 
+	</li>
+	<li>第二个字节的值为2：其后的两个字节表示下一个像素从当前开始的水平和垂直位置的偏移量。</li>
+</ul>
+<b>
+<p>[例2] </b>用十六进制数表示的4位压缩图像数据：</p>
+<p>03 04 05 06 00 06 45 56 67 00 04 78 00 02 05 01 04 78 00 00 09 1E 00 01</p>
+<p>这些压缩数据可解释为 ：</p>
+</font>
+<p align="center">　</p>
+<center>
+<table width="352" border="1" id="table5">
+	<tr>
+		<td vAlign="top" width="32%"><font lang="ZH-CN" face="宋体">
+		<p align="center">压缩数据</font></td>
+		<td vAlign="top" width="68%"><font lang="ZH-CN" face="宋体">
+		<p align="center">扩展数据</font></td>
+	</tr>
+	<tr>
+		<td vAlign="top" width="32%"><font lang="ZH-CN" face="宋体">03 04</font></td>
+		<td vAlign="top" width="68%"><font lang="ZH-CN" face="宋体">0 4 0</font></td>
+	</tr>
+	<tr>
+		<td vAlign="top" width="32%"><font lang="ZH-CN" face="宋体">05 06</font></td>
+		<td vAlign="top" width="68%"><font lang="ZH-CN" face="宋体">0 6 0 6 0
+		</font></td>
+	</tr>
+	<tr>
+		<td vAlign="top" width="32%"><font lang="ZH-CN" face="宋体">00 06 45 56 67 
+		00</font></td>
+		<td vAlign="top" width="68%"><font lang="ZH-CN" face="宋体">4 5 5 6 6 7
+		</font></td>
+	</tr>
+	<tr>
+		<td vAlign="top" width="32%"><font lang="ZH-CN" face="宋体">04 78</font></td>
+		<td vAlign="top" width="68%"><font lang="ZH-CN" face="宋体">7 8 7 8 </font>
+		</td>
+	</tr>
+	<tr>
+		<td vAlign="top" width="32%"><font lang="ZH-CN" face="宋体">00 02 05 01</font></td>
+		<td vAlign="top" width="68%"><font lang="ZH-CN" face="宋体">
+		从当前位置右移5个位置后向下移一行</font></td>
+	</tr>
+	<tr>
+		<td vAlign="top" width="32%"><font lang="ZH-CN" face="宋体">04 78</font></td>
+		<td vAlign="top" width="68%"><font lang="ZH-CN" face="宋体">7 8 7 8 </font>
+		</td>
+	</tr>
+	<tr>
+		<td vAlign="top" width="32%"><font lang="ZH-CN" face="宋体">00 00</font></td>
+		<td vAlign="top" width="68%"><font lang="ZH-CN" face="宋体">行结束</font></td>
+	</tr>
+	<tr>
+		<td vAlign="top" width="32%"><font lang="ZH-CN" face="宋体">09 1E</font></td>
+		<td vAlign="top" width="68%"><font lang="ZH-CN" face="宋体">1 E 1 E 1 E 1 
+		E 1 </font></td>
+	</tr>
+	<tr>
+		<td vAlign="top" width="32%"><font lang="ZH-CN" face="宋体">00 01</font></td>
+		<td vAlign="top" width="68%"><font lang="ZH-CN" face="宋体">RLE图像结束 </font>
+		</td>
+	</tr>
+</table>
+</center>
+<p><font lang="ZH-CN" face="宋体"><b>③ BI_BITFIELDS：</b>这其实不是一种压缩算法，但是它描述了16位色深位图的存储格式，通常有两种，即红5位、绿6位、蓝5位的r5g6b5和红5位、绿5位、蓝5位的r5g5b5。它们的掩码如下表。</font></p>
+<div align="center">
+
+<table class=MsoNormalTable border=1 cellpadding=0 style='width:254px;
+ mso-cellspacing:1.5pt;mso-padding-alt:0cm 5.4pt 0cm 5.4pt' id=table6 height="92">
+ <tr style='mso-yfti-irow:7'>
+  <td style='width:83px;padding:.75pt; ' height="23">
+  <p class="MsoNormal" align="center">掩码</td>
+  <td style='width:83px;padding:.75pt; ' height="23">
+  <p class="MsoNormal" align="center">r5g6b5</td>
+  <td style='width:84px;padding:.75pt; ' height="23">
+  <p class="MsoNormal" align="center">r5g5b5</td>
+ </tr>
+ <tr style='mso-yfti-irow:7'>
+  <td style='width:83px;padding:.75pt; ' height="23">
+  <p class="MsoNormal" align="center">红色</td>
+  <td style='width:83px;padding:.75pt; ' height="23">
+  <p class="MsoNormal" align="center">00F80000</td>
+  <td style='width:84px;padding:.75pt; ' height="23">
+  <p class="MsoNormal" align="center">007C0000</td>
+ </tr>
+ <tr style='mso-yfti-irow:7'>
+  <td style='width:83px;padding:.75pt; ' height="23">
+  <p class="MsoNormal" align="center">绿色</td>
+  <td style='width:83px;padding:.75pt; ' height="23">
+  <p class="MsoNormal" align="center">E0070000</td>
+  <td style='width:84px;padding:.75pt; ' height="23">
+  <p class="MsoNormal" align="center">E0030000</td>
+ </tr>
+ <tr style='mso-yfti-irow:7'>
+  <td style='width:83px;padding:.75pt; ' height="23">
+  <p class="MsoNormal" align="center">蓝色</td>
+  <td style='width:83px;padding:.75pt; ' height="23">
+  <p class="MsoNormal" align="center">1F000000</td>
+  <td style='width:84px;padding:.75pt; ' height="23">
+  <p class="MsoNormal" align="center">1F000000</td>
+ </tr>
+</table>
+
+</div>
+
+</div>
+<p>3、位图数据：</p>
+<p>每个像素按照从下到上从左到右的顺序排列。</p>
+<p>对于没有使用BI_RLE8或BI_RLE4的位图，每一行的数据字节数必须按4对齐，不足部分一般补0。</p>
+<p>
+对于色深为1、4的位图，每个字节的高位表示的像素比低位靠左。对于色深为24的位图，每个象素的3个字节按蓝绿红的顺序排列。对于色深为32的位图，每个象素的4个字节按蓝绿红Alpha的顺序排列。</p>
+<p>　</p>
+<p>参考：</p>
+<p>[1]《多媒体技术基础及应用》6.1 BMP文件格式，林福宗，<a href="http://mti.xidian.edu.cn/multimedia/multi/course1-6-1.html">http://mti.xidian.edu.cn/multimedia/multi/course1-6-1.html</a></p>
+
+<p>[2]BMP格式图像文件详析，Homects，<a href="http://my.opera.com/homec/blog/show.dml/330587">http://my.opera.com/homec/blog/show.dml/330587</a></p>
+<p>[3]BMP图象格式，<a href="http://dev.gameres.com/Program/Visual/Other/BMPFormat.htm">http://dev.gameres.com/Program/Visual/Other/BMPFormat.htm</a></p>
+
+</body>
+
+</html>

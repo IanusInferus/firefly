@@ -1,0 +1,135 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{1DE5CF1F-2526-4520-87D8-B1B1B8D1F214}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Firefly</RootNamespace>
+    <AssemblyName>Firefly.Core</AssemblyName>
+    <FileAlignment>512</FileAlignment>
+    <MyType>Windows</MyType>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <OptionExplicit>On</OptionExplicit>
+    <OptionCompare>Binary</OptionCompare>
+    <OptionStrict>Off</OptionStrict>
+    <OptionInfer>On</OptionInfer>
+    <SignAssembly>false</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(FLTKey)</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" Exists('$(FLTKey)') ">
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <DefineDebug>true</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <OutputPath>..\..\Bin\</OutputPath>
+    <DocumentationFile>Firefly.Core.xml</DocumentationFile>
+    <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>CodeAnalysisRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <DefineDebug>false</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\Bin\</OutputPath>
+    <DocumentationFile>Firefly.Core.xml</DocumentationFile>
+    <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Drawing" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.vb" />
+    <Compile Include="Compressing\CompressorSelector.vb" />
+    <Compile Include="Compressing\LZ77.vb" />
+    <Compile Include="Compressing\LZ77Reversed.vb" />
+    <Compile Include="Compressing\Pointer.vb" />
+    <Compile Include="Compressing\RLE.vb" />
+    <Compile Include="Core\BitStream.vb" />
+    <Compile Include="Core\CommandLine.vb" />
+    <Compile Include="Core\Counter.vb" />
+    <Compile Include="Core\ListPartStringEx.vb" />
+    <Compile Include="Core\ListPart.vb" />
+    <Compile Include="Core\Enumerators.vb" />
+    <Compile Include="Core\N32.vb" />
+    <Compile Include="Core\StringEx.vb" />
+    <Compile Include="Core\ArrayOperations.vb" />
+    <Compile Include="Core\BitOperations.vb" />
+    <Compile Include="Core\ExceptionInfo.vb" />
+    <Compile Include="Core\NumericOperations.vb" />
+    <Compile Include="Core\StreamExPasser.vb" />
+    <Compile Include="Core\StringDescape.vb" />
+    <Compile Include="Core\ArrayStream.vb" />
+    <Compile Include="Core\ByteArrayStream.vb" />
+    <Compile Include="Core\ListStringEx.vb" />
+    <Compile Include="GlobalSuppressions.vb" />
+    <Compile Include="Glyphing\FdGlyphDescriptionFile.vb" />
+    <Compile Include="Glyphing\Glyph.vb" />
+    <Compile Include="Glyphing\GlyphArranger.vb" />
+    <Compile Include="Glyphing\GlyphGenerator.vb" />
+    <Compile Include="Glyphing\Glyphing.vb" />
+    <Compile Include="Imaging\BitmapEx.vb" />
+    <Compile Include="Imaging\ImageInterface.vb" />
+    <Compile Include="Imaging\Quantizer.vb" />
+    <Compile Include="Packaging\PackageFixed.vb" />
+    <Compile Include="Packaging\PackageFixedAddress.vb" />
+    <Compile Include="Packaging\PackageContinuous.vb" />
+    <Compile Include="Packaging\PackageDiscrete.vb" />
+    <Compile Include="Setting\Xml.vb" />
+    <Compile Include="TextEncoding\ControlChars.vb" />
+    <Compile Include="TextEncoding\Encoding.vb" />
+    <Compile Include="TextEncoding\EncodingString.vb" />
+    <Compile Include="Imaging\Bmp.vb" />
+    <Compile Include="Imaging\ColorSpace.vb" />
+    <Compile Include="Core\CRC32.vb" />
+    <Compile Include="Core\DirectIntConvert.vb" />
+    <Compile Include="Core\Indexer.vb" />
+    <Compile Include="Core\FileLengthUtility.vb" />
+    <Compile Include="Core\FileNameHandling.vb" />
+    <Compile Include="Imaging\Gif.vb" />
+    <Compile Include="Setting\INI.vb" />
+    <Compile Include="Packaging\ISO.vb" />
+    <Compile Include="Packaging\PackageBase.vb" />
+    <Compile Include="Core\PartialStreamEx.vb" />
+    <Compile Include="Packaging\PCK.vb" />
+    <Compile Include="Core\StreamEx.vb" />
+    <Compile Include="TextEncoding\MultiByteEncoding.vb" />
+    <Compile Include="TextEncoding\TblCharMappingFile.vb" />
+    <Compile Include="TextEncoding\Char32.vb" />
+    <Compile Include="TextEncoding\StringCode.vb" />
+    <Compile Include="Core\Tokenizer.vb" />
+    <Compile Include="Texting\Agemo.vb" />
+    <Compile Include="Texting\ByteTextSearch.vb" />
+    <Compile Include="Texting\HanziConverter.vb" />
+    <Compile Include="Texting\HanziVariantTableGen.vb" />
+    <Compile Include="Texting\LOC.vb" />
+    <Compile Include="Texting\LOC1.vb" />
+    <Compile Include="Texting\Plain.vb" />
+    <Compile Include="Texting\UniHanDatabase.vb" />
+    <Compile Include="Texting\WQSG.vb" />
+    <Compile Include="Texting\Txt.vb" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="My Project\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.VisualBasic.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
