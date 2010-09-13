@@ -1,0 +1,23 @@
+pack文件格式
+boot.pack
+
+Header 00h
+4	String		Identifier		"PFH0"
+4	Int32		PackageIndex?		00 00 00 00
+4	Int32		?			00 00 00 00
+4	Int32		?			00 00 00 00
+4	Int32		NumFile			0A 00 00 00
+4	Int32		IndexTableLength	E4 01 00 00
+
+IndexTable 18h
+(
+4	Int32		Length			D4 00 00 00
+*	String		FileName		"commontextures\default_black.dds"
+			Null-terminated Ascii String
+){NumFile}
+
+Data 14171h
+(
+*	Byte()		FileData		"DDS" 20 ..
+			Continuous File Data Without Alignment
+){NumFile}

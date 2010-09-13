@@ -1,0 +1,19 @@
+¥×¥ê¥Ë DAT¸ñÊ½
+
+Header 00h
+12      String          Identifier      "NISPACK" 00 00 00 00
+4       Int32           NumFile         07 00 00 00
+
+Index 10h
+(
+32      String          Name            "debug.nsf" 00 00 .. 00
+4       Int32           Address         00 08 00 00
+4       Int32           Length          F5 03 00 00
+4       Int32           ?               E8 03 47 39
+){NumFile}
+
+Data 800h
+(
+*       Byte()          FileData        00 00 00 00 A5 ..
+0x800¶ÔÆë
+){NumFile}
