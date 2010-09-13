@@ -1,0 +1,16 @@
+Velvet Assassin loc文件格式
+eng.loc
+
+1	Byte		?			42
+4	Int32		NumText			1C 06 00 00
+
+(
+4	Int32		IndexLength		1B 00 00 00
+IndexLength
+	String		Index(ASCII)		"GAMEPLAY_EVENTS\DOOR_LOCKED"
+4	Int32		TextLength		1F 00 00 00
+TextLength * 2
+	String		Text(UTF-16L)		"The door is locked.|(no audio)|"
+){NumText}
+
+1	Byte		?			42
