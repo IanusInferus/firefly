@@ -3,7 +3,7 @@
 '  File:        Gif.vb
 '  Location:    Firefly.Imaging <Visual Basic .Net>
 '  Description: 基本Gif文件类
-'  Version:     2010.08.28.
+'  Version:     2010.09.14.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -20,45 +20,45 @@ Namespace Imaging
     ''' <remarks>用于GIF89a，但忽略无用功能</remarks>
     Public Class Gif
         Public Const Identifier As String = "GIF89a"
-        Protected PicWidth As Int16
-        ReadOnly Property Width() As Int16
+        Private PicWidth As Int16
+        Public ReadOnly Property Width() As Int16
             Get
                 Return PicWidth
             End Get
         End Property
-        Protected PicHeight As Int16
-        ReadOnly Property Height() As Int16
+        Private PicHeight As Int16
+        Public ReadOnly Property Height() As Int16
             Get
                 Return PicHeight
             End Get
         End Property
-        ReadOnly Property GlobalColorTableFlag() As Boolean
+        Public ReadOnly Property GlobalColorTableFlag() As Boolean
             Get
                 Return PicPalette IsNot Nothing
             End Get
         End Property
-        Protected PicBitsPerPixel As Integer
-        ReadOnly Property BitsPerPixel() As Integer
+        Private PicBitsPerPixel As Integer
+        Public ReadOnly Property BitsPerPixel() As Integer
             Get
                 Return PicBitsPerPixel
             End Get
         End Property
-        ReadOnly Property GlobalColorTableSize() As Integer
+        Public ReadOnly Property GlobalColorTableSize() As Integer
             Get
                 If PicPalette Is Nothing Then Return 0
                 Return PicPalette.GetLength(0)
             End Get
         End Property
         Public GlobalBackgroundColor As Byte
-        Protected Const PixelAspectRadio As Byte = 0 '不用
-        Protected PicPalette As Int32()
-        ReadOnly Property Palette() As Int32()
+        Private Const PixelAspectRadio As Byte = 0 '不用
+        Private PicPalette As Int32()
+        Public ReadOnly Property Palette() As Int32()
             Get
                 Return PicPalette
             End Get
         End Property
         Public Flame As GifImageBlock()
-        Protected Const Trailer As Byte = &H3B
+        Private Const Trailer As Byte = &H3B
 
         Private Sub New()
         End Sub
@@ -120,7 +120,7 @@ Namespace Imaging
                 End With
             End Using
         End Sub
-        Protected Shared Function GetNextImageBlock(ByVal sp As PositionedStreamPasser) As GifImageBlock
+        Private Shared Function GetNextImageBlock(ByVal sp As PositionedStreamPasser) As GifImageBlock
             Dim s = sp.GetStream
             Dim ret As GifImageBlock = Nothing
             Select Case s.ReadByte()
@@ -145,7 +145,7 @@ Namespace Imaging
             End Select
             Return ret
         End Function
-        Protected Shared Sub ReadNotExtendedImageBlock(ByVal sp As PositionedStreamPasser, ByRef i As GifImageBlock)
+        Private Shared Sub ReadNotExtendedImageBlock(ByVal sp As PositionedStreamPasser, ByRef i As GifImageBlock)
             Dim s = sp.GetStream
             With i
                 s.Position += 4
@@ -217,7 +217,7 @@ Namespace Imaging
                 End If
             End With
         End Sub
-        Protected Shared Sub ReadExtendedImageBlock(ByVal sp As PositionedStreamPasser, ByRef i As GifImageBlock)
+        Private Shared Sub ReadExtendedImageBlock(ByVal sp As PositionedStreamPasser, ByRef i As GifImageBlock)
             Dim s = sp.GetStream
             With i
                 .EnableControlExtension = True
@@ -268,7 +268,7 @@ Namespace Imaging
                 gf.WriteByte(Trailer)
             End Using
         End Sub
-        Protected Sub WriteImageBlock(ByVal sp As PositionedStreamPasser, ByVal i As GifImageBlock)
+        Private Sub WriteImageBlock(ByVal sp As PositionedStreamPasser, ByVal i As GifImageBlock)
             Dim s = sp.GetStream
             With i
                 If .EnableControlExtension Then

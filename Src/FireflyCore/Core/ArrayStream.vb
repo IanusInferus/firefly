@@ -3,7 +3,7 @@
 '  File:        ArrayStream.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 数组流
-'  Version:     2009.08.04.
+'  Version:     2010.09.14.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -146,25 +146,37 @@ Public Class ArrayStream(Of T)
     End Sub
 
 #Region " IDisposable 支持 "
-    Private DisposedValue As Boolean = False '检测冗余的调用
-    ''' <summary>释放流的资源。</summary>
-    ''' <remarks>对继承者的说明：不要调用基类的Dispose()，而应调用Dispose(True)，否则会出现无限递归。</remarks>
-    Protected Overridable Sub Dispose(ByVal Disposing As Boolean)
-        If DisposedValue Then Return
-        If Disposing Then
-            '释放其他状态(托管对象)。
-        End If
-
-        '释放您自己的状态(非托管对象)。
-        '将大型字段设置为 null。
+    ''' <summary>释放托管对象或间接非托管对象(Stream等)。可在这里将大型字段设置为 null。</summary>
+    Protected Overridable Sub DisposeManagedResource()
         BaseArray = Nothing
-        DisposedValue = True
     End Sub
+
+    ''' <summary>释放直接非托管对象(Handle等)。可在这里将大型字段设置为 null。</summary>
+    Protected Overridable Sub DisposeUnmanagedResource()
+    End Sub
+
+    '检测冗余的调用
+    Private DisposedValue As Boolean = False
+    ''' <summary>释放流的资源。请优先覆盖DisposeManagedResource、DisposeUnmanagedResource、DisposeNullify方法。如果你直接保存非托管对象(Handle等)，请覆盖Finalize方法，并在其中调用Dispose(False)。</summary>
+    Protected Overridable Sub Dispose(ByVal disposing As Boolean)
+        If DisposedValue Then Return
+        DisposedValue = True
+        If disposing Then
+            DisposeManagedResource()
+        End If
+        DisposeUnmanagedResource()
+    End Sub
+
     ''' <summary>释放流的资源。</summary>
     Public Sub Dispose() Implements IDisposable.Dispose
-        ' 不要更改此代码。请将清理代码放入上面的 Dispose(ByVal disposing As Boolean) 中。
+        ' 不要更改此代码。
         Dispose(True)
         GC.SuppressFinalize(Me)
+    End Sub
+
+    ''' <summary>析构。</summary>
+    Protected Overrides Sub Finalize()
+        Dispose(False)
     End Sub
 #End Region
 

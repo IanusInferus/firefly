@@ -3,7 +3,7 @@
 '  File:        BitmapEx.vb
 '  Location:    Firefly.Imaging <Visual Basic .Net>
 '  Description: Bitmap扩展函数
-'  Version:     2009.03.09.
+'  Version:     2010.09.14.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -14,6 +14,8 @@ Imports System.Drawing
 Imports System.Drawing.Imaging
 Imports System.Runtime.InteropServices
 Imports System.Runtime.CompilerServices
+Imports System.Security
+Imports System.Security.Permissions
 
 Namespace Imaging
 
@@ -25,7 +27,8 @@ Namespace Imaging
         ''' 从Bitmap中获得颜色数组。
         ''' 仅支持格式为PixelFormat.Format32bppArgb的Bitmap，且BitmapData.Stride必须为宽度的4倍。
         ''' </summary>
-        <Extension()> Public Function GetRectangle(ByVal Bitmap As Bitmap, ByVal x As Int32, ByVal y As Int32, ByVal w As Int32, ByVal h As Int32) As Int32(,)
+        <Extension()>
+        Public Function GetRectangle(ByVal Bitmap As Bitmap, ByVal x As Int32, ByVal y As Int32, ByVal w As Int32, ByVal h As Int32) As Int32(,)
             If Bitmap.PixelFormat <> PixelFormat.Format32bppArgb Then Throw New NotSupportedException
 
             If w < 0 OrElse h < 0 Then Return Nothing
@@ -61,19 +64,30 @@ Namespace Imaging
             If h <= 0 Then Return a
 
             Dim Rect As New Rectangle(0, oy, Bitmap.Width, h)
-            Dim BitmapData As System.Drawing.Imaging.BitmapData = Bitmap.LockBits(Rect, Drawing.Imaging.ImageLockMode.ReadOnly, Bitmap.PixelFormat)
-            If BitmapData.Stride <> Bitmap.Width * 4 Then Throw New NotSupportedException
 
-            Dim Ptr As IntPtr = BitmapData.Scan0
-            Dim NumPixels As Integer = (BitmapData.Stride * h) \ 4
-            Dim Pixels As Int32() = New Int32(NumPixels - 1) {}
-            Marshal.Copy(Ptr, Pixels, 0, NumPixels)
-            Bitmap.UnlockBits(BitmapData)
+            Dim BitmapPixelFormat = Bitmap.PixelFormat
+            Dim BitmapWidth = Bitmap.Width
+
+            Dim UnmanagedPermission = New SecurityPermission(PermissionState.Unrestricted)
+            UnmanagedPermission.Assert()
+            Dim BitmapData As System.Drawing.Imaging.BitmapData = Bitmap.LockBits(Rect, Drawing.Imaging.ImageLockMode.ReadOnly, BitmapPixelFormat)
+            Dim Pixels As Int32()
+            Try
+                If BitmapData.Stride <> BitmapWidth * 4 Then Throw New NotSupportedException
+
+                Dim Ptr As IntPtr = BitmapData.Scan0
+                Dim NumPixels As Integer = (BitmapData.Stride * h) \ 4
+                Pixels = New Int32(NumPixels - 1) {}
+                Marshal.Copy(Ptr, Pixels, 0, NumPixels)
+            Finally
+                Bitmap.UnlockBits(BitmapData)
+                CodeAccessPermission.RevertAssert()
+            End Try
 
             Dim o = oy - y
             For m As Integer = 0 To h - 1
                 For n As Integer = xl To xu
-                    a(n, o + m) = Pixels(ox + n + m * Bitmap.Width)
+                    a(n, o + m) = Pixels(ox + n + m * BitmapWidth)
                 Next
             Next
 
@@ -121,23 +135,33 @@ Namespace Imaging
             If h <= 0 Then Return
 
             Dim Rect As New Rectangle(0, oy, Bitmap.Width, h)
-            Dim BitmapData As System.Drawing.Imaging.BitmapData = Bitmap.LockBits(Rect, Drawing.Imaging.ImageLockMode.ReadWrite, Bitmap.PixelFormat)
-            If BitmapData.Stride <> Bitmap.Width * 4 Then Throw New NotSupportedException
 
-            Dim Ptr As IntPtr = BitmapData.Scan0
-            Dim NumPixels As Integer = (BitmapData.Stride * h) \ 4
-            Dim Pixels As Int32() = New Int32(NumPixels - 1) {}
-            Marshal.Copy(Ptr, Pixels, 0, NumPixels)
+            Dim BitmapPixelFormat = Bitmap.PixelFormat
+            Dim BitmapWidth = Bitmap.Width
 
-            Dim o = oy - y
-            For m As Integer = 0 To h - 1
-                For n As Integer = xl To xu
-                    Pixels(ox + n + m * Bitmap.Width) = a(n, o + m)
+            Dim UnmanagedPermission = New SecurityPermission(PermissionState.Unrestricted)
+            UnmanagedPermission.Assert()
+            Dim BitmapData As System.Drawing.Imaging.BitmapData = Bitmap.LockBits(Rect, Drawing.Imaging.ImageLockMode.ReadWrite, BitmapPixelFormat)
+            Try
+                If BitmapData.Stride <> BitmapWidth * 4 Then Throw New NotSupportedException
+
+                Dim Ptr As IntPtr = BitmapData.Scan0
+                Dim NumPixels As Integer = (BitmapData.Stride * h) \ 4
+                Dim Pixels As Int32() = New Int32(NumPixels - 1) {}
+                Marshal.Copy(Ptr, Pixels, 0, NumPixels)
+
+                Dim o = oy - y
+                For m As Integer = 0 To h - 1
+                    For n As Integer = xl To xu
+                        Pixels(ox + n + m * BitmapWidth) = a(n, o + m)
+                    Next
                 Next
-            Next
 
-            Marshal.Copy(Pixels, 0, Ptr, NumPixels)
-            Bitmap.UnlockBits(BitmapData)
+                Marshal.Copy(Pixels, 0, Ptr, NumPixels)
+            Finally
+                Bitmap.UnlockBits(BitmapData)
+                CodeAccessPermission.RevertAssert()
+            End Try
         End Sub
     End Module
 End Namespace

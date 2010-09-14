@@ -3,7 +3,7 @@
 '  File:        PackageBase.vb
 '  Location:    Firefly.Packaging <Visual Basic .Net>
 '  Description: 文件包基类
-'  Version:     2010.08.28.
+'  Version:     2010.09.14.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -384,8 +384,10 @@ Namespace Packaging
 #Region " IDisposable 支持 "
         ''' <summary>释放托管对象或间接非托管对象(Stream等)。可在这里将大型字段设置为 null。</summary>
         Protected Overridable Sub DisposeManagedResource()
-            If BaseStream IsNot Nothing Then BaseStream.Dispose()
-            BaseStream = Nothing
+            If BaseStream IsNot Nothing Then
+                BaseStream.Dispose()
+                BaseStream = Nothing
+            End If
         End Sub
 
         ''' <summary>释放直接非托管对象(Handle等)。可在这里将大型字段设置为 null。</summary>
@@ -406,9 +408,14 @@ Namespace Packaging
 
         ''' <summary>释放流的资源。</summary>
         Public Sub Dispose() Implements IDisposable.Dispose
-            ' 不要更改此代码。请将清理代码放入上面的 Dispose(ByVal disposing As Boolean) 中。
+            ' 不要更改此代码。
             Dispose(True)
             GC.SuppressFinalize(Me)
+        End Sub
+
+        ''' <summary>析构。</summary>
+        Protected Overrides Sub Finalize()
+            Dispose(False)
         End Sub
 #End Region
 
