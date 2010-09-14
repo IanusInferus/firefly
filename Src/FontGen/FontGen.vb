@@ -385,13 +385,13 @@ Public Class FontGen
                 Dim pgd = PartGlyphDescriptors.ToArray
                 If pgd.Length = 0 Then Throw New InvalidDataException("PicSizeTooSmallForGlyphOfChar:{0}".Formats(gl(GlyphIndex).c.ToString()))
                 Dim pgl = gl.SubArray(GlyphIndex, pgd.Length)
-                Using ImageWriter As New BmpFontImageWriter(ChangeExtension(FdPath, "bmp"), BitPerPixel)
+                Using ImageWriter As New BmpFontImageFileWriter(ChangeExtension(FdPath, "bmp"), BitPerPixel)
                     FdGlyphDescriptionFile.WriteFont(FdPath, TextEncoding.WritingDefault, pgl, pgd, ImageWriter, PicWidth, PicHeight)
                 End Using
                 GlyphIndex += pgd.Length
             End While
         Else
-            Using ImageWriter As New BmpFontImageWriter(ChangeExtension(TargetPath, "bmp"), BitPerPixel)
+            Using ImageWriter As New BmpFontImageFileWriter(ChangeExtension(TargetPath, "bmp"), BitPerPixel)
                 FdGlyphDescriptionFile.WriteFont(TargetPath, TextEncoding.WritingDefault, gl, ImageWriter, ga, PicWidth, PicHeight)
             End Using
         End If
