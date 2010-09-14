@@ -13,8 +13,10 @@ Imports System.Collections.Generic
 Imports System.Linq
 Imports System.IO
 Imports System.Text.RegularExpressions
+Imports System.Drawing
 Imports Firefly
 Imports Firefly.TextEncoding
+Imports Firefly.Imaging
 Imports Firefly.Glyphing
 
 Namespace Texting
@@ -65,7 +67,96 @@ Namespace Texting
 
                 Select Case Identifier
                     Case Identifier1
-                        Throw New NotImplementedException
+                        Dim NumSection As Int32 = s.ReadInt32
+                        If NumSection < 2 Then Throw New InvalidDataException
+
+                        Dim FontLibSectionAddress = s.ReadInt32
+                        Dim FontLibSectionLength = s.ReadInt32
+                        Dim TextAddress = s.ReadInt32
+                        Dim TextLength = s.ReadInt32
+
+                        Dim Font As New List(Of IGlyph)
+                        Dim Text As New List(Of IEnumerable(Of StringCode))
+
+                        Dim CharGlyphDictValue As New Dictionary(Of StringCode, Int32)
+
+                        s.Position = FontLibSectionAddress
+                        If FontLibSectionLength <= 0 Then Throw New InvalidDataException
+
+                        Dim CharCount As Int32 = s.ReadInt32
+                        Dim CharCode = New StringCode(CharCount - 1) {}
+                        Dim CharInfoDBLength As Int32 = s.ReadInt32 '暂时不用
+                        For n As Integer = 0 To CharCount - 1
+                            Dim Index = s.ReadInt32
+                            If Index <> n Then Throw New InvalidDataException
+
+                            Dim GlyphIndex = s.ReadInt32
+                            Dim Unicode = s.ReadInt32
+                            Dim Code = s.ReadInt32
+
+                            CharCode(n) = StringCode.FromUnicodesAndCodes(New StringEx(Of Char32)(New Char32() {New Char32(Unicode)}), New StringEx(Of Byte)(CodeInt32ToCodes(Code)))
+
+                            If GlyphIndex <> -1 Then CharGlyphDictValue.Add(CharCode(n), GlyphIndex)
+                        Next
+
+                        Dim GlyphCount = s.ReadInt32
+                        Dim GlyphWidth = s.ReadInt32
+                        Dim GlyphHeight = s.ReadInt32
+                        Dim WidthTableLength As Int32 = s.ReadInt32
+                        Dim WidthTable = New Byte(GlyphCount - 1) {}
+                        If WidthTableLength > 0 Then
+                            For n As Integer = 0 To GlyphCount - 1
+                                WidthTable(n) = s.ReadByte
+                            Next
+                            s.Position += WidthTableLength - GlyphCount
+                        End If
+                        s.Position = ((s.Position + 15) \ 16) * 16
+                        Dim BitmapLength As Int32 = s.ReadInt32
+                        If BitmapLength > 0 Then
+                            Dim HoldPosition = s.Position
+                            Using BitmapStream As New PartialStreamEx(s, s.Position, BitmapLength)
+                                Using Bitmap = Bmp.Open(BitmapStream)
+                                    Dim NumGlyphInLine = Bitmap.Width \ GlyphWidth
+                                    Dim GetGlyphVirtualBox = Function(GlyphIndex As Integer) New Rectangle(0, 0, WidthTable(GlyphIndex), GlyphHeight)
+                                    Dim GetGlyphPhysicalBox = Function(GlyphIndex As Integer) New Rectangle((GlyphIndex Mod NumGlyphInLine) * GlyphWidth, (GlyphIndex \ NumGlyphInLine) * GlyphHeight, GlyphWidth, GlyphHeight)
+
+                                    For Each c In CharCode
+                                        If CharGlyphDictValue.ContainsKey(c) Then
+                                            Dim r = GetGlyphPhysicalBox(CharGlyphDictValue(c))
+                                            Font.Add(New Glyph With {.c = c, .Block = Bitmap.GetRectangleAsARGB(r.X, r.Y, r.Width, r.Height), .VirtualBox = GetGlyphVirtualBox(CharGlyphDictValue(c))})
+                                        End If
+                                    Next
+                                End Using
+                            End Using
+                            s.Position = HoldPosition + BitmapLength
+                        End If
+
+                        s.Position = TextAddress
+                        Dim TextCount As Int32 = s.ReadInt32
+                        Dim TextInfoDBLength As Int32 = s.ReadInt32 '暂时不用
+
+                        Dim TextInfoAddress As Int32() = New Int32(TextCount - 1) {}
+                        Dim TextInfoLength As Int32() = New Int32(TextCount - 1) {}
+                        For n As Integer = 0 To TextCount - 1
+                            TextInfoAddress(n) = s.ReadInt32
+                            TextInfoLength(n) = s.ReadInt32
+                        Next
+                        Dim TextCharIndex = New Int32(TextCount - 1)() {}
+                        For n As Integer = 0 To TextCount - 1
+                            s.Position = TextAddress + TextInfoAddress(n)
+                            Dim VLEData As Byte() = s.Read(TextInfoLength(n))
+                            TextCharIndex(n) = VariableLengthDecode(VLEData)
+                        Next
+                        For n As Integer = 0 To TextCount - 1
+                            Dim Original = TextCharIndex(n)
+                            Dim SingleText = New StringCode(TextCharIndex(n).Length - 1) {}
+                            For k As Integer = 0 To TextCharIndex(n).Length - 1
+                                SingleText(k) = CharCode(Original(k))
+                            Next
+                            Text.Add(SingleText)
+                        Next
+
+                        Return New LOCText With {.Font = Font, .Text = Text}
                     Case Identifier2
                         Dim NumSection = s.ReadInt32
                         Dim StreamDict As New Dictionary(Of String, StreamEx)
@@ -329,5 +420,60 @@ Namespace Texting
         Private Shared Normal As String = "(?<Normal>.)"
 
         Private Shared r As New Regex("^" & "(" & SingleEscapes & "|" & CustomCodeEscapes & "|" & UnicodeEscapes & "|" & ErrorEscapes & "|" & Normal & ")*" & "$", RegexOptions.ExplicitCapture)
+
+        Private Shared Function VariableLengthEncode(ByVal Original As Int32()) As Byte()
+            Dim l As New List(Of Byte)
+            For Each i In Original
+                While (i And Not &H7F) <> 0
+                    l.Add(CByte((i And &H7F) Or &H80))
+                    i >>= 7
+                End While
+                l.Add(CByte(i))
+            Next
+            Return l.ToArray
+        End Function
+        Private Shared Function VariableLengthDecode(ByVal Encoded As Byte()) As Int32()
+            Dim l As New List(Of Int32)
+            Dim i As Int32
+            Dim p As Int32
+            For Each b In Encoded
+                i = i Or ((CInt(b) And &H7F) << p)
+                If (b And &H80) <> 0 Then
+                    p += 7
+                Else
+                    p = 0
+                    l.Add(i)
+                    i = 0
+                End If
+            Next
+            Return l.ToArray
+        End Function
+
+        Private Shared Function CodeInt32ToCodes(ByVal Code As Int32) As Byte()
+            Select Case Code
+                Case 0 To &HFF
+                    Return New Byte() {Code.Bits(7, 0)}
+                Case &H100 To &HFFFF
+                    Return New Byte() {Code.Bits(7, 0), Code.Bits(15, 8)}
+                Case &H10000 To &HFFFFFF
+                    Return New Byte() {Code.Bits(7, 0), Code.Bits(15, 8), Code.Bits(23, 16)}
+                Case Else
+                    Return New Byte() {Code.Bits(7, 0), Code.Bits(15, 8), Code.Bits(23, 16), Code.Bits(31, 24)}
+            End Select
+        End Function
+        Private Shared Function CodesToCodeInt32(ByVal Codes As Byte()) As Int32
+            Select Case Codes.Length
+                Case 1
+                    Return Codes(0)
+                Case 2
+                    Return ConcatBits(Codes(1), 8, Codes(0), 8)
+                Case 3
+                    Return ConcatBits(Codes(2), 8, Codes(1), 8, Codes(0), 8)
+                Case 4
+                    Return ConcatBits(Codes(3), 8, Codes(2), 8, Codes(1), 8, Codes(0), 8)
+                Case Else
+                    Throw New ArgumentException
+            End Select
+        End Function
     End Class
 End Namespace
