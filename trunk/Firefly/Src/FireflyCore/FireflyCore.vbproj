@@ -115,7 +115,6 @@
     <Compile Include="Texting\HanziConverter.vb" />
     <Compile Include="Texting\HanziVariantTableGen.vb" />
     <Compile Include="Texting\LOC.vb" />
-    <Compile Include="Texting\LOC1.vb" />
     <Compile Include="Texting\Plain.vb" />
     <Compile Include="Texting\UniHanDatabase.vb" />
     <Compile Include="Texting\WQSG.vb" />

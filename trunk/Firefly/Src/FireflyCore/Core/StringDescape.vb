@@ -3,7 +3,7 @@
 '  File:        StringDescape.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 字符串转义语法糖
-'  Version:     2010.09.11.
+'  Version:     2010.09.14.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -157,7 +157,7 @@ Public Module StringDescape
     End Property
     Private UnicodeEscapes As String = "\\U(?<UnicodeEscape>[0-9A-Fa-f]{5})|\\u(?<UnicodeEscape>[0-9A-Fa-f]{4})|\\x(?<UnicodeEscape>[0-9A-Fa-f]{2})"
     Private ErrorEscapes As String = "(?<ErrorEscape>\\)"
-    Private Normal As String = "(?<Normal>.)"
+    Private Normal As String = "(?<Normal>.|\r|\n)"
 
     Private r As New Regex("^" & "(" & SingleEscapes & "|" & UnicodeEscapes & "|" & ErrorEscapes & "|" & Normal & ")*" & "$", RegexOptions.ExplicitCapture)
 End Module
