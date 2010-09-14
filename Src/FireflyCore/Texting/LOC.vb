@@ -3,7 +3,7 @@
 '  File:        LOC.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: LOC文件格式类(版本2)(图形文本)
-'  Version:     2010.09.11.
+'  Version:     2010.09.14.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -25,11 +25,8 @@ Namespace Texting
         Public Text As IEnumerable(Of IEnumerable(Of StringCode))
     End Class
 
-    Public Enum LOCVersion
-        LOC1
-        LOC2
-    End Enum
-
+    ''' <summary>LOC文件格式类(版本2)(图形文本)</summary>
+    ''' <remarks>本类兼容LOC版本1格式的读取，但不能生成LOC版本1格式的文件。</remarks>
     Public Class LOC
         Private Sub New()
         End Sub
@@ -94,7 +91,7 @@ Namespace Texting
                             Dim Unicode = s.ReadInt32
                             Dim Code = s.ReadInt32
 
-                            CharCode(n) = StringCode.FromUnicodesAndCodes(New StringEx(Of Char32)(New Char32() {New Char32(Unicode)}), New StringEx(Of Byte)(CodeInt32ToCodes(Code)))
+                            CharCode(n) = StringCode.FromUnicodesAndCodes(UnicodeInt32ToUnicodes(Unicode), CodeInt32ToCodes(Code))
 
                             If GlyphIndex <> -1 Then CharGlyphDictValue.Add(CharCode(n), GlyphIndex)
                         Next
@@ -229,87 +226,80 @@ Namespace Texting
             End Using
         End Function
 
-        Public Shared Sub WriteFile(ByVal sp As ZeroLengthStreamPasser, ByVal Value As LOCText, Optional ByVal Compress As Boolean = False, Optional ByVal Version As LOCVersion = LOCVersion.LOC2)
+        Public Shared Sub WriteFile(ByVal sp As ZeroLengthStreamPasser, ByVal Value As LOCText, Optional ByVal Compress As Boolean = False)
             Dim f As StreamEx = sp.GetStream
             Using s As New StreamEx
-                Select Case Version
-                    Case LOCVersion.LOC1
-                        Throw New NotImplementedException
-                    Case LOCVersion.LOC2
-                        Dim Font = Value.Font
-                        Dim Text = Value.Text
+                Dim Font = Value.Font
+                Dim Text = Value.Text
 
-                        Dim StreamList As New List(Of KeyValuePair(Of String, StreamEx))
+                Dim StreamList As New List(Of KeyValuePair(Of String, StreamEx))
+                Try
+                    If Font IsNot Nothing Then
+                        Dim FdStream As New StreamEx
+                        Dim BmpStream As New StreamEx
                         Try
-                            If Font IsNot Nothing Then
-                                Dim FdStream As New StreamEx
-                                Dim BmpStream As New StreamEx
-                                Try
-                                    Using FdProtecter As New PartialStreamEx(FdStream, 0, Int64.MaxValue, FdStream.Length)
-                                        Using FdWriter = Txt.CreateTextWriter(FdProtecter, TextEncoding.UTF16)
-                                            Using ImageProtecter As New PartialStreamEx(BmpStream, 0, Int64.MaxValue, BmpStream.Length)
-                                                Using ImageWriter As New BmpFontImageWriter(ImageProtecter)
-                                                    FdGlyphDescriptionFile.WriteFont(FdWriter, Font, ImageWriter)
-                                                End Using
-                                            End Using
+                            Using FdProtecter As New PartialStreamEx(FdStream, 0, Int64.MaxValue, FdStream.Length)
+                                Using FdWriter = Txt.CreateTextWriter(FdProtecter, TextEncoding.UTF16)
+                                    Using ImageProtecter As New PartialStreamEx(BmpStream, 0, Int64.MaxValue, BmpStream.Length)
+                                        Using ImageWriter As New BmpFontImageWriter(ImageProtecter)
+                                            FdGlyphDescriptionFile.WriteFont(FdWriter, Font, ImageWriter)
                                         End Using
                                     End Using
-                                Finally
-                                    StreamList.Add(New KeyValuePair(Of String, StreamEx)(IdentifierFd, FdStream))
-                                    StreamList.Add(New KeyValuePair(Of String, StreamEx)(IdentifierBmp, BmpStream))
-                                End Try
-                            End If
-
-                            If Text IsNot Nothing Then
-                                Dim AgemoText = (From str In Text Select Escape(str)).ToArray
-                                Dim AgemoStream As New StreamEx
-                                Try
-                                    Using AgemoProtecter As New PartialStreamEx(AgemoStream, 0, Int64.MaxValue, AgemoStream.Length)
-                                        Using AgemoWriter = Txt.CreateTextWriter(AgemoProtecter, TextEncoding.UTF16)
-                                            Agemo.WriteFile(AgemoWriter, AgemoText)
-                                        End Using
-                                    End Using
-                                Finally
-                                    StreamList.Add(New KeyValuePair(Of String, StreamEx)(IdentifierAgemo, AgemoStream))
-                                End Try
-                            End If
-
-                            Dim NumSection = StreamList.Count
-                            Dim Address = 8 + 12 * NumSection
-                            Address = ((Address + 15) \ 16) * 16
-                            s.SetLength(Address)
-                            s.WriteSimpleString(Identifier2, 4)
-                            s.WriteInt32(NumSection)
-                            For Each sPair In StreamList
-                                Dim ss = sPair.Value
-                                s.WriteSimpleString(sPair.Key, 4)
-                                s.WriteInt32(Address)
-                                Dim Length = ss.Length
-                                Dim Space = ((Length + 15) \ 16) * 16
-                                s.WriteInt32(Length)
-
-                                Dim HoldPosition = s.Position
-                                s.Position = Address
-                                ss.Position = 0
-                                s.WriteFromStream(ss, Length)
-                                For n = Length To Space - 1
-                                    s.WriteByte(0)
-                                Next
-                                s.Position = HoldPosition
-
-                                Address += Space
-                            Next
+                                End Using
+                            End Using
                         Finally
-                            For Each sPair In StreamList
-                                Try
-                                    sPair.Value.Dispose()
-                                Catch
-                                End Try
-                            Next
+                            StreamList.Add(New KeyValuePair(Of String, StreamEx)(IdentifierFd, FdStream))
+                            StreamList.Add(New KeyValuePair(Of String, StreamEx)(IdentifierBmp, BmpStream))
                         End Try
-                    Case Else
-                        Throw New NotSupportedException
-                End Select
+                    End If
+
+                    If Text IsNot Nothing Then
+                        Dim AgemoText = (From str In Text Select Escape(str)).ToArray
+                        Dim AgemoStream As New StreamEx
+                        Try
+                            Using AgemoProtecter As New PartialStreamEx(AgemoStream, 0, Int64.MaxValue, AgemoStream.Length)
+                                Using AgemoWriter = Txt.CreateTextWriter(AgemoProtecter, TextEncoding.UTF16)
+                                    Agemo.WriteFile(AgemoWriter, AgemoText)
+                                End Using
+                            End Using
+                        Finally
+                            StreamList.Add(New KeyValuePair(Of String, StreamEx)(IdentifierAgemo, AgemoStream))
+                        End Try
+                    End If
+
+                    Dim NumSection = StreamList.Count
+                    Dim Address = 8 + 12 * NumSection
+                    Address = ((Address + 15) \ 16) * 16
+                    s.SetLength(Address)
+                    s.WriteSimpleString(Identifier2, 4)
+                    s.WriteInt32(NumSection)
+                    For Each sPair In StreamList
+                        Dim ss = sPair.Value
+                        s.WriteSimpleString(sPair.Key, 4)
+                        s.WriteInt32(Address)
+                        Dim Length = ss.Length
+                        Dim Space = ((Length + 15) \ 16) * 16
+                        s.WriteInt32(Length)
+
+                        Dim HoldPosition = s.Position
+                        s.Position = Address
+                        ss.Position = 0
+                        s.WriteFromStream(ss, Length)
+                        For n = Length To Space - 1
+                            s.WriteByte(0)
+                        Next
+                        s.Position = HoldPosition
+
+                        Address += Space
+                    Next
+                Finally
+                    For Each sPair In StreamList
+                        Try
+                            sPair.Value.Dispose()
+                        Catch
+                        End Try
+                    Next
+                End Try
 
                 s.Position = 0
                 If Not Compress Then
@@ -324,9 +314,9 @@ Namespace Texting
                 End If
             End Using
         End Sub
-        Public Shared Sub WriteFile(ByVal Path As String, ByVal Value As LOCText, Optional ByVal Compress As Boolean = False, Optional ByVal Version As LOCVersion = LOCVersion.LOC2)
+        Public Shared Sub WriteFile(ByVal Path As String, ByVal Value As LOCText, Optional ByVal Compress As Boolean = False)
             Using s As New StreamEx(Path, FileMode.Create, FileAccess.ReadWrite)
-                WriteFile(s, Value, Compress, Version)
+                WriteFile(s, Value, Compress)
             End Using
         End Sub
 
@@ -358,10 +348,12 @@ Namespace Texting
             For Each p In ss
                 If p.Value IsNot Nothing Then
                     sl.Add(p.Value)
-                ElseIf sl.Count > 0 Then
-                    Dim s = String.Join("", sl.ToArray)
-                    l.AddRange(From c In s.ToUTF32 Select StringCode.FromUnicodeChar(c))
-                    sl.Clear()
+                Else
+                    If sl.Count > 0 Then
+                        Dim s = String.Join("", sl.ToArray)
+                        l.AddRange(From c In s.ToUTF32 Select StringCode.FromUnicodeChar(c))
+                        sl.Clear()
+                    End If
                     l.Add(sg(p.Key))
                 End If
             Next
@@ -376,10 +368,12 @@ Namespace Texting
         Private Shared Function Escape(ByVal This As IEnumerable(Of StringCode)) As String
             Dim l As New List(Of String)
             For Each c In This
-                If c.HasCodes Then
+                If c.HasUnicodes Then
+                    l.Add(c.UnicodeString.Replace("\", "\\"))
+                ElseIf c.HasCodes Then
                     l.Add("\g{" & c.CodeString & "}")
                 Else
-                    l.Add(c.UnicodeString)
+                    Throw New InvalidDataException
                 End If
             Next
             Return String.Join("", l.ToArray)
@@ -417,7 +411,7 @@ Namespace Texting
         Private Shared CustomCodeEscapes As String = "\\g\{(?<CustomCodeEscape>[0-9A-Fa-f]+)\}"
         Private Shared UnicodeEscapes As String = "\\U(?<UnicodeEscape>[0-9A-Fa-f]{5})|\\u(?<UnicodeEscape>[0-9A-Fa-f]{4})|\\x(?<UnicodeEscape>[0-9A-Fa-f]{2})"
         Private Shared ErrorEscapes As String = "(?<ErrorEscape>\\)"
-        Private Shared Normal As String = "(?<Normal>.)"
+        Private Shared Normal As String = "(?<Normal>.|\r|\n)"
 
         Private Shared r As New Regex("^" & "(" & SingleEscapes & "|" & CustomCodeEscapes & "|" & UnicodeEscapes & "|" & ErrorEscapes & "|" & Normal & ")*" & "$", RegexOptions.ExplicitCapture)
 
@@ -449,20 +443,25 @@ Namespace Texting
             Return l.ToArray
         End Function
 
-        Private Shared Function CodeInt32ToCodes(ByVal Code As Int32) As Byte()
+        Private Shared Function CodeInt32ToCodes(ByVal Code As Int32) As StringEx(Of Byte)
             Select Case Code
+                Case -1
+                    Return Nothing
                 Case 0 To &HFF
-                    Return New Byte() {Code.Bits(7, 0)}
+                    Return New StringEx(Of Byte)(New Byte() {Code.Bits(7, 0)})
                 Case &H100 To &HFFFF
-                    Return New Byte() {Code.Bits(7, 0), Code.Bits(15, 8)}
+                    Return New StringEx(Of Byte)(New Byte() {Code.Bits(7, 0), Code.Bits(15, 8)})
                 Case &H10000 To &HFFFFFF
-                    Return New Byte() {Code.Bits(7, 0), Code.Bits(15, 8), Code.Bits(23, 16)}
+                    Return New StringEx(Of Byte)(New Byte() {Code.Bits(7, 0), Code.Bits(15, 8), Code.Bits(23, 16)})
                 Case Else
-                    Return New Byte() {Code.Bits(7, 0), Code.Bits(15, 8), Code.Bits(23, 16), Code.Bits(31, 24)}
+                    Return New StringEx(Of Byte)(New Byte() {Code.Bits(7, 0), Code.Bits(15, 8), Code.Bits(23, 16), Code.Bits(31, 24)})
             End Select
         End Function
-        Private Shared Function CodesToCodeInt32(ByVal Codes As Byte()) As Int32
-            Select Case Codes.Length
+        Private Shared Function CodesToCodeInt32(ByVal Codes As StringEx(Of Byte)) As Int32
+            If Codes Is Nothing Then Return -1
+            Select Case Codes.Count
+                Case 0
+                    Return -1
                 Case 1
                     Return Codes(0)
                 Case 2
@@ -474,6 +473,17 @@ Namespace Texting
                 Case Else
                     Throw New ArgumentException
             End Select
+        End Function
+
+        Private Shared Function UnicodeInt32ToUnicodes(ByVal Unicode As Int32) As StringEx(Of Char32)
+            If Unicode = -1 Then Return Nothing
+            Return New StringEx(Of Char32)(New Char32() {New Char32(Unicode)})
+        End Function
+        Private Shared Function UnicodesToUnicodeInt32(ByVal Unicodes As StringEx(Of Char32)) As Int32
+            If Unicodes Is Nothing Then Return -1
+            If Unicodes.Count = 0 Then Return -1
+            If Unicodes.Count <> 1 Then Throw New ArgumentException
+            Return Unicodes(0)
         End Function
     End Class
 End Namespace

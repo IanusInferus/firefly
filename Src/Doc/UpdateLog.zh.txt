@@ -1,4 +1,4 @@
-﻿2010.09.14
+﻿2010.09.14.0
 Firefly.Core:
 整理IDisposable模式。
 整理代码分析警告。
@@ -7,6 +7,8 @@ Firefly.Core.Glyphing:
 Firefly.Core.Texting:
 增加LOC(第2版)。
 重写LOC(第1版)读取代码。
+删除LOC(第1版)生成代码、CharCode等。(breaking change)
+LOC显示代码移至Eddy项目。
 
 2010.09.11
 Firefly.Core.TextEncoding:
