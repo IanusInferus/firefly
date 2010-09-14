@@ -23,7 +23,7 @@ xmlns="http://www.w3.org/TR/REC-html40">
   <o:Pages>1</o:Pages>
   <o:Words>219</o:Words>
   <o:Characters>1252</o:Characters>
-  <o:Company>Green Headquaters 2 - FLT</o:Company>
+  <o:Company>FLT</o:Company>
   <o:Lines>10</o:Lines>
   <o:Paragraphs>2</o:Paragraphs>
   <o:CharactersWithSpaces>1469</o:CharactersWithSpaces>
@@ -152,7 +152,7 @@ div.Section1
 
 <div class=Section1>
 
-<p>LOC文件格式表<span lang="en-us">(</span>版本2<span lang="en-us">)</span></p>
+<p>LOC文件格式表(版本2)</p>
 
 <p>地狱门神（<span lang=EN-US>F.R.C.</span>）制作</p>
 
@@ -189,9 +189,9 @@ div.Section1
   </td>
  </tr>
  <tr style='mso-yfti-irow:1'>
-  <td width=53 rowspan=4 style='width:39.8pt;padding:.75pt .75pt .75pt .75pt'>
+  <td width=53 rowspan=8 style='width:39.8pt;padding:.75pt .75pt .75pt .75pt'>
   <p class=MsoNormal align=center><span lang=EN-US
-  style='color:black'>Header DA<o:p></o:p></span></p>
+  style='color:black'>Header DA</span></p>
   </td>
  </tr>
  <tr style='mso-yfti-irow:1'>
@@ -207,7 +207,7 @@ div.Section1
   <p class=MsoNormal align=center>4<o:p></o:p></p>
   </td>
   <td style='width:239px;padding:.75pt; '>
-  <p class="MsoNormal">文件<span style="color: black">标</span>识符，固定为&quot;LOC1&quot;</td>
+  <p class="MsoNormal">文件<span style="color: black">标</span>识符，固定为&quot;LOC2&quot;</td>
   <td style='width:112px;padding:.75pt; '>
   <p class="MsoNormal" align="center">&quot;LOC2&quot;</td>
  </tr>
@@ -221,17 +221,79 @@ div.Section1
   <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
   <p class="MsoNormal" align="center">4</td>
   <td style='width:239px;padding:.75pt; '>
-  <p class="MsoNormal" align="left">段数</td>
+  <p class="MsoNormal" align="left">节数</td>
   <td style='width:112px;padding:.75pt; '>
-  <p class="MsoNormal" align="center">00000000　</td>
+  <p class="MsoNormal" align="center">03 00 00 00　</td>
+ </tr>
+ <tr style='mso-yfti-irow:2'>
+  <td width=124 style='width:93.0pt;padding:.75pt .75pt .75pt .75pt' rowspan="3">
+  <p class="MsoNormal" align="center">Section</td>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Identifier</td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">String</td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">4</td>
+  <td style='width:239px;padding:.75pt; '>
+  <p class="MsoNormal" align="left">节标识符，为FD、BMP、AGEM</td>
+  <td style='width:112px;padding:.75pt; '>
+  <p class="MsoNormal" align="center">&quot;FD&quot; 00 00</td>
+ </tr>
+ <tr style='mso-yfti-irow:2'>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Address</td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Int32</td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">4</td>
+  <td style='width:239px;padding:.75pt; '>
+  <p class="MsoNormal" align="left">节起始位置</td>
+  <td style='width:112px;padding:.75pt; '>
+  <p class="MsoNormal" align="center">2C 00 00 00</td>
+ </tr>
+ <tr style='mso-yfti-irow:2'>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Length</td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Int32</td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">4</td>
+  <td style='width:239px;padding:.75pt; '>
+  <p class="MsoNormal" align="left">节长度</td>
+  <td style='width:112px;padding:.75pt; '>
+  <p class="MsoNormal" align="center">00 04 00 00</td>
+ </tr>
+ <tr style='mso-yfti-irow:2'>
+  <td style='padding:.75pt .75pt .75pt .75pt' colspan="6">
+  <p class="MsoNormal" align="center">Num Section个Section</td>
+ </tr>
+ <tr style='mso-yfti-irow:6'>
+  <td width=53 style='width:39.8pt;padding:.75pt .75pt .75pt .75pt' rowspan="2">
+  <p class="MsoNormal" align="center">File DA</td>
+  <td width=124 style='width:93.0pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Section Data</td>
+  <td width=108 style='width:81.15pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">　</td>
+  <td width=55 style='width:41.45pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Byte()</td>
+  <td width=53 style='width:39.7pt;padding:.75pt .75pt .75pt .75pt'>
+  <p class="MsoNormal" align="center">Section Length</td>
+  <td style='width:239px;padding:.75pt; '>
+  <p class="MsoNormal" align="left">节数据</td>
+  <td style='width:112px;padding:.75pt; '>
+  <p class="MsoNormal" align="center">　</td>
+ </tr>
+ <tr style='mso-yfti-irow:2'>
+  <td style='padding:.75pt .75pt .75pt .75pt' colspan="6">
+  <p class="MsoNormal" align="center">Num Section个Section Data</td>
  </tr>
  </table>
 
 <p>本格式用于存储图形文本。</p>
-<p>本格式的实际内容在主文件名相同的fd、bmp、txt文件中。</p>
-<p>fd和bmp请参照FD文件格式表(FD.zh.htm)。</p>
+<p>本格式的实际内容在fd、bmp、txt文件中。</p>
+<p>fd和bmp请参照FD文件格式表(FD.zh.htm)，fd文件的编码应为UTF-16L。</p>
 <p>bmp另请参照BMP文件格式表(BMP.zh.htm)。</p>
-<p>txt文件为Agemo格式，但采用特殊转义语义。</p>
+<p>txt文件为Agemo格式，编码应为UTF-16L，采用特殊转义语义。</p>
 <p>该特殊转义语义如下：</p>
 <p><span lang="en-us">EscapedString ::= EscapedUTF16Char+ -&gt; 
 GetUTF16StringAsUTF32String(EscapedUTF16Char+)</span></p>
@@ -261,6 +323,20 @@ CustomCode:[0-9A-Fa-f]+ &quot;}&quot; -&gt; GetStringCode(CustomCode)</span></p>
 
 <p>注意<span lang=EN-US>:</span></p>
 <p><span lang="en-us">1、</span>所有的整数数据类型都是<span lang="EN-US">little-endian</span>的。</p>
+    <div class="Section1">
+        <p>
+            2、每个段是16字节对齐的。</p>
+    </div>
+    <p>
+        3、为了便于网络传输，可能使用 RFC 1952 （GZIP 文件格式规范 4.3） 对整个文件进行压缩。但也可以不使用。</p>
+    <p>
+&nbsp;&nbsp; 使用压缩时应对整个文件进行压缩，并在起始位置增加标识符&quot;LOCC&quot;。</p>
+    <p>
+&nbsp;&nbsp; .Net Framework 2.0 的 <MSHELP:LINK tabIndex=0 
+keywords="N:System.IO.Compression">System.IO.Compression.</MSHELP:LINK><span 
+            codelanguage="JSharp"><span class="identifier">GZipStream</span> 类实现了此压缩。</span></p>
+    <p>
+        &nbsp;</p>
 
 </div>
 

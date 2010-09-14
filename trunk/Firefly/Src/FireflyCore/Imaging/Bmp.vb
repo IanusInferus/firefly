@@ -3,7 +3,7 @@
 '  File:        Bmp.vb
 '  Location:    Firefly.Imaging <Visual Basic .Net>
 '  Description: 基本Bmp文件流类
-'  Version:     2010.09.11.
+'  Version:     2010.09.14.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -18,7 +18,7 @@ Namespace Imaging
 
     ''' <summary>基本Bmp文件流类</summary>
     ''' <remarks>不能使用压缩等无用功能</remarks>
-    Public Class Bmp
+    Public NotInheritable Class Bmp
         Implements IDisposable
 
         ''' <summary>标志符。</summary>
@@ -29,9 +29,9 @@ Namespace Imaging
                 Return BitmapDataOffset + BitmapDataSize
             End Get
         End Property
-        Protected Const Reserved As Int32 = 0
+        Private Const Reserved As Int32 = 0
         ''' <summary>位图数据偏移量。</summary>
-        ReadOnly Property BitmapDataOffset() As Int32
+        Public ReadOnly Property BitmapDataOffset() As Int32
             Get
                 If (PicBitsPerPixel = 1) OrElse (PicBitsPerPixel = 4) OrElse (PicBitsPerPixel = 8) Then
                     Return 54 + (1 << PicBitsPerPixel) * 4
@@ -42,10 +42,10 @@ Namespace Imaging
                 End If
             End Get
         End Property
-        Protected Const BitmapHeaderSize As Int32 = &H28
-        Protected PicWidth As Int32
+        Private Const BitmapHeaderSize As Int32 = &H28
+        Private PicWidth As Int32
         ''' <summary>宽度。</summary>
-        Property Width() As Int32
+        Public Property Width() As Int32
             Get
                 Return PicWidth
             End Get
@@ -57,17 +57,17 @@ Namespace Imaging
                 BaseStream.WriteInt32(PicWidth)
             End Set
         End Property
-        Protected LineBitLength As Int32
-        Protected Sub CalcLineBitLength()
+        Private LineBitLength As Int32
+        Private Sub CalcLineBitLength()
             If (PicWidth * PicBitsPerPixel) Mod 32 <> 0 Then
                 LineBitLength = (((PicWidth * PicBitsPerPixel) >> 5) + 1) << 5
             Else
                 LineBitLength = PicWidth * PicBitsPerPixel
             End If
         End Sub
-        Protected PicHeight As Int32
+        Private PicHeight As Int32
         ''' <summary>高度。</summary>
-        Property Height() As Int32
+        Public Property Height() As Int32
             Get
                 Return PicHeight
             End Get
@@ -78,35 +78,35 @@ Namespace Imaging
                 BaseStream.WriteInt32(PicHeight)
             End Set
         End Property
-        Protected Const Planes As Int16 = 1
-        Protected PicBitsPerPixel As Int16
+        Private Const Planes As Int16 = 1
+        Private PicBitsPerPixel As Int16
         ''' <summary>位深度。</summary>
-        ReadOnly Property BitsPerPixel() As Int16
+        Public ReadOnly Property BitsPerPixel() As Int16
             Get
                 If PicBitsPerPixel = 16 AndAlso Not r5g6b5 Then Return 15
                 Return PicBitsPerPixel
             End Get
         End Property
-        Protected PicCompression As Int32
+        Private PicCompression As Int32
         ''' <summary>压缩方式。</summary>
-        ReadOnly Property Compression() As Int32
+        Public ReadOnly Property Compression() As Int32
             Get
                 Return PicCompression
             End Get
         End Property
         ''' <summary>位图数据大小。</summary>
-        ReadOnly Property BitmapDataSize() As Int32
+        Public ReadOnly Property BitmapDataSize() As Int32
             Get
                 Return (LineBitLength * PicHeight) >> 3
             End Get
         End Property
-        Protected Const HResolution As Int32 = 0 '不用
-        Protected Const VResolution As Int32 = 0 '不用
-        Protected Const Colors As Int32 = 0
-        Protected Const ImportantColors As Int32 = 0
-        Protected PicPalette As Int32()
+        Private Const HResolution As Int32 = 0 '不用
+        Private Const VResolution As Int32 = 0 '不用
+        Private Const Colors As Int32 = 0
+        Private Const ImportantColors As Int32 = 0
+        Private PicPalette As Int32()
         ''' <summary>调色板。</summary>
-        Property Palette() As Int32()
+        Public Property Palette() As Int32()
             Get
                 Dim Value As Int32()
                 If (PicBitsPerPixel = 1) OrElse (PicBitsPerPixel = 4) OrElse (PicBitsPerPixel = 8) Then
@@ -135,15 +135,16 @@ Namespace Imaging
             End Set
         End Property
 
-        Protected BaseStream As StreamEx
-        Protected r5g6b5 As Boolean
+        Private BaseStream As StreamEx
+        Private r5g6b5 As Boolean
         Private Sub New()
         End Sub
 
-        ''' <summary>新建内存流Bmp</summary>
+        ''' <summary>新建Bmp</summary>
         ''' <param name="BitsPerPixel">Bmp位数：可以取1、4、8、15、16、24、32</param>
-        Sub New(ByVal Width As Int32, ByVal Height As Int32, Optional ByVal BitsPerPixel As Int16 = 24)
-            BaseStream = New MemoryStream
+        ''' <remarks>注意，流在Bmp关闭时会被关闭。</remarks>
+        Public Sub New(ByVal sp As ZeroLengthStreamPasser, ByVal Width As Int32, ByVal Height As Int32, Optional ByVal BitsPerPixel As Int16 = 24)
+            BaseStream = sp.GetStream
             If Width < 0 OrElse Height < 0 Then
                 BaseStream.Dispose()
                 Throw New InvalidDataException
@@ -198,69 +199,20 @@ Namespace Imaging
                     BaseStream.WriteInt32(&H0)
                 End If
             End If
+        End Sub
+        ''' <summary>新建内存流Bmp</summary>
+        ''' <param name="BitsPerPixel">Bmp位数：可以取1、4、8、15、16、24、32</param>
+        Public Sub New(ByVal Width As Int32, ByVal Height As Int32, Optional ByVal BitsPerPixel As Int16 = 24)
+            Me.New(New StreamEx, Width, Height, BitsPerPixel)
         End Sub
         ''' <summary>新建文件流Bmp</summary>
         ''' <param name="BitsPerPixel">Bmp位数：可以取1、4、8、15、16、24、32</param>
-        Sub New(ByVal Path As String, ByVal Width As Int32, ByVal Height As Int32, Optional ByVal BitsPerPixel As Int16 = 24)
-            BaseStream = New FileStream(Path, FileMode.Create)
-            If Width < 0 OrElse Height < 0 Then
-                BaseStream.Dispose()
-                Throw New InvalidDataException
-            End If
-            PicWidth = Width
-            PicHeight = Height
-            If (BitsPerPixel = 1) OrElse (BitsPerPixel = 4) OrElse (BitsPerPixel = 8) Then
-                PicBitsPerPixel = BitsPerPixel
-                PicPalette = New Int32(CInt(2 ^ (PicBitsPerPixel)) - 1) {}
-            ElseIf (BitsPerPixel = 15) OrElse (BitsPerPixel = 16) Then
-                r5g6b5 = (BitsPerPixel = 16)
-                PicBitsPerPixel = 16
-                PicCompression = 3
-            ElseIf (BitsPerPixel = 24) OrElse (BitsPerPixel = 32) Then
-                PicBitsPerPixel = BitsPerPixel
-            Else
-                BaseStream.Dispose()
-                Throw New NotSupportedException("PicBitsPerPixelNotSupported")
-            End If
-            CalcLineBitLength()
-            BaseStream.SetLength(FileSize)
-
-            BaseStream.Position = 0
-            For n As Integer = 0 To Identifier.Length - 1
-                BaseStream.WriteByte(CByte(AscQ(Identifier(n))))
-            Next
-            BaseStream.WriteInt32(FileSize)
-            BaseStream.WriteInt32(Reserved)
-            BaseStream.WriteInt32(BitmapDataOffset)
-            BaseStream.WriteInt32(BitmapHeaderSize)
-            BaseStream.WriteInt32(PicWidth)
-            BaseStream.WriteInt32(PicHeight)
-            BaseStream.WriteInt16(Planes)
-            BaseStream.WriteInt16(PicBitsPerPixel)
-            BaseStream.WriteInt32(PicCompression)
-            BaseStream.WriteInt32(BitmapDataSize)
-            BaseStream.WriteInt32(HResolution)
-            BaseStream.WriteInt32(VResolution)
-            BaseStream.WriteInt32(Colors)
-            BaseStream.WriteInt32(ImportantColors)
-
-            If (PicCompression = 3) AndAlso (PicBitsPerPixel = 16) Then
-                If r5g6b5 Then
-                    BaseStream.WriteInt32(&HF800)
-                    BaseStream.WriteInt32(&H7E0)
-                    BaseStream.WriteInt32(&H1F)
-                    BaseStream.WriteInt32(&H0)
-                Else
-                    BaseStream.WriteInt32(&H7C00)
-                    BaseStream.WriteInt32(&H3E0)
-                    BaseStream.WriteInt32(&H1F)
-                    BaseStream.WriteInt32(&H0)
-                End If
-            End If
+        Public Sub New(ByVal Path As String, ByVal Width As Int32, ByVal Height As Int32, Optional ByVal BitsPerPixel As Int16 = 24)
+            Me.New(New StreamEx(Path, FileMode.Create), Width, Height, BitsPerPixel)
         End Sub
 
         ''' <summary>已重载。从流打开一个位图。</summary>
-        Shared Function Open(ByVal sp As ZeroPositionStreamPasser) As Bmp
+        Public Shared Function Open(ByVal sp As ZeroPositionStreamPasser) As Bmp
             Dim s = sp.GetStream
             Dim bf As New Bmp
             With bf
@@ -319,7 +271,7 @@ Namespace Imaging
             Return bf
         End Function
         ''' <summary>已重载。从文件打开一个位图。</summary>
-        Shared Function Open(ByVal Path As String) As Bmp
+        Public Shared Function Open(ByVal Path As String) As Bmp
             Dim s As New StreamEx(Path, FileMode.Open)
             Try
                 Return Open(s)
@@ -329,29 +281,29 @@ Namespace Imaging
             End Try
         End Function
         ''' <summary>关闭。</summary>
-        Sub Close()
+        Public Sub Close()
             BaseStream.Close()
         End Sub
         ''' <summary>转换为System.Drawing.Bitmap。</summary>
-        Function ToBitmap() As Bitmap
+        Public Function ToBitmap() As Bitmap
             BaseStream.Position = 0
             BaseStream.Flush()
             Return New Bitmap(BaseStream)
         End Function
         ''' <summary>保存到流。</summary>
-        Sub SaveTo(ByVal sp As ZeroPositionStreamPasser)
+        Public Sub SaveTo(ByVal sp As ZeroPositionStreamPasser)
             Dim s = sp.GetStream
             BaseStream.Position = 0
             s.WriteFromStream(BaseStream, BaseStream.Length)
         End Sub
 
-        Protected ReadOnly Property Pos(ByVal x As Int32, ByVal y As Int32) As Integer
+        Private ReadOnly Property Pos(ByVal x As Int32, ByVal y As Int32) As Integer
             Get
                 Return (LineBitLength * (Height - 1 - y) + x * PicBitsPerPixel) >> 3
             End Get
         End Property
         ''' <summary>获得像素点。</summary>
-        Function GetPixel(ByVal x As Int32, ByVal y As Int32) As Int32
+        Public Function GetPixel(ByVal x As Int32, ByVal y As Int32) As Int32
             If x < 0 OrElse x > PicWidth - 1 OrElse y < 0 OrElse y > PicHeight - 1 Then Return 0
             BaseStream.Position = BitmapDataOffset + Pos(x, y)
             Select Case PicBitsPerPixel
@@ -372,7 +324,7 @@ Namespace Imaging
             End Select
         End Function
         ''' <summary>设置像素点。</summary>
-        Sub SetPixel(ByVal x As Int32, ByVal y As Int32, ByVal c As Int32)
+        Public Sub SetPixel(ByVal x As Int32, ByVal y As Int32, ByVal c As Int32)
             If x < 0 OrElse x > PicWidth - 1 OrElse y < 0 OrElse y > PicHeight - 1 Then Return
             BaseStream.Position = BitmapDataOffset + Pos(x, y)
             Select Case PicBitsPerPixel
@@ -398,7 +350,7 @@ Namespace Imaging
             End Select
         End Sub
         ''' <summary>获取矩形。</summary>
-        Function GetRectangle(ByVal x As Int32, ByVal y As Int32, ByVal w As Int32, ByVal h As Int32) As Int32(,)
+        Public Function GetRectangle(ByVal x As Int32, ByVal y As Int32, ByVal w As Int32, ByVal h As Int32) As Int32(,)
             If w < 0 OrElse h < 0 Then Return Nothing
             Dim a As Int32(,) = New Int32(w - 1, h - 1) {}
             Dim ox, oy As Integer
@@ -479,7 +431,7 @@ Namespace Imaging
             Return a
         End Function
         ''' <summary>获取矩形。表示为字节。仅供8位及以下图片使用。</summary>
-        Function GetRectangleBytes(ByVal x As Int32, ByVal y As Int32, ByVal w As Int32, ByVal h As Int32) As Byte(,)
+        Public Function GetRectangleBytes(ByVal x As Int32, ByVal y As Int32, ByVal w As Int32, ByVal h As Int32) As Byte(,)
             If w < 0 OrElse h < 0 Then Return Nothing
             Dim a As Byte(,) = New Byte(w - 1, h - 1) {}
             Dim ox, oy As Integer
@@ -548,7 +500,7 @@ Namespace Imaging
             Return a
         End Function
         ''' <summary>已重载。设置矩形。</summary>
-        Sub SetRectangle(ByVal x As Int32, ByVal y As Int32, ByVal a As Int32(,))
+        Public Sub SetRectangle(ByVal x As Int32, ByVal y As Int32, ByVal a As Int32(,))
             If a Is Nothing Then Return
             Dim w As Integer = a.GetLength(0)
             Dim h As Integer = a.GetLength(1)
@@ -638,7 +590,7 @@ Namespace Imaging
             Next
         End Sub
         ''' <summary>已重载。设置矩形。</summary>
-        Sub SetRectangle(ByVal x As Int32, ByVal y As Int32, ByVal a As Byte(,))
+        Public Sub SetRectangle(ByVal x As Int32, ByVal y As Int32, ByVal a As Byte(,))
             If a Is Nothing Then Return
             Dim w As Integer = a.GetLength(0)
             Dim h As Integer = a.GetLength(1)
@@ -717,7 +669,7 @@ Namespace Imaging
             Next
         End Sub
         ''' <summary>获取矩形为ARGB整数。对非24、32位位图会进行转换。</summary>
-        Function GetRectangleAsARGB(ByVal x As Int32, ByVal y As Int32, ByVal w As Int32, ByVal h As Int32) As Int32(,)
+        Public Function GetRectangleAsARGB(ByVal x As Int32, ByVal y As Int32, ByVal w As Int32, ByVal h As Int32) As Int32(,)
             Dim a As Int32(,) = GetRectangle(x, y, w, h)
             Select Case PicBitsPerPixel
                 Case 1, 4, 8
@@ -745,7 +697,7 @@ Namespace Imaging
             Return a
         End Function
         ''' <summary>从ARGB整数设置矩形。对非24、32位位图会进行转换。使用自定义的量化器。</summary>
-        Sub SetRectangleFromARGB(ByVal x As Int32, ByVal y As Int32, ByVal a As Int32(,), ByVal Quantize As Func(Of Int32, Byte))
+        Public Sub SetRectangleFromARGB(ByVal x As Int32, ByVal y As Int32, ByVal a As Int32(,), ByVal Quantize As Func(Of Int32, Byte))
             If a Is Nothing Then Return
             Dim w As Integer = a.GetLength(0)
             Dim h As Integer = a.GetLength(1)
@@ -841,37 +793,17 @@ Namespace Imaging
             Next
         End Sub
         ''' <summary>从ARGB整数设置矩形。对非24、32位位图会进行转换。</summary>
-        Sub SetRectangleFromARGB(ByVal x As Int32, ByVal y As Int32, ByVal a As Int32(,))
+        Public Sub SetRectangleFromARGB(ByVal x As Int32, ByVal y As Int32, ByVal a As Int32(,))
             Dim qc As New QuantizerCache(Function(c) QuantizeOnPalette(c, PicPalette))
             SetRectangleFromARGB(x, y, a, AddressOf qc.Quantize)
         End Sub
 
-#Region " IDisposable 支持 "
-        Private DisposedValue As Boolean = False '检测冗余的调用
         ''' <summary>释放资源。</summary>
-        ''' <remarks>对继承者的说明：不要调用基类的Dispose()，而应调用Dispose(True)，否则会出现无限递归。</remarks>
-        Protected Overridable Sub Dispose(ByVal Disposing As Boolean)
-            If DisposedValue Then Return
-            If Disposing Then
-                '释放其他状态(托管对象)。
-            End If
-
-            '释放您自己的状态(非托管对象)。
-            '将大型字段设置为 null。
+        Public Sub Dispose() Implements IDisposable.Dispose
             If BaseStream IsNot Nothing Then
                 BaseStream.Dispose()
                 BaseStream = Nothing
             End If
-            DisposedValue = True
         End Sub
-        ''' <summary>释放资源。</summary>
-        Public Sub Dispose() Implements IDisposable.Dispose
-            ' 不要更改此代码。请将清理代码放入上面的 Dispose(ByVal disposing As Boolean) 中。
-            Dispose(True)
-            GC.SuppressFinalize(Me)
-        End Sub
-#End Region
-
     End Class
-
 End Namespace

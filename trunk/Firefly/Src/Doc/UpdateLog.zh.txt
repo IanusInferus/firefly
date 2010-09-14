@@ -1,4 +1,13 @@
-﻿2010.09.11
+﻿2010.09.14
+Firefly.Core:
+整理IDisposable模式。
+整理代码分析警告。
+Firefly.Core.Glyphing:
+在FdGlyphDescriptionFile中增加Stream方式的BmpFontImageReader和BmpFontImageWriter。
+Firefly.Core.Texting:
+增加LOC(第2版)。
+
+2010.09.11
 Firefly.Core.TextEncoding:
 重新设计StringCode，增加对多编码对应多Unicode。
 将CharCode移到LOC中。

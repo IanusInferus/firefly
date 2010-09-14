@@ -26,7 +26,7 @@ Namespace Glyphing
     End Enum
 
     ''' <summary>字形生成器</summary>
-    Public Class GlyphGenerator
+    Public NotInheritable Class GlyphGenerator
         Implements IGlyphProvider
 
         Private PhysicalWidthValue As Integer
@@ -135,34 +135,25 @@ Namespace Glyphing
             End Select
         End Function
 
-#Region " IDisposable 支持 "
-        Private DisposedValue As Boolean = False '检测冗余的调用
-        ''' <summary>释放流的资源。</summary>
-        ''' <remarks>对继承者的说明：不要调用基类的Dispose()，而应调用Dispose(True)，否则会出现无限递归。</remarks>
-        Private Sub Dispose(ByVal Disposing As Boolean)
-            If DisposedValue Then Return
-            If Disposing Then
-                '释放其他状态(托管对象)。
-                If Font IsNot Nothing Then Font.Dispose()
-                If GlyphPiece IsNot Nothing Then GlyphPiece.Dispose()
-                If g IsNot Nothing Then g.Dispose()
-            End If
-
-            '释放您自己的状态(非托管对象)。
-            '将大型字段设置为 null。
-            DisposedValue = True
-        End Sub
         ''' <summary>释放流的资源。</summary>
         Public Sub Dispose() Implements IDisposable.Dispose
-            ' 不要更改此代码。请将清理代码放入上面的 Dispose(ByVal disposing As Boolean) 中。
-            Dispose(True)
-            GC.SuppressFinalize(Me)
+            If Font IsNot Nothing Then
+                Font.Dispose()
+                Font = Nothing
+            End If
+            If GlyphPiece IsNot Nothing Then
+                GlyphPiece.Dispose()
+                GlyphPiece = Nothing
+            End If
+            If g IsNot Nothing Then
+                g.Dispose()
+                g = Nothing
+            End If
         End Sub
-#End Region
     End Class
 
     ''' <summary>两倍超采样字形生成器</summary>
-    Public Class GlyphGeneratorDoubleSample
+    Public NotInheritable Class GlyphGeneratorDoubleSample
         Implements IGlyphProvider
 
         Private PhysicalWidthValue As Integer
@@ -282,29 +273,20 @@ Namespace Glyphing
             End Select
         End Function
 
-#Region " IDisposable 支持 "
-        Private DisposedValue As Boolean = False '检测冗余的调用
-        ''' <summary>释放流的资源。</summary>
-        ''' <remarks>对继承者的说明：不要调用基类的Dispose()，而应调用Dispose(True)，否则会出现无限递归。</remarks>
-        Private Sub Dispose(ByVal Disposing As Boolean)
-            If DisposedValue Then Return
-            If Disposing Then
-                '释放其他状态(托管对象)。
-                If Font IsNot Nothing Then Font.Dispose()
-                If GlyphPiece IsNot Nothing Then GlyphPiece.Dispose()
-                If g IsNot Nothing Then g.Dispose()
-            End If
-
-            '释放您自己的状态(非托管对象)。
-            '将大型字段设置为 null。
-            DisposedValue = True
-        End Sub
         ''' <summary>释放流的资源。</summary>
         Public Sub Dispose() Implements IDisposable.Dispose
-            ' 不要更改此代码。请将清理代码放入上面的 Dispose(ByVal disposing As Boolean) 中。
-            Dispose(True)
-            GC.SuppressFinalize(Me)
+            If Font IsNot Nothing Then
+                Font.Dispose()
+                Font = Nothing
+            End If
+            If GlyphPiece IsNot Nothing Then
+                GlyphPiece.Dispose()
+                GlyphPiece = Nothing
+            End If
+            If g IsNot Nothing Then
+                g.Dispose()
+                g = Nothing
+            End If
         End Sub
-#End Region
     End Class
 End Namespace

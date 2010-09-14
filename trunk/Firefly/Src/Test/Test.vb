@@ -5,6 +5,7 @@ Imports System.Windows.Forms
 Imports Firefly
 Imports Firefly.Compressing
 Imports Firefly.TextEncoding
+Imports Firefly.Glyphing
 Imports Firefly.Texting
 Imports Firefly.GUI
 
@@ -375,6 +376,6 @@ Public Module Test
         'TestBitStreamReadWrite()
         'TestCommandLine()
 
-        ExceptionHandler.PopupInfo(1)
+        'ExceptionHandler.PopupInfo(1)
     End Sub
 End Module
