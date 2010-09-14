@@ -9,6 +9,8 @@ Firefly.Core.Texting:
 重写LOC(第1版)读取代码。
 删除LOC(第1版)生成代码、CharCode等。(breaking change)
 LOC显示代码移至Eddy项目。
+放到SourceForge上。
+https://fflf.svn.sourceforge.net/svnroot/fflf/trunk/Firefly
 
 2010.09.11
 Firefly.Core.TextEncoding:
