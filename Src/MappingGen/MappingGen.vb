@@ -3,7 +3,7 @@
 '  File:        MappingGen.vb
 '  Location:    Firefly.MappingGen <Visual Basic .Net>
 '  Description: 字符映射表生成器
-'  Version:     2010.09.11.
+'  Version:     2010.09.15.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -199,7 +199,7 @@ Public Module MappingGen
                                             Throw New ArgumentException(String.Join(",", opt.Arguments))
                                     End Select
                                 Case "sortcode"
-                                    StringCodes = StringCodes.OrderBy(Function(sc) sc.Codes)
+                                    StringCodes = StringCodes.OrderBy(Function(sc) sc.Codes.Count).ThenBy(Function(sc) sc.Codes)
                                 Case "save"
                                     Select Case argv.Length
                                         Case 1
@@ -254,6 +254,8 @@ Public Module MappingGen
     End Function
 
     <Extension()> Private Function Code(ByVal This As StringCode) As UInt64
+        If This.Codes Is Nothing Then Throw New ArgumentNullException
+        If This.Codes.Count = 0 Then Throw New ArgumentNullException
         If This.Codes.Count > 8 Then Throw New NotSupportedException
 
         Dim i As UInt64 = 0
