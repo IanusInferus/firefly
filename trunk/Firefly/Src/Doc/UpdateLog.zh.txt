@@ -1,6 +1,8 @@
 ﻿2010.09.15.0
 Firefly.Core:
 修正StreamEx中的StreamAdapter在整理IDisposable模式出现的错误。
+Firefly.MappingGen:
+修正编码排序方式与之前不一致的问题。
 
 2010.09.14.0
 Firefly.Core:
