@@ -3,7 +3,7 @@
 '  File:        StreamEx.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 扩展流类
-'  Version:     2010.09.14.
+'  Version:     2010.09.15.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -585,6 +585,10 @@ Public Class StreamEx
             BaseStream.Write(Buffer, Offset, Count)
         End Sub
         Protected Overrides Sub Dispose(ByVal disposing As Boolean)
+            If BaseStream IsNot Nothing Then
+                BaseStream.Dispose()
+                BaseStream = Nothing
+            End If
             MyBase.Dispose(disposing)
         End Sub
     End Class

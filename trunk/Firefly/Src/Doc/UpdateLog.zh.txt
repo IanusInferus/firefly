@@ -1,4 +1,8 @@
-﻿2010.09.14.0
+﻿2010.09.15.0
+Firefly.Core:
+修正StreamEx中的StreamAdapter在整理IDisposable模式出现的错误。
+
+2010.09.14.0
 Firefly.Core:
 整理IDisposable模式。
 整理代码分析警告。
