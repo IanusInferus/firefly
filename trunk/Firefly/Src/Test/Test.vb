@@ -377,5 +377,8 @@ Public Module Test
         'TestCommandLine()
 
         'ExceptionHandler.PopupInfo(1)
+        Application.EnableVisualStyles()
+        MessageDialog.Show("123")
+        Application.Run(New MessageDialog)
     End Sub
 End Module

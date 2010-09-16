@@ -3,7 +3,7 @@
 '  File:        AgemoValidator.vb
 '  Location:    Firefly.AgemoValidator <Visual Basic .Net>
 '  Description: Agemo文本格式验证器
-'  Version:     2009.06.05.
+'  Version:     2010.09.17.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -50,13 +50,16 @@ Public Class AgemoValidator
 
         For Each f As String In ListBox_Files.Items
             Try
-                Dim Text As String = ""
+                Dim Lines As New List(Of String)
                 Dim Validated As Boolean
+                Dim Log = Sub(Path, LineNumber) Lines.Add(String.Format("{0}({1}) : 格式错误或编码错误。", Path, LineNumber))
+                Dim LogEncoding = Sub(Path, LineNumber) Lines.Add(String.Format("{0}({1}) : 格式错误或编码错误。", Path, LineNumber))
                 If EnforceUTF16 Then
-                    Validated = Agemo.VerifyFile(f, UTF16, Text)
+                    Validated = Agemo.VerifyFile(f, UTF16, Log, LogEncoding)
                 Else
-                    Validated = Agemo.VerifyFile(f, GB18030, Text)
+                    Validated = Agemo.VerifyFile(f, GB18030, Log, LogEncoding)
                 End If
+                Dim Text As String = String.Join(Environment.NewLine, Lines.ToArray)
                 If Validated Then
                     If AutoRemove Then
                         ToRemove.Add(f)

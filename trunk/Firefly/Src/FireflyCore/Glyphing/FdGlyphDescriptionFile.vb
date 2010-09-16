@@ -3,7 +3,7 @@
 '  File:        FdGlyphDescriptionFile.vb
 '  Location:    Firefly.TextEncoding <Visual Basic .Net>
 '  Description: fd字形描述文件
-'  Version:     2010.09.14.
+'  Version:     2010.09.17.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -24,7 +24,7 @@ Namespace Glyphing
         Private Sub New()
         End Sub
 
-        Private Shared Function ReadFile(ByVal Reader As StreamReader, ByVal FormatError As Func(Of Integer, String)) As IEnumerable(Of GlyphDescriptor)
+        Private Shared Function ReadFile(ByVal Reader As StreamReader, ByVal GetFormatException As Func(Of Integer, Exception)) As IEnumerable(Of GlyphDescriptor)
             Dim d As New List(Of GlyphDescriptor)
             Dim s = Reader
             Dim r As New Regex("^U\+(?<Unicode>[0-9A-Fa-f]+)$", RegexOptions.ExplicitCapture)
@@ -33,13 +33,13 @@ Namespace Glyphing
                 Dim Line = s.ReadLine
                 If Line.Trim <> "" Then
                     Dim Values = Line.Split(","c)
-                    If Values.Length <> 10 Then Throw New InvalidDataException(FormatError(LineNumber))
+                    If Values.Length <> 10 Then Throw GetFormatException(LineNumber)
 
                     Dim Unicodes As New List(Of Char32)
                     If Not Regex.Match(Values(0), "^ *$").Success Then
                         For Each p In Regex.Split(Values(0), " +")
                             Dim m = r.Match(p)
-                            If Not m.Success Then Throw New InvalidDataException(FormatError(LineNumber))
+                            If Not m.Success Then Throw GetFormatException(LineNumber)
                             Dim Unicode = Integer.Parse(m.Result("${Unicode}"), Globalization.NumberStyles.HexNumber)
                             Unicodes.Add(Unicode)
                         Next
@@ -62,11 +62,11 @@ Namespace Glyphing
             Return d
         End Function
         Public Shared Function ReadFile(ByVal Reader As StreamReader) As IEnumerable(Of GlyphDescriptor)
-            Return ReadFile(Reader, Function(LineNumber) String.Format("{0} : 格式错误。", LineNumber))
+            Return ReadFile(Reader, Function(LineNumber) New InvaildTextFormatException(LineNumber))
         End Function
         Public Shared Function ReadFile(ByVal Path As String, ByVal Encoding As System.Text.Encoding) As IEnumerable(Of GlyphDescriptor)
             Using s = Texting.Txt.CreateTextReader(Path, Encoding, True)
-                Return ReadFile(s, Function(LineNumber) String.Format("{0}({1}) : 格式错误。", Path, LineNumber))
+                Return ReadFile(s, Function(LineNumber) New InvaildTextFormatException(Path, LineNumber))
             End Using
         End Function
         Public Shared Function ReadFile(ByVal Path As String) As IEnumerable(Of GlyphDescriptor)

@@ -1,4 +1,11 @@
-﻿2010.09.15.0
+﻿2010.09.17
+Firefly.GUI:
+删除FileDialogEx。
+增加MessageDialog，兼容MessageBox，但加入可复制的文本框。
+Firefly.Core.Texting, Firefly.Core.Glyphing:
+增加TextExceptions，清除Agemo、WQSG、FdGlyphDescriptionFile中的语言相关错误信息。
+
+2010.09.15.0
 Firefly.Core:
 修正StreamEx中的StreamAdapter在整理IDisposable模式出现的错误。
 Firefly.MappingGen:

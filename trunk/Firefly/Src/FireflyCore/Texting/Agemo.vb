@@ -3,7 +3,7 @@
 '  File:        Agemo.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: Agemo文本格式
-'  Version:     2010.09.11.
+'  Version:     2010.09.17.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -20,7 +20,7 @@ Namespace Texting
         Private Sub New()
         End Sub
 
-        Private Shared Function ReadFile(ByVal Reader As StreamReader, ByVal FormatError As Func(Of Integer, String), ByVal FormatOrEncodingError As Func(Of Integer, String)) As String()
+        Private Shared Function ReadFile(ByVal Reader As StreamReader, ByVal GetFormatException As Func(Of Integer, Exception), ByVal GetFormatOrEncodingException As Func(Of Integer, Exception)) As String()
             Dim l As New LinkedList(Of String)
             Dim sb As New List(Of Char32)
             Dim NotNull As Boolean = False
@@ -60,10 +60,10 @@ Namespace Texting
                     sb = New List(Of Char32)
                     Dim Index As Integer
                     If Not Integer.TryParse(Match.Result("${index}").Trim, Index) Then
-                        Throw New InvalidDataException(FormatError(LineNumber))
+                        Throw GetFormatException(LineNumber)
                     End If
                     If Index <> PreIndex + 1 Then
-                        Throw New InvalidDataException(FormatError(LineNumber))
+                        Throw GetFormatException(LineNumber)
                     End If
                     PreIndex = Index
                 Else
@@ -78,7 +78,7 @@ Namespace Texting
             RemoveLast(sb, Lf)
             RemoveLast(sb, Cr)
             If Not NotNull Then
-                If sb.Count > 0 Then Throw New InvalidDataException(FormatOrEncodingError(LineNumber))
+                If sb.Count > 0 Then Throw GetFormatOrEncodingException(LineNumber)
                 Return New String() {}
             End If
             l.AddLast(sb.ToUTF16B)
@@ -87,15 +87,15 @@ Namespace Texting
             Return ret
         End Function
         Public Shared Function ReadFile(ByVal Reader As StreamReader) As String()
-            Return ReadFile(Reader, Function(LineNumber) String.Format("{0} : 格式错误。", LineNumber), Function(LineNumber) String.Format("{0} : 格式错误或编码错误。", LineNumber))
+            Return ReadFile(Reader, Function(LineNumber) New InvaildTextFormatException(LineNumber), Function(LineNumber) New InvaildTextFormatOrEncodingException(LineNumber))
         End Function
         Public Shared Function ReadFile(ByVal Path As String, ByVal Encoding As System.Text.Encoding) As String()
             Using s = Txt.CreateTextReader(Path, Encoding, True)
-                Return ReadFile(s, Function(LineNumber) String.Format("{0}({1}) : 格式错误。", Path, LineNumber), Function(LineNumber) String.Format("{0}({1}) : 格式错误或编码错误。", Path, LineNumber))
+                Return ReadFile(s, Function(LineNumber) New InvaildTextFormatException(Path, LineNumber), Function(LineNumber) New InvaildTextFormatOrEncodingException(Path, LineNumber))
             End Using
         End Function
-        Private Shared Function VerifyFile(ByVal Reader As StreamReader, <System.Runtime.InteropServices.Out()> ByRef LogText As String, ByVal FormatError As Func(Of Integer, String), ByVal FormatOrEncodingError As Func(Of Integer, String)) As Boolean
-            Dim Log As New List(Of String)
+        Private Shared Function VerifyFile(ByVal Reader As StreamReader, ByVal WriteFormatError As Action(Of Integer), ByVal WriteFormatOrEncodingError As Action(Of Integer)) As Boolean
+            Dim Correct = True
             Dim sb As New List(Of Char32)
             Dim NotNull As Boolean = False
             Dim LineNumber As Integer = 0
@@ -135,10 +135,12 @@ Namespace Texting
                     sb = New List(Of Char32)
                     Dim Index As Integer
                     If Not Integer.TryParse(Match.Result("${index}").Trim, Index) Then
-                        Log.Add(FormatError(LineNumber))
+                        WriteFormatError(LineNumber)
+                        Correct = False
                     Else
                         If Index <> PreIndex + 1 Then
-                            Log.Add(FormatError(LineNumber))
+                            WriteFormatError(LineNumber)
+                            Correct = False
                         End If
                         PreIndex = Index
                     End If
@@ -147,9 +149,11 @@ Namespace Texting
                     If Match0.Success Then
                         Dim Index As Integer
                         If Not Integer.TryParse(Match0.Result("${index}").Trim, Index) Then
-                            Log.Add(FormatError(LineNumber))
+                            WriteFormatError(LineNumber)
+                            Correct = False
                         Else
-                            Log.Add(FormatError(LineNumber))
+                            WriteFormatError(LineNumber)
+                            Correct = False
                             PreIndex = Index
                         End If
                     Else
@@ -163,17 +167,16 @@ Namespace Texting
             RemoveLast(sb, Lf)
             RemoveLast(sb, Cr)
             If Not NotNull Then
-                If sb.Count > 0 Then Log.Add(FormatOrEncodingError(LineNumber))
+                If sb.Count > 0 Then
+                    WriteFormatError(LineNumber)
+                    Correct = False
+                End If
             End If
-            LogText = String.Join(System.Environment.NewLine, Log.ToArray)
-            Return Log.Count = 0
+            Return Correct
         End Function
-        Public Shared Function VerifyFile(ByVal Reader As StreamReader, <System.Runtime.InteropServices.Out()> ByRef LogText As String) As Boolean
-            Return VerifyFile(Reader, LogText, Function(LineNumber) String.Format("{0} : 格式错误。", LineNumber), Function(LineNumber) String.Format("{0} : 格式错误或编码错误。", LineNumber))
-        End Function
-        Public Shared Function VerifyFile(ByVal Path As String, ByVal Encoding As System.Text.Encoding, <System.Runtime.InteropServices.Out()> ByRef LogText As String, Optional ByVal EnforceEncoding As Boolean = False) As Boolean
+        Public Shared Function VerifyFile(ByVal Path As String, ByVal Encoding As System.Text.Encoding, ByVal WriteFormatError As Action(Of String, Integer), ByVal WriteFormatOrEncodingError As Action(Of String, Integer), Optional ByVal EnforceEncoding As Boolean = False) As Boolean
             Using s = Txt.CreateTextReader(Path, Encoding, Not EnforceEncoding)
-                Return VerifyFile(s, LogText, Function(LineNumber) String.Format("{0}({1}) : 格式错误。", Path, LineNumber), Function(LineNumber) String.Format("{0}({1}) : 格式错误或编码错误。", Path, LineNumber))
+                Return VerifyFile(s, Sub(LineNumber) WriteFormatError(Path, LineNumber), Sub(LineNumber) WriteFormatOrEncodingError(Path, LineNumber))
             End Using
         End Function
         Public Shared Sub WriteFile(ByVal Writer As StreamWriter, ByVal Value As IEnumerable(Of String))
