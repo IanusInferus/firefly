@@ -3,7 +3,7 @@
 '  File:        WQSGValidator.vb
 '  Location:    Firefly.WQSGValidator <Visual Basic .Net>
 '  Description: WQSG文本格式验证器
-'  Version:     2009.10.20.
+'  Version:     2010.09.17.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -50,13 +50,15 @@ Public Class WQSGValidator
 
         For Each f As String In ListBox_Files.Items
             Try
-                Dim Text As String = ""
+                Dim Lines As New List(Of String)
                 Dim Validated As Boolean
+                Dim Log = Sub(Path, LineNumber) Lines.Add(String.Format("{0}({1}) : 格式错误。", Path, LineNumber))
                 If EnforceUTF16 Then
-                    Validated = WQSG.VerifyFile(f, UTF16, Text)
+                    Validated = WQSG.VerifyFile(f, UTF16, Log)
                 Else
-                    Validated = WQSG.VerifyFile(f, GB18030, Text)
+                    Validated = WQSG.VerifyFile(f, GB18030, Log)
                 End If
+                Dim Text As String = String.Join(Environment.NewLine, Lines.ToArray)
                 If Validated Then
                     If AutoRemove Then
                         ToRemove.Add(f)
