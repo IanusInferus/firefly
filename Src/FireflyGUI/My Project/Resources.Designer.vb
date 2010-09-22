@@ -26,7 +26,7 @@ Namespace My.Resources
      Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
      Global.System.Runtime.CompilerServices.CompilerGeneratedAttribute(),  _
      Global.Microsoft.VisualBasic.HideModuleNameAttribute()>  _
-    Public Module Resources
+    Friend Module Resources
         
         Private resourceMan As Global.System.Resources.ResourceManager
         
@@ -36,7 +36,7 @@ Namespace My.Resources
         '''  返回此类使用的缓存的 ResourceManager 实例。
         '''</summary>
         <Global.System.ComponentModel.EditorBrowsableAttribute(Global.System.ComponentModel.EditorBrowsableState.Advanced)>  _
-        Public ReadOnly Property ResourceManager() As Global.System.Resources.ResourceManager
+        Friend ReadOnly Property ResourceManager() As Global.System.Resources.ResourceManager
             Get
                 If Object.ReferenceEquals(resourceMan, Nothing) Then
                     Dim temp As Global.System.Resources.ResourceManager = New Global.System.Resources.ResourceManager("Firefly.GUI.Resources", GetType(Resources).Assembly)
@@ -51,7 +51,7 @@ Namespace My.Resources
         '''  重写当前线程的 CurrentUICulture 属性。
         '''</summary>
         <Global.System.ComponentModel.EditorBrowsableAttribute(Global.System.ComponentModel.EditorBrowsableState.Advanced)>  _
-        Public Property Culture() As Global.System.Globalization.CultureInfo
+        Friend Property Culture() As Global.System.Globalization.CultureInfo
             Get
                 Return resourceCulture
             End Get
@@ -60,14 +60,14 @@ Namespace My.Resources
             End Set
         End Property
         
-        Public ReadOnly Property Directory() As System.Drawing.Icon
+        Friend ReadOnly Property Directory() As System.Drawing.Icon
             Get
                 Dim obj As Object = ResourceManager.GetObject("Directory", resourceCulture)
                 Return CType(obj,System.Drawing.Icon)
             End Get
         End Property
         
-        Public ReadOnly Property File() As System.Drawing.Icon
+        Friend ReadOnly Property File() As System.Drawing.Icon
             Get
                 Dim obj As Object = ResourceManager.GetObject("File", resourceCulture)
                 Return CType(obj,System.Drawing.Icon)

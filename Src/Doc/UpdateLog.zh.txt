@@ -1,4 +1,8 @@
-﻿2010.09.17
+﻿2010.09.23
+Firefly.GUI:
+MessageDialog制作完成。
+
+2010.09.17
 Firefly.GUI:
 删除FileDialogEx。
 增加MessageDialog，兼容MessageBox，但加入可复制的文本框。
