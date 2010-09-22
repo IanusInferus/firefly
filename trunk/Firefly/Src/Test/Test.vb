@@ -378,7 +378,7 @@ Public Module Test
 
         'ExceptionHandler.PopupInfo(1)
         Application.EnableVisualStyles()
-        MessageDialog.Show("123")
-        Application.Run(New MessageDialog)
+        'Dim r = MessageDialog.Show("123", "234", "345", MessageBoxButtons.AbortRetryIgnore, MessageBoxIcon.None, MessageBoxDefaultButton.Button2)
+        ExceptionHandler.PopupException(New Exception("Test"))
     End Sub
 End Module
