@@ -21,7 +21,12 @@ Public Class MessageDialog
 
         ' 在 InitializeComponent() 调用之后添加任何初始化。
         ImageValue = New Bitmap(PictureBox_Icon.Width, PictureBox_Icon.Height)
+        Message = ""
+        Information = ""
+        Caption = ""
         Buttons = MessageBoxButtons.OK
+        Icon = MessageBoxIcon.None
+        DefaultButton = MessageBoxDefaultButton.Button1
     End Sub
 
     Private Sub MessageDialog_Disposed(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Disposed
