@@ -199,8 +199,10 @@ Public Class MessageDialog
         Dim MessageSize = New Size(Max(PreferredMessageSize.Width, PreferredInformationSize.Width), PreferredMessageSize.Height)
         Dim InformationSize = New Size(MessageSize.Width, PreferredInformationSize.Height)
 
-        Dim MessageLocation = New Size(InnerBorderSize.Width + IIf(IconVisible, IconWidth + Gap, 0), InnerBorderSize.Height)
-        Dim InformationLocation = New Size(MessageLocation.Width, MessageLocation.Height + MessageSize.Height + Gap)
+        Dim MessageLocation = New Point(InnerBorderSize.Width + IIf(IconVisible, IconWidth + Gap, 0), InnerBorderSize.Height)
+        Dim InformationLocation = New Point(MessageLocation.X, MessageLocation.Y + MessageSize.Height + Gap)
+
+        Dim ButtonY = IIf(InformationVisible, InformationLocation.Y + InformationSize.Height + Gap, InformationLocation.Y)
 
         Dim FormWidth = OuterBorderSize.Width * 2 + InnerBorderSize.Width * 2 + IIf(IconVisible, IconWidth + Gap, 0) + MessageSize.Width
         Dim FormHeight = OuterBorderSize.Height * 2 + InnerBorderSize.Height * 2 + CaptionHeight + Gap + ButtonHeight + MessageSize.Height + IIf(InformationVisible, InformationSize.Height + Gap, 0)
@@ -213,6 +215,9 @@ Public Class MessageDialog
             TextBox_Information.Location = InformationLocation
             TextBox_Information.Size = InformationSize
         End If
+        Button1.Location = New Point(Button1.Location.X, ButtonY)
+        Button2.Location = New Point(Button2.Location.X, ButtonY)
+        Button3.Location = New Point(Button3.Location.X, ButtonY)
 
         Button1.Hide()
         Button2.Hide()

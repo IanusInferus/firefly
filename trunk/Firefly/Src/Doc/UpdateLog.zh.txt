@@ -1,6 +1,9 @@
 ﻿2010.09.23
 Firefly.GUI:
 MessageDialog制作完成。
+FilePicker去除Mono中没有的DriveInfo.GetDrives调用，改用Enviroment.GetLogicalDrives。
+Firefly.Core:
+修改FileNameHandling，去除Like运算符调用。
 
 2010.09.17
 Firefly.GUI:
