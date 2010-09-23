@@ -3,7 +3,7 @@
 '  File:        FilePickerView.vb
 '  Location:    Firefly.GUI <Visual Basic .Net>
 '  Description: 文件选取对话框 - 界面
-'  Version:     2010.08.28.
+'  Version:     2010.09.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -28,12 +28,21 @@ Public Class FilePicker
         ComboBox_Directory.Items.Clear()
         DirectoryList.Add(Environment.GetFolderPath(Environment.SpecialFolder.Desktop))
         ComboBox_Directory.Items.Add("桌面")
-        For Each d In DriveInfo.GetDrives
-            DirectoryList.Add(d.Name)
-            If d.IsReady Then
-                ComboBox_Directory.Items.Add("{0} ({1})".Formats(GetDirectoryPathWithoutTailingSeparator(d.Name), d.VolumeLabel))
+        For Each DrivePath In Environment.GetLogicalDrives
+
+            DirectoryList.Add(DrivePath)
+            Dim VolumeLabel = ""
+            Try
+                Dim d As New DriveInfo(DrivePath)
+                If d.IsReady Then
+                    VolumeLabel = d.VolumeLabel
+                End If
+            Catch
+            End Try
+            If VolumeLabel <> "" Then
+                ComboBox_Directory.Items.Add("{0} ({1})".Formats(GetDirectoryPathWithoutTailingSeparator(DrivePath), VolumeLabel))
             Else
-                ComboBox_Directory.Items.Add(GetDirectoryPathWithoutTailingSeparator(d.Name))
+                ComboBox_Directory.Items.Add(GetDirectoryPathWithoutTailingSeparator(DrivePath))
             End If
         Next
         ComboBox_Directory.Text = DirectoryText

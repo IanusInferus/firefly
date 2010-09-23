@@ -376,9 +376,10 @@ Public Module Test
         'TestBitStreamReadWrite()
         'TestCommandLine()
 
-        'ExceptionHandler.PopupInfo(1)
         Application.EnableVisualStyles()
-        'Dim r = MessageDialog.Show("123", "234", "345", MessageBoxButtons.AbortRetryIgnore, MessageBoxIcon.None, MessageBoxDefaultButton.Button2)
-        ExceptionHandler.PopupException(New Exception("Test"))
+        'ExceptionHandler.PopupInfo(1)
+        Dim r = MessageDialog.Show("123", "234", "345", MessageBoxButtons.AbortRetryIgnore, MessageBoxIcon.None, MessageBoxDefaultButton.Button2)
+        'ExceptionHandler.PopupException(New Exception("Test"))
+        'Application.Run(New FilePicker)
     End Sub
 End Module
