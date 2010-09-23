@@ -3,7 +3,7 @@
 '  File:        ExceptionInfo.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 异常信息
-'  Version:     2010.08.29.
+'  Version:     2010.09.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -103,13 +103,7 @@ Public NotInheritable Class ExceptionInfo
     End Property
     Public Shared ReadOnly Property AssemblyVersion As String
         Get
-            Dim DescriptionAttributes = Assembly.GetEntryAssembly.GetCustomAttributes(GetType(AssemblyVersionAttribute), True)
-            If DescriptionAttributes.Length >= 1 Then
-                Dim Str = DirectCast(DescriptionAttributes(0), AssemblyVersionAttribute).Version
-                If Str <> "" Then Return Str
-            End If
-
-            Return ""
+            Return Assembly.GetEntryAssembly.GetName().Version.ToString()
         End Get
     End Property
     Public Shared ReadOnly Property AssemblyFileVersion As String
@@ -120,7 +114,7 @@ Public NotInheritable Class ExceptionInfo
                 If Str <> "" Then Return Str
             End If
 
-            Return ""
+            Return AssemblyVersion
         End Get
     End Property
 
