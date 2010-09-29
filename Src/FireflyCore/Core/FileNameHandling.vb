@@ -3,7 +3,7 @@
 '  File:        FileNameHandling.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 文件名操作函数模块
-'  Version:     2009.11.29.
+'  Version:     2010.09.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
