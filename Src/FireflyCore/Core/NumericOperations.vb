@@ -3,7 +3,7 @@
 '  File:        NumericOperations.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 数值操作
-'  Version:     2010.05.04.
+'  Version:     2010.09.30.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -51,8 +51,39 @@ Public Module NumericOperations
         b = Temp
     End Function
     <Extension()> Public Function [Mod](ByVal This As Integer, ByVal m As Integer) As Integer
-        Dim Result = This Mod m
-        If Result < 0 Xor m < 0 Then Result += m
-        Return Result
+        Dim r = This Mod m
+        If (r < 0 AndAlso m > 0) OrElse (r > 0 AndAlso m < 0) Then r += m
+        Return r
+    End Function
+    <Extension()> Public Function [Mod](ByVal This As Long, ByVal m As Long) As Long
+        Dim r = This Mod m
+        If (r < 0 AndAlso m > 0) OrElse (r > 0 AndAlso m < 0) Then r += m
+        Return r
+    End Function
+    <Extension()> Public Function Div(ByVal This As Integer, ByVal b As Integer) As Integer
+        If b = 0 Then Throw New DivideByZeroException()
+        Dim r = This.Mod(b)
+        If This > 0 AndAlso r < 0 Then
+            If (This - Integer.MaxValue > r) Then Return (This - Math.Abs(b) - r) \ b + Math.Sign(b)
+        ElseIf This < 0 AndAlso r > 0 Then
+            If (This - Integer.MinValue < r) Then Return (This + Math.Abs(b) - r) \ b - Math.Sign(b)
+        End If
+        Return (This - r) \ b
+    End Function
+    <Extension()> Public Function Div(ByVal This As Long, ByVal b As Long) As Long
+        If b = 0 Then Throw New DivideByZeroException()
+        Dim r = This.Mod(b)
+        If This > 0 AndAlso r < 0 Then
+            If (This - Long.MaxValue > r) Then Return (This - Math.Abs(b) - r) \ b + Math.Sign(b)
+        ElseIf This < 0 AndAlso r > 0 Then
+            If (This - Long.MinValue < r) Then Return (This + Math.Abs(b) - r) \ b - Math.Sign(b)
+        End If
+        Return (This - r) \ b
+    End Function
+    <Extension()> Public Function CeilToMultipleOf(ByVal This As Integer, ByVal n As Integer) As Integer
+        Return (This + n - 1).Div(n) * n
+    End Function
+    <Extension()> Public Function CeilToMultipleOf(ByVal This As Long, ByVal n As Long) As Long
+        Return (This + n - 1).Div(n) * n
     End Function
 End Module
