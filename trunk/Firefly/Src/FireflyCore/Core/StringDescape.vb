@@ -3,7 +3,7 @@
 '  File:        StringDescape.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 字符串转义语法糖
-'  Version:     2010.09.14.
+'  Version:     2010.10.01.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -79,6 +79,8 @@ Public Module StringDescape
         Dim l As New List(Of Char32)
         For Each c In This.ToUTF32
             Select Case c.Value
+                Case &H5C
+                    l.AddRange("\\".ToUTF32)
                 Case &H0
                     l.AddRange("\0".ToUTF32)
                 Case &H7
