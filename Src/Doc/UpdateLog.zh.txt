@@ -1,6 +1,7 @@
 ﻿2010.10.01.0
 Firefly.Core:
 修正FileNameHandling去除Like运算符时出现的bug。
+修正StringDescape转义时没有转义单个字符\的问题。
 
 2010.09.30
 Firefly.Core:
