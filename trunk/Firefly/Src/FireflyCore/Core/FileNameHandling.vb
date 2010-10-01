@@ -196,7 +196,7 @@ Public Module FileNameHandling
 
     ''' <summary>判断文件名是否符合通配符</summary>
     Public Function IsMatchFileMask(ByVal FileName As String, ByVal Mask As String) As Boolean
-        Dim Pattern = "^" & Regex.Escape(Mask).Replace("?", ".?").Replace("*", "*?") & "$"
+        Dim Pattern = "^" & Regex.Escape(Mask).Replace("\?", ".?").Replace("\*", "*?") & "$"
         Dim r As New Regex(Pattern, RegexOptions.ExplicitCapture Or RegexOptions.IgnoreCase)
         Return r.Match(FileName).Success
     End Function
