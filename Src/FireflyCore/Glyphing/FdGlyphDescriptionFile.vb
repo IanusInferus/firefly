@@ -62,11 +62,11 @@ Namespace Glyphing
             Return d
         End Function
         Public Shared Function ReadFile(ByVal Reader As StreamReader) As IEnumerable(Of GlyphDescriptor)
-            Return ReadFile(Reader, Function(LineNumber) New InvaildTextFormatException(LineNumber))
+            Return ReadFile(Reader, Function(LineNumber) New InvalidTextFormatException(LineNumber))
         End Function
         Public Shared Function ReadFile(ByVal Path As String, ByVal Encoding As System.Text.Encoding) As IEnumerable(Of GlyphDescriptor)
             Using s = Texting.Txt.CreateTextReader(Path, Encoding, True)
-                Return ReadFile(s, Function(LineNumber) New InvaildTextFormatException(Path, LineNumber))
+                Return ReadFile(s, Function(LineNumber) New InvalidTextFormatException(Path, LineNumber))
             End Using
         End Function
         Public Shared Function ReadFile(ByVal Path As String) As IEnumerable(Of GlyphDescriptor)
