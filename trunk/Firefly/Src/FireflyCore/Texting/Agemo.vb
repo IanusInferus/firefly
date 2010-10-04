@@ -87,11 +87,11 @@ Namespace Texting
             Return ret
         End Function
         Public Shared Function ReadFile(ByVal Reader As StreamReader) As String()
-            Return ReadFile(Reader, Function(LineNumber) New InvaildTextFormatException(LineNumber), Function(LineNumber) New InvaildTextFormatOrEncodingException(LineNumber))
+            Return ReadFile(Reader, Function(LineNumber) New InvalidTextFormatException(LineNumber), Function(LineNumber) New InvalidTextFormatOrEncodingException(LineNumber))
         End Function
         Public Shared Function ReadFile(ByVal Path As String, ByVal Encoding As System.Text.Encoding) As String()
             Using s = Txt.CreateTextReader(Path, Encoding, True)
-                Return ReadFile(s, Function(LineNumber) New InvaildTextFormatException(Path, LineNumber), Function(LineNumber) New InvaildTextFormatOrEncodingException(Path, LineNumber))
+                Return ReadFile(s, Function(LineNumber) New InvalidTextFormatException(Path, LineNumber), Function(LineNumber) New InvalidTextFormatOrEncodingException(Path, LineNumber))
             End Using
         End Function
         Private Shared Function VerifyFile(ByVal Reader As StreamReader, ByVal WriteFormatError As Action(Of Integer), ByVal WriteFormatOrEncodingError As Action(Of Integer)) As Boolean

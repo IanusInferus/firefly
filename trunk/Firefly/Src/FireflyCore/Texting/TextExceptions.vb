@@ -3,7 +3,7 @@
 '  File:        TextExceptions.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: 文本异常
-'  Version:     2010.09.17.
+'  Version:     2010.10.04.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -11,7 +11,7 @@
 Imports System
 Imports System.IO
 
-Public Class InvaildTextFormatException
+Public Class InvalidTextFormatException
     Inherits Exception
 
     Public Sub New()
@@ -69,7 +69,7 @@ Public Class InvaildTextFormatException
     End Function
 End Class
 
-Public Class InvaildTextFormatOrEncodingException
+Public Class InvalidTextFormatOrEncodingException
     Inherits Exception
 
     Public Sub New()
