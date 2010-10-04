@@ -1,6 +1,8 @@
 ﻿2010.10.04
 Firefly.Core.Texting:
 修正TextExceptions中的拼写错误。
+Firefly.Core:
+增加整数运算重载。
 
 2010.10.01.0
 Firefly.Core:
