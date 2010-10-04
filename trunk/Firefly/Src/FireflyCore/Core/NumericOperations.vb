@@ -3,7 +3,7 @@
 '  File:        NumericOperations.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 数值操作
-'  Version:     2010.09.30.
+'  Version:     2010.10.04.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -85,5 +85,11 @@ Public Module NumericOperations
     End Function
     <Extension()> Public Function CeilToMultipleOf(ByVal This As Long, ByVal n As Long) As Long
         Return (This + n - 1).Div(n) * n
+    End Function
+    <Extension()> Public Function CeilToMultipleOf(ByVal This As UInteger, ByVal n As UInteger) As UInteger
+        Return ((This + n - 1UI) \ n) * n
+    End Function
+    <Extension()> Public Function CeilToMultipleOf(ByVal This As ULong, ByVal n As ULong) As ULong
+        Return ((This + n - 1UL) \ n) * n
     End Function
 End Module
