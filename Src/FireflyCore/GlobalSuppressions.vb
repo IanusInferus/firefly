@@ -10,6 +10,8 @@
 '“在项目禁止显示文件中”。
 ' 无需手动向此文件添加禁止显示。
 
+<Assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2237:MarkISerializableTypesWithSerializable", Scope:="type", Target:="Firefly.InvalidTextFormatOrEncodingException")> 
+<Assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2237:MarkISerializableTypesWithSerializable", Scope:="type", Target:="Firefly.InvalidTextFormatException")> 
 <Assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:丢失范围之前释放对象", Scope:="member", Target:="Firefly.Texting.LOC.#WriteFile(Firefly.ZeroLengthStreamPasser,Firefly.Texting.LOCText,System.Boolean)")> 
 <Assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:丢失范围之前释放对象", Scope:="member", Target:="Firefly.Texting.LOC.#ReadFile(Firefly.ZeroPositionStreamPasser)")> 
 <Assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2122:DoNotIndirectlyExposeMethodsWithLinkDemands", Scope:="member", Target:="Firefly.Imaging.BitmapEx.#SetRectangle(System.Drawing.Bitmap,System.Int32,System.Int32,System.Int32[,])")> 

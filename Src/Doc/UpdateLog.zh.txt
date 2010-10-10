@@ -1,4 +1,9 @@
-﻿2010.10.04
+﻿2010.10.10.0
+Firefly.Core:
+删除ComposeBits和DecomposeBits函数。
+增加ConcatBits的扩展函数用法。
+
+2010.10.04
 Firefly.Core.Texting:
 修正TextExceptions中的拼写错误。
 Firefly.Core:
