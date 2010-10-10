@@ -3,7 +3,7 @@
 '  File:        HanziVariantTableGen.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: 简繁日汉字异体对应表生成器
-'  Version:     2009.10.30.
+'  Version:     2010.10.11.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -18,7 +18,7 @@ Imports System.Runtime.CompilerServices
 Imports Firefly
 Imports Firefly.TextEncoding
 Imports Firefly.Texting
-Imports Firefly.UniHanDatabase
+Imports Firefly.Texting.UniHanDatabase
 
 Namespace Texting
     ''' <summary>
