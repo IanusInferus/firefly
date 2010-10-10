@@ -1,4 +1,8 @@
-﻿2010.10.10.0
+﻿2010.10.11.0
+Firefly.Core:
+修正几处命名空间声明遗漏。
+
+2010.10.10
 Firefly.Core:
 删除ComposeBits和DecomposeBits函数。
 增加ConcatBits的扩展函数用法。
