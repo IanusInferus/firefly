@@ -3,7 +3,7 @@
 '  File:        BitOperations.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 位与32位整数转换
-'  Version:     2009.10.11.
+'  Version:     2010.10.10.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -209,7 +209,7 @@ Public Module BitOperations
     ''' <summary>
     ''' 获得整数的特定位。
     ''' </summary>
-    ''' <param name="This">Int32</param>
+    ''' <param name="This">UInt32</param>
     ''' <param name="U">高位索引(31-0)</param>
     ''' <param name="L">低位索引(31-0)</param>
     <Extension()> Public Function Bits(ByVal This As UInt32, ByVal U As Integer, ByVal L As Integer) As UInt32
@@ -228,7 +228,7 @@ Public Module BitOperations
     ''' <summary>
     ''' 获得整数的特定位。
     ''' </summary>
-    ''' <param name="This">Int32</param>
+    ''' <param name="This">UInt64</param>
     ''' <param name="U">高位索引(63-0)</param>
     ''' <param name="L">低位索引(63-0)</param>
     <Extension()> Public Function Bits(ByVal This As UInt64, ByVal U As Integer, ByVal L As Integer) As UInt64
@@ -247,7 +247,7 @@ Public Module BitOperations
     ''' <summary>
     ''' 获得整数的特定位。
     ''' </summary>
-    ''' <param name="This">Byte</param>
+    ''' <param name="This">SByte</param>
     ''' <param name="U">高位索引(7-0)</param>
     ''' <param name="L">低位索引(7-0)</param>
     <Extension()> Public Function Bits(ByVal This As SByte, ByVal U As Integer, ByVal L As Integer) As SByte
@@ -257,7 +257,7 @@ Public Module BitOperations
     ''' <summary>
     ''' 获得整数的特定位。
     ''' </summary>
-    ''' <param name="This">UInt16</param>
+    ''' <param name="This">Int16</param>
     ''' <param name="U">高位索引(15-0)</param>
     ''' <param name="L">低位索引(15-0)</param>
     <Extension()> Public Function Bits(ByVal This As Int16, ByVal U As Integer, ByVal L As Integer) As Int16
@@ -277,7 +277,7 @@ Public Module BitOperations
     ''' <summary>
     ''' 获得整数的特定位。
     ''' </summary>
-    ''' <param name="This">Int32</param>
+    ''' <param name="This">Int64</param>
     ''' <param name="U">高位索引(63-0)</param>
     ''' <param name="L">低位索引(63-0)</param>
     <Extension()> Public Function Bits(ByVal This As Int64, ByVal U As Integer, ByVal L As Integer) As Int64
@@ -286,212 +286,84 @@ Public Module BitOperations
 
 
     ''' <summary>
-    ''' 已重载。从位构成整数。
+    ''' 按位连接整数。
     ''' </summary>
-    ''' <param name="H">首字节</param>
-    ''' <param name="HU">首字节高位索引(7-0)</param>
-    ''' <param name="HL">首字节低位索引(7-0)</param>
-    ''' <param name="S">次字节</param>
-    ''' <param name="SU">次字节高位索引(7-0)</param>
-    ''' <param name="SL">次字节低位索引(7-0)</param>
-    ''' <param name="T">第三字节</param>
-    ''' <param name="TU">第三字节高位索引(7-0)</param>
-    ''' <param name="TL">第三字节低位索引(7-0)</param>
-    ''' <param name="Q">第四字节</param>
-    ''' <param name="QU">第四字节高位索引(7-0)</param>
-    ''' <param name="QL">第四字节低位索引(7-0)</param>
-    ''' <returns>由这些字节的这些位依次从高到低连接得到的整数。</returns>
-    Public Function ComposeBits(ByVal H As Byte, ByVal HU As Integer, ByVal HL As Integer, ByVal S As Byte, ByVal SU As Integer, ByVal SL As Integer, ByVal T As Byte, ByVal TU As Integer, ByVal TL As Integer, ByVal Q As Byte, ByVal QU As Integer, ByVal QL As Integer) As Int32
-        Dim HPart As Int32 = H.Bits(HU, HL)
-        Dim SPart As Int32 = S.Bits(SU, SL)
-        Dim TPart As Int32 = T.Bits(TU, TL)
-        Dim QPart As Int32 = Q.Bits(QU, QL)
-        Return HPart.SAL(SU - SL + 1 + TU - TL + 1 + QU - QL + 1) Or SPart.SAL(TU - TL + 1 + QU - QL + 1) Or TPart.SAL(QU - QL + 1) Or QPart
-    End Function
-    ''' <summary>
-    ''' 已重载。从位构成整数。
-    ''' </summary>
-    ''' <param name="H">首字节</param>
-    ''' <param name="HU">首字节高位索引(7-0)</param>
-    ''' <param name="HL">首字节低位索引(7-0)</param>
-    ''' <param name="S">次字节</param>
-    ''' <param name="SU">次字节高位索引(7-0)</param>
-    ''' <param name="SL">次字节低位索引(7-0)</param>
-    ''' <param name="T">第三字节</param>
-    ''' <param name="TU">第三字节高位索引(7-0)</param>
-    ''' <param name="TL">第三字节低位索引(7-0)</param>
-    ''' <returns>由这些字节的这些位依次从高到低连接得到的整数。</returns>
-    Public Function ComposeBits(ByVal H As Byte, ByVal HU As Integer, ByVal HL As Integer, ByVal S As Byte, ByVal SU As Integer, ByVal SL As Integer, ByVal T As Byte, ByVal TU As Integer, ByVal TL As Integer) As Int32
-        Dim HPart As Int32 = H.Bits(HU, HL)
-        Dim SPart As Int32 = S.Bits(SU, SL)
-        Dim TPart As Int32 = T.Bits(TU, TL)
-        Return HPart.SAL(SU - SL + 1 + TU - TL + 1) Or SPart.SAL(TU - TL + 1) Or TPart
-    End Function
-    ''' <summary>
-    ''' 已重载。从位构成整数。
-    ''' </summary>
-    ''' <param name="H">首字节</param>
-    ''' <param name="HU">首字节高位索引(7-0)</param>
-    ''' <param name="HL">首字节低位索引(7-0)</param>
-    ''' <param name="S">次字节</param>
-    ''' <param name="SU">次字节高位索引(7-0)</param>
-    ''' <param name="SL">次字节低位索引(7-0)</param>
-    ''' <returns>由这些字节的这些位依次从高到低连接得到的整数。</returns>
-    Public Function ComposeBits(ByVal H As Byte, ByVal HU As Integer, ByVal HL As Integer, ByVal S As Byte, ByVal SU As Integer, ByVal SL As Integer) As Int32
-        Dim HPart As Int32 = H.Bits(HU, HL)
-        Dim SPart As Int32 = S.Bits(SU, SL)
-        Return HPart.SAL(SU - SL + 1) Or SPart
-    End Function
-    ''' <summary>
-    ''' 已重载。从位构成整数。
-    ''' </summary>
-    ''' <param name="H">首字节</param>
-    ''' <param name="HU">首字节高位索引(7-0)</param>
-    ''' <param name="HL">首字节低位索引(7-0)</param>
-    ''' <returns>由这些字节的这些位依次从高到低连接得到的整数。</returns>
-    Public Function ComposeBits(ByVal H As Byte, ByVal HU As Integer, ByVal HL As Integer) As Int32
-        Return H.Bits(HU, HL)
-    End Function
-    ''' <summary>
-    ''' 已重载。从位构成整数。
-    ''' </summary>
-    ''' <param name="H">首Int32</param>
-    ''' <param name="HU">首Int32高位索引(31-0)</param>
-    ''' <param name="HL">首Int32低位索引(31-0)</param>
-    ''' <param name="S">次Int32</param>
-    ''' <param name="SU">次Int32高位索引(31-0)</param>
-    ''' <param name="SL">次Int32低位索引(31-0)</param>
-    ''' <returns>由这些Int32的这些位依次从高到低连接得到的整数。</returns>
-    Public Function ComposeBits(ByVal H As Int32, ByVal HU As Integer, ByVal HL As Integer, ByVal S As Int32, ByVal SU As Integer, ByVal SL As Integer) As Int32
-        Dim HPart As Int32 = H.Bits(HU, HL)
-        Dim SPart As Int32 = S.Bits(SU, SL)
-        Return HPart.SAL(SU - SL + 1) Or SPart
-    End Function
-    ''' <summary>
-    ''' 已重载。从位构成整数。
-    ''' </summary>
-    ''' <param name="H">首Int32</param>
-    ''' <param name="HU">首Int32高位索引(31-0)</param>
-    ''' <param name="HL">首Int32低位索引(31-0)</param>
-    ''' <returns>由这些Int32的这些位依次从高到低连接得到的整数。</returns>
-    Public Function ComposeBits(ByVal H As Int32, ByVal HU As Integer, ByVal HL As Integer) As Int32
-        Return H.Bits(HU, HL)
+    ''' <param name="This">Byte</param>
+    ''' <param name="Value">欲连接的数</param>
+    ''' <param name="Width">欲连接的数的位数(8-0)</param>
+    <Extension()> Public Function ConcatBits(ByVal This As Byte, ByVal Value As Byte, ByVal Width As Integer) As Byte
+        Return This.SHL(Width) Or Value.Bits(Width - 1, 0)
     End Function
 
     ''' <summary>
-    ''' 已重载。将整数分解到位。
+    ''' 按位连接整数。
     ''' </summary>
-    ''' <param name="H">首字节</param>
-    ''' <param name="HU">首字节高位索引(7-0)</param>
-    ''' <param name="HL">首字节低位索引(7-0)</param>
-    ''' <param name="S">次字节</param>
-    ''' <param name="SU">次字节高位索引(7-0)</param>
-    ''' <param name="SL">次字节低位索引(7-0)</param>
-    ''' <param name="T">第三字节</param>
-    ''' <param name="TU">第三字节高位索引(7-0)</param>
-    ''' <param name="TL">第三字节低位索引(7-0)</param>
-    ''' <param name="Q">第四字节</param>
-    ''' <param name="QU">第四字节高位索引(7-0)</param>
-    ''' <param name="QL">第四字节低位索引(7-0)</param>
-    ''' <param name="Value">待分解的整数。</param>
-    Public Sub DecomposeBits(ByRef H As Byte, ByVal HU As Integer, ByVal HL As Integer, ByRef S As Byte, ByVal SU As Integer, ByVal SL As Integer, ByRef T As Byte, ByVal TU As Integer, ByVal TL As Integer, ByRef Q As Byte, ByVal QU As Integer, ByVal QL As Integer, ByVal Value As Int32)
-        Dim HPart As Int32 = Value.SAR(SU - SL + 1 + TU - TL + 1 + QU - QL + 1) And (1.SAL(HU - HL + 1) - 1)
-        H = H And Not CByte((1.SAL(HU - HL + 1) - 1).SAL(HL))
-        H = H Or CByte(HPart.SAL(HL))
-        Dim SPart As Int32 = Value.SAR(TU - TL + 1 + QU - QL + 1) And (1.SAL(SU - SL + 1) - 1)
-        S = S And Not CByte((1.SAL(SU - SL + 1) - 1).SAL(SL))
-        S = S Or CByte(SPart.SAL(SL))
-        Dim TPart As Int32 = Value.SAR(QU - QL + 1) And (1.SAL(TU - TL + 1) - 1)
-        T = T And Not CByte((1.SAL(TU - TL + 1) - 1).SAL(TL))
-        T = T Or CByte(TPart.SAL(TL))
-        Dim QPart As Int32 = Value And (1.SAL(QU - QL + 1) - 1)
-        Q = Q And Not CByte((1.SAL(QU - QL + 1) - 1).SAL(QL))
-        Q = Q Or CByte(QPart.SAL(QL))
-    End Sub
+    ''' <param name="This">UInt16</param>
+    ''' <param name="Value">欲连接的数</param>
+    ''' <param name="Width">欲连接的数的位数(16-0)</param>
+    <Extension()> Public Function ConcatBits(ByVal This As UInt16, ByVal Value As UInt16, ByVal Width As Integer) As UInt16
+        Return This.SHL(Width) Or Value.Bits(Width - 1, 0)
+    End Function
+
     ''' <summary>
-    ''' 已重载。将整数分解到位。
+    ''' 按位连接整数。
     ''' </summary>
-    ''' <param name="H">首字节</param>
-    ''' <param name="HU">首字节高位索引(7-0)</param>
-    ''' <param name="HL">首字节低位索引(7-0)</param>
-    ''' <param name="S">次字节</param>
-    ''' <param name="SU">次字节高位索引(7-0)</param>
-    ''' <param name="SL">次字节低位索引(7-0)</param>
-    ''' <param name="T">第三字节</param>
-    ''' <param name="TU">第三字节高位索引(7-0)</param>
-    ''' <param name="TL">第三字节低位索引(7-0)</param>
-    ''' <param name="Value">待分解的整数。</param>
-    Public Sub DecomposeBits(ByRef H As Byte, ByVal HU As Integer, ByVal HL As Integer, ByRef S As Byte, ByVal SU As Integer, ByVal SL As Integer, ByRef T As Byte, ByVal TU As Integer, ByVal TL As Integer, ByVal Value As Int32)
-        Dim HPart As Int32 = Value.SAR(SU - SL + 1 + TU - TL + 1) And (1.SAL(HU - HL + 1) - 1)
-        H = H And Not CByte((1.SAL(HU - HL + 1) - 1).SAL(HL))
-        H = H Or CByte(HPart.SAL(HL))
-        Dim SPart As Int32 = Value.SAR(TU - TL + 1) And (1.SAL(SU - SL + 1) - 1)
-        S = S And Not CByte((1.SAL(SU - SL + 1) - 1).SAL(SL))
-        S = S Or CByte(SPart.SAL(SL))
-        Dim TPart As Int32 = Value And (1.SAL(TU - TL + 1) - 1)
-        T = T And Not CByte((1.SAL(TU - TL + 1) - 1).SAL(TL))
-        T = T Or CByte(TPart.SAL(TL))
-    End Sub
+    ''' <param name="This">UInt32</param>
+    ''' <param name="Value">欲连接的数</param>
+    ''' <param name="Width">欲连接的数的位数(32-0)</param>
+    <Extension()> Public Function ConcatBits(ByVal This As UInt32, ByVal Value As UInt32, ByVal Width As Integer) As UInt32
+        Return This.SHL(Width) Or Value.Bits(Width - 1, 0)
+    End Function
+
     ''' <summary>
-    ''' 已重载。将整数分解到位。
+    ''' 按位连接整数。
     ''' </summary>
-    ''' <param name="H">首字节</param>
-    ''' <param name="HU">首字节高位索引(7-0)</param>
-    ''' <param name="HL">首字节低位索引(7-0)</param>
-    ''' <param name="S">次字节</param>
-    ''' <param name="SU">次字节高位索引(7-0)</param>
-    ''' <param name="SL">次字节低位索引(7-0)</param>
-    ''' <param name="Value">待分解的整数。</param>
-    Public Sub DecomposeBits(ByRef H As Byte, ByVal HU As Integer, ByVal HL As Integer, ByRef S As Byte, ByVal SU As Integer, ByVal SL As Integer, ByVal Value As Int32)
-        Dim HPart As Int32 = Value.SAR(SU - SL + 1) And (1.SAL(HU - HL + 1) - 1)
-        H = H And Not CByte((1.SAL(HU - HL + 1) - 1).SAL(HL))
-        H = H Or CByte(HPart.SAL(HL))
-        Dim SPart As Int32 = Value And (1.SAL(SU - SL + 1) - 1)
-        S = S And Not CByte((1.SAL(SU - SL + 1) - 1).SAL(SL))
-        S = S Or CByte(SPart.SAL(SL))
-    End Sub
+    ''' <param name="This">UInt64</param>
+    ''' <param name="Value">欲连接的数</param>
+    ''' <param name="Width">欲连接的数的位数(8-0)</param>
+    <Extension()> Public Function ConcatBits(ByVal This As UInt64, ByVal Value As UInt64, ByVal Width As Integer) As UInt64
+        Return This.SHL(Width) Or Value.Bits(Width - 1, 0)
+    End Function
+
     ''' <summary>
-    ''' 已重载。将整数分解到位。
+    ''' 按位连接整数。
     ''' </summary>
-    ''' <param name="H">首字节</param>
-    ''' <param name="HU">首字节高位索引(7-0)</param>
-    ''' <param name="HL">首字节低位索引(7-0)</param>
-    ''' <param name="Value">待分解的整数。</param>
-    Public Sub DecomposeBits(ByRef H As Byte, ByVal HU As Integer, ByVal HL As Integer, ByVal Value As Int32)
-        Dim HPart As Int32 = Value And (1.SAL(HU - HL + 1) - 1)
-        H = H And Not CByte((1.SAL(HU - HL + 1) - 1).SAL(HL))
-        H = H Or CByte(HPart.SAL(HL))
-    End Sub
+    ''' <param name="This">SByte</param>
+    ''' <param name="Value">欲连接的数</param>
+    ''' <param name="Width">欲连接的数的位数(8-0)</param>
+    <Extension()> Public Function ConcatBits(ByVal This As SByte, ByVal Value As SByte, ByVal Width As Integer) As SByte
+        Return This.SAL(Width) Or Value.Bits(Width - 1, 0)
+    End Function
+
     ''' <summary>
-    ''' 已重载。将整数分解到位。
+    ''' 按位连接整数。
     ''' </summary>
-    ''' <param name="H">首Int32</param>
-    ''' <param name="HU">首Int32高位索引(31-0)</param>
-    ''' <param name="HL">首Int32低位索引(31-0)</param>
-    ''' <param name="S">次Int32</param>
-    ''' <param name="SU">次Int32高位索引(31-0)</param>
-    ''' <param name="SL">次Int32低位索引(31-0)</param>
-    ''' <param name="Value">待分解的整数。</param>
-    Public Sub DecomposeBits(ByRef H As Int32, ByVal HU As Integer, ByVal HL As Integer, ByRef S As Int32, ByVal SU As Integer, ByVal SL As Integer, ByVal Value As Int32)
-        Dim HPart As Int32 = (Value.SAR(SU - SL + 1)) And ((1.SAL(HU - HL + 1)) - 1)
-        H = H And Not (1.SAL(HU - HL + 1) - 1).SAL(HL)
-        H = H Or HPart.SAL(HL)
-        Dim SPart As Int32 = Value And ((1.SAL(SU - SL + 1)) - 1)
-        S = S And Not (1.SAL(SU - SL + 1) - 1).SAL(SL)
-        S = S Or SPart.SAL(SL)
-    End Sub
+    ''' <param name="This">Int16</param>
+    ''' <param name="Value">欲连接的数</param>
+    ''' <param name="Width">欲连接的数的位数(16-0)</param>
+    <Extension()> Public Function ConcatBits(ByVal This As Int16, ByVal Value As Int16, ByVal Width As Integer) As Int16
+        Return This.SAL(Width) Or Value.Bits(Width - 1, 0)
+    End Function
+
     ''' <summary>
-    ''' 已重载。将整数分解到位。
+    ''' 按位连接整数。
     ''' </summary>
-    ''' <param name="H">首Int32</param>
-    ''' <param name="HU">首Int32高位索引(31-0)</param>
-    ''' <param name="HL">首Int32低位索引(31-0)</param>
-    ''' <param name="Value">待分解的整数。</param>
-    Public Sub DecomposeBits(ByRef H As Int32, ByVal HU As Integer, ByVal HL As Integer, ByVal Value As Int32)
-        Dim HPart As Int32 = Value And ((1.SAL(HU - HL + 1)) - 1)
-        H = H And Not (1.SAL(HU - HL + 1) - 1).SAL(HL)
-        H = H Or HPart.SAL(HL)
-    End Sub
+    ''' <param name="This">Int32</param>
+    ''' <param name="Value">欲连接的数</param>
+    ''' <param name="Width">欲连接的数的位数(32-0)</param>
+    <Extension()> Public Function ConcatBits(ByVal This As Int32, ByVal Value As Int32, ByVal Width As Integer) As Int32
+        Return This.SAL(Width) Or Value.Bits(Width - 1, 0)
+    End Function
+
+    ''' <summary>
+    ''' 按位连接整数。
+    ''' </summary>
+    ''' <param name="This">Int64</param>
+    ''' <param name="Value">欲连接的数</param>
+    ''' <param name="Width">欲连接的数的位数(8-0)</param>
+    <Extension()> Public Function ConcatBits(ByVal This As Int64, ByVal Value As Int64, ByVal Width As Integer) As Int64
+        Return This.SAL(Width) Or Value.Bits(Width - 1, 0)
+    End Function
 
 
     ''' <summary>
