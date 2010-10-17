@@ -3,7 +3,7 @@
 '  File:        StreamEx.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 扩展流类
-'  Version:     2010.09.15.
+'  Version:     2010.10.17.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -60,13 +60,13 @@ Public Class StreamEx
         Return New UnsafeStreamAdapter(Me)
     End Function
 
-    ''' <summary>读取字节。</summary>
+    ''' <summary>读取Byte。</summary>
     Overridable Function ReadByte() As Byte
         Dim b As Integer = BaseStream.ReadByte
         If b = -1 Then Throw New EndOfStreamException
         Return CByte(b)
     End Function
-    ''' <summary>写入字节。</summary>
+    ''' <summary>写入Byte。</summary>
     Overridable Sub WriteByte(ByVal b As Byte)
         BaseStream.WriteByte(b)
     End Sub
@@ -190,6 +190,23 @@ Public Class StreamEx
         WriteByte(CByte(i And &HFF))
     End Sub
 
+    ''' <summary>读取Int8。</summary>
+    Overridable Function ReadInt8() As SByte
+        Return CUS(ReadByte())
+    End Function
+    ''' <summary>写入Int8。</summary>
+    Overridable Sub WriteInt8(ByVal i As SByte)
+        WriteByte(CSU(i))
+    End Sub
+    ''' <summary>读取UInt8。</summary>
+    Overridable Function ReadUInt8() As Byte
+        Return ReadByte()
+    End Function
+    ''' <summary>写入UInt8。</summary>
+    Overridable Sub WriteUInt8(ByVal b As Byte)
+        WriteByte(b)
+    End Sub
+
     ''' <summary>读取UInt16。</summary>
     Function ReadUInt16() As UInt16
         Return CSU(ReadInt16)
@@ -303,9 +320,9 @@ Public Class StreamEx
         Return a.SingleValue
     End Function
     ''' <summary>写入单精度浮点数。</summary>
-    Sub WriteSingle(ByVal i As Single)
+    Sub WriteSingle(ByVal f As Single)
         Dim a As SingleInt32
-        a.SingleValue = i
+        a.SingleValue = f
         WriteInt32(a.Int32Value)
     End Sub
     ''' <summary>读取单精度浮点数。</summary>
@@ -315,9 +332,9 @@ Public Class StreamEx
         Return a.SingleValue
     End Function
     ''' <summary>写入单精度浮点数。</summary>
-    Sub WriteFloat32(ByVal i As Single)
+    Sub WriteFloat32(ByVal f As Single)
         Dim a As SingleInt32
-        a.SingleValue = i
+        a.SingleValue = f
         WriteInt32(a.Int32Value)
     End Sub
 
@@ -332,9 +349,9 @@ Public Class StreamEx
         Return a.DoubleValue
     End Function
     ''' <summary>写入双精度浮点数。</summary>
-    Sub WriteDouble(ByVal i As Double)
+    Sub WriteDouble(ByVal f As Double)
         Dim a As DoubleInt64
-        a.DoubleValue = i
+        a.DoubleValue = f
         WriteInt64(a.Int64Value)
     End Sub
     ''' <summary>读取双精度浮点数。</summary>
@@ -344,9 +361,9 @@ Public Class StreamEx
         Return a.DoubleValue
     End Function
     ''' <summary>写入双精度浮点数。</summary>
-    Sub WriteFloat64(ByVal i As Double)
+    Sub WriteFloat64(ByVal f As Double)
         Dim a As DoubleInt64
-        a.DoubleValue = i
+        a.DoubleValue = f
         WriteInt64(a.Int64Value)
     End Sub
 

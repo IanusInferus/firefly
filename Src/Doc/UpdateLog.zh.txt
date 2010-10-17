@@ -1,4 +1,9 @@
-﻿2010.10.11.0
+﻿2010.10.17
+Firefly.Core:
+StreamEx增加Int8读写。
+增加BinarySerializer。
+
+2010.10.11.0
 Firefly.Core:
 修正几处命名空间声明遗漏。
 
