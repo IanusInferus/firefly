@@ -98,9 +98,10 @@ Public Class BinarySerializer
             Dim CreateThis = Expression.Assign(ThisParam, Expression.[New](c))
             Statements.Add(CreateThis)
 
-            Dim Fields = PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance).Select(Function(f) New With {.FieldOrPropertyExpr = Expression.Field(ThisParam, f), .Type = f.FieldType})
-            Dim Properties = PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance).Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso p.GetIndexParameters.Length = 0).Select(Function(f) New With {.FieldOrPropertyExpr = Expression.Property(ThisParam, f), .Type = f.PropertyType})
-            Dim FieldsAndProperties = Fields.Concat(Properties).ToArray
+            Dim Fields = PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance).Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Field(ThisParam, f), .Type = f.FieldType})
+            Dim Properties = PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance).Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso p.GetIndexParameters.Length = 0).Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Property(ThisParam, f), .Type = f.PropertyType})
+            Dim MemberToIndex = PhysicalType.GetMembers.Select(Function(m, i) New With {.Member = m, .Index = i}).ToDictionary(Function(p) p.Member, Function(p) p.Index)
+            Dim FieldsAndProperties = Fields.Concat(Properties).OrderBy(Function(f) MemberToIndex(f.Member)).ToArray
             If PhysicalType.IsValueType Then
                 If FieldsAndProperties.Length = 0 Then
                     Throw New NotSupportedException("NoReader: {0}".Formats(PhysicalType.FullName))
@@ -206,9 +207,10 @@ Public Class BinarySerializer
 
             Dim Statements As New List(Of Expression)
 
-            Dim Fields = PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance).Select(Function(f) New With {.FieldOrPropertyExpr = Expression.Field(ThisParam, f), .Type = f.FieldType})
-            Dim Properties = PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance).Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso p.GetIndexParameters.Length = 0).Select(Function(f) New With {.FieldOrPropertyExpr = Expression.Property(ThisParam, f), .Type = f.PropertyType})
-            Dim FieldsAndProperties = Fields.Concat(Properties).ToArray
+            Dim Fields = PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance).Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Field(ThisParam, f), .Type = f.FieldType})
+            Dim Properties = PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance).Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso p.GetIndexParameters.Length = 0).Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Property(ThisParam, f), .Type = f.PropertyType})
+            Dim MemberToIndex = PhysicalType.GetMembers.Select(Function(m, i) New With {.Member = m, .Index = i}).ToDictionary(Function(p) p.Member, Function(p) p.Index)
+            Dim FieldsAndProperties = Fields.Concat(Properties).OrderBy(Function(f) MemberToIndex(f.Member)).ToArray
             If PhysicalType.IsValueType Then
                 If FieldsAndProperties.Length = 0 Then
                     Throw New NotSupportedException("NoReader: {0}".Formats(PhysicalType.FullName))
@@ -310,9 +312,10 @@ Public Class BinarySerializer
 
             Dim FunctionBody As Expression = Expression.Constant(0)
 
-            Dim Fields = PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance).Select(Function(f) New With {.FieldOrPropertyExpr = Expression.Field(ThisParam, f), .Type = f.FieldType})
-            Dim Properties = PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance).Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso p.GetIndexParameters.Length = 0).Select(Function(f) New With {.FieldOrPropertyExpr = Expression.Property(ThisParam, f), .Type = f.PropertyType})
-            Dim FieldsAndProperties = Fields.Concat(Properties).ToArray
+            Dim Fields = PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance).Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Field(ThisParam, f), .Type = f.FieldType})
+            Dim Properties = PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance).Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso p.GetIndexParameters.Length = 0).Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Property(ThisParam, f), .Type = f.PropertyType})
+            Dim MemberToIndex = PhysicalType.GetMembers.Select(Function(m, i) New With {.Member = m, .Index = i}).ToDictionary(Function(p) p.Member, Function(p) p.Index)
+            Dim FieldsAndProperties = Fields.Concat(Properties).OrderBy(Function(f) MemberToIndex(f.Member)).ToArray
             If PhysicalType.IsValueType Then
                 If FieldsAndProperties.Length = 0 Then
                     Throw New NotSupportedException("NoReader: {0}".Formats(PhysicalType.FullName))
