@@ -3,7 +3,7 @@
 '  File:        BinarySerializer.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 二进制序列化类
-'  Version:     2010.10.17.
+'  Version:     2010.10.19.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -56,23 +56,15 @@ Public Class BinarySerializer
         CounterCache.Add(GetType(Double), Function(f As Double) 8)
     End Sub
 
-    Public Shared ReadOnly Property GlobalCache As BinarySerializer
-        Get
-            Static Cache As BinarySerializer
-            If Cache Is Nothing Then Cache = New BinarySerializer
-            Return Cache
-        End Get
-    End Property
-
-    Public Shared Function GetReader(ByVal PhysicalType As Type, ByVal CachedSerializer As BinarySerializer) As [Delegate]
-        Dim Cache = CachedSerializer.ReaderCache
+    Public Shared Function GetReader(ByVal PhysicalType As Type, ByVal bs As BinarySerializer) As [Delegate]
+        Dim Cache = bs.ReaderCache
 
         If Cache.ContainsKey(PhysicalType) Then Return Cache(PhysicalType)
 
         If PhysicalType.IsPrimitive Then Throw New NotSupportedException("NoSupportedPrimitive: {0}".Formats(PhysicalType.FullName))
 
         If PhysicalType.IsEnum Then
-            Dim UnderlyingReader = GetReader(PhysicalType.GetEnumUnderlyingType, CachedSerializer)
+            Dim UnderlyingReader = GetReader(PhysicalType.GetEnumUnderlyingType, bs)
 
             Dim sParam = Expression.Variable(GetType(StreamEx), "s")
             Dim FunctionBody = Expression.ConvertChecked(Expression.Call(UnderlyingReader.Method, sParam), PhysicalType)
@@ -116,7 +108,7 @@ Public Class BinarySerializer
                 If Cache.ContainsKey(Type) Then
                     Reader = Cache(Type)
                 Else
-                    Reader = GetReader(Type, CachedSerializer)
+                    Reader = GetReader(Type, bs)
                 End If
                 If Reader.Target IsNot Nothing Then
                     Dim n = ClosureObjects.Count
@@ -163,9 +155,9 @@ Public Class BinarySerializer
             Return Compiled
         End If
     End Function
-    Public Shared Function GetReader(Of T)(ByVal CachedSerializer As BinarySerializer) As Func(Of StreamEx, T)
+    Public Shared Function GetReader(Of T)(ByVal bs As BinarySerializer) As Func(Of StreamEx, T)
         Dim PhysicalType = GetType(T)
-        Return CType(GetReader(PhysicalType, CachedSerializer), Func(Of StreamEx, T))
+        Return CType(GetReader(PhysicalType, bs), Func(Of StreamEx, T))
     End Function
     Public Function GetReader(Of T)() As Func(Of StreamEx, T)
         Return GetReader(Of T)(Me)
@@ -174,15 +166,15 @@ Public Class BinarySerializer
         Return GetReader(Of T)()(s)
     End Function
 
-    Public Shared Function GetWriter(ByVal PhysicalType As Type, ByVal CachedSerializer As BinarySerializer) As [Delegate]
-        Dim Cache = CachedSerializer.WriterCache
+    Public Shared Function GetWriter(ByVal PhysicalType As Type, ByVal bs As BinarySerializer) As [Delegate]
+        Dim Cache = bs.WriterCache
 
         If Cache.ContainsKey(PhysicalType) Then Return Cache(PhysicalType)
 
         If PhysicalType.IsPrimitive Then Throw New NotSupportedException("NoSupportedPrimitive: {0}".Formats(PhysicalType.FullName))
 
         If PhysicalType.IsEnum Then
-            Dim UnderlyingReader = GetWriter(PhysicalType.GetEnumUnderlyingType, CachedSerializer)
+            Dim UnderlyingReader = GetWriter(PhysicalType.GetEnumUnderlyingType, bs)
 
             Dim sParam = Expression.Variable(GetType(StreamEx), "s")
             Dim ThisParam = Expression.Variable(PhysicalType, "This")
@@ -225,7 +217,7 @@ Public Class BinarySerializer
                 If Cache.ContainsKey(Type) Then
                     Writer = Cache(Type)
                 Else
-                    Writer = GetWriter(Type, CachedSerializer)
+                    Writer = GetWriter(Type, bs)
                 End If
                 If Writer.Target IsNot Nothing Then
                     Dim n = ClosureObjects.Count
@@ -270,9 +262,9 @@ Public Class BinarySerializer
             Return Compiled
         End If
     End Function
-    Public Shared Function GetWriter(Of T)(ByVal CachedSerializer As BinarySerializer) As Action(Of StreamEx, T)
+    Public Shared Function GetWriter(Of T)(ByVal bs As BinarySerializer) As Action(Of StreamEx, T)
         Dim PhysicalType = GetType(T)
-        Return CType(GetWriter(PhysicalType, CachedSerializer), Action(Of StreamEx, T))
+        Return CType(GetWriter(PhysicalType, bs), Action(Of StreamEx, T))
     End Function
     Public Function GetWriter(Of T)() As Action(Of StreamEx, T)
         Return GetWriter(Of T)(Me)
@@ -281,15 +273,15 @@ Public Class BinarySerializer
         GetWriter(Of T)()(s, Value)
     End Sub
 
-    Public Shared Function GetCounter(ByVal PhysicalType As Type, ByVal CachedSerializer As BinarySerializer) As [Delegate]
-        Dim Cache = CachedSerializer.CounterCache
+    Public Shared Function GetCounter(ByVal PhysicalType As Type, ByVal bs As BinarySerializer) As [Delegate]
+        Dim Cache = bs.CounterCache
 
         If Cache.ContainsKey(PhysicalType) Then Return Cache(PhysicalType)
 
         If PhysicalType.IsPrimitive Then Throw New NotSupportedException("NoSupportedPrimitive: {0}".Formats(PhysicalType.FullName))
 
         If PhysicalType.IsEnum Then
-            Dim UnderlyingReader = GetCounter(PhysicalType.GetEnumUnderlyingType, CachedSerializer)
+            Dim UnderlyingReader = GetCounter(PhysicalType.GetEnumUnderlyingType, bs)
 
             Dim ThisParam = Expression.Variable(PhysicalType, "This")
             Dim FunctionBody = Expression.Call(UnderlyingReader.Method, Expression.ConvertChecked(ThisParam, PhysicalType.GetEnumUnderlyingType))
@@ -331,7 +323,7 @@ Public Class BinarySerializer
                 If Cache.ContainsKey(Type) Then
                     Counter = Cache(Type)
                 Else
-                    Counter = GetCounter(Type, CachedSerializer)
+                    Counter = GetCounter(Type, bs)
                 End If
                 If Counter.Target IsNot Nothing Then
                     Dim n = ClosureObjects.Count
@@ -375,9 +367,9 @@ Public Class BinarySerializer
             Return Compiled
         End If
     End Function
-    Public Shared Function GetCounter(Of T)(ByVal CachedSerializer As BinarySerializer) As Func(Of T, Integer)
+    Public Shared Function GetCounter(Of T)(ByVal bs As BinarySerializer) As Func(Of T, Integer)
         Dim PhysicalType = GetType(T)
-        Return CType(GetCounter(PhysicalType, CachedSerializer), Func(Of T, Integer))
+        Return CType(GetCounter(PhysicalType, bs), Func(Of T, Integer))
     End Function
     Public Function GetCounter(Of T)() As Func(Of T, Integer)
         Return GetCounter(Of T)(Me)
