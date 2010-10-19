@@ -1,4 +1,8 @@
-﻿2010.10.17
+﻿2010.10.19
+Firefly.Core:
+BinarySerializer内存测试，可自动回收。删除全局缓存。
+
+2010.10.17
 Firefly.Core:
 StreamEx增加Int8读写。
 增加BinarySerializer。
