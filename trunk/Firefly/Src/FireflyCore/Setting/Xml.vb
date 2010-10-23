@@ -3,7 +3,7 @@
 '  File:        Xml.vb
 '  Location:    Firefly.Setting <Visual Basic .Net>
 '  Description: Xml读写
-'  Version:     2010.08.28.
+'  Version:     2010.10.23.
 '  Copyright:   F.R.C.
 '
 '==========================================================================
@@ -29,14 +29,14 @@ Namespace Setting
     ''' 
     ''' 用于将对象格式化到Xml文件及从Xml文件恢复数据
     ''' 简单对象能够直接格式化
-    ''' 所谓的简单对象，包括String、基元类型、Enum、1维数组、有公开单参数Add方法并实现IEnumerable的简单对象元素的集合、简单对象构成的类和结构
+    ''' 所谓的简单对象，包括String、基元类型、Enum、1维数组、实现ICollection(Of T)的简单对象元素的集合、简单对象构成的类和结构
     ''' 所有的简单对象的类需要有公共的不带参数的构造函数
     ''' 不能有交叉引用
     ''' 允许使用继承，但所有不直接出现在根类型的类型声明的类型树中的类型必须添加到ExternalTypes中
     ''' ExternalTypes中不应有命名冲突
     ''' 
     ''' 如果不能满足这些条件，可以使用类型替代
-    ''' 需要注意的是，不要在替代器中返回替代类的子类，比如，不能使用List(Of Int32)来做某个类->IEnumerable(Of Int32)的替代，这时应明确为某个类->List(Of Int32)的替代
+    ''' 需要注意的是，不要在替代器中返回替代类的子类，比如，不能使用List(Of Int32)来做某个类->ICollection(Of Int32)的替代，这时应明确为某个类->List(Of Int32)的替代
     ''' </summary>
     Public NotInheritable Class Xml
         Private Sub New()
@@ -44,6 +44,10 @@ Namespace Setting
 
         Public Shared Function ReadFile(Of T)(ByVal Path As String) As T
             Return ReadFile(Of T)(Path, New Type() {}, New IMapper() {})
+        End Function
+
+        Public Shared Function ReadFile(Of T)(ByVal Reader As StreamReader) As T
+            Return ReadFile(Of T)(Reader, New Type() {}, New IMapper() {})
         End Function
 
         Public Shared Function ReadFile(Of T)(ByVal Path As String, ByVal ExternalTypes As IEnumerable(Of Type)) As T
@@ -72,6 +76,10 @@ Namespace Setting
 
         Public Shared Sub WriteFile(Of T)(ByVal Path As String, ByVal Value As T)
             WriteFile(Path, TextEncoding.WritingDefault, Value, New Type() {}, New IMapper() {})
+        End Sub
+
+        Public Shared Sub WriteFile(Of T)(ByVal Writer As StreamWriter, ByVal Value As T)
+            WriteFile(Writer, Value, New Type() {}, New IMapper() {})
         End Sub
 
         Public Shared Sub WriteFile(Of T)(ByVal Path As String, ByVal Encoding As Encoding, ByVal Value As T)
@@ -115,6 +123,18 @@ Namespace Setting
                 Return Name & "Of" & String.Join("And", (From t In Type.GetGenericArguments() Select GetTypeFriendlyName(t)).ToArray)
             End If
             Return Type.Name
+        End Function
+
+        Private Shared Function IsList(ByVal PhysicalType As Type) As Boolean
+            Return PhysicalType.GetInterfaces().Any(Function(t) t.IsGenericType AndAlso t.GetGenericTypeDefinition Is GetType(ICollection(Of )))
+        End Function
+        Private Shared Function GetListElementType(ByVal PhysicalType As Type) As Type
+            Return PhysicalType.GetInterfaces().Where(Function(t) t.IsGenericType AndAlso t.GetGenericTypeDefinition Is GetType(ICollection(Of ))).Single.GetGenericArguments()(0)
+        End Function
+        Private Shared Function GetMethodFromDefinedGenericMethod(ByVal m As [Delegate], ByVal MethodType As Type, ByVal ParamArray ParameterTypes As Type()) As [Delegate]
+            Dim Target = m.Target
+            Dim gm = m.Method.GetGenericMethodDefinition().MakeGenericMethod(ParameterTypes)
+            Return [Delegate].CreateDelegate(MethodType, Target, gm)
         End Function
 
         Private Shared Function MapElement(ByVal Name As String, ByVal Value As Object, ByVal ConstraintType As Type, ByVal ExternalTypeDict As Dictionary(Of String, Type), ByVal MapperDict As Dictionary(Of Type, IMapper)) As XElement
@@ -248,39 +268,10 @@ Namespace Setting
                 Return Element
             End If
 
-            If GetType(IEnumerable).IsAssignableFrom(PhysicalType) Then
+            If IsList(PhysicalType) Then
                 Dim enu = DirectCast(Value, IEnumerable)
-                Dim ObjectType = GetType(Object)
+                Dim ObjectType = GetListElementType(PhysicalType)
 
-                Dim Adds = PhysicalType.GetMethods(BindingFlags.Public Or BindingFlags.Instance).Where(Function(mi) mi.Name = "Add" AndAlso mi.GetParameters.Length = 1).ToArray
-                If Adds.Length = 0 Then Throw New NotSupportedException("NoPublicOneParameterAddForIEnumerable: {0}".Formats(GetTypeFriendlyName(PhysicalType)))
-                Dim Add As MethodInfo = Nothing
-                For Each mi In Adds
-                    Dim p = mi.GetParameters()(0)
-                    If p.ParameterType Is ObjectType Then
-                        Add = mi
-                        Exit For
-                    End If
-                Next
-                If Add Is Nothing Then
-                    For Each mi In Adds
-                        Dim p = mi.GetParameters()(0)
-                        If ObjectType.IsAssignableFrom(p.ParameterType) Then
-                            Add = mi
-                            Exit For
-                        End If
-                    Next
-                End If
-                If Add Is Nothing Then Throw New NotSupportedException("NoCompatibleAddForIEnumerable: {0}".Formats(GetTypeFriendlyName(PhysicalType)))
-
-                For Each i In PhysicalType.GetInterfaces
-                    If Not i.IsGenericType Then Continue For
-                    Dim d = i.GetGenericTypeDefinition
-                    If d Is GetType(IEnumerable(Of )) Then
-                        ObjectType = i.GetGenericArguments()(0)
-                        Exit For
-                    End If
-                Next
                 Dim EmptyFlag = True
                 For Each o In enu
                     Element.Add(MapElement("", o, ObjectType, ExternalTypeDict, MapperDict))
@@ -438,42 +429,15 @@ Namespace Setting
                 Return InvM(arr)
             End If
 
-            If GetType(IEnumerable).IsAssignableFrom(PhysicalType) Then
-                Dim ObjectType = GetType(Object)
-                For Each i In PhysicalType.GetInterfaces
-                    If Not i.IsGenericType Then Continue For
-                    Dim d = i.GetGenericTypeDefinition
-                    If d Is GetType(IEnumerable(Of )) Then
-                        ObjectType = i.GetGenericArguments()(0)
-                        Exit For
-                    End If
-                Next
-
-                Dim Adds = PhysicalType.GetMethods(BindingFlags.Public Or BindingFlags.Instance).Where(Function(mi) mi.Name = "Add" AndAlso mi.GetParameters.Length = 1).ToArray
-                If Adds.Length = 0 Then Throw New NotSupportedException("NoPublicOneParameterAddForIEnumerable: {0}".Formats(GetTypeFriendlyName(PhysicalType)))
-                Dim Add As MethodInfo = Nothing
-                For Each mi In Adds
-                    Dim p = mi.GetParameters()(0)
-                    If p.ParameterType Is ObjectType Then
-                        Add = mi
-                        Exit For
-                    End If
-                Next
-                If Add Is Nothing Then
-                    For Each mi In Adds
-                        Dim p = mi.GetParameters()(0)
-                        If ObjectType.IsAssignableFrom(p.ParameterType) Then
-                            Add = mi
-                            Exit For
-                        End If
-                    Next
-                End If
-                If Add Is Nothing Then Throw New NotSupportedException("NoCompatibleAddForIEnumerable: {0}".Formats(GetTypeFriendlyName(PhysicalType)))
+            If IsList(PhysicalType) Then
+                Dim ObjectType = GetListElementType(PhysicalType)
+                Dim AddDelegate As Action(Of List(Of Integer), Integer) = AddressOf ListAdd(Of Integer, List(Of Integer))
+                Dim Add = GetMethodFromDefinedGenericMethod(AddDelegate, GetType(Action(Of ,)).MakeGenericType(PhysicalType, ObjectType), ObjectType, PhysicalType)
 
                 Dim SubElements = Element.Elements.ToArray
-                Dim enu As Object = DirectCast(Activator.CreateInstance(PhysicalType), IEnumerable)
+                Dim enu = DirectCast(Activator.CreateInstance(PhysicalType), IEnumerable)
                 For n = 0 To SubElements.Length - 1
-                    Add.Invoke(enu, New Object() {InvMapElement("", SubElements(n), ObjectType, ExternalTypeDict, MapperDict)})
+                    Add.DynamicInvoke(New Object() {enu, InvMapElement("", SubElements(n), ObjectType, ExternalTypeDict, MapperDict)})
                 Next
                 Return InvM(enu)
             End If
@@ -500,28 +464,31 @@ Namespace Setting
                 Return InvM(obj)
             End If
 
-            If PhysicalType.IsValueType Then
-                '必须定义为ValueType，否则无法正常设置值
-                Dim obj = DirectCast(Activator.CreateInstance(PhysicalType), ValueType)
+                If PhysicalType.IsValueType Then
+                    '必须定义为ValueType，否则无法正常设置值
+                    Dim obj = DirectCast(Activator.CreateInstance(PhysicalType), ValueType)
 
-                Dim SubElementDict = Element.Elements.ToDictionary(Function(e) e.Name.LocalName, StringComparer.OrdinalIgnoreCase)
-                For Each f In PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance)
-                    If SubElementDict.ContainsKey(f.Name) Then
-                        f.SetValue(obj, InvMapElement(f.Name, SubElementDict(f.Name), f.FieldType, ExternalTypeDict, MapperDict))
-                    End If
-                Next
-                For Each f In PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance)
-                    If f.CanRead AndAlso f.CanWrite AndAlso f.GetIndexParameters.Length = 0 Then
+                    Dim SubElementDict = Element.Elements.ToDictionary(Function(e) e.Name.LocalName, StringComparer.OrdinalIgnoreCase)
+                    For Each f In PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance)
                         If SubElementDict.ContainsKey(f.Name) Then
-                            f.SetValue(obj, InvMapElement(f.Name, SubElementDict(f.Name), f.PropertyType, ExternalTypeDict, MapperDict), Nothing)
+                            f.SetValue(obj, InvMapElement(f.Name, SubElementDict(f.Name), f.FieldType, ExternalTypeDict, MapperDict))
                         End If
-                    End If
-                Next
-                Return InvM(obj)
-            End If
+                    Next
+                    For Each f In PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance)
+                        If f.CanRead AndAlso f.CanWrite AndAlso f.GetIndexParameters.Length = 0 Then
+                            If SubElementDict.ContainsKey(f.Name) Then
+                                f.SetValue(obj, InvMapElement(f.Name, SubElementDict(f.Name), f.PropertyType, ExternalTypeDict, MapperDict), Nothing)
+                            End If
+                        End If
+                    Next
+                    Return InvM(obj)
+                End If
 
-            Throw New NotSupportedException
+                Throw New NotSupportedException
         End Function
+        Private Shared Sub ListAdd(Of T, TList As {New, ICollection(Of T)})(ByVal l As TList, ByVal v As T)
+            l.Add(v)
+        End Sub
 
         Public Interface IMapper
             ReadOnly Property SourceType() As Type

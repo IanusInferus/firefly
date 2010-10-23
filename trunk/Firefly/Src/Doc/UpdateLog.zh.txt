@@ -1,4 +1,10 @@
-﻿2010.10.19
+﻿2010.10.24.0
+Firefly.Core.Setting:
+修改Xml对集合的支持。将通过字符串Add反射获取集合增加方法改为使用ICollection(Of T).Add来增加。
+Firefly.Core:
+重构BinarySerializer，增加数组和集合的默认解析器。
+
+2010.10.19
 Firefly.Core:
 BinarySerializer内存测试，可自动回收。删除全局缓存。
 
