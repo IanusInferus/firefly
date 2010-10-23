@@ -3,7 +3,7 @@
 '  File:        BitOperations.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 位与32位整数转换
-'  Version:     2010.10.10.
+'  Version:     2010.10.24.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -367,7 +367,7 @@ Public Module BitOperations
 
 
     ''' <summary>
-    ''' 已重载。从位连接整数。
+    ''' 已重载。按位连接整数。
     ''' </summary>
     ''' <param name="H">首字节</param>
     ''' <param name="HW">首字节宽度(8-0)</param>
@@ -386,7 +386,7 @@ Public Module BitOperations
         Return HPart.SAL(SW + TW + QW) Or SPart.SAL(TW + QW) Or TPart.SAL(QW) Or QPart
     End Function
     ''' <summary>
-    ''' 已重载。从位连接整数。
+    ''' 已重载。按位连接整数。
     ''' </summary>
     ''' <param name="H">首字节</param>
     ''' <param name="HW">首字节宽度(8-0)</param>
@@ -402,7 +402,7 @@ Public Module BitOperations
         Return HPart.SAL(SW + TW) Or SPart.SAL(TW) Or TPart
     End Function
     ''' <summary>
-    ''' 已重载。从位连接整数。
+    ''' 已重载。按位连接整数。
     ''' </summary>
     ''' <param name="H">首字节</param>
     ''' <param name="HW">首字节宽度(8-0)</param>
@@ -415,7 +415,7 @@ Public Module BitOperations
         Return HPart.SAL(SW) Or SPart
     End Function
     ''' <summary>
-    ''' 已重载。从位连接整数。
+    ''' 已重载。按位连接整数。
     ''' </summary>
     ''' <param name="H">首Int32</param>
     ''' <param name="HW">首Int32宽度(32-0)</param>
