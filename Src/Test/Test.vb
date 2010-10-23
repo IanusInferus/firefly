@@ -1,5 +1,7 @@
 ﻿Imports System
 Imports System.Collections.Generic
+Imports System.Linq
+Imports System.IO
 Imports System.Diagnostics.Debug
 Imports System.Windows.Forms
 Imports Firefly
@@ -7,6 +9,7 @@ Imports Firefly.Compressing
 Imports Firefly.TextEncoding
 Imports Firefly.Glyphing
 Imports Firefly.Texting
+Imports Firefly.Setting
 Imports Firefly.GUI
 
 Public Module Test
@@ -363,6 +366,68 @@ Public Module Test
         Assert(CmdLine.Options(0).Arguments(2) = "234")
     End Sub
 
+    Public Sub TestUI()
+        Application.EnableVisualStyles()
+        ExceptionHandler.PopupInfo(1)
+        Dim r = MessageDialog.Show("123", "234", "345", MessageBoxButtons.AbortRetryIgnore, MessageBoxIcon.None, MessageBoxDefaultButton.Button2)
+        ExceptionHandler.PopupException(New Exception("Test"))
+        Application.Run(New FilePicker)
+    End Sub
+
+    Public Class SerializerTestObject
+        Public i As Integer
+        Public Property s As Byte
+        Public o As SerializerTestObject2
+        Public a As Byte()
+        Public l As List(Of Int16)
+        Public l2 As LinkedList(Of Int32)
+        Public l3 As HashSet(Of UInt64)
+
+        Public Shared Operator =(ByVal Left As SerializerTestObject, ByVal Right As SerializerTestObject) As Boolean
+            Return Left.i = Right.i AndAlso Left.s = Right.s AndAlso Left.o.h = Right.o.h AndAlso Left.a.ArrayEqual(Right.a) AndAlso Left.l.ToArray.ArrayEqual(Right.l.ToArray) AndAlso Left.l2.ToArray.ArrayEqual(Right.l2.ToArray) AndAlso Left.l3.ToArray.ArrayEqual(Right.l3.ToArray)
+        End Operator
+        Public Shared Operator <>(ByVal Left As SerializerTestObject, ByVal Right As SerializerTestObject) As Boolean
+            Return Not (Left = Right)
+        End Operator
+    End Class
+
+    Public Class SerializerTestObject2
+        Public h As Integer
+    End Class
+
+    Public Sub TestSerializer()
+        Dim TestObject As New SerializerTestObject With {.i = 1, .s = 2, .o = New SerializerTestObject2 With {.h = 3}, .a = New Byte() {4, 5, 6}, .l = New List(Of Int16) From {7, 8, 9}, .l2 = New LinkedList(Of Int32)(New Int32() {10, 11, 12}), .l3 = New HashSet(Of UInt64) From {7, 8, 9}}
+
+        Dim XmlRoundTripped As SerializerTestObject
+
+        Using s As New StreamEx
+            Using ps As New PartialStreamEx(s, 0, Int64.MaxValue, 0, False)
+                Using sw = Txt.CreateTextWriter(ps, UTF16)
+                    Xml.WriteFile(sw, TestObject)
+                End Using
+            End Using
+            s.Position = 0
+            Using ps As New PartialStreamEx(s, 0, s.Length, False)
+                Using sr = Txt.CreateTextReader(ps, UTF16)
+                    XmlRoundTripped = Xml.ReadFile(Of SerializerTestObject)(sr)
+                End Using
+            End Using
+        End Using
+        Assert(TestObject = XmlRoundTripped)
+
+        Dim BinaryRoundTripped As SerializerTestObject
+
+        Using s As New StreamEx
+            Dim bs As New BinarySerializer
+            Dim Size = bs.Count(TestObject)
+            bs.Write(s, TestObject)
+            Assert(Size = s.Length)
+            s.Position = 0
+            BinaryRoundTripped = bs.Read(Of SerializerTestObject)(s)
+        End Using
+        Assert(TestObject = BinaryRoundTripped)
+    End Sub
+
     Public Sub Main()
         'TestStreamExStreamReadWrite()
         'TestListPartStringEx()
@@ -375,11 +440,7 @@ Public Module Test
         'TestFileDialog()
         'TestBitStreamReadWrite()
         'TestCommandLine()
-
-        Application.EnableVisualStyles()
-        'ExceptionHandler.PopupInfo(1)
-        Dim r = MessageDialog.Show("123", "234", "345", MessageBoxButtons.AbortRetryIgnore, MessageBoxIcon.None, MessageBoxDefaultButton.Button2)
-        'ExceptionHandler.PopupException(New Exception("Test"))
-        'Application.Run(New FilePicker)
+        'TestMessageDialog()
+        TestSerializer()
     End Sub
 End Module
