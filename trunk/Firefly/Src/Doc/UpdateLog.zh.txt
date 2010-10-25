@@ -1,4 +1,8 @@
-﻿2010.10.24.0
+﻿2010.10.25
+Firefly.Core:
+修正BinarySerializer无法自动处理结构的问题。
+
+2010.10.24.0
 Firefly.Core.Setting:
 修改Xml对集合的支持。将通过字符串Add反射获取集合增加方法改为使用ICollection(Of T).Add来增加。
 Firefly.Core:
