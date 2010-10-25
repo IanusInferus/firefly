@@ -391,9 +391,9 @@ Public Module Test
         End Operator
     End Class
 
-    Public Class SerializerTestObject2
+    Public Structure SerializerTestObject2
         Public h As Integer
-    End Class
+    End Structure
 
     Public Sub TestSerializer()
         Dim TestObject As New SerializerTestObject With {.i = 1, .s = 2, .o = New SerializerTestObject2 With {.h = 3}, .a = New Byte() {4, 5, 6}, .l = New List(Of Int16) From {7, 8, 9}, .l2 = New LinkedList(Of Int32)(New Int32() {10, 11, 12}), .l3 = New HashSet(Of UInt64) From {7, 8, 9}}
