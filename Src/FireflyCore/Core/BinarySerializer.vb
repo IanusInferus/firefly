@@ -3,7 +3,7 @@
 '  File:        BinarySerializer.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 二进制序列化类
-'  Version:     2010.10.24.
+'  Version:     2010.10.25.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -602,15 +602,17 @@ Public Class BinarySerializer
 
         Public Function TryResolveReader(ByVal PhysicalType As Type) As [Delegate] Implements IBinarySerializerResolver.TryResolveReader
             If PhysicalType.IsValueType OrElse PhysicalType.IsClass Then
-                Dim c = PhysicalType.GetConstructor(New Type() {})
-                If c Is Nothing OrElse Not c.IsPublic Then Return Nothing
+                If PhysicalType.IsClass Then
+                    Dim c = PhysicalType.GetConstructor(New Type() {})
+                    If c Is Nothing OrElse Not c.IsPublic Then Return Nothing
+                End If
 
                 Dim sParam = Expression.Variable(GetType(StreamEx), "s")
                 Dim ThisParam = Expression.Variable(PhysicalType, "This")
                 Dim ClosureParam = Expression.Variable(GetType(Closure), "<>_Closure")
 
                 Dim Statements As New List(Of Expression)
-                Dim CreateThis = Expression.Assign(ThisParam, Expression.[New](c))
+                Dim CreateThis = Expression.Assign(ThisParam, Expression.[New](PhysicalType))
                 Statements.Add(CreateThis)
 
                 Dim Fields = PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance).Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Field(ThisParam, f), .Type = f.FieldType})
@@ -679,8 +681,10 @@ Public Class BinarySerializer
 
         Public Function TryResolveWriter(ByVal PhysicalType As Type) As [Delegate] Implements IBinarySerializerResolver.TryResolveWriter
             If PhysicalType.IsValueType OrElse PhysicalType.IsClass Then
-                Dim c = PhysicalType.GetConstructor(New Type() {})
-                If c Is Nothing OrElse Not c.IsPublic Then Return Nothing
+                If PhysicalType.IsClass Then
+                    Dim c = PhysicalType.GetConstructor(New Type() {})
+                    If c Is Nothing OrElse Not c.IsPublic Then Return Nothing
+                End If
 
                 Dim sParam = Expression.Variable(GetType(StreamEx), "s")
                 Dim ThisParam = Expression.Variable(PhysicalType, "This")
@@ -751,8 +755,10 @@ Public Class BinarySerializer
 
         Public Function TryResolveCounter(ByVal PhysicalType As Type) As [Delegate] Implements IBinarySerializerResolver.TryResolveCounter
             If PhysicalType.IsValueType OrElse PhysicalType.IsClass Then
-                Dim c = PhysicalType.GetConstructor(New Type() {})
-                If c Is Nothing OrElse Not c.IsPublic Then Return Nothing
+                If PhysicalType.IsClass Then
+                    Dim c = PhysicalType.GetConstructor(New Type() {})
+                    If c Is Nothing OrElse Not c.IsPublic Then Return Nothing
+                End If
 
                 Dim ThisParam = Expression.Variable(PhysicalType, "This")
                 Dim ClosureParam = Expression.Variable(GetType(Closure), "<>_Closure")
