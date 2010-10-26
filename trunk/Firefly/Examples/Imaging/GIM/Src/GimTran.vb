@@ -3,7 +3,7 @@
 '  File:        GimTran.vb
 '  Location:    Firefly.Examples <Visual Basic .Net>
 '  Description: GIM/MIG操作实例
-'  Version:     2010.03.23.
+'  Version:     2010.10.26.
 '  Author:      F.R.C.
 '  Copyright(C) Public Domain
 '
@@ -27,7 +27,7 @@ Public Module GimTran
             Try
                 MainInner()
             Catch ex As Exception
-                ExceptionHandler.PopupException(ex, "发生以下异常:", My.Application.Info.ProductName)
+                Console.Error.WriteLine(ExceptionInfo.GetExceptionInfo(ex))
             End Try
         End If
     End Sub
