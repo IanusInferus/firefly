@@ -3,7 +3,7 @@
 '  File:        BitOperations.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 位与32位整数转换
-'  Version:     2010.10.24.
+'  Version:     2010.10.27.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -282,6 +282,79 @@ Public Module BitOperations
     ''' <param name="L">低位索引(63-0)</param>
     <Extension()> Public Function Bits(ByVal This As Int64, ByVal U As Integer, ByVal L As Integer) As Int64
         Return CUS(CSU(This).Bits(U, L))
+    End Function
+
+
+    ''' <summary>
+    ''' 获得整数的特定位。
+    ''' </summary>
+    ''' <param name="This">Byte</param>
+    ''' <param name="B">索引(7-0)</param>
+    <Extension()> Public Function Bit(ByVal This As Byte, ByVal B As Integer) As Boolean
+        Return (This.SHR(B) And CByte(1)) <> 0
+    End Function
+
+    ''' <summary>
+    ''' 获得整数的特定位。
+    ''' </summary>
+    ''' <param name="This">UInt16</param>
+    ''' <param name="B">索引(15-0)</param>
+    <Extension()> Public Function Bit(ByVal This As UInt16, ByVal B As Integer) As Boolean
+        Return (This.SHR(B) And 1US) <> 0
+    End Function
+
+    ''' <summary>
+    ''' 获得整数的特定位。
+    ''' </summary>
+    ''' <param name="This">UInt32</param>
+    ''' <param name="B">索引(31-0)</param>
+    <Extension()> Public Function Bit(ByVal This As UInt32, ByVal B As Integer) As Boolean
+        Return (This.SHR(B) And 1UI) <> 0
+    End Function
+
+    ''' <summary>
+    ''' 获得整数的特定位。
+    ''' </summary>
+    ''' <param name="This">UInt64</param>
+    ''' <param name="B">索引(63-0)</param>
+    <Extension()> Public Function Bit(ByVal This As UInt64, ByVal B As Integer) As Boolean
+        Return (This.SHR(B) And 1UL) <> 0
+    End Function
+
+    ''' <summary>
+    ''' 获得整数的特定位。
+    ''' </summary>
+    ''' <param name="This">SByte</param>
+    ''' <param name="B">索引(7-0)</param>
+    <Extension()> Public Function Bit(ByVal This As SByte, ByVal B As Integer) As Boolean
+        Return (This.SAR(B) And CSByte(1)) <> 0
+    End Function
+
+    ''' <summary>
+    ''' 获得整数的特定位。
+    ''' </summary>
+    ''' <param name="This">Int16</param>
+    ''' <param name="B">索引(15-0)</param>
+    <Extension()> Public Function Bit(ByVal This As Int16, ByVal B As Integer) As Boolean
+        Return (This.SAR(B) And 1S) <> 0
+    End Function
+
+    ''' <summary>
+    ''' 获得整数的特定位。
+    ''' </summary>
+    ''' <param name="This">Int32</param>
+    ''' <param name="B">索引(31-0)</param>
+    <Extension()> Public Function Bit(ByVal This As Int32, ByVal B As Integer) As Boolean
+        Return (This.SAR(B) And 1I) <> 0
+    End Function
+
+    ''' <summary>
+    ''' 获得整数的特定位。
+    ''' </summary>
+    ''' <param name="This">Int64</param>
+    ''' <param name="B">索引(63-0)</param>
+    <Extension()> Public Function Bit(ByVal This As Int64, ByVal B As Integer) As Boolean
+        Return (This.SAR(B) And 1L) <> 0
     End Function
 
 
