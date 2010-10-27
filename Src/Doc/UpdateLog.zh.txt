@@ -1,4 +1,8 @@
-﻿2010.10.27
+﻿2010.10.28
+Firefly.Core:
+修正BinarySerializer中忘记缓存动态编译结果的问题。
+
+2010.10.27
 Firefly.Core:
 添加取单二进制位函数Bit。
 
