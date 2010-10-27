@@ -3,7 +3,7 @@
 '  File:        BinarySerializer.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 二进制序列化类
-'  Version:     2010.10.25.
+'  Version:     2010.10.28.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -87,7 +87,10 @@ Public Class BinarySerializer
         If ReaderCache.ContainsKey(PhysicalType) Then Return ReaderCache(PhysicalType)
         For Each r In Resolvers
             Dim Resolved = r.TryResolveReader(PhysicalType)
-            If Resolved IsNot Nothing Then Return Resolved
+            If Resolved IsNot Nothing Then
+                ReaderCache.Add(PhysicalType, Resolved)
+                Return Resolved
+            End If
         Next
         Throw New NotSupportedException("NotResolved: {0}".Formats(PhysicalType.FullName))
     End Function
@@ -99,7 +102,10 @@ Public Class BinarySerializer
         If WriterCache.ContainsKey(PhysicalType) Then Return WriterCache(PhysicalType)
         For Each r In Resolvers
             Dim Resolved = r.TryResolveWriter(PhysicalType)
-            If Resolved IsNot Nothing Then Return Resolved
+            If Resolved IsNot Nothing Then
+                WriterCache.Add(PhysicalType, Resolved)
+                Return Resolved
+            End If
         Next
         Throw New NotSupportedException("NotResolved: {0}".Formats(PhysicalType.FullName))
     End Function
@@ -111,7 +117,10 @@ Public Class BinarySerializer
         If CounterCache.ContainsKey(PhysicalType) Then Return CounterCache(PhysicalType)
         For Each r In Resolvers
             Dim Resolved = r.TryResolveCounter(PhysicalType)
-            If Resolved IsNot Nothing Then Return Resolved
+            If Resolved IsNot Nothing Then
+                CounterCache.Add(PhysicalType, Resolved)
+                Return Resolved
+            End If
         Next
         Throw New NotSupportedException("NotResolved: {0}".Formats(PhysicalType.FullName))
     End Function
