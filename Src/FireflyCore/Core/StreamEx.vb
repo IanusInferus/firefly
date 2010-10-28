@@ -3,7 +3,7 @@
 '  File:        StreamEx.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 扩展流类
-'  Version:     2010.10.17.
+'  Version:     2010.10.28.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -191,19 +191,19 @@ Public Class StreamEx
     End Sub
 
     ''' <summary>读取Int8。</summary>
-    Overridable Function ReadInt8() As SByte
+    Function ReadInt8() As SByte
         Return CUS(ReadByte())
     End Function
     ''' <summary>写入Int8。</summary>
-    Overridable Sub WriteInt8(ByVal i As SByte)
+    Sub WriteInt8(ByVal i As SByte)
         WriteByte(CSU(i))
     End Sub
     ''' <summary>读取UInt8。</summary>
-    Overridable Function ReadUInt8() As Byte
+    Function ReadUInt8() As Byte
         Return ReadByte()
     End Function
     ''' <summary>写入UInt8。</summary>
-    Overridable Sub WriteUInt8(ByVal b As Byte)
+    Sub WriteUInt8(ByVal b As Byte)
         WriteByte(b)
     End Sub
 

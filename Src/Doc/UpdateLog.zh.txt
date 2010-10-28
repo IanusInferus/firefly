@@ -1,6 +1,7 @@
 ﻿2010.10.28
 Firefly.Core:
 修正BinarySerializer中忘记缓存动态编译结果的问题。
+去除StreamEx的Int8读写导致的多余Overridable修饰符。
 
 2010.10.27
 Firefly.Core:
