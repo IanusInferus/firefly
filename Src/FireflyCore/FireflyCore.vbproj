@@ -65,6 +65,11 @@
     <Compile Include="Core\ListPart.vb" />
     <Compile Include="Core\Enumerators.vb" />
     <Compile Include="Core\N32.vb" />
+    <Compile Include="Core\StreamAdapters.vb" />
+    <Compile Include="Core\StreamExComplex.vb" />
+    <Compile Include="Core\StreamExFloats.vb" />
+    <Compile Include="Core\StreamExInts.vb" />
+    <Compile Include="Core\StreamExStrings.vb" />
     <Compile Include="Core\StringEx.vb" />
     <Compile Include="Core\ArrayOperations.vb" />
     <Compile Include="Core\BitOperations.vb" />
