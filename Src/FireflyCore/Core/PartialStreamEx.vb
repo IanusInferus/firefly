@@ -3,7 +3,7 @@
 '  File:        PartialStreamEx.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 局部扩展流类
-'  Version:     2009.11.21.
+'  Version:     2010.11.01.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -52,35 +52,35 @@ Public Class PartialStreamEx
     End Sub
 
     ''' <summary>读取字节。</summary>
-    Overrides Function ReadByte() As Byte
+    Public Overrides Function ReadByte() As Byte
         If Position >= BaseLength Then Throw New EndOfStreamException
         Return MyBase.ReadByte
     End Function
     ''' <summary>写入字节。</summary>
-    Overrides Sub WriteByte(ByVal b As Byte)
+    Public Overrides Sub WriteByte(ByVal b As Byte)
         If Position >= BaseLength Then Throw New EndOfStreamException
         MyBase.WriteByte(b)
     End Sub
     ''' <summary>用字节表示的流的长度。</summary>
-    Overrides ReadOnly Property Length() As Int64
+    Public Overrides ReadOnly Property Length() As Int64
         Get
             Return LengthValue
         End Get
     End Property
     ''' <summary>用字节表示的流在基流中的的偏移位置。</summary>
-    Overridable ReadOnly Property BasePosition() As Int64
+    Public Overridable ReadOnly Property BasePosition() As Int64
         Get
             Return BasePositionValue
         End Get
     End Property
     ''' <summary>用字节表示的流的最大长度。</summary>
-    Overridable ReadOnly Property BaseLength() As Int64
+    Public Overridable ReadOnly Property BaseLength() As Int64
         Get
             Return BaseLengthValue
         End Get
     End Property
     ''' <summary>流的当前位置。</summary>
-    Overrides Property Position() As Int64
+    Public Overrides Property Position() As Int64
         Get
             Return MyBase.Position - BasePositionValue
         End Get
@@ -89,7 +89,7 @@ Public Class PartialStreamEx
         End Set
     End Property
     ''' <summary>设置流的长度，不得大于最大大小。</summary>
-    Overrides Sub SetLength(ByVal Value As Int64)
+    Public Overrides Sub SetLength(ByVal Value As Int64)
         If Value < 0 Then Throw New ArgumentOutOfRangeException
         If Value > BaseLength Then Throw New ArgumentOutOfRangeException
         If BasePositionValue + Value > MyBase.Length Then MyBase.SetLength(BasePositionValue + Value)
@@ -97,13 +97,13 @@ Public Class PartialStreamEx
     End Sub
     ''' <summary>已重载。读取到字节数组。</summary>
     ''' <param name="Offset">Buffer 中的从零开始的字节偏移量，从此处开始存储从当前流中读取的数据。</param>
-    Overrides Sub Read(ByVal Buffer As Byte(), ByVal Offset As Integer, ByVal Count As Integer)
+    Public Overrides Sub Read(ByVal Buffer As Byte(), ByVal Offset As Integer, ByVal Count As Integer)
         If Position + Count > Length Then Throw New EndOfStreamException
         MyBase.Read(Buffer, Offset, Count)
     End Sub
     ''' <summary>已重载。写入字节数组。</summary>
     ''' <param name="Offset">Buffer 中的从零开始的字节偏移量，从此处开始将字节复制到当前流。</param>
-    Overrides Sub Write(ByVal Buffer As Byte(), ByVal Offset As Integer, ByVal Count As Integer)
+    Public Overrides Sub Write(ByVal Buffer As Byte(), ByVal Offset As Integer, ByVal Count As Integer)
         If Position + Count > BaseLength Then Throw New EndOfStreamException
         MyBase.Write(Buffer, Offset, Count)
         If Position > Length Then LengthValue = Position

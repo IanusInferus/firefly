@@ -1,4 +1,9 @@
-﻿2010.10.28
+﻿2010.11.01
+Firefly.Core:
+整理StreamEx代码结构。
+增加Peek方法。
+
+2010.10.28
 Firefly.Core:
 修正BinarySerializer中忘记缓存动态编译结果的问题。
 去除StreamEx的Int8读写导致的多余Overridable修饰符。
