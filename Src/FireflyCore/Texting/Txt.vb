@@ -3,7 +3,7 @@
 '  File:        Txt.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: 文本文件格式
-'  Version:     2010.08.26.
+'  Version:     2010.11.10.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -18,8 +18,8 @@ Namespace Texting
         Private Sub New()
         End Sub
 
-        ''' <summary>已重载。检查UTF-16(FF FE)、GB18030(84 31 95 33)、UTF-8(EF BB BF)、UTF-32(FF FE 00 00)、UTF-16B(FE FF)、UTF-32B(00 00 FE FF)这六种编码的BOM，如果失败，返回默认编码。</summary>
-        Public Shared Function GetEncoding(ByVal sp As ZeroPositionStreamPasser, ByVal DefaultEncoding As Encoding) As Encoding
+        ''' <summary>已重载。检查UTF-16(FF FE)、GB18030(84 31 95 33)、UTF-8(EF BB BF)、UTF-32(FF FE 00 00)、UTF-16B(FE FF)、UTF-32B(00 00 FE FF)这六种编码的BOM，如果失败，返回空。</summary>
+        Public Shared Function GetEncodingByBOM(ByVal sp As ZeroPositionStreamPasser) As Encoding
             Dim s = sp.GetStream
             If s.Length >= 4 Then
                 s.Position = 0
@@ -40,6 +40,18 @@ Namespace Texting
                 If BOM = &HFFFEUS Then Return UTF16
                 If BOM = &HFEFFUS Then Return UTF16B
             End If
+            Return Nothing
+        End Function
+        ''' <summary>已重载。检查UTF-16(FF FE)、GB18030(84 31 95 33)、UTF-8(EF BB BF)、UTF-32(FF FE 00 00)、UTF-16B(FE FF)、UTF-32B(00 00 FE FF)这六种编码的BOM，如果失败，返回空。</summary>
+        Public Shared Function GetEncodingByBOM(ByVal Path As String) As Encoding
+            Using s As New StreamEx(Path, FileMode.Open, FileAccess.Read)
+                Return GetEncodingByBOM(s)
+            End Using
+        End Function
+        ''' <summary>已重载。检查UTF-16(FF FE)、GB18030(84 31 95 33)、UTF-8(EF BB BF)、UTF-32(FF FE 00 00)、UTF-16B(FE FF)、UTF-32B(00 00 FE FF)这六种编码的BOM，如果失败，返回默认编码。</summary>
+        Public Shared Function GetEncoding(ByVal sp As ZeroPositionStreamPasser, ByVal DefaultEncoding As Encoding) As Encoding
+            Dim Encoding = GetEncodingByBOM(sp)
+            If Encoding IsNot Nothing Then Return Encoding
             Return DefaultEncoding
         End Function
         ''' <summary>已重载。检查UTF-16(FF FE)、GB18030(84 31 95 33)、UTF-8(EF BB BF)、UTF-32(FF FE 00 00)、UTF-16B(FE FF)、UTF-32B(00 00 FE FF)这六种编码的BOM，如果失败，返回默认编码。</summary>
