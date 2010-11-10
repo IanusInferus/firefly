@@ -1,4 +1,10 @@
-﻿2010.11.01
+﻿2010.11.10
+Firefly.Core:
+增加Txt.GetEncodingByBOM。
+Firefly.TransEncoding:
+增加去除BOM的选项。
+
+2010.11.01
 Firefly.Core:
 整理StreamEx代码结构。
 增加Peek方法。

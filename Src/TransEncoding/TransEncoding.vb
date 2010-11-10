@@ -3,7 +3,7 @@
 '  File:        TransEncoding.vb
 '  Location:    Firefly.TransEncoding <Visual Basic .Net>
 '  Description: 编码转换器
-'  Version:     2010.08.28.
+'  Version:     2010.11.10.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -33,20 +33,24 @@ Public Module TransEncoding
     Public Function MainInner() As Integer
         Dim CmdLine = CommandLine.GetCmdLine()
         Dim argv = CmdLine.Arguments
+
+        Dim NoBom As Boolean = False
         For Each opt In CmdLine.Options
             Select Case opt.Name.ToLower
                 Case "?", "help"
                     DisplayInfo()
                     Return 0
+                Case "nobom"
+                    NoBom = True
                 Case Else
                     Throw New ArgumentException(opt.Name)
             End Select
         Next
         Select Case argv.Length
             Case 2
-                TransEncoding(argv(0), GetEncoding(argv(1)))
+                TransEncoding(argv(0), GetEncoding(argv(1)), Nothing, NoBom)
             Case 3
-                TransEncoding(argv(0), GetEncoding(argv(1)), GetEncoding(argv(2)))
+                TransEncoding(argv(0), GetEncoding(argv(1)), GetEncoding(argv(2)), NoBom)
             Case Else
                 DisplayInfo()
                 Return -1
@@ -64,6 +68,7 @@ Public Module TransEncoding
         Console.WriteLine("Pattern 文本的文件名模式，参考 MSDN - 正则表达式 [.NET Framework]")
         Console.WriteLine("TargetEncoding 目标编码，编码名称、代码页或者编码文件")
         Console.WriteLine("SourceEncoding 原始编码，编码名称、代码页或者编码文件，可不指定，默认为GB18030")
+        Console.WriteLine("/nobom 生成的文件中没有BOM")
         Console.WriteLine("编码若由名称或者代码页指定，则使用System.Text.Encoding.GetEncoding获得。")
         Console.WriteLine("编码若由编码文件(*.tbl)指定，则使用该编码文件生成一个编码，支持1-4字节编码，不支持破字节编码(如UTF-7)。")
         Console.WriteLine("若文件有BOM，则总识别BOM(UTF-16(FF FE)、GB18030(84 31 95 33)、UTF-8(EF BB BF)、UTF-32(FF FE 00 00)、UTF-16B(FE FF)、UTF-32B(00 00 FE FF))，因此这几种带BOM的编码的文件等不受SourceEncoding影响。")
@@ -88,7 +93,7 @@ Public Module TransEncoding
         End If
     End Function
 
-    Public Sub TransEncoding(ByVal Pattern As String, ByVal TargetEncoding As System.Text.Encoding, Optional ByVal SourceEncoding As System.Text.Encoding = Nothing)
+    Public Sub TransEncoding(ByVal Pattern As String, ByVal TargetEncoding As System.Text.Encoding, Optional ByVal SourceEncoding As System.Text.Encoding = Nothing, Optional ByVal NoBom As Boolean = False)
         If SourceEncoding Is Nothing Then SourceEncoding = TextEncoding.Default
         Dim Count = 0
         Dim WrittenCount = 0
@@ -100,14 +105,17 @@ Public Module TransEncoding
             Dim Match = Regex.Match(GetRelativePath(f, CurrentDir))
             If Match.Success Then
                 Dim t As String = ""
-                Dim DetectedEncoding = Txt.GetEncoding(f, SourceEncoding)
+                Dim DetectedEncoding = Txt.GetEncodingByBOM(f)
+                Dim HasBOM = DetectedEncoding IsNot Nothing
+                Dim NeedBOM = Not NoBom
+                If DetectedEncoding Is Nothing Then DetectedEncoding = SourceEncoding
                 Using s = Txt.CreateTextReader(f, DetectedEncoding, True)
                     If Not s.EndOfStream Then
                         t = s.ReadToEnd
                     End If
                 End Using
-                If DetectedEncoding IsNot TargetEncoding Then
-                    Txt.WriteFile(f, TargetEncoding, t)
+                If DetectedEncoding IsNot TargetEncoding OrElse HasBOM <> NeedBOM Then
+                    Txt.WriteFile(f, TargetEncoding, t, NeedBOM)
                     WrittenCount += 1
                 End If
                 Count += 1
