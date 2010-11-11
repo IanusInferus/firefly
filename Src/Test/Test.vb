@@ -425,7 +425,6 @@ Public Module Test
 
         Private mp As ObjectTreeOneToManyMapper(Of D)
         Public Sub New(ByVal mp As ObjectTreeOneToManyMapper(Of D))
-            MyBase.New(mp)
             Me.mp = mp
         End Sub
     End Class
@@ -448,7 +447,6 @@ Public Module Test
 
         Private mp As ObjectTreeManyToOneMapper(Of R)
         Public Sub New(ByVal mp As ObjectTreeManyToOneMapper(Of R))
-            MyBase.New(mp)
             Me.mp = mp
         End Sub
     End Class
@@ -460,11 +458,11 @@ Public Module Test
 
         With Nothing
             Dim mp As New ObjectTreeOneToManyMapper(Of Integer)
-            Dim er = New ObjectTreeOneToManyMapper(Of Integer).EnumMapperResolver(mp)
+            Dim er = New ObjectTreeOneToManyMapper(Of Integer).EnumMapperResolver(AddressOf mp.Map)
             mp.Resolvers.Add(er)
             Dim cr = New OneToManyFixedCollectionMapperResolver(Of Integer)(mp)
             mp.Resolvers.Add(cr)
-            Dim csr = New ObjectTreeOneToManyMapper(Of Integer).ClassAndStructureMapperResolver(mp)
+            Dim csr = New ObjectTreeOneToManyMapper(Of Integer).ClassAndStructureMapperResolver(AddressOf mp.Map)
             mp.Resolvers.Add(csr)
             mp.PutMapper(
                 Function(i) As Byte
@@ -498,11 +496,11 @@ Public Module Test
         Dim Count2 = 0
         With Nothing
             Dim mp As New ObjectTreeManyToOneMapper(Of Integer)
-            Dim er = New ObjectTreeManyToOneMapper(Of Integer).EnumMapperResolver(mp)
+            Dim er = New ObjectTreeManyToOneMapper(Of Integer).EnumMapperResolver(AddressOf mp.Map)
             mp.Resolvers.Add(er)
             Dim cr = New ManyToOneFixedCollectionMapperResolver(Of Integer)(mp)
             mp.Resolvers.Add(cr)
-            Dim csr = New ObjectTreeManyToOneMapper(Of Integer).ClassAndStructureMapperResolver(mp)
+            Dim csr = New ObjectTreeManyToOneMapper(Of Integer).ClassAndStructureMapperResolver(AddressOf mp.Map)
             mp.Resolvers.Add(csr)
             mp.PutMapper(
                 Sub(Key As Byte, Value As Integer)
