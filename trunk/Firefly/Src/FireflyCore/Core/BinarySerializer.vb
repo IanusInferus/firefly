@@ -3,7 +3,7 @@
 '  File:        BinarySerializer.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 二进制序列化类
-'  Version:     2010.11.11.
+'  Version:     2010.11.12.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -33,17 +33,43 @@ Public Class BinarySerializer
     Private ReaderCache As New Dictionary(Of Type, [Delegate])
     Private WriterCache As New Dictionary(Of Type, [Delegate])
     Private CounterCache As New Dictionary(Of Type, [Delegate])
-    Private ResolversValue As List(Of IBinarySerializerResolver)
-    Public ReadOnly Property Resolvers As List(Of IBinarySerializerResolver)
+    Private ReaderResolversValue As New List(Of IObjectTreeOneToManyMapperResolver(Of StreamEx))
+    Private WriterResolversValue As New List(Of IBinarySerializerResolver)
+    Private CounterResolversValue As New List(Of IBinarySerializerResolver)
+    Public ReadOnly Property ReaderResolvers As List(Of IObjectTreeOneToManyMapperResolver(Of StreamEx))
         Get
-            Return ResolversValue
+            Return ReaderResolversValue
+        End Get
+    End Property
+    Public ReadOnly Property WriterResolvers As List(Of IBinarySerializerResolver)
+        Get
+            Return WriterResolversValue
+        End Get
+    End Property
+    Public ReadOnly Property CounterResolvers As List(Of IBinarySerializerResolver)
+        Get
+            Return CounterResolversValue
         End Get
     End Property
     Public Sub New()
-        Me.ResolversValue = New List(Of IBinarySerializerResolver) From {New PrimitiveSerializerResolver(), New EnumSerializerResolver(Me), New CollectionSerializerResolver(Me), New ClassAndStructureSerializerResolver(Me)}
-    End Sub
-    Public Sub New(ByVal GetResolvers As Func(Of BinarySerializer, IEnumerable(Of IBinarySerializerResolver)))
-        Me.ResolversValue = GetResolvers(Me).ToList()
+        Me.ReaderResolversValue = New List(Of IObjectTreeOneToManyMapperResolver(Of StreamEx)) From {
+            New PrimitiveSerializerResolver(),
+            New ObjectTreeOneToManyMapper(Of StreamEx).EnumMapperResolver(AddressOf Me.Read),
+            New CollectionReaderResolver(Of StreamEx)(AddressOf Me.Read),
+            New ObjectTreeOneToManyMapper(Of StreamEx).ClassAndStructureMapperResolver(AddressOf Me.Read)
+        }
+        Me.WriterResolversValue = New List(Of IBinarySerializerResolver) From {
+            New PrimitiveSerializerResolver(),
+            New EnumSerializerResolver(Me),
+            New CollectionSerializerResolver(Me),
+            New ClassAndStructureSerializerResolver(Me)
+        }
+        Me.CounterResolversValue = New List(Of IBinarySerializerResolver) From {
+            New PrimitiveSerializerResolver(),
+            New EnumSerializerResolver(Me),
+            New CollectionSerializerResolver(Me),
+            New ClassAndStructureSerializerResolver(Me)
+        }
     End Sub
 
     Public Sub PutReader(ByVal PhysicalType As Type, ByVal Reader As [Delegate])
@@ -81,8 +107,8 @@ Public Class BinarySerializer
 
     Public Function GetReader(ByVal PhysicalType As Type) As [Delegate]
         If ReaderCache.ContainsKey(PhysicalType) Then Return ReaderCache(PhysicalType)
-        For Each r In Resolvers
-            Dim Resolved = r.TryResolveReader(PhysicalType)
+        For Each r In ReaderResolversValue
+            Dim Resolved = r.TryResolve(PhysicalType)
             If Resolved IsNot Nothing Then
                 ReaderCache.Add(PhysicalType, Resolved)
                 Return Resolved
@@ -96,7 +122,7 @@ Public Class BinarySerializer
 
     Public Function GetWriter(ByVal PhysicalType As Type) As [Delegate]
         If WriterCache.ContainsKey(PhysicalType) Then Return WriterCache(PhysicalType)
-        For Each r In Resolvers
+        For Each r In WriterResolversValue
             Dim Resolved = r.TryResolveWriter(PhysicalType)
             If Resolved IsNot Nothing Then
                 WriterCache.Add(PhysicalType, Resolved)
@@ -111,7 +137,7 @@ Public Class BinarySerializer
 
     Public Function GetCounter(ByVal PhysicalType As Type) As [Delegate]
         If CounterCache.ContainsKey(PhysicalType) Then Return CounterCache(PhysicalType)
-        For Each r In Resolvers
+        For Each r In CounterResolversValue
             Dim Resolved = r.TryResolveCounter(PhysicalType)
             If Resolved IsNot Nothing Then
                 CounterCache.Add(PhysicalType, Resolved)
@@ -135,7 +161,13 @@ Public Class BinarySerializer
     End Function
 
     Public Class PrimitiveSerializerResolver
+        Implements IObjectTreeOneToManyMapperResolver(Of StreamEx)
         Implements IBinarySerializerResolver
+
+        Public Function TryResolve(ByVal RangeType As System.Type) As [Delegate] Implements IObjectTreeOneToManyMapperResolver(Of StreamEx).TryResolve
+            If Readers.ContainsKey(RangeType) Then Return Readers(RangeType)
+            Return Nothing
+        End Function
 
         Public Function TryResolveReader(ByVal PhysicalType As Type) As [Delegate] Implements IBinarySerializerResolver.TryResolveReader
             If Readers.ContainsKey(PhysicalType) Then Return Readers(PhysicalType)
@@ -308,6 +340,64 @@ Public Class BinarySerializer
         Private bs As BinarySerializer
         Public Sub New(ByVal bs As BinarySerializer)
             Me.bs = bs
+        End Sub
+    End Class
+
+    Public Class CollectionReaderResolver(Of D)
+        Inherits ObjectTreeOneToManyMapper(Of D).CollectionMapperResolver
+
+        Public Overrides Function DefaultArrayMapper(Of R)(ByVal Key As D) As R()
+            Dim Mapper = DirectCast(Map.MakeDelegateMethodFromDummy(GetType(R)), Func(Of D, R))
+            Dim IntMapper = DirectCast(Map.MakeDelegateMethodFromDummy(GetType(Integer)), Func(Of D, Integer))
+            Dim NumElement = IntMapper(Key)
+            Dim arr = New R(NumElement - 1) {}
+            For n = 0 To NumElement - 1
+                arr(n) = Mapper(Key)
+            Next
+            Return arr
+        End Function
+        Public Overrides Function DefaultListMapper(Of R, RList As {New, ICollection(Of R)})(ByVal Key As D) As RList
+            Dim Mapper = DirectCast(Map.MakeDelegateMethodFromDummy(GetType(R)), Func(Of D, R))
+            Dim IntMapper = DirectCast(Map.MakeDelegateMethodFromDummy(GetType(Integer)), Func(Of D, Integer))
+            Dim NumElement = IntMapper(Key)
+            Dim list = New RList()
+            For n = 0 To NumElement - 1
+                list.Add(Mapper(Key))
+            Next
+            Return list
+        End Function
+
+        Private Map As Func(Of D, DummyType)
+        Public Sub New(ByVal Map As Func(Of D, DummyType))
+            Me.Map = Map
+        End Sub
+    End Class
+
+    Public Class CollectionWriterResolver(Of R)
+        Inherits ObjectTreeManyToOneMapper(Of R).CollectionMapperResolver
+
+        Public Overrides Sub DefaultArrayMapper(Of D)(ByVal arr As D(), ByVal Value As R)
+            Dim Mapper = DirectCast(Map.MakeDelegateMethodFromDummy(GetType(D)), Action(Of D, R))
+            Dim IntMapper = DirectCast(Map.MakeDelegateMethodFromDummy(GetType(Integer)), Action(Of Integer, R))
+            Dim NumElement = arr.Length
+            IntMapper(NumElement, Value)
+            For n = 0 To NumElement - 1
+                Mapper(arr(n), Value)
+            Next
+        End Sub
+        Public Overrides Sub DefaultListMapper(Of D, DList As ICollection(Of D))(ByVal list As DList, ByVal Value As R)
+            Dim Mapper = DirectCast(Map.MakeDelegateMethodFromDummy(GetType(D)), Action(Of D, R))
+            Dim IntMapper = DirectCast(Map.MakeDelegateMethodFromDummy(GetType(Integer)), Action(Of Integer, R))
+            Dim NumElement = list.Count
+            IntMapper(NumElement, Value)
+            For Each v In list
+                Mapper(v, Value)
+            Next
+        End Sub
+
+        Private Map As Action(Of DummyType, R)
+        Public Sub New(ByVal Map As Action(Of DummyType, R))
+            Me.Map = Map
         End Sub
     End Class
 
