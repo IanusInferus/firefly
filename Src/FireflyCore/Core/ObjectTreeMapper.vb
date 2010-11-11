@@ -35,7 +35,7 @@ End Interface
 
 Public Class ObjectTreeMapper
     Private MapperCache As New Dictionary(Of KeyValuePair(Of Type, Type), [Delegate])
-    Private ResolversValue As List(Of IObjectTreeMapperResolver)
+    Private ResolversValue As New List(Of IObjectTreeMapperResolver)
     Public ReadOnly Property Resolvers As List(Of IObjectTreeMapperResolver)
         Get
             Return ResolversValue
@@ -86,7 +86,7 @@ End Class
 
 Public Class ObjectTreeOneToManyMapper(Of D)
     Private MapperCache As New Dictionary(Of Type, [Delegate])
-    Private ResolversValue As List(Of IObjectTreeOneToManyMapperResolver(Of D))
+    Private ResolversValue As New List(Of IObjectTreeOneToManyMapperResolver(Of D))
     Public ReadOnly Property Resolvers As List(Of IObjectTreeOneToManyMapperResolver(Of D))
         Get
             Return ResolversValue
@@ -134,7 +134,7 @@ Public Class ObjectTreeOneToManyMapper(Of D)
         Public Function TryResolve(ByVal PhysicalType As Type) As [Delegate] Implements IObjectTreeOneToManyMapperResolver(Of D).TryResolve
             If PhysicalType.IsEnum Then
                 Dim UnderlyingType = PhysicalType.GetEnumUnderlyingType
-                Dim MapperMethod = DirectCast(AddressOf mp.Map(Of DummyType), Func(Of D, DummyType))
+                Dim MapperMethod = Map
                 Dim Mapper = MapperMethod.MakeDelegateMethodFromDummy(UnderlyingType)
 
                 Dim ClosureParam As ParameterExpression = Nothing
@@ -164,9 +164,9 @@ Public Class ObjectTreeOneToManyMapper(Of D)
             Return Nothing
         End Function
 
-        Private mp As ObjectTreeOneToManyMapper(Of D)
-        Public Sub New(ByVal mp As ObjectTreeOneToManyMapper(Of D))
-            Me.mp = mp
+        Private Map As Func(Of D, DummyType)
+        Public Sub New(ByVal Map As Func(Of D, DummyType))
+            Me.Map = Map
         End Sub
     End Class
 
@@ -188,11 +188,6 @@ Public Class ObjectTreeOneToManyMapper(Of D)
             End If
             Return Nothing
         End Function
-
-        Private mp As ObjectTreeOneToManyMapper(Of D)
-        Public Sub New(ByVal mp As ObjectTreeOneToManyMapper(Of D))
-            Me.mp = mp
-        End Sub
 
         Private ArrayMapperGeneratorCache As New Dictionary(Of Integer, Func(Of Type, [Delegate]))
         Private ListMapperGeneratorCache As New Dictionary(Of Type, Func(Of Type, [Delegate]))
@@ -313,7 +308,7 @@ Public Class ObjectTreeOneToManyMapper(Of D)
                 For Each Pair In FieldsAndProperties
                     Dim Type = Pair.Type
                     If TypeToMapper.ContainsKey(Type) Then Continue For
-                    Dim MapperMethod = DirectCast(AddressOf mp.Map(Of DummyType), Func(Of D, DummyType))
+                    Dim MapperMethod = Map
                     Dim Mapper = MapperMethod.MakeDelegateMethodFromDummy(Type)
                     TypeToMapper.Add(Type, Mapper)
                     If Mapper.Target IsNot Nothing Then
@@ -362,16 +357,16 @@ Public Class ObjectTreeOneToManyMapper(Of D)
             Return Nothing
         End Function
 
-        Private mp As ObjectTreeOneToManyMapper(Of D)
-        Public Sub New(ByVal mp As ObjectTreeOneToManyMapper(Of D))
-            Me.mp = mp
+        Private Map As Func(Of D, DummyType)
+        Public Sub New(ByVal Map As Func(Of D, DummyType))
+            Me.Map = Map
         End Sub
     End Class
 End Class
 
 Public Class ObjectTreeManyToOneMapper(Of R)
     Private MapperCache As New Dictionary(Of Type, [Delegate])
-    Private ResolversValue As List(Of IObjectTreeManyToOneMapperResolver(Of R))
+    Private ResolversValue As New List(Of IObjectTreeManyToOneMapperResolver(Of R))
     Public ReadOnly Property Resolvers As List(Of IObjectTreeManyToOneMapperResolver(Of R))
         Get
             Return ResolversValue
@@ -419,7 +414,7 @@ Public Class ObjectTreeManyToOneMapper(Of R)
         Public Function TryResolve(ByVal PhysicalType As Type) As [Delegate] Implements IObjectTreeManyToOneMapperResolver(Of R).TryResolve
             If PhysicalType.IsEnum Then
                 Dim UnderlyingType = PhysicalType.GetEnumUnderlyingType
-                Dim MapperMethod = DirectCast(AddressOf mp.Map(Of DummyType), Action(Of DummyType, R))
+                Dim MapperMethod = Map
                 Dim Mapper = MapperMethod.MakeDelegateMethodFromDummy(UnderlyingType)
 
                 Dim ClosureParam As ParameterExpression = Nothing
@@ -450,9 +445,9 @@ Public Class ObjectTreeManyToOneMapper(Of R)
             Return Nothing
         End Function
 
-        Private mp As ObjectTreeManyToOneMapper(Of R)
-        Public Sub New(ByVal mp As ObjectTreeManyToOneMapper(Of R))
-            Me.mp = mp
+        Private Map As Action(Of DummyType, R)
+        Public Sub New(ByVal Map As Action(Of DummyType, R))
+            Me.Map = Map
         End Sub
     End Class
 
@@ -474,11 +469,6 @@ Public Class ObjectTreeManyToOneMapper(Of R)
             End If
             Return Nothing
         End Function
-
-        Private mp As ObjectTreeManyToOneMapper(Of R)
-        Public Sub New(ByVal mp As ObjectTreeManyToOneMapper(Of R))
-            Me.mp = mp
-        End Sub
 
         Private ArrayMapperGeneratorCache As New Dictionary(Of Integer, Func(Of Type, [Delegate]))
         Private ListMapperGeneratorCache As New Dictionary(Of Type, Func(Of Type, [Delegate]))
@@ -597,7 +587,7 @@ Public Class ObjectTreeManyToOneMapper(Of R)
                 For Each Pair In FieldsAndProperties
                     Dim Type = Pair.Type
                     If TypeToMapper.ContainsKey(Type) Then Continue For
-                    Dim MapperMethod = DirectCast(AddressOf mp.Map(Of DummyType), Action(Of DummyType, R))
+                    Dim MapperMethod = Map
                     Dim Mapper = MapperMethod.MakeDelegateMethodFromDummy(Type)
                     TypeToMapper.Add(Type, Mapper)
                     If Mapper.Target IsNot Nothing Then
@@ -643,9 +633,9 @@ Public Class ObjectTreeManyToOneMapper(Of R)
             Return Nothing
         End Function
 
-        Private mp As ObjectTreeManyToOneMapper(Of R)
-        Public Sub New(ByVal mp As ObjectTreeManyToOneMapper(Of R))
-            Me.mp = mp
+        Private Map As Action(Of DummyType, R)
+        Public Sub New(ByVal Map As Action(Of DummyType, R))
+            Me.Map = Map
         End Sub
     End Class
 End Class
