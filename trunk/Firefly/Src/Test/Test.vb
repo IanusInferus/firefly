@@ -374,17 +374,24 @@ Public Module Test
         Application.Run(New FilePicker)
     End Sub
 
+    Public Enum SerializerTestEnum
+        E1
+        E2
+        E3
+    End Enum
+
     Public Class SerializerTestObject
         Public i As Integer
-        Public Property s As Byte
+        Public s As Byte
         Public o As SerializerTestObject2
         Public a As Byte()
         Public l As List(Of Int16)
         Public l2 As LinkedList(Of Int32)
         Public l3 As HashSet(Of UInt64)
+        Public e1 As SerializerTestEnum
 
         Public Shared Operator =(ByVal Left As SerializerTestObject, ByVal Right As SerializerTestObject) As Boolean
-            Return Left.i = Right.i AndAlso Left.s = Right.s AndAlso Left.o.h = Right.o.h AndAlso Left.a.ArrayEqual(Right.a) AndAlso Left.l.ToArray.ArrayEqual(Right.l.ToArray) AndAlso Left.l2.ToArray.ArrayEqual(Right.l2.ToArray) AndAlso Left.l3.ToArray.ArrayEqual(Right.l3.ToArray)
+            Return Left.i = Right.i AndAlso Left.s = Right.s AndAlso Left.o.h = Right.o.h AndAlso Left.a.ArrayEqual(Right.a) AndAlso Left.l.ToArray.ArrayEqual(Right.l.ToArray) AndAlso Left.l2.ToArray.ArrayEqual(Right.l2.ToArray) AndAlso Left.l3.ToArray.ArrayEqual(Right.l3.ToArray) AndAlso Left.e1 = Right.e1
         End Operator
         Public Shared Operator <>(ByVal Left As SerializerTestObject, ByVal Right As SerializerTestObject) As Boolean
             Return Not (Left = Right)
@@ -395,8 +402,136 @@ Public Module Test
         Public h As Integer
     End Structure
 
+    Public Class OneToManyFixedCollectionMapperResolver(Of D)
+        Inherits ObjectTreeOneToManyMapper(Of D).CollectionMapperResolver
+
+        Public Overrides Function DefaultArrayMapper(Of R)(ByVal Key As D) As R()
+            Dim Size = 3
+            Dim l = New R(Size - 1) {}
+            For n = 0 To Size - 1
+                l(n) = mp.Map(Of R)(Key)
+            Next
+            Return l
+        End Function
+
+        Public Overrides Function DefaultListMapper(Of R, RList As {New, ICollection(Of R)})(ByVal Key As D) As RList
+            Dim Size = 3
+            Dim l = New RList()
+            For n = 0 To Size - 1
+                l.Add(mp.Map(Of R)(Key))
+            Next
+            Return l
+        End Function
+
+        Private mp As ObjectTreeOneToManyMapper(Of D)
+        Public Sub New(ByVal mp As ObjectTreeOneToManyMapper(Of D))
+            MyBase.New(mp)
+            Me.mp = mp
+        End Sub
+    End Class
+
+    Public Class ManyToOneFixedCollectionMapperResolver(Of R)
+        Inherits ObjectTreeManyToOneMapper(Of R).CollectionMapperResolver
+
+        Public Overrides Sub DefaultArrayMapper(Of D)(ByVal arr As D(), ByVal Value As R)
+            Dim Size = 3
+            For n = 0 To Size - 1
+                mp.Map(Of D)(arr(n), Value)
+            Next
+        End Sub
+        Public Overrides Sub DefaultListMapper(Of D, DList As ICollection(Of D))(ByVal list As DList, ByVal Value As R)
+            Dim Size = 3
+            For n = 0 To Size - 1
+                mp.Map(Of D)(list(n), Value)
+            Next
+        End Sub
+
+        Private mp As ObjectTreeManyToOneMapper(Of R)
+        Public Sub New(ByVal mp As ObjectTreeManyToOneMapper(Of R))
+            MyBase.New(mp)
+            Me.mp = mp
+        End Sub
+    End Class
+
+    Public Sub TestObjectTreeMapper()
+        Dim TestObject As New SerializerTestObject With {.i = 1, .s = 2, .o = New SerializerTestObject2 With {.h = 3}, .a = New Byte() {4, 5, 6}, .l = New List(Of Int16) From {7, 8, 9}, .l2 = New LinkedList(Of Int32)(New Int32() {10, 11, 12}), .l3 = New HashSet(Of UInt64) From {13, 14, 15}, .e1 = 16}
+
+        Dim Count = 0
+
+        With Nothing
+            Dim mp As New ObjectTreeOneToManyMapper(Of Integer)
+            Dim er = New ObjectTreeOneToManyMapper(Of Integer).EnumMapperResolver(mp)
+            mp.Resolvers.Add(er)
+            Dim cr = New OneToManyFixedCollectionMapperResolver(Of Integer)(mp)
+            mp.Resolvers.Add(cr)
+            Dim csr = New ObjectTreeOneToManyMapper(Of Integer).ClassAndStructureMapperResolver(mp)
+            mp.Resolvers.Add(csr)
+            mp.PutMapper(
+                Function(i) As Byte
+                    Count += 1
+                    Return Count
+                End Function
+            )
+            mp.PutMapper(
+                Function(i) As Int16
+                    Count += 1
+                    Return Count
+                End Function
+            )
+            mp.PutMapper(
+                Function(i) As Int32
+                    Count += 1
+                    Return Count
+                End Function
+            )
+            mp.PutMapper(
+                Function(i) As UInt64
+                    Count += 1
+                    Return Count
+                End Function
+            )
+
+            Dim BuiltObject = mp.Map(Of SerializerTestObject)(0)
+            Assert(TestObject = BuiltObject)
+        End With
+
+        Dim Count2 = 0
+        With Nothing
+            Dim mp As New ObjectTreeManyToOneMapper(Of Integer)
+            Dim er = New ObjectTreeManyToOneMapper(Of Integer).EnumMapperResolver(mp)
+            mp.Resolvers.Add(er)
+            Dim cr = New ManyToOneFixedCollectionMapperResolver(Of Integer)(mp)
+            mp.Resolvers.Add(cr)
+            Dim csr = New ObjectTreeManyToOneMapper(Of Integer).ClassAndStructureMapperResolver(mp)
+            mp.Resolvers.Add(csr)
+            mp.PutMapper(
+                Sub(Key As Byte, Value As Integer)
+                    Count2 += 1
+                End Sub
+            )
+            mp.PutMapper(
+                Sub(Key As Int16, Value As Integer)
+                    Count2 += 1
+                End Sub
+            )
+            mp.PutMapper(
+                Sub(Key As Int32, Value As Integer)
+                    Count2 += 1
+                End Sub
+            )
+            mp.PutMapper(
+                Sub(Key As UInt64, Value As Integer)
+                    Count2 += 1
+                End Sub
+            )
+
+            mp.Map(Of SerializerTestObject)(TestObject, 1)
+            Assert(Count = Count2)
+        End With
+    End Sub
+
     Public Sub TestSerializer()
-        Dim TestObject As New SerializerTestObject With {.i = 1, .s = 2, .o = New SerializerTestObject2 With {.h = 3}, .a = New Byte() {4, 5, 6}, .l = New List(Of Int16) From {7, 8, 9}, .l2 = New LinkedList(Of Int32)(New Int32() {10, 11, 12}), .l3 = New HashSet(Of UInt64) From {7, 8, 9}}
+        Dim TestObject As New SerializerTestObject With {.i = 1, .s = 2, .o = New SerializerTestObject2 With {.h = 3}, .a = New Byte() {4, 5, 6}, .l = New List(Of Int16) From {7, 8, 9}, .l2 = New LinkedList(Of Int32)(New Int32() {10, 11, 12}), .l3 = New HashSet(Of UInt64) From {13, 14, 15}, .e1 = 16}
 
         Dim XmlRoundTripped As SerializerTestObject
 
@@ -441,6 +576,7 @@ Public Module Test
         'TestBitStreamReadWrite()
         'TestCommandLine()
         'TestMessageDialog()
+        TestObjectTreeMapper()
         TestSerializer()
     End Sub
 End Module

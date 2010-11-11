@@ -65,7 +65,7 @@
     <Compile Include="Core\ListPart.vb" />
     <Compile Include="Core\Enumerators.vb" />
     <Compile Include="Core\N32.vb" />
-    <Compile Include="Core\ObjectTreeBuilderAndVisitor.vb" />
+    <Compile Include="Core\ObjectTreeMapper.vb" />
     <Compile Include="Core\StreamAdapters.vb" />
     <Compile Include="Core\StreamExComplex.vb" />
     <Compile Include="Core\StreamExFloats.vb" />
@@ -90,6 +90,7 @@
     <Compile Include="Imaging\BitmapEx.vb" />
     <Compile Include="Imaging\ImageInterface.vb" />
     <Compile Include="Imaging\Quantizer.vb" />
+    <Compile Include="Core\MetaProgramming.vb" />
     <Compile Include="Packaging\PackageFixed.vb" />
     <Compile Include="Packaging\PackageFixedAddress.vb" />
     <Compile Include="Packaging\PackageContinuous.vb" />
