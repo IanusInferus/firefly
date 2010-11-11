@@ -3,7 +3,7 @@
 '  File:        Xml.vb
 '  Location:    Firefly.Setting <Visual Basic .Net>
 '  Description: Xml读写
-'  Version:     2010.10.23.
+'  Version:     2010.11.11.
 '  Copyright:   F.R.C.
 '
 '==========================================================================
@@ -123,18 +123,6 @@ Namespace Setting
                 Return Name & "Of" & String.Join("And", (From t In Type.GetGenericArguments() Select GetTypeFriendlyName(t)).ToArray)
             End If
             Return Type.Name
-        End Function
-
-        Private Shared Function IsList(ByVal PhysicalType As Type) As Boolean
-            Return PhysicalType.GetInterfaces().Any(Function(t) t.IsGenericType AndAlso t.GetGenericTypeDefinition Is GetType(ICollection(Of )))
-        End Function
-        Private Shared Function GetListElementType(ByVal PhysicalType As Type) As Type
-            Return PhysicalType.GetInterfaces().Where(Function(t) t.IsGenericType AndAlso t.GetGenericTypeDefinition Is GetType(ICollection(Of ))).Single.GetGenericArguments()(0)
-        End Function
-        Private Shared Function GetMethodFromDefinedGenericMethod(ByVal m As [Delegate], ByVal MethodType As Type, ByVal ParamArray ParameterTypes As Type()) As [Delegate]
-            Dim Target = m.Target
-            Dim gm = m.Method.GetGenericMethodDefinition().MakeGenericMethod(ParameterTypes)
-            Return [Delegate].CreateDelegate(MethodType, Target, gm)
         End Function
 
         Private Shared Function MapElement(ByVal Name As String, ByVal Value As Object, ByVal ConstraintType As Type, ByVal ExternalTypeDict As Dictionary(Of String, Type), ByVal MapperDict As Dictionary(Of Type, IMapper)) As XElement
@@ -268,7 +256,7 @@ Namespace Setting
                 Return Element
             End If
 
-            If IsList(PhysicalType) Then
+            If PhysicalType.IsListType() Then
                 Dim enu = DirectCast(Value, IEnumerable)
                 Dim ObjectType = GetListElementType(PhysicalType)
 
@@ -286,8 +274,10 @@ Namespace Setting
                 If c Is Nothing OrElse Not c.IsPublic Then Throw New NotSupportedException("NoPublicDefaultConstructor: {0}".Formats(GetTypeFriendlyName(PhysicalType)))
                 Dim EmptyFlag = True
                 For Each f In PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance)
-                    Element.Add(MapElement(f.Name, f.GetValue(Value), f.FieldType, ExternalTypeDict, MapperDict))
-                    EmptyFlag = False
+                    If Not f.IsInitOnly Then
+                        Element.Add(MapElement(f.Name, f.GetValue(Value), f.FieldType, ExternalTypeDict, MapperDict))
+                        EmptyFlag = False
+                    End If
                 Next
                 For Each f In PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance)
                     If f.CanRead AndAlso f.CanWrite AndAlso f.GetIndexParameters.Length = 0 Then
@@ -302,8 +292,10 @@ Namespace Setting
             If PhysicalType.IsValueType Then
                 Dim HasData As Boolean = False
                 For Each f In PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance)
-                    HasData = True
-                    Element.Add(MapElement(f.Name, f.GetValue(Value), f.FieldType, ExternalTypeDict, MapperDict))
+                    If Not f.IsInitOnly Then
+                        HasData = True
+                        Element.Add(MapElement(f.Name, f.GetValue(Value), f.FieldType, ExternalTypeDict, MapperDict))
+                    End If
                 Next
                 For Each f In PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance)
                     If f.CanRead AndAlso f.CanWrite AndAlso f.GetIndexParameters.Length = 0 Then
@@ -429,10 +421,10 @@ Namespace Setting
                 Return InvM(arr)
             End If
 
-            If IsList(PhysicalType) Then
+            If PhysicalType.IsListType() Then
                 Dim ObjectType = GetListElementType(PhysicalType)
-                Dim AddDelegate As Action(Of List(Of Integer), Integer) = AddressOf ListAdd(Of Integer, List(Of Integer))
-                Dim Add = GetMethodFromDefinedGenericMethod(AddDelegate, GetType(Action(Of ,)).MakeGenericType(PhysicalType, ObjectType), ObjectType, PhysicalType)
+                Dim AddDelegate As Action(Of ICollection(Of DummyType), DummyType) = AddressOf ListAdd(Of DummyType, ICollection(Of DummyType))
+                Dim Add = AddDelegate.MakeDelegateMethodFromDummy(ObjectType)
 
                 Dim SubElements = Element.Elements.ToArray
                 Dim enu = DirectCast(Activator.CreateInstance(PhysicalType), IEnumerable)
@@ -450,8 +442,10 @@ Namespace Setting
 
                 Dim SubElementDict = Element.Elements.ToDictionary(Function(e) e.Name.LocalName, StringComparer.OrdinalIgnoreCase)
                 For Each f In PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance)
-                    If SubElementDict.ContainsKey(f.Name) Then
-                        f.SetValue(obj, InvMapElement(f.Name, SubElementDict(f.Name), f.FieldType, ExternalTypeDict, MapperDict))
+                    If Not f.IsInitOnly Then
+                        If SubElementDict.ContainsKey(f.Name) Then
+                            f.SetValue(obj, InvMapElement(f.Name, SubElementDict(f.Name), f.FieldType, ExternalTypeDict, MapperDict))
+                        End If
                     End If
                 Next
                 For Each f In PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance)
@@ -470,10 +464,12 @@ Namespace Setting
 
                     Dim SubElementDict = Element.Elements.ToDictionary(Function(e) e.Name.LocalName, StringComparer.OrdinalIgnoreCase)
                     For Each f In PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance)
+                    If Not f.IsInitOnly Then
                         If SubElementDict.ContainsKey(f.Name) Then
                             f.SetValue(obj, InvMapElement(f.Name, SubElementDict(f.Name), f.FieldType, ExternalTypeDict, MapperDict))
                         End If
-                    Next
+                    End If
+                Next
                     For Each f In PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance)
                         If f.CanRead AndAlso f.CanWrite AndAlso f.GetIndexParameters.Length = 0 Then
                             If SubElementDict.ContainsKey(f.Name) Then
@@ -486,7 +482,7 @@ Namespace Setting
 
                 Throw New NotSupportedException
         End Function
-        Private Shared Sub ListAdd(Of T, TList As {New, ICollection(Of T)})(ByVal l As TList, ByVal v As T)
+        Private Shared Sub ListAdd(Of T, TList As ICollection(Of T))(ByVal l As TList, ByVal v As T)
             l.Add(v)
         End Sub
 

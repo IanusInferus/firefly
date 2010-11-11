@@ -3,14 +3,13 @@
 '  File:        BinarySerializer.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 二进制序列化类
-'  Version:     2010.10.28.
+'  Version:     2010.11.11.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
 
 Option Strict On
 Imports System
-Imports System.Collections
 Imports System.Collections.Generic
 Imports System.Linq
 Imports System.Linq.Expressions
@@ -23,34 +22,28 @@ Public Interface IBinarySerializerResolver
     Function TryResolveCounter(ByVal Type As Type) As [Delegate]
 End Interface
 
-Public Module MetaProgramming
-    <Extension()> Public Function IsListType(ByVal PhysicalType As Type) As Boolean
-        Return PhysicalType.GetInterfaces().Any(Function(t) t.IsGenericType AndAlso t.GetGenericTypeDefinition Is GetType(ICollection(Of )))
-    End Function
-    <Extension()> Public Function GetListElementType(ByVal PhysicalType As Type) As Type
-        Return PhysicalType.GetInterfaces().Where(Function(t) t.IsGenericType AndAlso t.GetGenericTypeDefinition Is GetType(ICollection(Of ))).Single.GetGenericArguments()(0)
-    End Function
-    <Extension()> Public Function GetMethodFromDefinedGenericMethod(ByVal m As [Delegate], ByVal MethodType As Type, ByVal ParamArray ParameterTypes As Type()) As [Delegate]
-        Dim Target = m.Target
-        Dim gm = m.Method.GetGenericMethodDefinition().MakeGenericMethod(ParameterTypes)
-        Return [Delegate].CreateDelegate(MethodType, Target, gm)
-    End Function
-
-    Public Class DummyType
-    End Class
-End Module
-
+''' <remarks>
+''' 对于非简单类型，应提供自定义序列化器
+''' 简单类型是指数据均全部存储在公开可读写字段或全部存储在公开可读写属性中，字段或属性的类型均为简单类型组合，并且类型结构为树状的类型
+''' 简单类型组合 ::= 简单类型
+'''              | 数组(简单类型组合)
+'''              | ICollection(简单类型组合)
+''' </remarks>
 Public Class BinarySerializer
     Private ReaderCache As New Dictionary(Of Type, [Delegate])
     Private WriterCache As New Dictionary(Of Type, [Delegate])
     Private CounterCache As New Dictionary(Of Type, [Delegate])
-    Private Resolvers As IBinarySerializerResolver()
-
+    Private ResolversValue As List(Of IBinarySerializerResolver)
+    Public ReadOnly Property Resolvers As List(Of IBinarySerializerResolver)
+        Get
+            Return ResolversValue
+        End Get
+    End Property
     Public Sub New()
-        Me.Resolvers = New IBinarySerializerResolver() {New PrimitiveSerializerResolver(), New EnumSerializerResolver(Me), New CollectionSerializerResolver(Me), New ClassAndStructureSerializerResolver(Me)}
+        Me.ResolversValue = New List(Of IBinarySerializerResolver) From {New PrimitiveSerializerResolver(), New EnumSerializerResolver(Me), New CollectionSerializerResolver(Me), New ClassAndStructureSerializerResolver(Me)}
     End Sub
-    Public Sub New(ByVal Resolvers As IEnumerable(Of IBinarySerializerResolver))
-        Me.Resolvers = Resolvers.ToArray()
+    Public Sub New(ByVal GetResolvers As Func(Of BinarySerializer, IEnumerable(Of IBinarySerializerResolver)))
+        Me.ResolversValue = GetResolvers(Me).ToList()
     End Sub
 
     Public Sub PutReader(ByVal PhysicalType As Type, ByVal Reader As [Delegate])
@@ -214,40 +207,100 @@ Public Class BinarySerializer
 
         Public Function TryResolveReader(ByVal PhysicalType As Type) As [Delegate] Implements IBinarySerializerResolver.TryResolveReader
             If PhysicalType.IsEnum Then
-                Dim UnderlyingReader = bs.GetReader(PhysicalType.GetEnumUnderlyingType)
+                Dim UnderlyingType = PhysicalType.GetEnumUnderlyingType
+                Dim ReaderMethod = DirectCast(AddressOf bs.Read(Of DummyType), Func(Of StreamEx, DummyType))
+                Dim Reader = ReaderMethod.MakeDelegateMethodFromDummy(UnderlyingType)
 
+                Dim ClosureParam As ParameterExpression = Nothing
                 Dim sParam = Expression.Variable(GetType(StreamEx), "s")
-                Dim FunctionBody = Expression.ConvertChecked(Expression.Call(UnderlyingReader.Method, sParam), PhysicalType)
-                Dim FunctionLambda = Expression.Lambda(FunctionBody, New ParameterExpression() {sParam})
 
-                Return FunctionLambda.Compile()
+                Dim ReaderCall As Expression
+                If Reader.Target Is Nothing Then
+                    ReaderCall = Expression.Call(Reader.Method, sParam)
+                Else
+                    ClosureParam = Expression.Variable(Reader.GetType(), "<>_Closure")
+                    ReaderCall = Expression.Invoke(ClosureParam, sParam)
+                End If
+
+                Dim FunctionBody = Expression.ConvertChecked(ReaderCall, PhysicalType)
+                Dim FunctionLambda = Expression.Lambda(FunctionBody, New ParameterExpression() {sParam})
+                If Reader.Target IsNot Nothing Then
+                    FunctionLambda = Expression.Lambda(FunctionLambda, New ParameterExpression() {ClosureParam})
+                End If
+
+                Dim Compiled As [Delegate] = FunctionLambda.Compile()
+                If Reader.Target IsNot Nothing Then
+                    Compiled = CType(Compiled.DynamicInvoke(Reader), [Delegate])
+                End If
+
+                Return Compiled
             End If
             Return Nothing
         End Function
 
         Public Function TryResolveWriter(ByVal PhysicalType As Type) As [Delegate] Implements IBinarySerializerResolver.TryResolveWriter
             If PhysicalType.IsEnum Then
-                Dim UnderlyingReader = bs.GetWriter(PhysicalType.GetEnumUnderlyingType)
+                Dim UnderlyingType = PhysicalType.GetEnumUnderlyingType
+                Dim WriterMethod = DirectCast(AddressOf bs.Write(Of DummyType), Action(Of StreamEx, DummyType))
+                Dim Writer = WriterMethod.MakeDelegateMethodFromDummy(UnderlyingType)
 
+                Dim ClosureParam As ParameterExpression = Nothing
                 Dim sParam = Expression.Variable(GetType(StreamEx), "s")
                 Dim ThisParam = Expression.Variable(PhysicalType, "This")
-                Dim FunctionBody = Expression.Call(UnderlyingReader.Method, sParam, Expression.ConvertChecked(ThisParam, PhysicalType.GetEnumUnderlyingType))
-                Dim FunctionLambda = Expression.Lambda(FunctionBody, New ParameterExpression() {sParam, ThisParam})
 
-                Return FunctionLambda.Compile()
+                Dim WriterCall As Expression
+                If Writer.Target Is Nothing Then
+                    WriterCall = Expression.Call(Writer.Method, sParam, Expression.ConvertChecked(ThisParam, UnderlyingType))
+                Else
+                    ClosureParam = Expression.Variable(Writer.GetType(), "<>_Closure")
+                    WriterCall = Expression.Invoke(ClosureParam, sParam, Expression.ConvertChecked(ThisParam, UnderlyingType))
+                End If
+
+                Dim FunctionBody = WriterCall
+                Dim FunctionLambda = Expression.Lambda(FunctionBody, New ParameterExpression() {sParam, ThisParam})
+                If Writer.Target IsNot Nothing Then
+                    FunctionLambda = Expression.Lambda(FunctionLambda, New ParameterExpression() {ClosureParam})
+                End If
+
+                Dim Compiled As [Delegate] = FunctionLambda.Compile()
+                If Writer.Target IsNot Nothing Then
+                    Compiled = CType(Compiled.DynamicInvoke(Writer), [Delegate])
+                End If
+
+                Return Compiled
             End If
             Return Nothing
         End Function
 
         Public Function TryResolveCounter(ByVal PhysicalType As Type) As [Delegate] Implements IBinarySerializerResolver.TryResolveCounter
             If PhysicalType.IsEnum Then
-                Dim UnderlyingReader = bs.GetCounter(PhysicalType.GetEnumUnderlyingType)
+                Dim UnderlyingType = PhysicalType.GetEnumUnderlyingType
+                Dim CounterMethod = DirectCast(AddressOf bs.Count(Of DummyType), Func(Of DummyType, Integer))
+                Dim Counter = CounterMethod.MakeDelegateMethodFromDummy(UnderlyingType)
 
+                Dim ClosureParam As ParameterExpression = Nothing
                 Dim ThisParam = Expression.Variable(PhysicalType, "This")
-                Dim FunctionBody = Expression.Call(UnderlyingReader.Method, Expression.ConvertChecked(ThisParam, PhysicalType.GetEnumUnderlyingType))
-                Dim FunctionLambda = Expression.Lambda(FunctionBody, New ParameterExpression() {ThisParam})
 
-                Return FunctionLambda.Compile()
+                Dim CounterCall As Expression
+                If Counter.Target Is Nothing Then
+                    CounterCall = Expression.Call(Counter.Method, Expression.ConvertChecked(ThisParam, UnderlyingType))
+                Else
+                    ClosureParam = Expression.Variable(Counter.GetType(), "<>_Closure")
+                    CounterCall = Expression.Invoke(ClosureParam, Expression.ConvertChecked(ThisParam, UnderlyingType))
+                End If
+
+                Dim FunctionBody = CounterCall
+                Dim FunctionLambda = Expression.Lambda(FunctionBody, New ParameterExpression() {ThisParam})
+                If Counter.Target IsNot Nothing Then
+                    FunctionLambda = Expression.Lambda(FunctionLambda, New ParameterExpression() {ClosureParam})
+                End If
+
+                Dim Compiled As [Delegate] = FunctionLambda.Compile()
+                If Counter.Target IsNot Nothing Then
+                    Compiled = CType(Compiled.DynamicInvoke(Counter), [Delegate])
+                End If
+
+                Return Compiled
             End If
             Return Nothing
         End Function
@@ -337,8 +390,7 @@ Public Class BinarySerializer
                 End Function
             Dim Gen =
                 Function(ElementType As Type) As [Delegate]
-                    Dim dt = GetType(Func(Of ,)).MakeGenericType(GetType(StreamEx), MakeArrayType(ElementType, Dimension))
-                    Return Generator.GetMethodFromDefinedGenericMethod(dt, ElementType)
+                    Return Generator.MakeDelegateMethodFromDummy(ElementType)
                 End Function
 
             If ArrayReaderGeneratorCache.ContainsKey(Dimension) Then
@@ -365,8 +417,7 @@ Public Class BinarySerializer
 
             Dim Gen =
                 Function(ElementType As Type) As [Delegate]
-                    Dim dt = GetType(Func(Of ,)).MakeGenericType(GetType(StreamEx), ListType.MakeGenericType(ElementType))
-                    Return Generator.GetMethodFromDefinedGenericMethod(dt, ElementType, ListType.MakeGenericType(ElementType))
+                    Return Generator.MakeDelegateMethodFromDummy(ElementType)
                 End Function
 
             If ListReaderGeneratorCache.ContainsKey(ListType) Then
@@ -395,8 +446,7 @@ Public Class BinarySerializer
                 End Function
             Dim Gen =
                 Function(ElementType As Type) As [Delegate]
-                    Dim dt = GetType(Action(Of ,)).MakeGenericType(GetType(StreamEx), MakeArrayType(ElementType, Dimension))
-                    Return Generator.GetMethodFromDefinedGenericMethod(dt, ElementType)
+                    Return Generator.MakeDelegateMethodFromDummy(ElementType)
                 End Function
 
             If ArrayWriterGeneratorCache.ContainsKey(Dimension) Then
@@ -423,8 +473,7 @@ Public Class BinarySerializer
 
             Dim Gen =
                 Function(ElementType As Type) As [Delegate]
-                    Dim dt = GetType(Action(Of ,)).MakeGenericType(GetType(StreamEx), ListType.MakeGenericType(ElementType))
-                    Return Generator.GetMethodFromDefinedGenericMethod(dt, ElementType, ListType.MakeGenericType(ElementType))
+                    Return Generator.MakeDelegateMethodFromDummy(ElementType)
                 End Function
 
             If ListWriterGeneratorCache.ContainsKey(ListType) Then
@@ -453,8 +502,7 @@ Public Class BinarySerializer
                 End Function
             Dim Gen =
                 Function(ElementType As Type) As [Delegate]
-                    Dim dt = GetType(Func(Of ,)).MakeGenericType(MakeArrayType(ElementType, Dimension), GetType(Integer))
-                    Return Generator.GetMethodFromDefinedGenericMethod(dt, ElementType)
+                    Return Generator.MakeDelegateMethodFromDummy(ElementType)
                 End Function
 
             If ArrayCounterGeneratorCache.ContainsKey(Dimension) Then
@@ -481,8 +529,7 @@ Public Class BinarySerializer
 
             Dim Gen =
                 Function(ElementType As Type) As [Delegate]
-                    Dim dt = GetType(Func(Of ,)).MakeGenericType(ListType.MakeGenericType(ElementType), GetType(Integer))
-                    Return Generator.GetMethodFromDefinedGenericMethod(dt, ElementType, ListType.MakeGenericType(ElementType))
+                    Return Generator.MakeDelegateMethodFromDummy(ElementType)
                 End Function
 
             If ListCounterGeneratorCache.ContainsKey(ListType) Then
@@ -505,11 +552,12 @@ Public Class BinarySerializer
         Public Overridable Function TryGetListReaderGenerator(ByVal ListType As Type) As Func(Of Type, [Delegate])
             If Not ListReaderGeneratorCache.ContainsKey(ListType) Then
                 If Not ListType.IsListType() Then Throw New ArgumentException
-                If Not ListType.IsGenericType OrElse ListType.GetGenericArguments().Length <> 1 Then Return Nothing
+                If Not ListType.IsGenericType Then Throw New ArgumentException
+                If Not ListType.IsGenericTypeDefinition Then Throw New ArgumentException
+                If ListType.GetGenericArguments().Length <> 1 Then Return Nothing
                 Dim DummyListType = ListType.MakeGenericType(GetType(DummyType))
                 Dim DummyMethod As Func(Of StreamEx, List(Of DummyType)) = AddressOf DefaultListReader(Of DummyType, List(Of DummyType))
-                Dim MethodType = GetType(Func(Of ,)).MakeGenericType(GetType(StreamEx), DummyListType)
-                Dim m = DummyMethod.GetMethodFromDefinedGenericMethod(MethodType, GetType(DummyType), DummyListType)
+                Dim m = DummyMethod.MakeDelegateMethodFromDummy(GetType(List(Of DummyType)), DummyListType)
                 PutListReaderGenerator(m)
             End If
             Return ListReaderGeneratorCache(ListType)
@@ -524,11 +572,12 @@ Public Class BinarySerializer
         Public Overridable Function TryGetListWriterGenerator(ByVal ListType As Type) As Func(Of Type, [Delegate])
             If Not ListWriterGeneratorCache.ContainsKey(ListType) Then
                 If Not ListType.IsListType() Then Throw New ArgumentException
-                If Not ListType.IsGenericType OrElse ListType.GetGenericArguments().Length <> 1 Then Return Nothing
+                If Not ListType.IsGenericType Then Throw New ArgumentException
+                If Not ListType.IsGenericTypeDefinition Then Throw New ArgumentException
+                If ListType.GetGenericArguments().Length <> 1 Then Return Nothing
                 Dim DummyListType = ListType.MakeGenericType(GetType(DummyType))
                 Dim DummyMethod As Action(Of StreamEx, List(Of DummyType)) = AddressOf DefaultListWriter(Of DummyType, List(Of DummyType))
-                Dim MethodType = GetType(Action(Of ,)).MakeGenericType(GetType(StreamEx), DummyListType)
-                Dim m = DummyMethod.GetMethodFromDefinedGenericMethod(MethodType, GetType(DummyType), DummyListType)
+                Dim m = DummyMethod.MakeDelegateMethodFromDummy(GetType(List(Of DummyType)), DummyListType)
                 PutListWriterGenerator(m)
             End If
             Return ListWriterGeneratorCache(ListType)
@@ -543,11 +592,12 @@ Public Class BinarySerializer
         Public Overridable Function TryGetListCounterGenerator(ByVal ListType As Type) As Func(Of Type, [Delegate])
             If Not ListCounterGeneratorCache.ContainsKey(ListType) Then
                 If Not ListType.IsListType() Then Throw New ArgumentException
-                If Not ListType.IsGenericType OrElse ListType.GetGenericArguments().Length <> 1 Then Return Nothing
+                If Not ListType.IsGenericType Then Throw New ArgumentException
+                If Not ListType.IsGenericTypeDefinition Then Throw New ArgumentException
+                If ListType.GetGenericArguments().Length <> 1 Then Return Nothing
                 Dim DummyListType = ListType.MakeGenericType(GetType(DummyType))
                 Dim DummyMethod As Func(Of List(Of DummyType), Integer) = AddressOf DefaultListCounter(Of DummyType, List(Of DummyType))
-                Dim MethodType = GetType(Func(Of ,)).MakeGenericType(DummyListType, GetType(Integer))
-                Dim m = DummyMethod.GetMethodFromDefinedGenericMethod(MethodType, GetType(DummyType), DummyListType)
+                Dim m = DummyMethod.MakeDelegateMethodFromDummy(GetType(List(Of DummyType)), DummyListType)
                 PutListCounterGenerator(m)
             End If
             Return ListCounterGeneratorCache(ListType)
@@ -624,8 +674,9 @@ Public Class BinarySerializer
                 Dim CreateThis = Expression.Assign(ThisParam, Expression.[New](PhysicalType))
                 Statements.Add(CreateThis)
 
-                Dim Fields = PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance).Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Field(ThisParam, f), .Type = f.FieldType})
-                Dim Properties = PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance).Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso p.GetIndexParameters.Length = 0).Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Property(ThisParam, f), .Type = f.PropertyType})
+                Dim Fields = PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance).Where(Function(f) Not f.IsInitOnly).Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Field(ThisParam, f), .Type = f.FieldType}).ToArray
+                Dim Properties = PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance).Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso p.GetIndexParameters.Length = 0).Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Property(ThisParam, f), .Type = f.PropertyType}).ToArray
+                If Fields.Length > 0 AndAlso Properties.Length > 0 Then Return Nothing
                 Dim MemberToIndex = PhysicalType.GetMembers.Select(Function(m, i) New With {.Member = m, .Index = i}).ToDictionary(Function(p) p.Member, Function(p) p.Index)
                 Dim FieldsAndProperties = Fields.Concat(Properties).OrderBy(Function(f) MemberToIndex(f.Member)).ToArray
                 If PhysicalType.IsValueType Then
@@ -640,7 +691,8 @@ Public Class BinarySerializer
                 For Each Pair In FieldsAndProperties
                     Dim Type = Pair.Type
                     If TypeToReader.ContainsKey(Type) Then Continue For
-                    Dim Reader = bs.GetReader(Type)
+                    Dim ReaderMethod = DirectCast(AddressOf bs.Read(Of DummyType), Func(Of StreamEx, DummyType))
+                    Dim Reader = ReaderMethod.MakeDelegateMethodFromDummy(Type)
                     TypeToReader.Add(Type, Reader)
                     If Reader.Target IsNot Nothing Then
                         Dim n = ClosureObjects.Count
@@ -701,8 +753,9 @@ Public Class BinarySerializer
 
                 Dim Statements As New List(Of Expression)
 
-                Dim Fields = PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance).Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Field(ThisParam, f), .Type = f.FieldType})
-                Dim Properties = PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance).Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso p.GetIndexParameters.Length = 0).Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Property(ThisParam, f), .Type = f.PropertyType})
+                Dim Fields = PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance).Where(Function(f) Not f.IsInitOnly).Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Field(ThisParam, f), .Type = f.FieldType}).ToArray
+                Dim Properties = PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance).Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso p.GetIndexParameters.Length = 0).Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Property(ThisParam, f), .Type = f.PropertyType}).ToArray
+                If Fields.Length > 0 AndAlso Properties.Length > 0 Then Return Nothing
                 Dim MemberToIndex = PhysicalType.GetMembers.Select(Function(m, i) New With {.Member = m, .Index = i}).ToDictionary(Function(p) p.Member, Function(p) p.Index)
                 Dim FieldsAndProperties = Fields.Concat(Properties).OrderBy(Function(f) MemberToIndex(f.Member)).ToArray
                 If PhysicalType.IsValueType Then
@@ -717,7 +770,8 @@ Public Class BinarySerializer
                 For Each Pair In FieldsAndProperties
                     Dim Type = Pair.Type
                     If TypeToWriter.ContainsKey(Type) Then Continue For
-                    Dim Writer = bs.GetWriter(Type)
+                    Dim WriterMethod = DirectCast(AddressOf bs.Write(Of DummyType), Action(Of StreamEx, DummyType))
+                    Dim Writer = WriterMethod.MakeDelegateMethodFromDummy(Type)
                     TypeToWriter.Add(Type, Writer)
                     If Writer.Target IsNot Nothing Then
                         Dim n = ClosureObjects.Count
@@ -774,8 +828,9 @@ Public Class BinarySerializer
 
                 Dim FunctionBody As Expression = Expression.Constant(0)
 
-                Dim Fields = PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance).Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Field(ThisParam, f), .Type = f.FieldType})
-                Dim Properties = PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance).Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso p.GetIndexParameters.Length = 0).Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Property(ThisParam, f), .Type = f.PropertyType})
+                Dim Fields = PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance).Where(Function(f) Not f.IsInitOnly).Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Field(ThisParam, f), .Type = f.FieldType}).ToArray
+                Dim Properties = PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance).Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso p.GetIndexParameters.Length = 0).Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Property(ThisParam, f), .Type = f.PropertyType}).ToArray
+                If Fields.Length > 0 AndAlso Properties.Length > 0 Then Return Nothing
                 Dim MemberToIndex = PhysicalType.GetMembers.Select(Function(m, i) New With {.Member = m, .Index = i}).ToDictionary(Function(p) p.Member, Function(p) p.Index)
                 Dim FieldsAndProperties = Fields.Concat(Properties).OrderBy(Function(f) MemberToIndex(f.Member)).ToArray
                 If PhysicalType.IsValueType Then
@@ -791,7 +846,8 @@ Public Class BinarySerializer
                     Dim FieldOrPropertyExpr = Pair.FieldOrPropertyExpr
                     Dim Type = Pair.Type
                     If TypeToCounter.ContainsKey(Type) Then Continue For
-                    Dim Counter = bs.GetCounter(Type)
+                    Dim CounterMethod = DirectCast(AddressOf bs.Count(Of DummyType), Func(Of DummyType, Integer))
+                    Dim Counter = CounterMethod.MakeDelegateMethodFromDummy(Type)
                     TypeToCounter.Add(Type, Counter)
                     If Counter.Target IsNot Nothing Then
                         Dim n = ClosureObjects.Count

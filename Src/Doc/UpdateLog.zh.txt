@@ -1,4 +1,9 @@
-﻿2010.11.10
+﻿2010.11.12
+Firefly.Core:
+增加ObjectTreeMapper。
+修改BinarySerializer。
+
+2010.11.10
 Firefly.Core:
 增加Txt.GetEncodingByBOM。
 Firefly.TransEncoding:
