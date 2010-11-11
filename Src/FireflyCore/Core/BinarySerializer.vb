@@ -35,6 +35,9 @@ Public Module MetaProgramming
         Dim gm = m.Method.GetGenericMethodDefinition().MakeGenericMethod(ParameterTypes)
         Return [Delegate].CreateDelegate(MethodType, Target, gm)
     End Function
+
+    Public Class DummyType
+    End Class
 End Module
 
 Public Class BinarySerializer
@@ -137,9 +140,6 @@ Public Class BinarySerializer
     Public Function Count(Of T)(ByVal Value As T) As Integer
         Return GetCounter(Of T)()(Value)
     End Function
-
-    Public Class DummyType
-    End Class
 
     Public Class PrimitiveSerializerResolver
         Implements IBinarySerializerResolver
