@@ -402,52 +402,55 @@ Public Module Test
         Public h As Integer
     End Structure
 
-    Public Class OneToManyFixedCollectionMapperResolver(Of D)
-        Inherits ObjectTreeOneToManyMapper(Of D).CollectionMapperResolver
+    Public Class CollectionOneToManyResolverDefaultMapperProvider(Of D)
+        Implements ICollectionOneToManyMapperResolverDefaultProvider(Of D)
 
-        Public Overrides Function DefaultArrayMapper(Of R)(ByVal Key As D) As R()
+        Public Function DefaultArrayMapper(Of R)(ByVal Key As D) As R() Implements ICollectionOneToManyMapperResolverDefaultProvider(Of D).DefaultArrayMapper
+            Dim Mapper = DirectCast(Map.MakeDelegateMethodFromDummy(GetType(R)), Func(Of D, R))
             Dim Size = 3
             Dim l = New R(Size - 1) {}
             For n = 0 To Size - 1
-                l(n) = mp.Map(Of R)(Key)
+                l(n) = Mapper(Key)
             Next
             Return l
         End Function
-
-        Public Overrides Function DefaultListMapper(Of R, RList As {New, ICollection(Of R)})(ByVal Key As D) As RList
+        Public Function DefaultListMapper(Of R, RList As {New, ICollection(Of R)})(ByVal Key As D) As RList Implements ICollectionOneToManyMapperResolverDefaultProvider(Of D).DefaultListMapper
+            Dim Mapper = DirectCast(Map.MakeDelegateMethodFromDummy(GetType(R)), Func(Of D, R))
             Dim Size = 3
             Dim l = New RList()
             For n = 0 To Size - 1
-                l.Add(mp.Map(Of R)(Key))
+                l.Add(Mapper(Key))
             Next
             Return l
         End Function
 
-        Private mp As ObjectTreeOneToManyMapper(Of D)
-        Public Sub New(ByVal mp As ObjectTreeOneToManyMapper(Of D))
-            Me.mp = mp
+        Private Map As Func(Of D, DummyType)
+        Public Sub New(ByVal Map As Func(Of D, DummyType))
+            Me.Map = Map
         End Sub
     End Class
 
-    Public Class ManyToOneFixedCollectionMapperResolver(Of R)
-        Inherits ObjectTreeManyToOneMapper(Of R).CollectionMapperResolver
+    Public Class CollectionManyToOneResolverDefaultMapperProvider(Of R)
+        Implements ICollectionMapperResolverDefaultProvider(Of R)
 
-        Public Overrides Sub DefaultArrayMapper(Of D)(ByVal arr As D(), ByVal Value As R)
+        Public Sub DefaultArrayMapper(Of D)(ByVal arr As D(), ByVal Value As R) Implements ICollectionMapperResolverDefaultProvider(Of R).DefaultArrayMapper
+            Dim Mapper = DirectCast(Map.MakeDelegateMethodFromDummy(GetType(D)), Action(Of D, R))
             Dim Size = 3
             For n = 0 To Size - 1
-                mp.Map(Of D)(arr(n), Value)
+                Mapper(arr(n), Value)
             Next
         End Sub
-        Public Overrides Sub DefaultListMapper(Of D, DList As ICollection(Of D))(ByVal list As DList, ByVal Value As R)
+        Public Sub DefaultListMapper(Of D, DList As ICollection(Of D))(ByVal list As DList, ByVal Value As R) Implements ICollectionMapperResolverDefaultProvider(Of R).DefaultListMapper
+            Dim Mapper = DirectCast(Map.MakeDelegateMethodFromDummy(GetType(D)), Action(Of D, R))
             Dim Size = 3
             For n = 0 To Size - 1
-                mp.Map(Of D)(list(n), Value)
+                Mapper(list(n), Value)
             Next
         End Sub
 
-        Private mp As ObjectTreeManyToOneMapper(Of R)
-        Public Sub New(ByVal mp As ObjectTreeManyToOneMapper(Of R))
-            Me.mp = mp
+        Private Map As Action(Of DummyType, R)
+        Public Sub New(ByVal Map As Action(Of DummyType, R))
+            Me.Map = Map
         End Sub
     End Class
 
@@ -457,12 +460,12 @@ Public Module Test
         Dim Count = 0
 
         With Nothing
-            Dim mp As New ObjectTreeOneToManyMapper(Of Integer)
-            Dim er = New ObjectTreeOneToManyMapper(Of Integer).EnumMapperResolver(AddressOf mp.Map)
+            Dim mp As New ObjectOneToManyMapper(Of Integer)
+            Dim er = New ObjectOneToManyMapper(Of Integer).EnumMapperResolver(AddressOf mp.Map)
             mp.Resolvers.Add(er)
-            Dim cr = New OneToManyFixedCollectionMapperResolver(Of Integer)(mp)
+            Dim cr = New ObjectOneToManyMapper(Of Integer).CollectionMapperResolver(New CollectionOneToManyResolverDefaultMapperProvider(Of Integer)(AddressOf mp.Map))
             mp.Resolvers.Add(cr)
-            Dim csr = New ObjectTreeOneToManyMapper(Of Integer).ClassAndStructureMapperResolver(AddressOf mp.Map)
+            Dim csr = New ObjectOneToManyMapper(Of Integer).ClassAndStructureMapperResolver(AddressOf mp.Map)
             mp.Resolvers.Add(csr)
             mp.PutMapper(
                 Function(i) As Byte
@@ -495,12 +498,12 @@ Public Module Test
 
         Dim Count2 = 0
         With Nothing
-            Dim mp As New ObjectTreeManyToOneMapper(Of Integer)
-            Dim er = New ObjectTreeManyToOneMapper(Of Integer).EnumMapperResolver(AddressOf mp.Map)
+            Dim mp As New ObjectManyToOneMapper(Of Integer)
+            Dim er = New ObjectManyToOneMapper(Of Integer).EnumMapperResolver(AddressOf mp.Map)
             mp.Resolvers.Add(er)
-            Dim cr = New ManyToOneFixedCollectionMapperResolver(Of Integer)(mp)
+            Dim cr = New ObjectManyToOneMapper(Of Integer).CollectionMapperResolver(New CollectionManyToOneResolverDefaultMapperProvider(Of Integer)(AddressOf mp.Map))
             mp.Resolvers.Add(cr)
-            Dim csr = New ObjectTreeManyToOneMapper(Of Integer).ClassAndStructureMapperResolver(AddressOf mp.Map)
+            Dim csr = New ObjectManyToOneMapper(Of Integer).ClassAndStructureMapperResolver(AddressOf mp.Map)
             mp.Resolvers.Add(csr)
             mp.PutMapper(
                 Sub(Key As Byte, Value As Integer)

@@ -1,8 +1,8 @@
 ﻿'==========================================================================
 '
-'  File:        ObjectTreeMapper.vb
+'  File:        ObjectMapper.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
-'  Description: Object树映射
+'  Description: Object映射
 '  Version:     2010.11.12.
 '  Copyright(C) F.R.C.
 '
@@ -17,33 +17,45 @@ Imports System.Linq.Expressions
 Imports System.Reflection
 Imports System.Runtime.CompilerServices
 
-Public Interface IObjectTreeMapperResolver
+Public Interface IObjectMapperResolver
     ''' <param name="TypePair">(DomainType, RangeType)</param>
     ''' <returns>返回Func(Of ${DomainType}, ${RangeType})</returns>
     Function TryResolve(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate]
 End Interface
 
-Public Interface IObjectTreeOneToManyMapperResolver(Of D)
-    ''' <returns>返回Func(Of ${Type})</returns>
+Public Interface IObjectOneToManyMapperResolver(Of D)
+    ''' <returns>返回Func(Of ${DomainType}, ${RangeType})</returns>
     Function TryResolve(ByVal RangeType As Type) As [Delegate]
 End Interface
 
-Public Interface IObjectTreeManyToOneMapperResolver(Of R)
-    ''' <returns>返回Action(Of ${Type})</returns>
+Public Interface IObjectManyToOneMapperResolver(Of R)
+    ''' <returns>返回Action(Of ${DomainType}, ${RangeType})</returns>
     Function TryResolve(ByVal DomainType As Type) As [Delegate]
 End Interface
 
-Public Class ObjectTreeMapper
+''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
+Public Interface ICollectionOneToManyMapperResolverDefaultProvider(Of D)
+    Function DefaultArrayMapper(Of R)(ByVal Key As D) As R()
+    Function DefaultListMapper(Of R, RList As {New, ICollection(Of R)})(ByVal Key As D) As RList
+End Interface
+
+''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
+Public Interface ICollectionMapperResolverDefaultProvider(Of R)
+    Sub DefaultArrayMapper(Of D)(ByVal arr As D(), ByVal Value As R)
+    Sub DefaultListMapper(Of D, DList As ICollection(Of D))(ByVal list As DList, ByVal Value As R)
+End Interface
+
+Public Class ObjectMapper
     Private MapperCache As New Dictionary(Of KeyValuePair(Of Type, Type), [Delegate])
-    Private ResolversValue As New List(Of IObjectTreeMapperResolver)
-    Public ReadOnly Property Resolvers As List(Of IObjectTreeMapperResolver)
+    Private ResolversValue As New List(Of IObjectMapperResolver)
+    Public ReadOnly Property Resolvers As List(Of IObjectMapperResolver)
         Get
             Return ResolversValue
         End Get
     End Property
     Public Sub New()
     End Sub
-    Public Sub New(ByVal GetResolvers As Func(Of ObjectTreeMapper, IEnumerable(Of IObjectTreeMapperResolver)))
+    Public Sub New(ByVal GetResolvers As Func(Of ObjectMapper, IEnumerable(Of IObjectMapperResolver)))
         Me.ResolversValue = GetResolvers(Me).ToList()
     End Sub
 
@@ -84,17 +96,17 @@ Public Class ObjectTreeMapper
     End Function
 End Class
 
-Public Class ObjectTreeOneToManyMapper(Of D)
+Public Class ObjectOneToManyMapper(Of D)
     Private MapperCache As New Dictionary(Of Type, [Delegate])
-    Private ResolversValue As New List(Of IObjectTreeOneToManyMapperResolver(Of D))
-    Public ReadOnly Property Resolvers As List(Of IObjectTreeOneToManyMapperResolver(Of D))
+    Private ResolversValue As New List(Of IObjectOneToManyMapperResolver(Of D))
+    Public ReadOnly Property Resolvers As List(Of IObjectOneToManyMapperResolver(Of D))
         Get
             Return ResolversValue
         End Get
     End Property
     Public Sub New()
     End Sub
-    Public Sub New(ByVal GetResolvers As Func(Of ObjectTreeOneToManyMapper(Of D), IEnumerable(Of IObjectTreeOneToManyMapperResolver(Of D))))
+    Public Sub New(ByVal GetResolvers As Func(Of ObjectOneToManyMapper(Of D), IEnumerable(Of IObjectOneToManyMapperResolver(Of D))))
         Me.ResolversValue = GetResolvers(Me).ToList()
     End Sub
 
@@ -129,9 +141,9 @@ Public Class ObjectTreeOneToManyMapper(Of D)
     End Function
 
     Public Class EnumMapperResolver
-        Implements IObjectTreeOneToManyMapperResolver(Of D)
+        Implements IObjectOneToManyMapperResolver(Of D)
 
-        Public Function TryResolve(ByVal PhysicalType As Type) As [Delegate] Implements IObjectTreeOneToManyMapperResolver(Of D).TryResolve
+        Public Function TryResolve(ByVal PhysicalType As Type) As [Delegate] Implements IObjectOneToManyMapperResolver(Of D).TryResolve
             If PhysicalType.IsEnum Then
                 Dim UnderlyingType = PhysicalType.GetEnumUnderlyingType
                 Dim MapperMethod = Map
@@ -170,10 +182,10 @@ Public Class ObjectTreeOneToManyMapper(Of D)
         End Sub
     End Class
 
-    Public MustInherit Class CollectionMapperResolver
-        Implements IObjectTreeOneToManyMapperResolver(Of D)
+    Public Class CollectionMapperResolver
+        Implements IObjectOneToManyMapperResolver(Of D)
 
-        Public Function TryResolve(ByVal PhysicalType As Type) As [Delegate] Implements IObjectTreeOneToManyMapperResolver(Of D).TryResolve
+        Public Function TryResolve(ByVal PhysicalType As Type) As [Delegate] Implements IObjectOneToManyMapperResolver(Of D).TryResolve
             If PhysicalType.IsArray Then
                 Dim ArrayMapperGen = TryGetArrayMapperGenerator(PhysicalType.GetArrayRank)
                 If ArrayMapperGen IsNot Nothing Then
@@ -251,7 +263,7 @@ Public Class ObjectTreeOneToManyMapper(Of D)
         Public Overridable Function TryGetArrayMapperGenerator(ByVal Dimension As Integer) As Func(Of Type, [Delegate])
             If Not ArrayMapperGeneratorCache.ContainsKey(Dimension) Then
                 If Dimension <> 1 Then Return Nothing
-                PutArrayMapperGenerator(DirectCast(AddressOf DefaultArrayMapper(Of DummyType), Func(Of D, DummyType())))
+                PutArrayMapperGenerator(DirectCast(AddressOf Provider.DefaultArrayMapper(Of DummyType), Func(Of D, DummyType())))
             End If
             Return ArrayMapperGeneratorCache(Dimension)
         End Function
@@ -262,21 +274,23 @@ Public Class ObjectTreeOneToManyMapper(Of D)
                 If Not ListType.IsGenericTypeDefinition Then Throw New ArgumentException
                 If ListType.GetGenericArguments().Length <> 1 Then Return Nothing
                 Dim DummyListType = ListType.MakeGenericType(GetType(DummyType))
-                Dim DummyMethod As Func(Of D, List(Of DummyType)) = AddressOf DefaultListMapper(Of DummyType, List(Of DummyType))
+                Dim DummyMethod As Func(Of D, List(Of DummyType)) = AddressOf Provider.DefaultListMapper(Of DummyType, List(Of DummyType))
                 Dim m = DummyMethod.MakeDelegateMethodFromDummy(GetType(List(Of DummyType)), DummyListType)
                 PutListMapperGenerator(m)
             End If
             Return ListMapperGeneratorCache(ListType)
         End Function
 
-        Public MustOverride Function DefaultArrayMapper(Of R)(ByVal Key As D) As R()
-        Public MustOverride Function DefaultListMapper(Of R, RList As {New, ICollection(Of R)})(ByVal Key As D) As RList
+        Private Provider As ICollectionOneToManyMapperResolverDefaultProvider(Of D)
+        Public Sub New(ByVal Provider As ICollectionOneToManyMapperResolverDefaultProvider(Of D))
+            Me.Provider = Provider
+        End Sub
     End Class
 
     Public Class ClassAndStructureMapperResolver
-        Implements IObjectTreeOneToManyMapperResolver(Of D)
+        Implements IObjectOneToManyMapperResolver(Of D)
 
-        Public Function TryResolve(ByVal PhysicalType As Type) As [Delegate] Implements IObjectTreeOneToManyMapperResolver(Of D).TryResolve
+        Public Function TryResolve(ByVal PhysicalType As Type) As [Delegate] Implements IObjectOneToManyMapperResolver(Of D).TryResolve
             If PhysicalType.IsValueType OrElse PhysicalType.IsClass Then
                 If PhysicalType.IsClass Then
                     Dim c = PhysicalType.GetConstructor(New Type() {})
@@ -364,17 +378,17 @@ Public Class ObjectTreeOneToManyMapper(Of D)
     End Class
 End Class
 
-Public Class ObjectTreeManyToOneMapper(Of R)
+Public Class ObjectManyToOneMapper(Of R)
     Private MapperCache As New Dictionary(Of Type, [Delegate])
-    Private ResolversValue As New List(Of IObjectTreeManyToOneMapperResolver(Of R))
-    Public ReadOnly Property Resolvers As List(Of IObjectTreeManyToOneMapperResolver(Of R))
+    Private ResolversValue As New List(Of IObjectManyToOneMapperResolver(Of R))
+    Public ReadOnly Property Resolvers As List(Of IObjectManyToOneMapperResolver(Of R))
         Get
             Return ResolversValue
         End Get
     End Property
     Public Sub New()
     End Sub
-    Public Sub New(ByVal GetResolvers As Func(Of ObjectTreeManyToOneMapper(Of R), IEnumerable(Of IObjectTreeManyToOneMapperResolver(Of R))))
+    Public Sub New(ByVal GetResolvers As Func(Of ObjectManyToOneMapper(Of R), IEnumerable(Of IObjectManyToOneMapperResolver(Of R))))
         Me.ResolversValue = GetResolvers(Me).ToList()
     End Sub
 
@@ -409,9 +423,9 @@ Public Class ObjectTreeManyToOneMapper(Of R)
     End Sub
 
     Public Class EnumMapperResolver
-        Implements IObjectTreeManyToOneMapperResolver(Of R)
+        Implements IObjectManyToOneMapperResolver(Of R)
 
-        Public Function TryResolve(ByVal PhysicalType As Type) As [Delegate] Implements IObjectTreeManyToOneMapperResolver(Of R).TryResolve
+        Public Function TryResolve(ByVal PhysicalType As Type) As [Delegate] Implements IObjectManyToOneMapperResolver(Of R).TryResolve
             If PhysicalType.IsEnum Then
                 Dim UnderlyingType = PhysicalType.GetEnumUnderlyingType
                 Dim MapperMethod = Map
@@ -451,10 +465,10 @@ Public Class ObjectTreeManyToOneMapper(Of R)
         End Sub
     End Class
 
-    Public MustInherit Class CollectionMapperResolver
-        Implements IObjectTreeManyToOneMapperResolver(Of R)
+    Public Class CollectionMapperResolver
+        Implements IObjectManyToOneMapperResolver(Of R)
 
-        Public Function TryResolve(ByVal PhysicalType As Type) As [Delegate] Implements IObjectTreeManyToOneMapperResolver(Of R).TryResolve
+        Public Function TryResolve(ByVal PhysicalType As Type) As [Delegate] Implements IObjectManyToOneMapperResolver(Of R).TryResolve
             If PhysicalType.IsArray Then
                 Dim ArrayMapperGen = TryGetArrayMapperGenerator(PhysicalType.GetArrayRank)
                 If ArrayMapperGen IsNot Nothing Then
@@ -532,7 +546,7 @@ Public Class ObjectTreeManyToOneMapper(Of R)
         Public Overridable Function TryGetArrayMapperGenerator(ByVal Dimension As Integer) As Func(Of Type, [Delegate])
             If Not ArrayMapperGeneratorCache.ContainsKey(Dimension) Then
                 If Dimension <> 1 Then Return Nothing
-                PutArrayMapperGenerator(DirectCast(AddressOf DefaultArrayMapper(Of DummyType), Action(Of DummyType(), R)))
+                PutArrayMapperGenerator(DirectCast(AddressOf Provider.DefaultArrayMapper(Of DummyType), Action(Of DummyType(), R)))
             End If
             Return ArrayMapperGeneratorCache(Dimension)
         End Function
@@ -543,21 +557,23 @@ Public Class ObjectTreeManyToOneMapper(Of R)
                 If Not ListType.IsGenericTypeDefinition Then Throw New ArgumentException
                 If ListType.GetGenericArguments().Length <> 1 Then Return Nothing
                 Dim DummyListType = ListType.MakeGenericType(GetType(DummyType))
-                Dim DummyMethod As Action(Of List(Of DummyType), R) = AddressOf DefaultListMapper(Of DummyType, List(Of DummyType))
+                Dim DummyMethod As Action(Of List(Of DummyType), R) = AddressOf Provider.DefaultListMapper(Of DummyType, List(Of DummyType))
                 Dim m = DummyMethod.MakeDelegateMethodFromDummy(GetType(List(Of DummyType)), DummyListType)
                 PutListMapperGenerator(m)
             End If
             Return ListMapperGeneratorCache(ListType)
         End Function
 
-        Public MustOverride Sub DefaultArrayMapper(Of D)(ByVal arr As D(), ByVal Value As R)
-        Public MustOverride Sub DefaultListMapper(Of D, DList As ICollection(Of D))(ByVal list As DList, ByVal Value As R)
+        Private Provider As ICollectionMapperResolverDefaultProvider(Of R)
+        Public Sub New(ByVal Provider As ICollectionMapperResolverDefaultProvider(Of R))
+            Me.Provider = Provider
+        End Sub
     End Class
 
     Public Class ClassAndStructureMapperResolver
-        Implements IObjectTreeManyToOneMapperResolver(Of R)
+        Implements IObjectManyToOneMapperResolver(Of R)
 
-        Public Function TryResolve(ByVal PhysicalType As Type) As [Delegate] Implements IObjectTreeManyToOneMapperResolver(Of R).TryResolve
+        Public Function TryResolve(ByVal PhysicalType As Type) As [Delegate] Implements IObjectManyToOneMapperResolver(Of R).TryResolve
             If PhysicalType.IsValueType OrElse PhysicalType.IsClass Then
                 If PhysicalType.IsClass Then
                     Dim c = PhysicalType.GetConstructor(New Type() {})
