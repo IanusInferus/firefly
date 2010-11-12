@@ -1,7 +1,8 @@
 ﻿2010.11.12
 Firefly.Core:
-增加ObjectTreeMapper。
+增加ObjectMapper。
 重构BinarySerializer。
+修改项目配置，让exe文件发布版不生成pdb。
 
 2010.11.10
 Firefly.Core:

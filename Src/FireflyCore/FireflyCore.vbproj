@@ -31,7 +31,7 @@
     <OutputPath>..\..\Bin\</OutputPath>
     <DocumentationFile>Firefly.Core.xml</DocumentationFile>
     <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisRuleSet>CodeAnalysisRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -65,7 +65,7 @@
     <Compile Include="Core\ListPart.vb" />
     <Compile Include="Core\Enumerators.vb" />
     <Compile Include="Core\N32.vb" />
-    <Compile Include="Core\ObjectTreeMapper.vb" />
+    <Compile Include="Core\ObjectMapper.vb" />
     <Compile Include="Core\StreamAdapters.vb" />
     <Compile Include="Core\StreamExComplex.vb" />
     <Compile Include="Core\StreamExFloats.vb" />
