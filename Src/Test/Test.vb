@@ -389,9 +389,10 @@ Public Module Test
         Public l2 As LinkedList(Of Int32)
         Public l3 As HashSet(Of UInt64)
         Public e1 As SerializerTestEnum
+        Public p As KeyValuePair(Of Byte, Integer)
 
         Public Shared Operator =(ByVal Left As SerializerTestObject, ByVal Right As SerializerTestObject) As Boolean
-            Return Left.i = Right.i AndAlso Left.s = Right.s AndAlso Left.o.h = Right.o.h AndAlso Left.a.ArrayEqual(Right.a) AndAlso Left.l.ToArray.ArrayEqual(Right.l.ToArray) AndAlso Left.l2.ToArray.ArrayEqual(Right.l2.ToArray) AndAlso Left.l3.ToArray.ArrayEqual(Right.l3.ToArray) AndAlso Left.e1 = Right.e1
+            Return Left.i = Right.i AndAlso Left.s = Right.s AndAlso Left.o.h = Right.o.h AndAlso Left.a.ArrayEqual(Right.a) AndAlso Left.l.ToArray.ArrayEqual(Right.l.ToArray) AndAlso Left.l2.ToArray.ArrayEqual(Right.l2.ToArray) AndAlso Left.l3.ToArray.ArrayEqual(Right.l3.ToArray) AndAlso Left.e1 = Right.e1 AndAlso Left.p.Key = Right.p.Key AndAlso Left.p.Value = Right.p.Value
         End Operator
         Public Shared Operator <>(ByVal Left As SerializerTestObject, ByVal Right As SerializerTestObject) As Boolean
             Return Not (Left = Right)
@@ -454,9 +455,8 @@ Public Module Test
         End Sub
     End Class
 
+    Public TestObject As New SerializerTestObject With {.i = 1, .s = 2, .o = New SerializerTestObject2 With {.h = 3}, .a = New Byte() {4, 5, 6}, .l = New List(Of Int16) From {7, 8, 9}, .l2 = New LinkedList(Of Int32)(New Int32() {10, 11, 12}), .l3 = New HashSet(Of UInt64) From {13, 14, 15}, .e1 = 16, .p = New KeyValuePair(Of Byte, Integer)(17, 18)}
     Public Sub TestObjectTreeMapper()
-        Dim TestObject As New SerializerTestObject With {.i = 1, .s = 2, .o = New SerializerTestObject2 With {.h = 3}, .a = New Byte() {4, 5, 6}, .l = New List(Of Int16) From {7, 8, 9}, .l2 = New LinkedList(Of Int32)(New Int32() {10, 11, 12}), .l3 = New HashSet(Of UInt64) From {13, 14, 15}, .e1 = 16}
-
         Dim Count = 0
 
         With Nothing
@@ -531,9 +531,21 @@ Public Module Test
         End With
     End Sub
 
-    Public Sub TestSerializer()
-        Dim TestObject As New SerializerTestObject With {.i = 1, .s = 2, .o = New SerializerTestObject2 With {.h = 3}, .a = New Byte() {4, 5, 6}, .l = New List(Of Int16) From {7, 8, 9}, .l2 = New LinkedList(Of Int32)(New Int32() {10, 11, 12}), .l3 = New HashSet(Of UInt64) From {13, 14, 15}, .e1 = 16}
+    Public Sub TestBinarySerializer()
+        Dim BinaryRoundTripped As SerializerTestObject
 
+        Using s As New StreamEx
+            Dim bs As New BinarySerializer
+            Dim Size = bs.Count(TestObject)
+            bs.Write(s, TestObject)
+            Assert(Size = s.Length)
+            s.Position = 0
+            BinaryRoundTripped = bs.Read(Of SerializerTestObject)(s)
+        End Using
+        Assert(TestObject = BinaryRoundTripped)
+    End Sub
+
+    Public Sub TestXmlSerializer()
         Dim XmlRoundTripped As SerializerTestObject
 
         Using s As New StreamEx
@@ -550,18 +562,6 @@ Public Module Test
             End Using
         End Using
         Assert(TestObject = XmlRoundTripped)
-
-        Dim BinaryRoundTripped As SerializerTestObject
-
-        Using s As New StreamEx
-            Dim bs As New BinarySerializer
-            Dim Size = bs.Count(TestObject)
-            bs.Write(s, TestObject)
-            Assert(Size = s.Length)
-            s.Position = 0
-            BinaryRoundTripped = bs.Read(Of SerializerTestObject)(s)
-        End Using
-        Assert(TestObject = BinaryRoundTripped)
     End Sub
 
     Public Sub Main()
@@ -578,6 +578,7 @@ Public Module Test
         'TestCommandLine()
         'TestMessageDialog()
         TestObjectTreeMapper()
-        TestSerializer()
+        TestBinarySerializer()
+        TestXmlSerializer()
     End Sub
 End Module

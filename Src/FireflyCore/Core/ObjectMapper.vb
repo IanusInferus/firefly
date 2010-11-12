@@ -292,83 +292,178 @@ Public Class ObjectOneToManyMapper(Of D)
 
         Public Function TryResolve(ByVal PhysicalType As Type) As [Delegate] Implements IObjectOneToManyMapperResolver(Of D).TryResolve
             If PhysicalType.IsValueType OrElse PhysicalType.IsClass Then
-                If PhysicalType.IsClass Then
-                    Dim c = PhysicalType.GetConstructor(New Type() {})
-                    If c Is Nothing OrElse Not c.IsPublic Then Return Nothing
-                End If
-
-                Dim dParam = Expression.Variable(GetType(D), "Key")
-                Dim rParam = Expression.Variable(PhysicalType, "Value")
-                Dim ClosureParam = Expression.Variable(GetType(Closure), "<>_Closure")
-
-                Dim Statements As New List(Of Expression)
-                Dim CreateThis = Expression.Assign(rParam, Expression.[New](PhysicalType))
-                Statements.Add(CreateThis)
-
-                Dim Fields = PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance).Where(Function(f) Not f.IsInitOnly).Where(Function(p) Not p.IsInitOnly).Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Field(rParam, f), .Type = f.FieldType}).ToArray
-                Dim Properties = PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance).Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso p.GetIndexParameters.Length = 0).Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Property(rParam, f), .Type = f.PropertyType}).ToArray
-                If Fields.Length > 0 AndAlso Properties.Length > 0 Then Return Nothing
-                Dim MemberToIndex = PhysicalType.GetMembers.Select(Function(m, i) New With {.Member = m, .Index = i}).ToDictionary(Function(p) p.Member, Function(p) p.Index)
-                Dim FieldsAndProperties = Fields.Concat(Properties).OrderBy(Function(f) MemberToIndex(f.Member)).ToArray
-                If PhysicalType.IsValueType Then
-                    If FieldsAndProperties.Length = 0 Then
-                        Return Nothing
-                    End If
-                End If
-
-                Dim TypeToMapper As New Dictionary(Of Type, [Delegate])
-                Dim MapperToClosureField As New Dictionary(Of [Delegate], Integer)
-                Dim ClosureObjects As New List(Of Object)
-                For Each Pair In FieldsAndProperties
-                    Dim Type = Pair.Type
-                    If TypeToMapper.ContainsKey(Type) Then Continue For
-                    Dim MapperMethod = Map
-                    Dim Mapper = MapperMethod.MakeDelegateMethodFromDummy(Type)
-                    TypeToMapper.Add(Type, Mapper)
-                    If Mapper.Target IsNot Nothing Then
-                        Dim n = ClosureObjects.Count
-                        MapperToClosureField.Add(Mapper, n)
-                        ClosureObjects.Add(Mapper)
-                    End If
-                Next
-                Dim Closure As Closure = Nothing
-                If ClosureObjects.Count > 0 Then
-                    Closure = New Closure(Nothing, ClosureObjects.ToArray)
-                End If
-                For Each Pair In FieldsAndProperties
-                    Dim FieldOrPropertyExpr = Pair.FieldOrPropertyExpr
-                    Dim Type = Pair.Type
-                    Dim Mapper = TypeToMapper(Type)
-                    Dim MapperCall As Expression
-                    If Mapper.Target Is Nothing Then
-                        MapperCall = Expression.Call(Mapper.Method, dParam)
-                    Else
-                        Dim n = MapperToClosureField(Mapper)
-                        Dim ArrayIndex = Function(cl As Closure, i As Integer) cl.Locals(i)
-                        Dim DelegateType = GetType(Func(Of ,)).MakeGenericType(GetType(D), Type)
-                        Dim DelegateFunc = Expression.ConvertChecked(Expression.Call(ArrayIndex.Method, ClosureParam, Expression.Constant(n)), DelegateType)
-                        MapperCall = Expression.Invoke(DelegateFunc, dParam)
-                    End If
-                    Dim Assign = Expression.Assign(FieldOrPropertyExpr, MapperCall)
-                    Statements.Add(Assign)
-                Next
-                Statements.Add(rParam)
-
-                Dim FunctionBody = Expression.Block(New ParameterExpression() {rParam}, Statements)
-                Dim FunctionLambda As LambdaExpression = Expression.Lambda(FunctionBody, New ParameterExpression() {dParam})
-                If Closure IsNot Nothing Then
-                    FunctionLambda = Expression.Lambda(FunctionLambda, New ParameterExpression() {ClosureParam})
-                End If
-
-                Dim Compiled As [Delegate] = FunctionLambda.Compile()
-                If Closure IsNot Nothing Then
-                    Dim CompiledFunc = CType(Compiled, Func(Of Closure, [Delegate]))
-                    Compiled = CompiledFunc(Closure)
-                End If
-
-                Return Compiled
+                Dim Resolved = TryParametricConstructor(PhysicalType)
+                If Resolved IsNot Nothing Then Return Resolved
+                Resolved = TryNonparametricConstructor(PhysicalType)
+                If Resolved IsNot Nothing Then Return Resolved
             End If
             Return Nothing
+        End Function
+
+        Public Function TryParametricConstructor(ByVal PhysicalType As Type) As [Delegate]
+            If Not (PhysicalType.IsValueType OrElse PhysicalType.IsClass) Then Return Nothing
+
+            Dim ReadableAndWritableFields = PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance).Where(Function(f) Not f.IsInitOnly).ToArray
+            Dim WritableProperties = PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance).Where(Function(p) p.CanWrite AndAlso p.GetIndexParameters.Length = 0).ToArray
+            Dim ReadableFields = PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance).Where(Function(f) f.IsInitOnly).ToArray
+            Dim ReadableProperties = PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance).Where(Function(p) p.CanRead AndAlso Not p.CanWrite AndAlso p.GetIndexParameters.Length = 0).ToArray
+
+            If ReadableAndWritableFields.Count > 0 Then Return Nothing
+            If WritableProperties.Count > 0 Then Return Nothing
+            If ReadableFields.Length > 0 AndAlso ReadableProperties.Length > 0 Then Return Nothing
+
+            Dim dParam = Expression.Variable(GetType(D), "Key")
+            Dim ClosureParam = Expression.Variable(GetType(Closure), "<>_Closure")
+
+            Dim FieldMembers = ReadableFields.Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .Type = f.FieldType}).ToArray
+            Dim PropertyMembers = ReadableProperties.Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .Type = f.PropertyType}).ToArray
+            Dim MemberToIndex = PhysicalType.GetMembers.Select(Function(m, i) New With {.Member = m, .Index = i}).ToDictionary(Function(p) p.Member, Function(p) p.Index)
+            Dim FieldsAndProperties = FieldMembers.Concat(PropertyMembers).OrderBy(Function(f) MemberToIndex(f.Member)).ToArray
+            If PhysicalType.IsValueType Then
+                If FieldsAndProperties.Length = 0 Then
+                    Return Nothing
+                End If
+            End If
+
+            Dim FieldAndPropertyTypes = FieldsAndProperties.Select(Function(f) f.Type).ToArray
+            Dim c = PhysicalType.GetConstructor(FieldAndPropertyTypes)
+            If c Is Nothing OrElse Not c.IsPublic Then Return Nothing
+
+            Dim Expressions As New List(Of Expression)
+
+            Dim TypeToMapper As New Dictionary(Of Type, [Delegate])
+            Dim MapperToClosureField As New Dictionary(Of [Delegate], Integer)
+            Dim ClosureObjects As New List(Of Object)
+            For Each Pair In FieldsAndProperties
+                Dim Type = Pair.Type
+                If TypeToMapper.ContainsKey(Type) Then Continue For
+                Dim MapperMethod = Map
+                Dim Mapper = MapperMethod.MakeDelegateMethodFromDummy(Type)
+                TypeToMapper.Add(Type, Mapper)
+                If Mapper.Target IsNot Nothing Then
+                    Dim n = ClosureObjects.Count
+                    MapperToClosureField.Add(Mapper, n)
+                    ClosureObjects.Add(Mapper)
+                End If
+            Next
+            Dim Closure As Closure = Nothing
+            If ClosureObjects.Count > 0 Then
+                Closure = New Closure(Nothing, ClosureObjects.ToArray)
+            End If
+            For Each Pair In FieldsAndProperties
+                Dim Type = Pair.Type
+                Dim Mapper = TypeToMapper(Type)
+                Dim MapperCall As Expression
+                If Mapper.Target Is Nothing Then
+                    MapperCall = Expression.Call(Mapper.Method, dParam)
+                Else
+                    Dim n = MapperToClosureField(Mapper)
+                    Dim ArrayIndex = Function(cl As Closure, i As Integer) cl.Locals(i)
+                    Dim DelegateType = GetType(Func(Of ,)).MakeGenericType(GetType(D), Type)
+                    Dim DelegateFunc = Expression.ConvertChecked(Expression.Call(ArrayIndex.Method, ClosureParam, Expression.Constant(n)), DelegateType)
+                    MapperCall = Expression.Invoke(DelegateFunc, dParam)
+                End If
+                Expressions.Add(MapperCall)
+            Next
+            Dim CreateThis = Expression.[New](c, Expressions)
+
+            Dim FunctionBody = Expression.Block(New ParameterExpression() {}, CreateThis)
+            Dim FunctionLambda As LambdaExpression = Expression.Lambda(FunctionBody, New ParameterExpression() {dParam})
+            If Closure IsNot Nothing Then
+                FunctionLambda = Expression.Lambda(FunctionLambda, New ParameterExpression() {ClosureParam})
+            End If
+
+            Dim Compiled As [Delegate] = FunctionLambda.Compile()
+            If Closure IsNot Nothing Then
+                Dim CompiledFunc = CType(Compiled, Func(Of Closure, [Delegate]))
+                Compiled = CompiledFunc(Closure)
+            End If
+
+            Return Compiled
+        End Function
+
+        Public Function TryNonparametricConstructor(ByVal PhysicalType As Type) As [Delegate]
+            If Not (PhysicalType.IsValueType OrElse PhysicalType.IsClass) Then Return Nothing
+
+            If PhysicalType.IsClass Then
+                Dim c = PhysicalType.GetConstructor(New Type() {})
+                If c Is Nothing OrElse Not c.IsPublic Then Return Nothing
+            End If
+
+            Dim ReadableAndWritableFields = PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance).Where(Function(f) Not f.IsInitOnly).ToArray
+            Dim ReadableAndWritableProperties = PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance).Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso p.GetIndexParameters.Length = 0).ToArray
+            Dim WritableProperties = PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance).Where(Function(p) p.CanWrite AndAlso p.GetIndexParameters.Length = 0).ToArray
+            If Not ((ReadableAndWritableFields.Length > 0 AndAlso WritableProperties.Length = 0) OrElse (ReadableAndWritableFields.Length = 0 AndAlso ReadableAndWritableProperties.Length > 0)) Then Return Nothing
+
+            Dim dParam = Expression.Variable(GetType(D), "Key")
+            Dim rParam = Expression.Variable(PhysicalType, "Value")
+            Dim ClosureParam = Expression.Variable(GetType(Closure), "<>_Closure")
+
+            Dim Statements As New List(Of Expression)
+            Dim CreateThis = Expression.Assign(rParam, Expression.[New](PhysicalType))
+            Statements.Add(CreateThis)
+
+            Dim FieldMembers = ReadableAndWritableFields.Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Field(rParam, f), .Type = f.FieldType}).ToArray
+            Dim PropertyMembers = ReadableAndWritableProperties.Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Property(rParam, f), .Type = f.PropertyType}).ToArray
+            Dim MemberToIndex = PhysicalType.GetMembers.Select(Function(m, i) New With {.Member = m, .Index = i}).ToDictionary(Function(p) p.Member, Function(p) p.Index)
+            Dim FieldsAndProperties = FieldMembers.Concat(PropertyMembers).OrderBy(Function(f) MemberToIndex(f.Member)).ToArray
+            If PhysicalType.IsValueType Then
+                If FieldsAndProperties.Length = 0 Then
+                    Return Nothing
+                End If
+            End If
+
+            Dim TypeToMapper As New Dictionary(Of Type, [Delegate])
+            Dim MapperToClosureField As New Dictionary(Of [Delegate], Integer)
+            Dim ClosureObjects As New List(Of Object)
+            For Each Pair In FieldsAndProperties
+                Dim Type = Pair.Type
+                If TypeToMapper.ContainsKey(Type) Then Continue For
+                Dim MapperMethod = Map
+                Dim Mapper = MapperMethod.MakeDelegateMethodFromDummy(Type)
+                TypeToMapper.Add(Type, Mapper)
+                If Mapper.Target IsNot Nothing Then
+                    Dim n = ClosureObjects.Count
+                    MapperToClosureField.Add(Mapper, n)
+                    ClosureObjects.Add(Mapper)
+                End If
+            Next
+            Dim Closure As Closure = Nothing
+            If ClosureObjects.Count > 0 Then
+                Closure = New Closure(Nothing, ClosureObjects.ToArray)
+            End If
+            For Each Pair In FieldsAndProperties
+                Dim FieldOrPropertyExpr = Pair.FieldOrPropertyExpr
+                Dim Type = Pair.Type
+                Dim Mapper = TypeToMapper(Type)
+                Dim MapperCall As Expression
+                If Mapper.Target Is Nothing Then
+                    MapperCall = Expression.Call(Mapper.Method, dParam)
+                Else
+                    Dim n = MapperToClosureField(Mapper)
+                    Dim ArrayIndex = Function(cl As Closure, i As Integer) cl.Locals(i)
+                    Dim DelegateType = GetType(Func(Of ,)).MakeGenericType(GetType(D), Type)
+                    Dim DelegateFunc = Expression.ConvertChecked(Expression.Call(ArrayIndex.Method, ClosureParam, Expression.Constant(n)), DelegateType)
+                    MapperCall = Expression.Invoke(DelegateFunc, dParam)
+                End If
+                Dim Assign = Expression.Assign(FieldOrPropertyExpr, MapperCall)
+                Statements.Add(Assign)
+            Next
+            Statements.Add(rParam)
+
+            Dim FunctionBody = Expression.Block(New ParameterExpression() {rParam}, Statements)
+            Dim FunctionLambda As LambdaExpression = Expression.Lambda(FunctionBody, New ParameterExpression() {dParam})
+            If Closure IsNot Nothing Then
+                FunctionLambda = Expression.Lambda(FunctionLambda, New ParameterExpression() {ClosureParam})
+            End If
+
+            Dim Compiled As [Delegate] = FunctionLambda.Compile()
+            If Closure IsNot Nothing Then
+                Dim CompiledFunc = CType(Compiled, Func(Of Closure, [Delegate]))
+                Compiled = CompiledFunc(Closure)
+            End If
+
+            Return Compiled
         End Function
 
         Private Map As Func(Of D, DummyType)
@@ -575,78 +670,173 @@ Public Class ObjectManyToOneMapper(Of R)
 
         Public Function TryResolve(ByVal PhysicalType As Type) As [Delegate] Implements IObjectManyToOneMapperResolver(Of R).TryResolve
             If PhysicalType.IsValueType OrElse PhysicalType.IsClass Then
-                If PhysicalType.IsClass Then
-                    Dim c = PhysicalType.GetConstructor(New Type() {})
-                    If c Is Nothing OrElse Not c.IsPublic Then Return Nothing
-                End If
-
-                Dim dParam = Expression.Variable(PhysicalType, "Key")
-                Dim rParam = Expression.Variable(GetType(R), "Value")
-                Dim ClosureParam = Expression.Variable(GetType(Closure), "<>_Closure")
-
-                Dim Statements As New List(Of Expression)
-
-                Dim Fields = PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance).Where(Function(f) Not f.IsInitOnly).Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Field(dParam, f), .Type = f.FieldType}).ToArray
-                Dim Properties = PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance).Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso p.GetIndexParameters.Length = 0).Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Property(dParam, f), .Type = f.PropertyType}).ToArray
-                If Fields.Length > 0 AndAlso Properties.Length > 0 Then Return Nothing
-                Dim MemberToIndex = PhysicalType.GetMembers.Select(Function(m, i) New With {.Member = m, .Index = i}).ToDictionary(Function(p) p.Member, Function(p) p.Index)
-                Dim FieldsAndProperties = Fields.Concat(Properties).OrderBy(Function(f) MemberToIndex(f.Member)).ToArray
-                If PhysicalType.IsValueType Then
-                    If FieldsAndProperties.Length = 0 Then
-                        Return Nothing
-                    End If
-                End If
-
-                Dim TypeToMapper As New Dictionary(Of Type, [Delegate])
-                Dim ReaderToClosureField As New Dictionary(Of [Delegate], Integer)
-                Dim ClosureObjects As New List(Of Object)
-                For Each Pair In FieldsAndProperties
-                    Dim Type = Pair.Type
-                    If TypeToMapper.ContainsKey(Type) Then Continue For
-                    Dim MapperMethod = Map
-                    Dim Mapper = MapperMethod.MakeDelegateMethodFromDummy(Type)
-                    TypeToMapper.Add(Type, Mapper)
-                    If Mapper.Target IsNot Nothing Then
-                        Dim n = ClosureObjects.Count
-                        ReaderToClosureField.Add(Mapper, n)
-                        ClosureObjects.Add(Mapper)
-                    End If
-                Next
-                Dim Closure As Closure = Nothing
-                If ClosureObjects.Count > 0 Then
-                    Closure = New Closure(Nothing, ClosureObjects.ToArray)
-                End If
-                For Each Pair In FieldsAndProperties
-                    Dim FieldOrPropertyExpr = Pair.FieldOrPropertyExpr
-                    Dim Type = Pair.Type
-                    Dim Mapper = TypeToMapper(Type)
-                    Dim MapperCall As Expression
-                    If Mapper.Target Is Nothing Then
-                        MapperCall = Expression.Call(Mapper.Method, FieldOrPropertyExpr, rParam)
-                    Else
-                        Dim n = ReaderToClosureField(Mapper)
-                        Dim ArrayIndex = Function(cl As Closure, i As Integer) cl.Locals(i)
-                        Dim DelegateType = GetType(Action(Of ,)).MakeGenericType(Type, GetType(R))
-                        Dim DelegateFunc = Expression.ConvertChecked(Expression.Call(ArrayIndex.Method, ClosureParam, Expression.Constant(n)), DelegateType)
-                        MapperCall = Expression.Invoke(DelegateFunc, FieldOrPropertyExpr, rParam)
-                    End If
-                    Statements.Add(MapperCall)
-                Next
-
-                Dim FunctionBody = Expression.Block(Statements)
-                Dim FunctionLambda = Expression.Lambda(FunctionBody, New ParameterExpression() {dParam, rParam})
-                If Closure IsNot Nothing Then
-                    FunctionLambda = Expression.Lambda(FunctionLambda, New ParameterExpression() {ClosureParam})
-                End If
-
-                Dim Compiled = FunctionLambda.Compile()
-                If Closure IsNot Nothing Then
-                    Dim CompiledFunc = CType(Compiled, Func(Of Closure, [Delegate]))
-                    Compiled = CompiledFunc(Closure)
-                End If
-                Return Compiled
+                Dim Resolved = TryParametricConstructor(PhysicalType)
+                If Resolved IsNot Nothing Then Return Resolved
+                Resolved = TryNonparametricConstructor(PhysicalType)
+                If Resolved IsNot Nothing Then Return Resolved
             End If
             Return Nothing
+        End Function
+
+        Public Function TryParametricConstructor(ByVal PhysicalType As Type) As [Delegate]
+            If Not (PhysicalType.IsValueType OrElse PhysicalType.IsClass) Then Return Nothing
+
+            Dim ReadableAndWritableFields = PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance).Where(Function(f) Not f.IsInitOnly).ToArray
+            Dim WritableProperties = PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance).Where(Function(p) p.CanWrite AndAlso p.GetIndexParameters.Length = 0).ToArray
+            Dim ReadableFields = PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance).Where(Function(f) f.IsInitOnly).ToArray
+            Dim ReadableProperties = PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance).Where(Function(p) p.CanRead AndAlso Not p.CanWrite AndAlso p.GetIndexParameters.Length = 0).ToArray
+
+            If ReadableAndWritableFields.Count > 0 Then Return Nothing
+            If WritableProperties.Count > 0 Then Return Nothing
+            If ReadableFields.Length > 0 AndAlso ReadableProperties.Length > 0 Then Return Nothing
+
+            Dim dParam = Expression.Variable(PhysicalType, "Key")
+            Dim rParam = Expression.Variable(GetType(R), "Value")
+            Dim ClosureParam = Expression.Variable(GetType(Closure), "<>_Closure")
+
+            Dim Statements As New List(Of Expression)
+
+            Dim FieldMembers = ReadableFields.Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Field(dParam, f), .Type = f.FieldType}).ToArray
+            Dim PropertyMembers = ReadableProperties.Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Property(dParam, f), .Type = f.PropertyType}).ToArray
+            Dim MemberToIndex = PhysicalType.GetMembers.Select(Function(m, i) New With {.Member = m, .Index = i}).ToDictionary(Function(p) p.Member, Function(p) p.Index)
+            Dim FieldsAndProperties = FieldMembers.Concat(PropertyMembers).OrderBy(Function(f) MemberToIndex(f.Member)).ToArray
+            If PhysicalType.IsValueType Then
+                If FieldsAndProperties.Length = 0 Then
+                    Return Nothing
+                End If
+            End If
+
+            Dim FieldAndPropertyTypes = FieldsAndProperties.Select(Function(f) f.Type).ToArray
+            Dim c = PhysicalType.GetConstructor(FieldAndPropertyTypes)
+            If c Is Nothing OrElse Not c.IsPublic Then Return Nothing
+
+            Dim TypeToMapper As New Dictionary(Of Type, [Delegate])
+            Dim ReaderToClosureField As New Dictionary(Of [Delegate], Integer)
+            Dim ClosureObjects As New List(Of Object)
+            For Each Pair In FieldsAndProperties
+                Dim Type = Pair.Type
+                If TypeToMapper.ContainsKey(Type) Then Continue For
+                Dim MapperMethod = Map
+                Dim Mapper = MapperMethod.MakeDelegateMethodFromDummy(Type)
+                TypeToMapper.Add(Type, Mapper)
+                If Mapper.Target IsNot Nothing Then
+                    Dim n = ClosureObjects.Count
+                    ReaderToClosureField.Add(Mapper, n)
+                    ClosureObjects.Add(Mapper)
+                End If
+            Next
+            Dim Closure As Closure = Nothing
+            If ClosureObjects.Count > 0 Then
+                Closure = New Closure(Nothing, ClosureObjects.ToArray)
+            End If
+            For Each Pair In FieldsAndProperties
+                Dim FieldOrPropertyExpr = Pair.FieldOrPropertyExpr
+                Dim Type = Pair.Type
+                Dim Mapper = TypeToMapper(Type)
+                Dim MapperCall As Expression
+                If Mapper.Target Is Nothing Then
+                    MapperCall = Expression.Call(Mapper.Method, FieldOrPropertyExpr, rParam)
+                Else
+                    Dim n = ReaderToClosureField(Mapper)
+                    Dim ArrayIndex = Function(cl As Closure, i As Integer) cl.Locals(i)
+                    Dim DelegateType = GetType(Action(Of ,)).MakeGenericType(Type, GetType(R))
+                    Dim DelegateFunc = Expression.ConvertChecked(Expression.Call(ArrayIndex.Method, ClosureParam, Expression.Constant(n)), DelegateType)
+                    MapperCall = Expression.Invoke(DelegateFunc, FieldOrPropertyExpr, rParam)
+                End If
+                Statements.Add(MapperCall)
+            Next
+
+            Dim FunctionBody = Expression.Block(Statements)
+            Dim FunctionLambda = Expression.Lambda(FunctionBody, New ParameterExpression() {dParam, rParam})
+            If Closure IsNot Nothing Then
+                FunctionLambda = Expression.Lambda(FunctionLambda, New ParameterExpression() {ClosureParam})
+            End If
+
+            Dim Compiled = FunctionLambda.Compile()
+            If Closure IsNot Nothing Then
+                Dim CompiledFunc = CType(Compiled, Func(Of Closure, [Delegate]))
+                Compiled = CompiledFunc(Closure)
+            End If
+            Return Compiled
+        End Function
+
+        Public Function TryNonparametricConstructor(ByVal PhysicalType As Type) As [Delegate]
+            If Not (PhysicalType.IsValueType OrElse PhysicalType.IsClass) Then Return Nothing
+
+            If PhysicalType.IsClass Then
+                Dim c = PhysicalType.GetConstructor(New Type() {})
+                If c Is Nothing OrElse Not c.IsPublic Then Return Nothing
+            End If
+
+            Dim ReadableAndWritableFields = PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance).Where(Function(f) Not f.IsInitOnly).ToArray
+            Dim ReadableAndWritableProperties = PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance).Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso p.GetIndexParameters.Length = 0).ToArray
+            Dim WritableProperties = PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance).Where(Function(p) p.CanWrite AndAlso p.GetIndexParameters.Length = 0).ToArray
+            If Not ((ReadableAndWritableFields.Length > 0 AndAlso WritableProperties.Length = 0) OrElse (ReadableAndWritableFields.Length = 0 AndAlso ReadableAndWritableProperties.Length > 0)) Then Return Nothing
+
+            Dim dParam = Expression.Variable(PhysicalType, "Key")
+            Dim rParam = Expression.Variable(GetType(R), "Value")
+            Dim ClosureParam = Expression.Variable(GetType(Closure), "<>_Closure")
+
+            Dim Statements As New List(Of Expression)
+
+            Dim FieldMembers = ReadableAndWritableFields.Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Field(dParam, f), .Type = f.FieldType}).ToArray
+            Dim PropertyMembers = ReadableAndWritableProperties.Select(Function(f) New With {.Member = DirectCast(f, MemberInfo), .FieldOrPropertyExpr = Expression.Property(dParam, f), .Type = f.PropertyType}).ToArray
+            Dim MemberToIndex = PhysicalType.GetMembers.Select(Function(m, i) New With {.Member = m, .Index = i}).ToDictionary(Function(p) p.Member, Function(p) p.Index)
+            Dim FieldsAndProperties = FieldMembers.Concat(PropertyMembers).OrderBy(Function(f) MemberToIndex(f.Member)).ToArray
+            If PhysicalType.IsValueType Then
+                If FieldsAndProperties.Length = 0 Then
+                    Return Nothing
+                End If
+            End If
+
+            Dim TypeToMapper As New Dictionary(Of Type, [Delegate])
+            Dim ReaderToClosureField As New Dictionary(Of [Delegate], Integer)
+            Dim ClosureObjects As New List(Of Object)
+            For Each Pair In FieldsAndProperties
+                Dim Type = Pair.Type
+                If TypeToMapper.ContainsKey(Type) Then Continue For
+                Dim MapperMethod = Map
+                Dim Mapper = MapperMethod.MakeDelegateMethodFromDummy(Type)
+                TypeToMapper.Add(Type, Mapper)
+                If Mapper.Target IsNot Nothing Then
+                    Dim n = ClosureObjects.Count
+                    ReaderToClosureField.Add(Mapper, n)
+                    ClosureObjects.Add(Mapper)
+                End If
+            Next
+            Dim Closure As Closure = Nothing
+            If ClosureObjects.Count > 0 Then
+                Closure = New Closure(Nothing, ClosureObjects.ToArray)
+            End If
+            For Each Pair In FieldsAndProperties
+                Dim FieldOrPropertyExpr = Pair.FieldOrPropertyExpr
+                Dim Type = Pair.Type
+                Dim Mapper = TypeToMapper(Type)
+                Dim MapperCall As Expression
+                If Mapper.Target Is Nothing Then
+                    MapperCall = Expression.Call(Mapper.Method, FieldOrPropertyExpr, rParam)
+                Else
+                    Dim n = ReaderToClosureField(Mapper)
+                    Dim ArrayIndex = Function(cl As Closure, i As Integer) cl.Locals(i)
+                    Dim DelegateType = GetType(Action(Of ,)).MakeGenericType(Type, GetType(R))
+                    Dim DelegateFunc = Expression.ConvertChecked(Expression.Call(ArrayIndex.Method, ClosureParam, Expression.Constant(n)), DelegateType)
+                    MapperCall = Expression.Invoke(DelegateFunc, FieldOrPropertyExpr, rParam)
+                End If
+                Statements.Add(MapperCall)
+            Next
+
+            Dim FunctionBody = Expression.Block(Statements)
+            Dim FunctionLambda = Expression.Lambda(FunctionBody, New ParameterExpression() {dParam, rParam})
+            If Closure IsNot Nothing Then
+                FunctionLambda = Expression.Lambda(FunctionLambda, New ParameterExpression() {ClosureParam})
+            End If
+
+            Dim Compiled = FunctionLambda.Compile()
+            If Closure IsNot Nothing Then
+                Dim CompiledFunc = CType(Compiled, Func(Of Closure, [Delegate]))
+                Compiled = CompiledFunc(Closure)
+            End If
+            Return Compiled
         End Function
 
         Private Map As Action(Of DummyType, R)
