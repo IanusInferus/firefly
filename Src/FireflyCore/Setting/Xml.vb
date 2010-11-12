@@ -28,10 +28,21 @@ Namespace Setting
     ''' Xml
     ''' 
     ''' 用于将对象格式化到Xml文件及从Xml文件恢复数据
-    ''' 简单对象能够直接格式化
-    ''' 所谓的简单对象，包括String、基元类型、Enum、1维数组、实现ICollection(Of T)的简单对象元素的集合、简单对象构成的类和结构
-    ''' 所有的简单对象的类需要有公共的不带参数的构造函数
-    ''' 不能有交叉引用
+    ''' 简单类型能够直接格式化
+    ''' 对于非简单类型，应提供自定义序列化器
+    ''' 简单类型 ::= 简单类型
+    '''           | Byte | UInt16 | UInt32 | UInt64 | SByte | Int16 | Int32 | Int64 | Single | Double
+    '''           | String
+    '''           | 枚举
+    '''           | 数组(简单类型)
+    '''           | ICollection(简单类型)
+    '''           | 简单类或结构
+    ''' 简单类或结构 ::= 
+    '''               ( 类或结构(构造函数(参数(简单类型)*), 公共只读字段(简单类型)*, 公共可写属性{0}) AND (参数(简单类型)* = 公共只读字段(简单类型)*)
+    '''               | 类或结构(构造函数(参数(简单类型)*), 公共可写字段{0}, 公共只读属性(简单类型)*) AND (参数(简单类型)* = 公共只读属性(简单类型)*)
+    '''               | 类或结构(无参构造函数, 公共可读写字段(简单类型)*, 公共可写属性{0})
+    '''               | 类或结构(无参构造函数, 公共可写字段{0}, 公共可读写属性(简单类型)*)
+    '''               ) AND 类型结构为树状
     ''' 允许使用继承，但所有不直接出现在根类型的类型声明的类型树中的类型必须添加到ExternalTypes中
     ''' ExternalTypes中不应有命名冲突
     ''' 
@@ -458,29 +469,29 @@ Namespace Setting
                 Return InvM(obj)
             End If
 
-                If PhysicalType.IsValueType Then
-                    '必须定义为ValueType，否则无法正常设置值
-                    Dim obj = DirectCast(Activator.CreateInstance(PhysicalType), ValueType)
+            If PhysicalType.IsValueType Then
+                '必须定义为ValueType，否则无法正常设置值
+                Dim obj = DirectCast(Activator.CreateInstance(PhysicalType), ValueType)
 
-                    Dim SubElementDict = Element.Elements.ToDictionary(Function(e) e.Name.LocalName, StringComparer.OrdinalIgnoreCase)
-                    For Each f In PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance)
+                Dim SubElementDict = Element.Elements.ToDictionary(Function(e) e.Name.LocalName, StringComparer.OrdinalIgnoreCase)
+                For Each f In PhysicalType.GetFields(BindingFlags.Public Or BindingFlags.Instance)
                     If Not f.IsInitOnly Then
                         If SubElementDict.ContainsKey(f.Name) Then
                             f.SetValue(obj, InvMapElement(f.Name, SubElementDict(f.Name), f.FieldType, ExternalTypeDict, MapperDict))
                         End If
                     End If
                 Next
-                    For Each f In PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance)
-                        If f.CanRead AndAlso f.CanWrite AndAlso f.GetIndexParameters.Length = 0 Then
-                            If SubElementDict.ContainsKey(f.Name) Then
-                                f.SetValue(obj, InvMapElement(f.Name, SubElementDict(f.Name), f.PropertyType, ExternalTypeDict, MapperDict), Nothing)
-                            End If
+                For Each f In PhysicalType.GetProperties(BindingFlags.Public Or BindingFlags.Instance)
+                    If f.CanRead AndAlso f.CanWrite AndAlso f.GetIndexParameters.Length = 0 Then
+                        If SubElementDict.ContainsKey(f.Name) Then
+                            f.SetValue(obj, InvMapElement(f.Name, SubElementDict(f.Name), f.PropertyType, ExternalTypeDict, MapperDict), Nothing)
                         End If
-                    Next
-                    Return InvM(obj)
-                End If
+                    End If
+                Next
+                Return InvM(obj)
+            End If
 
-                Throw New NotSupportedException
+            Throw New NotSupportedException
         End Function
         Private Shared Sub ListAdd(Of T, TList As ICollection(Of T))(ByVal l As TList, ByVal v As T)
             l.Add(v)

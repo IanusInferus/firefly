@@ -81,6 +81,7 @@
     <Compile Include="Core\ArrayStream.vb" />
     <Compile Include="Core\ByteArrayStream.vb" />
     <Compile Include="Core\ListStringEx.vb" />
+    <Compile Include="Core\XmlSerializer.vb" />
     <Compile Include="GlobalSuppressions.vb" />
     <Compile Include="Glyphing\FdGlyphDescriptionFile.vb" />
     <Compile Include="Glyphing\Glyph.vb" />
