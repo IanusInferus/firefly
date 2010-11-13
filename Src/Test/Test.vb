@@ -9,6 +9,7 @@ Imports Firefly.Compressing
 Imports Firefly.TextEncoding
 Imports Firefly.Glyphing
 Imports Firefly.Texting
+Imports Firefly.Mapping
 Imports Firefly.Setting
 Imports Firefly.GUI
 
@@ -403,10 +404,10 @@ Public Module Test
         Public h As Integer
     End Structure
 
-    Public Class CollectionOneToManyResolverDefaultMapperProvider(Of D)
-        Implements ICollectionOneToManyMapperResolverDefaultProvider(Of D)
+    Public Class CollectionUnpackerDefaultProvider(Of D)
+        Implements ICollectionDefaultUnpacker(Of D)
 
-        Public Function DefaultArrayMapper(Of R)(ByVal Key As D) As R() Implements ICollectionOneToManyMapperResolverDefaultProvider(Of D).DefaultArrayMapper
+        Public Function DefaultArrayMapper(Of R)(ByVal Key As D) As R() Implements ICollectionDefaultUnpacker(Of D).DefaultArrayMapper
             Dim Mapper = DirectCast(Map.MakeDelegateMethodFromDummy(GetType(R)), Func(Of D, R))
             Dim Size = 3
             Dim l = New R(Size - 1) {}
@@ -415,7 +416,7 @@ Public Module Test
             Next
             Return l
         End Function
-        Public Function DefaultListMapper(Of R, RList As {New, ICollection(Of R)})(ByVal Key As D) As RList Implements ICollectionOneToManyMapperResolverDefaultProvider(Of D).DefaultListMapper
+        Public Function DefaultListMapper(Of R, RList As {New, ICollection(Of R)})(ByVal Key As D) As RList Implements ICollectionDefaultUnpacker(Of D).DefaultListMapper
             Dim Mapper = DirectCast(Map.MakeDelegateMethodFromDummy(GetType(R)), Func(Of D, R))
             Dim Size = 3
             Dim l = New RList()
@@ -432,16 +433,16 @@ Public Module Test
     End Class
 
     Public Class CollectionManyToOneResolverDefaultMapperProvider(Of R)
-        Implements ICollectionMapperResolverDefaultProvider(Of R)
+        Implements ICollectionDefaultPacker(Of R)
 
-        Public Sub DefaultArrayMapper(Of D)(ByVal arr As D(), ByVal Value As R) Implements ICollectionMapperResolverDefaultProvider(Of R).DefaultArrayMapper
+        Public Sub DefaultArrayMapper(Of D)(ByVal arr As D(), ByVal Value As R) Implements ICollectionDefaultPacker(Of R).DefaultArrayMapper
             Dim Mapper = DirectCast(Map.MakeDelegateMethodFromDummy(GetType(D)), Action(Of D, R))
             Dim Size = 3
             For n = 0 To Size - 1
                 Mapper(arr(n), Value)
             Next
         End Sub
-        Public Sub DefaultListMapper(Of D, DList As ICollection(Of D))(ByVal list As DList, ByVal Value As R) Implements ICollectionMapperResolverDefaultProvider(Of R).DefaultListMapper
+        Public Sub DefaultListMapper(Of D, DList As ICollection(Of D))(ByVal list As DList, ByVal Value As R) Implements ICollectionDefaultPacker(Of R).DefaultListMapper
             Dim Mapper = DirectCast(Map.MakeDelegateMethodFromDummy(GetType(D)), Action(Of D, R))
             Dim Size = 3
             For n = 0 To Size - 1
@@ -460,73 +461,73 @@ Public Module Test
         Dim Count = 0
 
         With Nothing
-            Dim mp As New ObjectOneToManyMapper(Of Integer)
-            Dim er = New ObjectOneToManyMapper(Of Integer).EnumMapperResolver(AddressOf mp.Map)
-            mp.Resolvers.Add(er)
-            Dim cr = New ObjectOneToManyMapper(Of Integer).CollectionMapperResolver(New CollectionOneToManyResolverDefaultMapperProvider(Of Integer)(AddressOf mp.Map))
-            mp.Resolvers.Add(cr)
-            Dim csr = New ObjectOneToManyMapper(Of Integer).ClassAndStructureMapperResolver(AddressOf mp.Map)
-            mp.Resolvers.Add(csr)
-            mp.PutMapper(
-                Function(i) As Byte
+            Dim mp As New ObjectMapper
+            Dim er = New BinarySerializer.EnumUnpacker(Of Integer)(mp)
+            mp.ProjectorResolvers.Add(er)
+            Dim cr = New CollectionUnpacker(Of Integer)(New CollectionUnpackerDefaultProvider(Of Integer)(AddressOf mp.Project))
+            mp.ProjectorResolvers.Add(cr)
+            Dim csr = New RecordUnpacker(Of Integer)(mp)
+            mp.ProjectorResolvers.Add(csr)
+            mp.PutProjector(
+                Function(i As Integer) As Byte
                     Count += 1
                     Return Count
                 End Function
             )
-            mp.PutMapper(
-                Function(i) As Int16
+            mp.PutProjector(
+                Function(i As Integer) As Int16
                     Count += 1
                     Return Count
                 End Function
             )
-            mp.PutMapper(
-                Function(i) As Int32
+            mp.PutProjector(
+                Function(i As Integer) As Int32
                     Count += 1
                     Return Count
                 End Function
             )
-            mp.PutMapper(
-                Function(i) As UInt64
+            mp.PutProjector(
+                Function(i As Integer) As UInt64
                     Count += 1
                     Return Count
                 End Function
             )
 
-            Dim BuiltObject = mp.Map(Of SerializerTestObject)(0)
+            Dim BuiltObject = mp.Project(Of Integer, SerializerTestObject)(0)
             Assert(TestObject = BuiltObject)
         End With
 
         Dim Count2 = 0
         With Nothing
-            Dim mp As New ObjectManyToOneMapper(Of Integer)
-            Dim er = New ObjectManyToOneMapper(Of Integer).EnumMapperResolver(AddressOf mp.Map)
-            mp.Resolvers.Add(er)
-            Dim cr = New ObjectManyToOneMapper(Of Integer).CollectionMapperResolver(New CollectionManyToOneResolverDefaultMapperProvider(Of Integer)(AddressOf mp.Map))
-            mp.Resolvers.Add(cr)
-            Dim csr = New ObjectManyToOneMapper(Of Integer).ClassAndStructureMapperResolver(AddressOf mp.Map)
-            mp.Resolvers.Add(csr)
-            mp.PutMapper(
+            Dim mp As New ObjectMapper
+            Dim er = New BinarySerializer.EnumPacker(Of Integer)(mp)
+            mp.AggregatorResolvers.Add(er)
+            Dim cr = New CollectionPacker(Of Integer)(New CollectionManyToOneResolverDefaultMapperProvider(Of Integer)(AddressOf mp.Aggregate))
+            mp.AggregatorResolvers.Add(cr)
+            Dim csr = New RecordPacker(Of Integer)(mp)
+            mp.AggregatorResolvers.Add(csr)
+            mp.PutAggregator(
                 Sub(Key As Byte, Value As Integer)
                     Count2 += 1
                 End Sub
             )
-            mp.PutMapper(
+            mp.PutAggregator(
                 Sub(Key As Int16, Value As Integer)
                     Count2 += 1
                 End Sub
             )
-            mp.PutMapper(
+            mp.PutAggregator(
                 Sub(Key As Int32, Value As Integer)
                     Count2 += 1
                 End Sub
             )
-            mp.PutMapper(
+            mp.PutAggregator(
                 Sub(Key As UInt64, Value As Integer)
                     Count2 += 1
                 End Sub
             )
 
-            mp.Map(Of SerializerTestObject)(TestObject, 1)
+            mp.Aggregate(TestObject, 1)
             Assert(Count = Count2)
         End With
     End Sub
@@ -579,6 +580,6 @@ Public Module Test
         'TestMessageDialog()
         TestObjectTreeMapper()
         TestBinarySerializer()
-        TestXmlSerializer()
+        'TestXmlSerializer()
     End Sub
 End Module

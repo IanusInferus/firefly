@@ -3,7 +3,7 @@
 '  File:        Xml.vb
 '  Location:    Firefly.Setting <Visual Basic .Net>
 '  Description: Xml读写
-'  Version:     2010.11.11.
+'  Version:     2010.11.13.
 '  Copyright:   F.R.C.
 '
 '==========================================================================
@@ -22,6 +22,7 @@ Imports System.Reflection
 Imports Firefly
 Imports Firefly.TextEncoding
 Imports Firefly.Texting
+Imports Firefly.Mapping
 
 Namespace Setting
     ''' <summary>
