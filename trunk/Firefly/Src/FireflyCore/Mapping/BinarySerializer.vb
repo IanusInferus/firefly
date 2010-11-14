@@ -55,21 +55,21 @@ Namespace Mapping
             ReaderMapperValue.ProjectorResolvers.AddRange(New List(Of IObjectProjectorResolver) From {
                 New PrimitiveMapperResolver(),
                 New EnumUnpacker(Of StreamEx)(ReaderMapperValue),
-                New CollectionUnpacker(Of StreamEx)(New CollectionDefaultUnpacker(Of StreamEx)(ReaderMapperValue)),
+                New CollectionUnpacker(Of StreamEx)(New GenericListProjectorResolver(Of StreamEx)(ReaderMapperValue)),
                 New RecordUnpacker(Of StreamEx)(ReaderMapperValue)
             })
             WriterMapperValue = New ObjectMapper
             WriterMapperValue.AggregatorResolvers.AddRange(New List(Of IObjectAggregatorResolver) From {
                 New PrimitiveMapperResolver(),
                 New EnumPacker(Of StreamEx)(WriterMapperValue),
-                New CollectionPacker(Of StreamEx)(New CollectionDefaultPacker(Of StreamEx)(WriterMapperValue)),
+                New CollectionPacker(Of StreamEx)(New GenericListAggregatorResolver(Of StreamEx)(WriterMapperValue)),
                 New RecordPacker(Of StreamEx)(WriterMapperValue)
             })
             CounterMapperValue = New ObjectMapper
             CounterMapperValue.AggregatorResolvers.AddRange(New List(Of IObjectAggregatorResolver) From {
                 New PrimitiveMapperResolver(),
                 New EnumPacker(Of CounterState)(CounterMapperValue),
-                New CollectionPacker(Of CounterState)(New CollectionDefaultPacker(Of CounterState)(CounterMapperValue)),
+                New CollectionPacker(Of CounterState)(New GenericListAggregatorResolver(Of CounterState)(CounterMapperValue)),
                 New RecordPacker(Of CounterState)(CounterMapperValue)
             })
         End Sub
@@ -199,7 +199,7 @@ Namespace Mapping
         Public Class EnumUnpacker(Of D)
             Implements IObjectProjectorResolver
 
-            Public Function TryResolve(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
+            Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
                 Dim DomainType = TypePair.Key
                 Dim RangeType = TypePair.Value
                 If DomainType IsNot GetType(D) Then Return Nothing
@@ -229,7 +229,7 @@ Namespace Mapping
         Public Class EnumPacker(Of R)
             Implements IObjectAggregatorResolver
 
-            Public Function TryResolve(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectAggregatorResolver.TryResolveAggregator
+            Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectAggregatorResolver.TryResolveAggregator
                 Dim DomainType = TypePair.Key
                 Dim RangeType = TypePair.Value
                 If RangeType IsNot GetType(R) Then Return Nothing
@@ -256,28 +256,22 @@ Namespace Mapping
             End Sub
         End Class
 
-        Public Class CollectionDefaultUnpacker(Of D)
-            Implements ICollectionDefaultUnpacker(Of D)
+        Public Class GenericListProjectorResolver(Of D)
+            Implements IGenericListProjectorResolver(Of D)
 
-            Public Function DefaultProjectorMapper(Of R)(ByVal Key As D) As R() Implements ICollectionDefaultUnpacker(Of D).DefaultArrayMapper
+            Public Function ResolveProjector(Of R, RList As {New, ICollection(Of R)})() As Func(Of D, RList) Implements IGenericListProjectorResolver(Of D).ResolveProjector
                 Dim Mapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(D), GetType(R))), Func(Of D, R))
                 Dim IntMapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(D), GetType(Integer))), Func(Of D, Integer))
-                Dim NumElement = IntMapper(Key)
-                Dim arr = New R(NumElement - 1) {}
-                For n = 0 To NumElement - 1
-                    arr(n) = Mapper(Key)
-                Next
-                Return arr
-            End Function
-            Public Function DefaultListProjector(Of R, RList As {New, ICollection(Of R)})(ByVal Key As D) As RList Implements ICollectionDefaultUnpacker(Of D).DefaultListMapper
-                Dim Mapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(D), GetType(R))), Func(Of D, R))
-                Dim IntMapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(D), GetType(Integer))), Func(Of D, Integer))
-                Dim NumElement = IntMapper(Key)
-                Dim list = New RList()
-                For n = 0 To NumElement - 1
-                    list.Add(Mapper(Key))
-                Next
-                Return list
+                Dim F =
+                    Function(Key As D) As RList
+                        Dim NumElement = IntMapper(Key)
+                        Dim List = New RList()
+                        For n = 0 To NumElement - 1
+                            List.Add(Mapper(Key))
+                        Next
+                        Return List
+                    End Function
+                Return F
             End Function
 
             Private AbsResolver As ObjectMapperAbsoluteResolver
@@ -286,27 +280,22 @@ Namespace Mapping
             End Sub
         End Class
 
-        Public Class CollectionDefaultPacker(Of R)
-            Implements ICollectionDefaultPacker(Of R)
+        Public Class GenericListAggregatorResolver(Of R)
+            Implements IGenericListAggregatorResolver(Of R)
 
-            Public Sub DefaultArrayMapper(Of D)(ByVal arr As D(), ByVal Value As R) Implements ICollectionDefaultPacker(Of R).DefaultArrayMapper
+            Public Function ResolveAggregator(Of D, DList As ICollection(Of D))() As Action(Of DList, R) Implements IGenericListAggregatorResolver(Of R).ResolveAggregator
                 Dim Mapper = DirectCast(AbsResolver.ResolveAggregator(CreatePair(GetType(D), GetType(R))), Action(Of D, R))
                 Dim IntMapper = DirectCast(AbsResolver.ResolveAggregator(CreatePair(GetType(Integer), GetType(R))), Action(Of Integer, R))
-                Dim NumElement = arr.Length
-                IntMapper(NumElement, Value)
-                For n = 0 To NumElement - 1
-                    Mapper(arr(n), Value)
-                Next
-            End Sub
-            Public Sub DefaultListMapper(Of D, DList As ICollection(Of D))(ByVal list As DList, ByVal Value As R) Implements ICollectionDefaultPacker(Of R).DefaultListMapper
-                Dim Mapper = DirectCast(AbsResolver.ResolveAggregator(CreatePair(GetType(D), GetType(R))), Action(Of D, R))
-                Dim IntMapper = DirectCast(AbsResolver.ResolveAggregator(CreatePair(GetType(Integer), GetType(R))), Action(Of Integer, R))
-                Dim NumElement = list.Count
-                IntMapper(NumElement, Value)
-                For Each v In list
-                    Mapper(v, Value)
-                Next
-            End Sub
+                Dim F =
+                    Sub(List As DList, Value As R)
+                        Dim NumElement = List.Count
+                        IntMapper(NumElement, Value)
+                        For Each v In List
+                            Mapper(v, Value)
+                        Next
+                    End Sub
+                Return F
+            End Function
 
             Private AbsResolver As ObjectMapperAbsoluteResolver
             Public Sub New(ByVal AbsResolver As IObjectMapperResolver)

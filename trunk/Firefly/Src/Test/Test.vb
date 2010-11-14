@@ -404,55 +404,47 @@ Public Module Test
         Public h As Integer
     End Structure
 
-    Public Class CollectionUnpackerDefaultProvider(Of D)
-        Implements ICollectionDefaultUnpacker(Of D)
+    Public Class GenericListProjectorResolver(Of D)
+        Implements IGenericListProjectorResolver(Of D)
 
-        Public Function DefaultArrayMapper(Of R)(ByVal Key As D) As R() Implements ICollectionDefaultUnpacker(Of D).DefaultArrayMapper
-            Dim Mapper = DirectCast(Map.MakeDelegateMethodFromDummy(GetType(R)), Func(Of D, R))
-            Dim Size = 3
-            Dim l = New R(Size - 1) {}
-            For n = 0 To Size - 1
-                l(n) = Mapper(Key)
-            Next
-            Return l
-        End Function
-        Public Function DefaultListMapper(Of R, RList As {New, ICollection(Of R)})(ByVal Key As D) As RList Implements ICollectionDefaultUnpacker(Of D).DefaultListMapper
-            Dim Mapper = DirectCast(Map.MakeDelegateMethodFromDummy(GetType(R)), Func(Of D, R))
-            Dim Size = 3
-            Dim l = New RList()
-            For n = 0 To Size - 1
-                l.Add(Mapper(Key))
-            Next
-            Return l
+        Public Function ResolveProjector(Of R, RList As {New, ICollection(Of R)})() As Func(Of D, RList) Implements IGenericListProjectorResolver(Of D).ResolveProjector
+            Dim Mapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(D), GetType(R))), Func(Of D, R))
+            Dim F =
+                Function(Key As D) As RList
+                    Dim Size = 3
+                    Dim l = New RList()
+                    For n = 0 To Size - 1
+                        l.Add(Mapper(Key))
+                    Next
+                    Return l
+                End Function
+            Return F
         End Function
 
-        Private Map As Func(Of D, DummyType)
-        Public Sub New(ByVal Map As Func(Of D, DummyType))
-            Me.Map = Map
+        Private AbsResolver As ObjectMapperAbsoluteResolver
+        Public Sub New(ByVal AbsResolver As IObjectMapperResolver)
+            Me.AbsResolver = New ObjectMapperAbsoluteResolver(AbsResolver)
         End Sub
     End Class
 
-    Public Class CollectionManyToOneResolverDefaultMapperProvider(Of R)
-        Implements ICollectionDefaultPacker(Of R)
+    Public Class GenericListAggregatorResolver(Of R)
+        Implements IGenericListAggregatorResolver(Of R)
 
-        Public Sub DefaultArrayMapper(Of D)(ByVal arr As D(), ByVal Value As R) Implements ICollectionDefaultPacker(Of R).DefaultArrayMapper
-            Dim Mapper = DirectCast(Map.MakeDelegateMethodFromDummy(GetType(D)), Action(Of D, R))
-            Dim Size = 3
-            For n = 0 To Size - 1
-                Mapper(arr(n), Value)
-            Next
-        End Sub
-        Public Sub DefaultListMapper(Of D, DList As ICollection(Of D))(ByVal list As DList, ByVal Value As R) Implements ICollectionDefaultPacker(Of R).DefaultListMapper
-            Dim Mapper = DirectCast(Map.MakeDelegateMethodFromDummy(GetType(D)), Action(Of D, R))
-            Dim Size = 3
-            For n = 0 To Size - 1
-                Mapper(list(n), Value)
-            Next
-        End Sub
+        Public Function ResolveAggregator(Of D, DList As ICollection(Of D))() As Action(Of DList, R) Implements IGenericListAggregatorResolver(Of R).ResolveAggregator
+            Dim Mapper = DirectCast(AbsResolver.ResolveAggregator(CreatePair(GetType(D), GetType(R))), Action(Of D, R))
+            Dim F =
+                Sub(list As DList, Value As R)
+                    Dim Size = 3
+                    For n = 0 To Size - 1
+                        Mapper(list(n), Value)
+                    Next
+                End Sub
+            Return F
+        End Function
 
-        Private Map As Action(Of DummyType, R)
-        Public Sub New(ByVal Map As Action(Of DummyType, R))
-            Me.Map = Map
+        Private AbsResolver As ObjectMapperAbsoluteResolver
+        Public Sub New(ByVal AbsResolver As IObjectMapperResolver)
+            Me.AbsResolver = New ObjectMapperAbsoluteResolver(AbsResolver)
         End Sub
     End Class
 
@@ -464,7 +456,7 @@ Public Module Test
             Dim mp As New ObjectMapper
             Dim er = New BinarySerializer.EnumUnpacker(Of Integer)(mp)
             mp.ProjectorResolvers.Add(er)
-            Dim cr = New CollectionUnpacker(Of Integer)(New CollectionUnpackerDefaultProvider(Of Integer)(AddressOf mp.Project))
+            Dim cr = New CollectionUnpacker(Of Integer)(New GenericListProjectorResolver(Of Integer)(mp))
             mp.ProjectorResolvers.Add(cr)
             Dim csr = New RecordUnpacker(Of Integer)(mp)
             mp.ProjectorResolvers.Add(csr)
@@ -502,7 +494,7 @@ Public Module Test
             Dim mp As New ObjectMapper
             Dim er = New BinarySerializer.EnumPacker(Of Integer)(mp)
             mp.AggregatorResolvers.Add(er)
-            Dim cr = New CollectionPacker(Of Integer)(New CollectionManyToOneResolverDefaultMapperProvider(Of Integer)(AddressOf mp.Aggregate))
+            Dim cr = New CollectionPacker(Of Integer)(New GenericListAggregatorResolver(Of Integer)(mp))
             mp.AggregatorResolvers.Add(cr)
             Dim csr = New RecordPacker(Of Integer)(mp)
             mp.AggregatorResolvers.Add(csr)
