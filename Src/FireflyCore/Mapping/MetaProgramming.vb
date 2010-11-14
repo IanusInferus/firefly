@@ -3,7 +3,7 @@
 '  File:        MetaProgramming.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 元编程
-'  Version:     2010.11.14.
+'  Version:     2010.11.15.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -223,6 +223,27 @@ Namespace Mapping
                 Compiled = DirectCast(Compiled.DynamicInvoke(Closure), [Delegate])
             End If
             Return Compiled
+        End Function
+        <Extension()> Public Function Compose(Of D, M, R)(ByVal InnerFunction As Func(Of D, M), ByVal OuterFunction As Func(Of M, R)) As Func(Of D, R)
+            Return Function(v) OuterFunction(InnerFunction(v))
+        End Function
+        <Extension()> Public Function Compose(ByVal InnerFunction As [Delegate], ByVal OuterFunction As [Delegate]) As [Delegate]
+            Dim D = InnerFunction.Method.GetParameters.Single.ParameterType
+            Dim MI = InnerFunction.Method.ReturnType
+            Dim MO = OuterFunction.Method.GetParameters.Single.ParameterType
+            Dim R = OuterFunction.Method.ReturnType
+
+            Dim iParam = Expression.Variable(InnerFunction.GetType(), "<>_i")
+            Dim oParam = Expression.Variable(OuterFunction.GetType(), "<>_o")
+
+            Dim vParam = Expression.Variable(D, "<>_v")
+            Dim l As LambdaExpression
+            If MI Is MO Then
+                l = Expression.Lambda(Expression.Invoke(oParam, Expression.Invoke(iParam, vParam)), vParam)
+            Else
+                l = Expression.Lambda(Expression.Invoke(oParam, Expression.ConvertChecked(Expression.Invoke(iParam, vParam), MO)), vParam)
+            End If
+            Return DirectCast(Expression.Lambda(l, iParam, oParam).Compile().DynamicInvoke(InnerFunction, OuterFunction), [Delegate])
         End Function
 
         Public Function CreatePair(Of TKey, TValue)(ByVal Key As TKey, ByVal Value As TValue) As KeyValuePair(Of TKey, TValue)
