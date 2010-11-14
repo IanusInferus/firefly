@@ -3,7 +3,7 @@
 '  File:        BinarySerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 二进制序列化类
-'  Version:     2010.11.14.
+'  Version:     2010.11.15.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -29,15 +29,16 @@ Namespace Mapping
     '''               | 类或结构(无参构造函数, 公共可读写字段(简单类型)*, 公共可写属性{0})
     '''               | 类或结构(无参构造函数, 公共可写字段{0}, 公共可读写属性(简单类型)*)
     '''               ) AND 类型结构为树状
+    ''' 此外，对象树中不应有空引用，否则应提供自定义序列化器
     ''' </remarks>
     Public Class BinarySerializer
         Private PrimRes As PrimitiveResolver
         Private ReaderMapper As ObjectMapper
         Private WriterMapper As ObjectMapper
         Private CounterMapper As ObjectMapper
-        Private ReaderTranslatorResolver As TranslatorResolver
-        Private WriterTranslatorResolver As TranslatorResolver
-        Private CounterTranslatorResolver As TranslatorResolver
+        Private ReaderCache As CachedResolver
+        Private WriterCache As CachedResolver
+        Private CounterCache As CachedResolver
         Private ReaderResolverSet As AlternativeResolver
         Private WriterResolverSet As AlternativeResolver
         Private CounterResolverSet As AlternativeResolver
@@ -61,40 +62,45 @@ Namespace Mapping
         Public Sub New()
             PrimRes = New PrimitiveResolver
             ReaderResolverSet = New AlternativeResolver
-            Dim ReaderCache As New CachedResolver(ReaderResolverSet)
-            ReaderTranslatorResolver = New TranslatorResolver(ReaderCache)
-            ReaderResolverSet.ProjectorResolvers.AddRange(New List(Of IObjectProjectorResolver) From {
+            ReaderCache = New CachedResolver(ReaderResolverSet)
+            Dim ReaderList = New List(Of IObjectProjectorResolver) From {
                 PrimRes,
                 New EnumUnpacker(Of StreamEx)(ReaderCache),
                 New CollectionUnpacker(Of StreamEx)(New GenericListProjectorResolver(Of StreamEx)(ReaderCache)),
-                New RecordUnpacker(Of StreamEx)(ReaderCache),
-                ReaderTranslatorResolver
-            })
+                New RecordUnpacker(Of StreamEx)(ReaderCache)
+            }
+            For Each r In ReaderList
+                ReaderResolverSet.ProjectorResolvers.AddLast(r)
+            Next
             WriterResolverSet = New AlternativeResolver
-            Dim WriterCache As New CachedResolver(WriterResolverSet)
-            WriterTranslatorResolver = New TranslatorResolver(WriterCache)
-            WriterResolverSet.AggregatorResolvers.AddRange(New List(Of IObjectAggregatorResolver) From {
+            WriterCache = New CachedResolver(WriterResolverSet)
+            Dim WriterList = New List(Of IObjectAggregatorResolver) From {
                 PrimRes,
                 New EnumPacker(Of StreamEx)(WriterCache),
                 New CollectionPacker(Of StreamEx)(New GenericListAggregatorResolver(Of StreamEx)(WriterCache)),
-                New RecordPacker(Of StreamEx)(WriterCache),
-                WriterTranslatorResolver
-            })
+                New RecordPacker(Of StreamEx)(WriterCache)
+            }
+            For Each r In WriterList
+                WriterResolverSet.AggregatorResolvers.AddLast(r)
+            Next
             CounterResolverSet = New AlternativeResolver
-            Dim CounterCache As New CachedResolver(CounterResolverSet)
-            CounterTranslatorResolver = New TranslatorResolver(CounterCache)
-            CounterResolverSet.ProjectorResolvers.AddRange(New List(Of IObjectProjectorResolver) From {
+            CounterCache = New CachedResolver(CounterResolverSet)
+            Dim CounterProjectorList = New List(Of IObjectProjectorResolver) From {
                 PrimRes,
-                CounterTranslatorResolver
-            })
-            CounterResolverSet.AggregatorResolvers.AddRange(New List(Of IObjectAggregatorResolver) From {
+                TranslatorResolver.Create(CounterCache, New CounterStateToIntRangeTranslator)
+            }
+            For Each r In CounterProjectorList
+                CounterResolverSet.ProjectorResolvers.AddLast(r)
+            Next
+            Dim CounterAggregatorList = New List(Of IObjectAggregatorResolver) From {
                 New EnumPacker(Of CounterState)(CounterCache),
                 New CollectionPacker(Of CounterState)(New GenericListAggregatorResolver(Of CounterState)(CounterCache)),
                 New RecordPacker(Of CounterState)(CounterCache),
-                CounterTranslatorResolver
-            })
-            CounterTranslatorResolver.PutAggregatorToProjectorTranslatorRange(New CounterStateToIntRangeTranslator)
-            CounterTranslatorResolver.PutProjectorToAggregatorTranslatorRange(New IntToCounterStateRangeTranslator)
+                TranslatorResolver.Create(CounterCache, New IntToCounterStateRangeTranslator)
+            }
+            For Each r In CounterAggregatorList
+                CounterResolverSet.AggregatorResolvers.AddLast(r)
+            Next
             ReaderMapper = New ObjectMapper(ReaderCache)
             WriterMapper = New ObjectMapper(WriterCache)
             CounterMapper = New ObjectMapper(CounterCache)
@@ -110,13 +116,13 @@ Namespace Mapping
             PrimRes.PutCounter(Of T)(Counter)
         End Sub
         Public Sub PutReaderTranslator(Of R, M)(ByVal Translator As IProjectorToProjectorRangeTranslator(Of R, M))
-            ReaderTranslatorResolver.PutProjectorToProjectorTranslatorRange(Translator)
+            ReaderResolverSet.ProjectorResolvers.AddFirst(TranslatorResolver.Create(ReaderCache, Translator))
         End Sub
         Public Sub PutWriterTranslator(Of D, M)(ByVal Translator As IAggregatorToAggregatorDomainTranslator(Of D, M))
-            WriterTranslatorResolver.PutAggregatorToAggregatorTranslatorDomain(Translator)
+            WriterResolverSet.AggregatorResolvers.AddFirst(TranslatorResolver.Create(WriterCache, Translator))
         End Sub
         Public Sub PutCounterTranslator(Of D, M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of D, M))
-            CounterTranslatorResolver.PutProjectorToProjectorTranslatorDomain(Translator)
+            CounterResolverSet.ProjectorResolvers.AddFirst(TranslatorResolver.Create(CounterCache, Translator))
         End Sub
 
         Public Function GetReader(Of T)() As Func(Of StreamEx, T)
@@ -149,7 +155,7 @@ Namespace Mapping
         Public Class PrimitiveResolver
             Implements IObjectMapperResolver
 
-            Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
+            Private Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
                 Dim DomainType = TypePair.Key
                 Dim RangeType = TypePair.Value
                 If DomainType Is GetType(StreamEx) Then Return TryResolveReader(RangeType)

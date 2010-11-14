@@ -1,4 +1,10 @@
-﻿2010.11.14
+﻿2010.11.15
+Firefly.Core.Mapping:
+重构ObjectMapperResolvers。
+重构BinarySerializer。
+增加XmlSerializer。
+
+2010.11.14
 Firefly.Core.Mapping:
 增加Firefly.Core.Mapping。
 重构ObjectMapper。

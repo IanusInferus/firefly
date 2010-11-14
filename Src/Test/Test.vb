@@ -400,6 +400,7 @@ Public Module Test
             Return Not (Left = Right)
         End Operator
     End Class
+    Public TestObject As New SerializerTestObject With {.i = 1, .s = 2, .o = New SerializerTestObject2 With {.h = 3}, .a = New Byte() {4, 5, 6}, .l = New List(Of Int16) From {7, 8, 9}, .l2 = New LinkedList(Of Int32)(New Int32() {10, 11, 12}), .l3 = New HashSet(Of UInt64) From {13, 14, 15}, .e1 = 16, .p = New KeyValuePair(Of Byte, Integer)(17, 18), .str = "19"}
 
     Public Structure SerializerTestObject2
         Public h As Integer
@@ -449,20 +450,19 @@ Public Module Test
         End Sub
     End Class
 
-    Public TestObject As New SerializerTestObject With {.i = 1, .s = 2, .o = New SerializerTestObject2 With {.h = 3}, .a = New Byte() {4, 5, 6}, .l = New List(Of Int16) From {7, 8, 9}, .l2 = New LinkedList(Of Int32)(New Int32() {10, 11, 12}), .l3 = New HashSet(Of UInt64) From {13, 14, 15}, .e1 = 16, .p = New KeyValuePair(Of Byte, Integer)(17, 18), .str = "19"}
     Public Sub TestObjectTreeMapper()
         Dim Count = 0
 
         With Nothing
             Dim mprs As New AlternativeResolver
             Dim pr = New PrimitiveResolver
-            mprs.ProjectorResolvers.Add(pr)
+            mprs.ProjectorResolvers.AddLast(pr)
             Dim er = New BinarySerializer.EnumUnpacker(Of Integer)(mprs)
-            mprs.ProjectorResolvers.Add(er)
+            mprs.ProjectorResolvers.AddLast(er)
             Dim cr = New CollectionUnpacker(Of Integer)(New GenericListProjectorResolver(Of Integer)(mprs))
-            mprs.ProjectorResolvers.Add(cr)
+            mprs.ProjectorResolvers.AddLast(cr)
             Dim csr = New RecordUnpacker(Of Integer)(mprs)
-            mprs.ProjectorResolvers.Add(csr)
+            mprs.ProjectorResolvers.AddLast(csr)
             pr.PutProjector(
                 Function(i As Integer) As Byte
                     Count += 1
@@ -503,13 +503,13 @@ Public Module Test
         With Nothing
             Dim mprs As New AlternativeResolver
             Dim pr = New PrimitiveResolver
-            mprs.AggregatorResolvers.Add(pr)
+            mprs.AggregatorResolvers.AddLast(pr)
             Dim er = New BinarySerializer.EnumPacker(Of Integer)(mprs)
-            mprs.AggregatorResolvers.Add(er)
+            mprs.AggregatorResolvers.AddLast(er)
             Dim cr = New CollectionPacker(Of Integer)(New GenericListAggregatorResolver(Of Integer)(mprs))
-            mprs.AggregatorResolvers.Add(cr)
+            mprs.AggregatorResolvers.AddLast(cr)
             Dim csr = New RecordPacker(Of Integer)(mprs)
-            mprs.AggregatorResolvers.Add(csr)
+            mprs.AggregatorResolvers.AddLast(csr)
             pr.PutAggregator(
                 Sub(Key As Byte, Value As Integer)
                     Count2 += 1
@@ -579,7 +579,31 @@ Public Module Test
         Assert(TestObject = BinaryRoundTripped)
     End Sub
 
+    Public Sub XmlRoundTrip(Of T)(ByVal xs As XmlSerializer, ByVal v As T)
+        Dim xe = xs.Write(v)
+        Dim RoundTripped = xs.Read(Of T)(xe)
+        Assert(v.Equals(RoundTripped))
+    End Sub
+    Public Sub XmlRoundTripCollection(Of E, T As IEnumerable(Of E))(ByVal xs As XmlSerializer, ByVal v As T)
+        Dim xe = xs.Write(v)
+        Dim RoundTripped = xs.Read(Of T)(xe)
+        Dim va = v.ToArray()
+        Dim ra = RoundTripped.ToArray()
+        Assert(va.SequenceEqual(ra))
+    End Sub
+
     Public Sub TestXmlSerializer()
+        Dim xs As New XmlSerializer
+
+        XmlRoundTrip(xs, 123123)
+        XmlRoundTrip(xs, "123123")
+        XmlRoundTrip(xs, SerializerTestEnum.E3)
+        XmlRoundTrip(xs, 123.123)
+        XmlRoundTrip(xs, CType(123.123, Decimal))
+
+        XmlRoundTripCollection(Of Byte, Byte())(xs, New Byte() {1, 2, 3})
+        Stop
+
         Dim XmlRoundTripped As SerializerTestObject
 
         Using s As New StreamEx
@@ -611,8 +635,8 @@ Public Module Test
         'TestBitStreamReadWrite()
         'TestCommandLine()
         'TestMessageDialog()
-        TestObjectTreeMapper()
-        TestBinarySerializer()
-        'TestXmlSerializer()
+        'TestObjectTreeMapper()
+        'TestBinarySerializer()
+        TestXmlSerializer()
     End Sub
 End Module
