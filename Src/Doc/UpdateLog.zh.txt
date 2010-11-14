@@ -3,6 +3,7 @@ Firefly.Core.Mapping:
 增加Firefly.Core.Mapping。
 重构ObjectMapper。
 重构BinarySerializer。
+增加ObjectMapperResolvers。
 
 2010.11.12
 Firefly.Core:

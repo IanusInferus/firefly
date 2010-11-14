@@ -21,10 +21,10 @@ Namespace Mapping
         Public Class DummyType
         End Class
 
-        <Extension()> Public Function IsListType(ByVal Type As Type) As Boolean
+        <Extension()> Public Function IsCollectionType(ByVal Type As Type) As Boolean
             Return Type.GetInterfaces().Any(Function(t) t.IsGenericType AndAlso t.GetGenericTypeDefinition Is GetType(ICollection(Of )))
         End Function
-        <Extension()> Public Function GetListElementType(ByVal Type As Type) As Type
+        <Extension()> Public Function GetCollectionElementType(ByVal Type As Type) As Type
             Return Type.GetInterfaces().Where(Function(t) t.IsGenericType AndAlso t.GetGenericTypeDefinition Is GetType(ICollection(Of ))).Single.GetGenericArguments()(0)
         End Function
 
@@ -127,16 +127,19 @@ Namespace Mapping
             Return MakeGenericTypeFromDummy(Type, Mapping)
         End Function
         <Extension()> Public Function MakeGenericMethodFromDummy(ByVal Method As MethodInfo, ByVal Mapping As Func(Of Type, Type)) As MethodInfo
+            If Not Method.IsGenericMethod Then Throw New ArgumentException
             If Method.IsGenericMethodDefinition Then Throw New ArgumentException
             Return Method.GetGenericMethodDefinition().MakeGenericMethod(Method.GetGenericArguments().Select(Function(t) t.MakeGenericTypeFromDummy(Mapping)).ToArray)
         End Function
         <Extension()> Public Function MakeGenericMethodFromDummy(ByVal Method As MethodInfo, ByVal DummyType As Type, ByVal RealType As Type) As MethodInfo
+            If Not Method.IsGenericMethod Then Throw New ArgumentException
             If Method.IsGenericMethodDefinition Then Throw New ArgumentException
             Return Method.GetGenericMethodDefinition().MakeGenericMethod(Method.GetGenericArguments().Select(Function(t) t.MakeGenericTypeFromDummy(DummyType, RealType)).ToArray)
         End Function
         <Extension()> Public Function MakeDelegateMethodFromDummy(ByVal m As [Delegate], ByVal Mapping As Func(Of Type, Type)) As [Delegate]
             Dim Target = m.Target
             Dim Method = m.Method
+            If Not Method.IsGenericMethod Then Throw New ArgumentException
             If Method.IsGenericMethodDefinition Then Throw New ArgumentException
             Dim GenericMethod = Method.MakeGenericMethodFromDummy(Mapping)
             Dim MethodType = m.GetType().MakeGenericTypeFromDummy(Mapping)
