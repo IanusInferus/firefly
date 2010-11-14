@@ -31,67 +31,102 @@ Namespace Mapping
     '''               ) AND 类型结构为树状
     ''' </remarks>
     Public Class BinarySerializer
-        Private ReaderMapperValue As ObjectMapper
-        Public ReadOnly Property ReaderMapper As ObjectMapper
+        Private PrimRes As PrimitiveResolver
+        Private ReaderMapper As ObjectMapper
+        Private WriterMapper As ObjectMapper
+        Private CounterMapper As ObjectMapper
+        Private ReaderTranslatorResolver As TranslatorResolver
+        Private WriterTranslatorResolver As TranslatorResolver
+        Private CounterTranslatorResolver As TranslatorResolver
+        Private ReaderResolverSet As AlternativeResolver
+        Private WriterResolverSet As AlternativeResolver
+        Private CounterResolverSet As AlternativeResolver
+
+        Public ReadOnly Property ReaderResolver As AlternativeResolver
             Get
-                Return ReaderMapperValue
+                Return ReaderResolverSet
             End Get
         End Property
-        Private WriterMapperValue As ObjectMapper
-        Public ReadOnly Property WriterMapper As ObjectMapper
+        Public ReadOnly Property WriterResolver As AlternativeResolver
             Get
-                Return WriterMapperValue
+                Return WriterResolverSet
             End Get
         End Property
-        Private CounterMapperValue As ObjectMapper
-        Public ReadOnly Property CounterMapper As ObjectMapper
+        Public ReadOnly Property CounterResolver As AlternativeResolver
             Get
-                Return CounterMapperValue
+                Return CounterResolverSet
             End Get
         End Property
 
         Public Sub New()
-            ReaderMapperValue = New ObjectMapper
-            ReaderMapperValue.ProjectorResolvers.AddRange(New List(Of IObjectProjectorResolver) From {
-                New PrimitiveMapperResolver(),
-                New EnumUnpacker(Of StreamEx)(ReaderMapperValue),
-                New CollectionUnpacker(Of StreamEx)(New GenericListProjectorResolver(Of StreamEx)(ReaderMapperValue)),
-                New RecordUnpacker(Of StreamEx)(ReaderMapperValue)
+            PrimRes = New PrimitiveResolver
+            ReaderResolverSet = New AlternativeResolver
+            Dim ReaderCache As New CachedResolver(ReaderResolverSet)
+            ReaderTranslatorResolver = New TranslatorResolver(ReaderCache)
+            ReaderResolverSet.ProjectorResolvers.AddRange(New List(Of IObjectProjectorResolver) From {
+                PrimRes,
+                New EnumUnpacker(Of StreamEx)(ReaderCache),
+                New CollectionUnpacker(Of StreamEx)(New GenericListProjectorResolver(Of StreamEx)(ReaderCache)),
+                New RecordUnpacker(Of StreamEx)(ReaderCache),
+                ReaderTranslatorResolver
             })
-            WriterMapperValue = New ObjectMapper
-            WriterMapperValue.AggregatorResolvers.AddRange(New List(Of IObjectAggregatorResolver) From {
-                New PrimitiveMapperResolver(),
-                New EnumPacker(Of StreamEx)(WriterMapperValue),
-                New CollectionPacker(Of StreamEx)(New GenericListAggregatorResolver(Of StreamEx)(WriterMapperValue)),
-                New RecordPacker(Of StreamEx)(WriterMapperValue)
+            WriterResolverSet = New AlternativeResolver
+            Dim WriterCache As New CachedResolver(WriterResolverSet)
+            WriterTranslatorResolver = New TranslatorResolver(WriterCache)
+            WriterResolverSet.AggregatorResolvers.AddRange(New List(Of IObjectAggregatorResolver) From {
+                PrimRes,
+                New EnumPacker(Of StreamEx)(WriterCache),
+                New CollectionPacker(Of StreamEx)(New GenericListAggregatorResolver(Of StreamEx)(WriterCache)),
+                New RecordPacker(Of StreamEx)(WriterCache),
+                WriterTranslatorResolver
             })
-            CounterMapperValue = New ObjectMapper
-            CounterMapperValue.AggregatorResolvers.AddRange(New List(Of IObjectAggregatorResolver) From {
-                New PrimitiveMapperResolver(),
-                New EnumPacker(Of CounterState)(CounterMapperValue),
-                New CollectionPacker(Of CounterState)(New GenericListAggregatorResolver(Of CounterState)(CounterMapperValue)),
-                New RecordPacker(Of CounterState)(CounterMapperValue)
+            CounterResolverSet = New AlternativeResolver
+            Dim CounterCache As New CachedResolver(CounterResolverSet)
+            CounterTranslatorResolver = New TranslatorResolver(CounterCache)
+            CounterResolverSet.ProjectorResolvers.AddRange(New List(Of IObjectProjectorResolver) From {
+                PrimRes,
+                CounterTranslatorResolver
             })
+            CounterResolverSet.AggregatorResolvers.AddRange(New List(Of IObjectAggregatorResolver) From {
+                New EnumPacker(Of CounterState)(CounterCache),
+                New CollectionPacker(Of CounterState)(New GenericListAggregatorResolver(Of CounterState)(CounterCache)),
+                New RecordPacker(Of CounterState)(CounterCache),
+                CounterTranslatorResolver
+            })
+            CounterTranslatorResolver.PutAggregatorToProjectorTranslatorRange(New CounterStateToIntRangeTranslator)
+            CounterTranslatorResolver.PutProjectorToAggregatorTranslatorRange(New IntToCounterStateRangeTranslator)
+            ReaderMapper = New ObjectMapper(ReaderCache)
+            WriterMapper = New ObjectMapper(WriterCache)
+            CounterMapper = New ObjectMapper(CounterCache)
         End Sub
 
         Public Sub PutReader(Of T)(ByVal Reader As Func(Of StreamEx, T))
-            ReaderMapperValue.PutProjector(Of StreamEx, T)(Reader)
+            PrimRes.PutReader(Of T)(Reader)
         End Sub
         Public Sub PutWriter(Of T)(ByVal Writer As Action(Of T, StreamEx))
-            WriterMapperValue.PutAggregator(Of T, StreamEx)(Writer)
+            PrimRes.PutWriter(Of T)(Writer)
         End Sub
-        Public Sub PutCounter(Of T)(ByVal Counter As Action(Of T, CounterState))
-            CounterMapperValue.PutAggregator(Of T, CounterState)(Counter)
+        Public Sub PutCounter(Of T)(ByVal Counter As Func(Of T, Integer))
+            PrimRes.PutCounter(Of T)(Counter)
+        End Sub
+        Public Sub PutReaderTranslator(Of R, M)(ByVal Translator As IProjectorToProjectorRangeTranslator(Of R, M))
+            ReaderTranslatorResolver.PutProjectorToProjectorTranslatorRange(Translator)
+        End Sub
+        Public Sub PutWriterTranslator(Of D, M)(ByVal Translator As IAggregatorToAggregatorDomainTranslator(Of D, M))
+            WriterTranslatorResolver.PutAggregatorToAggregatorTranslatorDomain(Translator)
+        End Sub
+        Public Sub PutCounterTranslator(Of D, M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of D, M))
+            CounterTranslatorResolver.PutProjectorToProjectorTranslatorDomain(Translator)
         End Sub
 
         Public Function GetReader(Of T)() As Func(Of StreamEx, T)
-            Return ReaderMapperValue.GetProjector(Of StreamEx, T)()
+            Return ReaderMapper.GetProjector(Of StreamEx, T)()
         End Function
         Public Function GetWriter(Of T)() As Action(Of T, StreamEx)
-            Return WriterMapperValue.GetAggregator(Of T, StreamEx)()
+            Return WriterMapper.GetAggregator(Of T, StreamEx)()
         End Function
-        Public Function GetCounter(Of T)() As Action(Of T, CounterState)
-            Return CounterMapperValue.GetAggregator(Of T, CounterState)()
+        Public Function GetCounter(Of T)() As Func(Of T, Integer)
+            Return CounterMapper.GetProjector(Of T, Integer)()
         End Function
 
         Public Function Read(Of T)(ByVal s As StreamEx) As T
@@ -103,36 +138,33 @@ Namespace Mapping
         Public Sub Write(Of T)(ByVal s As StreamEx, ByVal Value As T)
             Write(Of T)(Value, s)
         End Sub
-        Public Sub Count(Of T)(ByVal Value As T, ByVal c As CounterState)
-            GetCounter(Of T)()(Value, c)
-        End Sub
         Public Function Count(Of T)(ByVal Value As T) As Integer
-            Dim c As New CounterState With {.Number = 0}
-            Count(Of T)(Value, c)
-            Return c.Number
+            Return GetCounter(Of T)()(Value)
         End Function
 
         Public Class CounterState
             Public Number As Integer
         End Class
 
-        Public Class PrimitiveMapperResolver
-            Implements IObjectProjectorResolver
-            Implements IObjectAggregatorResolver
+        Public Class PrimitiveResolver
+            Implements IObjectMapperResolver
 
-            Public Function TryResolveReader(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
+            Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
                 Dim DomainType = TypePair.Key
                 Dim RangeType = TypePair.Value
-                If DomainType IsNot GetType(StreamEx) Then Return Nothing
-                If Readers.ContainsKey(TypePair.Value) Then Return Readers(TypePair.Value)
+                If DomainType Is GetType(StreamEx) Then Return TryResolveReader(RangeType)
+                If RangeType Is GetType(Integer) Then Return TryResolveCounter(DomainType)
                 Return Nothing
             End Function
-
             Private Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectAggregatorResolver.TryResolveAggregator
                 Dim DomainType = TypePair.Key
                 Dim RangeType = TypePair.Value
                 If RangeType Is GetType(StreamEx) Then Return TryResolveWriter(DomainType)
-                If RangeType Is GetType(CounterState) Then Return TryResolveCounter(DomainType)
+                Return Nothing
+            End Function
+
+            Public Function TryResolveReader(ByVal RangeType As Type) As [Delegate]
+                If Readers.ContainsKey(RangeType) Then Return Readers(RangeType)
                 Return Nothing
             End Function
 
@@ -146,13 +178,13 @@ Namespace Mapping
                 Return Nothing
             End Function
 
-            Private Sub PutReader(Of T)(ByVal Reader As Func(Of StreamEx, T))
+            Public Sub PutReader(Of T)(ByVal Reader As Func(Of StreamEx, T))
                 Readers.Add(GetType(T), Reader)
             End Sub
-            Private Sub PutWriter(Of T)(ByVal Writer As Action(Of T, StreamEx))
+            Public Sub PutWriter(Of T)(ByVal Writer As Action(Of T, StreamEx))
                 Writers.Add(GetType(T), Writer)
             End Sub
-            Private Sub PutCounter(Of T)(ByVal Counter As Action(Of T, CounterState))
+            Public Sub PutCounter(Of T)(ByVal Counter As Func(Of T, Integer))
                 Counters.Add(GetType(T), Counter)
             End Sub
 
@@ -183,16 +215,16 @@ Namespace Mapping
                 PutWriter(Sub(f As Single, s As StreamEx) s.WriteFloat32(f))
                 PutWriter(Sub(f As Double, s As StreamEx) s.WriteFloat64(f))
 
-                PutCounter(Sub(i As Byte, c As CounterState) c.Number += 1)
-                PutCounter(Sub(i As UInt16, c As CounterState) c.Number += 2)
-                PutCounter(Sub(i As UInt32, c As CounterState) c.Number += 4)
-                PutCounter(Sub(i As UInt64, c As CounterState) c.Number += 8)
-                PutCounter(Sub(i As SByte, c As CounterState) c.Number += 1)
-                PutCounter(Sub(i As Int16, c As CounterState) c.Number += 2)
-                PutCounter(Sub(i As Int32, c As CounterState) c.Number += 4)
-                PutCounter(Sub(i As Int64, c As CounterState) c.Number += 8)
-                PutCounter(Sub(f As Single, c As CounterState) c.Number += 4)
-                PutCounter(Sub(f As Double, c As CounterState) c.Number += 8)
+                PutCounter(Function(i As Byte) 1)
+                PutCounter(Function(i As UInt16) 2)
+                PutCounter(Function(i As UInt32) 4)
+                PutCounter(Function(i As UInt64) 8)
+                PutCounter(Function(i As SByte) 1)
+                PutCounter(Function(i As Int16) 2)
+                PutCounter(Function(i As Int32) 4)
+                PutCounter(Function(i As Int64) 8)
+                PutCounter(Function(f As Single) 4)
+                PutCounter(Function(f As Double) 8)
             End Sub
         End Class
 
@@ -220,9 +252,9 @@ Namespace Mapping
                 Return Nothing
             End Function
 
-            Private AbsResolver As ObjectMapperAbsoluteResolver
-            Public Sub New(ByVal AbsResolver As IObjectMapperResolver)
-                Me.AbsResolver = New ObjectMapperAbsoluteResolver(AbsResolver)
+            Private AbsResolver As AbsoluteResolver
+            Public Sub New(ByVal Resolver As IObjectMapperResolver)
+                Me.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver))
             End Sub
         End Class
 
@@ -250,9 +282,9 @@ Namespace Mapping
                 Return Nothing
             End Function
 
-            Private AbsResolver As ObjectMapperAbsoluteResolver
-            Public Sub New(ByVal AbsResolver As IObjectMapperResolver)
-                Me.AbsResolver = New ObjectMapperAbsoluteResolver(AbsResolver)
+            Private AbsResolver As AbsoluteResolver
+            Public Sub New(ByVal Resolver As IObjectMapperResolver)
+                Me.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver))
             End Sub
         End Class
 
@@ -274,9 +306,9 @@ Namespace Mapping
                 Return F
             End Function
 
-            Private AbsResolver As ObjectMapperAbsoluteResolver
-            Public Sub New(ByVal AbsResolver As IObjectMapperResolver)
-                Me.AbsResolver = New ObjectMapperAbsoluteResolver(AbsResolver)
+            Private AbsResolver As AbsoluteResolver
+            Public Sub New(ByVal Resolver As IObjectMapperResolver)
+                Me.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver))
             End Sub
         End Class
 
@@ -297,10 +329,29 @@ Namespace Mapping
                 Return F
             End Function
 
-            Private AbsResolver As ObjectMapperAbsoluteResolver
-            Public Sub New(ByVal AbsResolver As IObjectMapperResolver)
-                Me.AbsResolver = New ObjectMapperAbsoluteResolver(AbsResolver)
+            Private AbsResolver As AbsoluteResolver
+            Public Sub New(ByVal Resolver As IObjectMapperResolver)
+                Me.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver))
             End Sub
+        End Class
+
+        Public Class CounterStateToIntRangeTranslator
+            Implements IAggregatorToProjectorRangeTranslator(Of Integer, CounterState)
+            Public Function TranslateAggregatorToProjector(Of D)(ByVal Aggregator As Action(Of D, CounterState)) As Func(Of D, Integer) Implements IAggregatorToProjectorRangeTranslator(Of Integer, CounterState).TranslateAggregatorToProjectorRange
+                Return Function(Key)
+                           Dim c As New CounterState
+                           Aggregator(Key, c)
+                           Return c.Number
+                       End Function
+            End Function
+        End Class
+        Public Class IntToCounterStateRangeTranslator
+            Implements IProjectorToAggregatorRangeTranslator(Of CounterState, Integer)
+            Public Function TranslateProjectorToAggregator(Of D)(ByVal Projector As Func(Of D, Integer)) As Action(Of D, CounterState) Implements IProjectorToAggregatorRangeTranslator(Of CounterState, Integer).TranslateProjectorToAggregatorRange
+                Return Sub(Key, c)
+                           c.Number += Projector(Key)
+                       End Sub
+            End Function
         End Class
     End Class
 End Namespace
