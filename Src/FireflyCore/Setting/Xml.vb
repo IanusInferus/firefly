@@ -268,9 +268,9 @@ Namespace Setting
                 Return Element
             End If
 
-            If PhysicalType.IsListType() Then
+            If PhysicalType.IsCollectionType() Then
                 Dim enu = DirectCast(Value, IEnumerable)
-                Dim ObjectType = GetListElementType(PhysicalType)
+                Dim ObjectType = GetCollectionElementType(PhysicalType)
 
                 Dim EmptyFlag = True
                 For Each o In enu
@@ -433,8 +433,8 @@ Namespace Setting
                 Return InvM(arr)
             End If
 
-            If PhysicalType.IsListType() Then
-                Dim ObjectType = GetListElementType(PhysicalType)
+            If PhysicalType.IsCollectionType() Then
+                Dim ObjectType = GetCollectionElementType(PhysicalType)
                 Dim AddDelegate As Action(Of ICollection(Of DummyType), DummyType) = AddressOf ListAdd(Of DummyType, ICollection(Of DummyType))
                 Dim Add = AddDelegate.MakeDelegateMethodFromDummy(ObjectType)
 

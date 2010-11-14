@@ -19,21 +19,19 @@ Imports System.Runtime.CompilerServices
 
 Namespace Mapping
     ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
-    Public Interface ICollectionDefaultUnpacker(Of D)
-        Function DefaultArrayMapper(Of R)(ByVal Key As D) As R()
-        Function DefaultListMapper(Of R, RList As {New, ICollection(Of R)})(ByVal Key As D) As RList
+    Public Interface IGenericListProjectorResolver(Of D)
+        Function ResolveProjector(Of R, RList As {New, ICollection(Of R)})() As Func(Of D, RList)
     End Interface
 
     ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
-    Public Interface ICollectionDefaultPacker(Of R)
-        Sub DefaultArrayMapper(Of D)(ByVal arr As D(), ByVal Value As R)
-        Sub DefaultListMapper(Of D, DList As ICollection(Of D))(ByVal list As DList, ByVal Value As R)
+    Public Interface IGenericListAggregatorResolver(Of R)
+        Function ResolveAggregator(Of D, DList As ICollection(Of D))() As Action(Of DList, R)
     End Interface
 
     Public Class CollectionUnpacker(Of D)
         Implements IObjectProjectorResolver
 
-        Public Function TryResolve(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
+        Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
             Dim DomainType = TypePair.Key
             Dim RangeType = TypePair.Value
             If DomainType IsNot GetType(D) Then Return Nothing
@@ -43,7 +41,7 @@ Namespace Mapping
                     Return ArrayMapperGen(RangeType.GetElementType)
                 End If
             End If
-            If RangeType.IsListType() Then
+            If RangeType.IsCollectionType() Then
                 Dim ListMapperGen = TryGetListMapperGenerator(RangeType.GetGenericTypeDefinition)
                 If ListMapperGen IsNot Nothing Then
                     Return ListMapperGen(RangeType.GetGenericArguments(0))
@@ -55,8 +53,8 @@ Namespace Mapping
         Private ArrayMapperGeneratorCache As New Dictionary(Of Integer, Func(Of Type, [Delegate]))
         Private ListMapperGeneratorCache As New Dictionary(Of Type, Func(Of Type, [Delegate]))
 
-        Public Sub PutArrayMapperGenerator(ByVal Generator As [Delegate])
-            Dim FuncType = Generator.GetType()
+        Public Sub PutGenericArrayMapper(ByVal GenericMapper As [Delegate])
+            Dim FuncType = GenericMapper.GetType()
             If Not FuncType.IsGenericType Then Throw New ArgumentException
             If FuncType.GetGenericTypeDefinition IsNot GetType(Func(Of ,)) Then Throw New ArgumentException
             Dim DummyArrayType = FuncType.GetGenericArguments()(1)
@@ -64,84 +62,83 @@ Namespace Mapping
             If DummyArrayType.GetElementType IsNot GetType(DummyType) Then Throw New ArgumentException
             Dim Dimension = DummyArrayType.GetArrayRank()
 
-            Dim MakeArrayType =
-                Function(ElementType As Type, n As Integer) As Type
-                    If n = 1 Then Return ElementType.MakeArrayType
-                    Return ElementType.MakeArrayType(n)
-                End Function
-            Dim Gen =
-                Function(ElementType As Type) As [Delegate]
-                    Return Generator.MakeDelegateMethodFromDummy(ElementType)
-                End Function
-
+            Dim Gen = Function(ElementType As Type) GenericMapper.MakeDelegateMethodFromDummy(ElementType)
             If ArrayMapperGeneratorCache.ContainsKey(Dimension) Then
                 ArrayMapperGeneratorCache(Dimension) = Gen
             Else
                 ArrayMapperGeneratorCache.Add(Dimension, Gen)
             End If
         End Sub
-        Public Sub PutArrayMapperGenerator(ByVal Generator As Func(Of D, DummyType()))
-            PutArrayMapperGenerator(DirectCast(Generator, [Delegate]))
+        Public Sub PutGenericArrayMapper(ByVal GenericMapper As Func(Of D, DummyType()))
+            PutGenericArrayMapper(DirectCast(GenericMapper, [Delegate]))
         End Sub
-        Public Sub PutArrayMapperGenerator(ByVal Generator As Func(Of D, DummyType(,)))
-            PutArrayMapperGenerator(DirectCast(Generator, [Delegate]))
+        Public Sub PutGenericArrayMapper(ByVal GenericMapper As Func(Of D, DummyType(,)))
+            PutGenericArrayMapper(DirectCast(GenericMapper, [Delegate]))
         End Sub
 
-        Public Sub PutListMapperGenerator(ByVal Generator As [Delegate])
-            Dim FuncType = Generator.GetType()
+        Public Sub PutGenericListMapper(ByVal GenericMapper As [Delegate])
+            Dim FuncType = GenericMapper.GetType()
             If Not FuncType.IsGenericType Then Throw New ArgumentException
             If FuncType.GetGenericTypeDefinition IsNot GetType(Func(Of ,)) Then Throw New ArgumentException
             Dim DummyListType = FuncType.GetGenericArguments()(1)
-            If Not DummyListType.IsListType() Then Throw New ArgumentException
+            If Not DummyListType.IsCollectionType() Then Throw New ArgumentException
             If DummyListType.GetGenericArguments(0) IsNot GetType(DummyType) Then Throw New ArgumentException
             Dim ListType = DummyListType.GetGenericTypeDefinition
 
-            Dim Gen =
-                Function(ElementType As Type) As [Delegate]
-                    Return Generator.MakeDelegateMethodFromDummy(ElementType)
-                End Function
-
+            Dim Gen = Function(ElementType As Type) GenericMapper.MakeDelegateMethodFromDummy(ElementType)
             If ListMapperGeneratorCache.ContainsKey(ListType) Then
                 ListMapperGeneratorCache(ListType) = Gen
             Else
                 ListMapperGeneratorCache.Add(ListType, Gen)
             End If
         End Sub
-        Public Sub PutListMapperGenerator(Of RList As {New, ICollection(Of DummyType)})(ByVal Generator As Func(Of D, RList))
-            PutListMapperGenerator(DirectCast(Generator, [Delegate]))
+        Public Sub PutGenericListMapper(Of RList As {New, ICollection(Of DummyType)})(ByVal GenericMapper As Func(Of D, RList))
+            PutGenericListMapper(DirectCast(GenericMapper, [Delegate]))
         End Sub
 
-        Public Overridable Function TryGetArrayMapperGenerator(ByVal Dimension As Integer) As Func(Of Type, [Delegate])
+        Private Shared Function ArrayToListGenericMapperAdapter(Of T)(ByVal DummyMethod As Func(Of D, List(Of T))) As Func(Of D, T())
+            Return Function(Key As D) DummyMethod(Key).ToArray()
+        End Function
+        Public Function TryGetArrayMapperGenerator(ByVal Dimension As Integer) As Func(Of Type, [Delegate])
             If Not ArrayMapperGeneratorCache.ContainsKey(Dimension) Then
                 If Dimension <> 1 Then Return Nothing
-                PutArrayMapperGenerator(DirectCast(AddressOf Provider.DefaultArrayMapper(Of DummyType), Func(Of D, DummyType())))
+                If Inner Is Nothing Then Return Nothing
+                Dim m = DirectCast(AddressOf ArrayToList(Of DummyType), Func(Of Func(Of D, DummyType())))
+                Dim Gen = Function(ElementType As Type) DirectCast(m.MakeDelegateMethodFromDummy(ElementType).DynamicInvoke(), [Delegate])
+                ArrayMapperGeneratorCache.Add(Dimension, Gen)
             End If
             Return ArrayMapperGeneratorCache(Dimension)
         End Function
-        Public Overridable Function TryGetListMapperGenerator(ByVal ListType As Type) As Func(Of Type, [Delegate])
+        Public Function TryGetListMapperGenerator(ByVal ListType As Type) As Func(Of Type, [Delegate])
             If Not ListMapperGeneratorCache.ContainsKey(ListType) Then
-                If Not ListType.IsListType() Then Throw New ArgumentException
-                If Not ListType.IsGenericType Then Throw New ArgumentException
+                If Not ListType.IsCollectionType() Then Throw New ArgumentException
                 If Not ListType.IsGenericTypeDefinition Then Throw New ArgumentException
                 If ListType.GetGenericArguments().Length <> 1 Then Return Nothing
                 Dim DummyListType = ListType.MakeGenericType(GetType(DummyType))
-                Dim DummyMethod As Func(Of D, List(Of DummyType)) = AddressOf Provider.DefaultListMapper(Of DummyType, List(Of DummyType))
+
+                Dim DummyMethod = DirectCast(AddressOf Inner.ResolveProjector(Of DummyType, List(Of DummyType)), Func(Of Func(Of D, List(Of DummyType))))
                 Dim m = DummyMethod.MakeDelegateMethodFromDummy(GetType(List(Of DummyType)), DummyListType)
-                PutListMapperGenerator(m)
+                Dim Gen = Function(ElementType As Type) DirectCast(m.MakeDelegateMethodFromDummy(ElementType).DynamicInvoke(), [Delegate])
+                ListMapperGeneratorCache.Add(ListType, Gen)
             End If
             Return ListMapperGeneratorCache(ListType)
         End Function
 
-        Private Provider As ICollectionDefaultUnpacker(Of D)
-        Public Sub New(ByVal Provider As ICollectionDefaultUnpacker(Of D))
-            Me.Provider = Provider
+        Private Function ArrayToList(Of R)() As Func(Of D, R())
+            Dim Mapper = Inner.ResolveProjector(Of R, List(Of R))()
+            Return Function(Key As D) Mapper(Key).ToArray()
+        End Function
+
+        Private Inner As IGenericListProjectorResolver(Of D)
+        Public Sub New(ByVal Inner As IGenericListProjectorResolver(Of D))
+            Me.Inner = Inner
         End Sub
     End Class
 
     Public Class RecordUnpacker(Of D)
         Implements IObjectProjectorResolver
 
-        Public Function TryResolve(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
+        Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
             Dim DomainType = TypePair.Key
             Dim RangeType = TypePair.Value
             If DomainType IsNot GetType(D) Then Return Nothing
@@ -211,7 +208,7 @@ Namespace Mapping
     Public Class CollectionPacker(Of R)
         Implements IObjectAggregatorResolver
 
-        Public Function TryResolve(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectAggregatorResolver.TryResolveAggregator
+        Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectAggregatorResolver.TryResolveAggregator
             Dim DomainType = TypePair.Key
             Dim RangeType = TypePair.Value
             If RangeType IsNot GetType(R) Then Return Nothing
@@ -221,7 +218,7 @@ Namespace Mapping
                     Return ArrayMapperGen(DomainType.GetElementType)
                 End If
             End If
-            If DomainType.IsListType() Then
+            If DomainType.IsCollectionType() Then
                 Dim ListMapperGen = TryGetListMapperGenerator(DomainType.GetGenericTypeDefinition)
                 If ListMapperGen IsNot Nothing Then
                     Return ListMapperGen(DomainType.GetGenericArguments(0))
@@ -233,8 +230,8 @@ Namespace Mapping
         Private ArrayMapperGeneratorCache As New Dictionary(Of Integer, Func(Of Type, [Delegate]))
         Private ListMapperGeneratorCache As New Dictionary(Of Type, Func(Of Type, [Delegate]))
 
-        Public Sub PutArrayMapperGenerator(ByVal Generator As [Delegate])
-            Dim FuncType = Generator.GetType()
+        Public Sub PutGenericArrayMapper(ByVal GenericMapper As [Delegate])
+            Dim FuncType = GenericMapper.GetType()
             If Not FuncType.IsGenericType Then Throw New ArgumentException
             If FuncType.GetGenericTypeDefinition IsNot GetType(Action(Of ,)) Then Throw New ArgumentException
             Dim DummyArrayType = FuncType.GetGenericArguments()(0)
@@ -242,32 +239,32 @@ Namespace Mapping
             If DummyArrayType.GetElementType IsNot GetType(DummyType) Then Throw New ArgumentException
             Dim Dimension = DummyArrayType.GetArrayRank()
 
-            Dim Gen = Function(ElementType As Type) Generator.MakeDelegateMethodFromDummy(ElementType)
+            Dim Gen = Function(ElementType As Type) GenericMapper.MakeDelegateMethodFromDummy(ElementType)
             If ArrayMapperGeneratorCache.ContainsKey(Dimension) Then
                 ArrayMapperGeneratorCache(Dimension) = Gen
             Else
                 ArrayMapperGeneratorCache.Add(Dimension, Gen)
             End If
         End Sub
-        Public Sub PutArrayMapperGenerator(ByVal Generator As Action(Of DummyType(), R))
-            PutArrayMapperGenerator(DirectCast(Generator, [Delegate]))
+        Public Sub PutGenericArrayMapper(ByVal GenericMapper As Action(Of DummyType(), R))
+            PutGenericArrayMapper(DirectCast(GenericMapper, [Delegate]))
         End Sub
-        Public Sub PutArrayMapperGenerator(ByVal Generator As Action(Of DummyType(,), R))
-            PutArrayMapperGenerator(DirectCast(Generator, [Delegate]))
+        Public Sub PutGenericArrayMapper(ByVal GenericMapper As Action(Of DummyType(,), R))
+            PutGenericArrayMapper(DirectCast(GenericMapper, [Delegate]))
         End Sub
 
-        Public Sub PutListMapperGenerator(ByVal Generator As [Delegate])
-            Dim FuncType = Generator.GetType()
+        Public Sub PutGenericListMapper(ByVal GenericMapper As [Delegate])
+            Dim FuncType = GenericMapper.GetType()
             If Not FuncType.IsGenericType Then Throw New ArgumentException
             If FuncType.GetGenericTypeDefinition IsNot GetType(Action(Of ,)) Then Throw New ArgumentException
             Dim DummyListType = FuncType.GetGenericArguments()(0)
-            If Not DummyListType.IsListType() Then Throw New ArgumentException
+            If Not DummyListType.IsCollectionType() Then Throw New ArgumentException
             If DummyListType.GetGenericArguments(0) IsNot GetType(DummyType) Then Throw New ArgumentException
             Dim ListType = DummyListType.GetGenericTypeDefinition
 
             Dim Gen =
                 Function(ElementType As Type) As [Delegate]
-                    Return Generator.MakeDelegateMethodFromDummy(ElementType)
+                    Return GenericMapper.MakeDelegateMethodFromDummy(ElementType)
                 End Function
 
             If ListMapperGeneratorCache.ContainsKey(ListType) Then
@@ -276,41 +273,49 @@ Namespace Mapping
                 ListMapperGeneratorCache.Add(ListType, Gen)
             End If
         End Sub
-        Public Sub PutListMapperGenerator(Of DList As ICollection(Of DummyType))(ByVal Generator As Action(Of DList, R))
-            PutListMapperGenerator(DirectCast(Generator, [Delegate]))
+        Public Sub PutGenericListMapper(Of DList As ICollection(Of DummyType))(ByVal GenericMapper As Action(Of DList, R))
+            PutGenericListMapper(DirectCast(GenericMapper, [Delegate]))
         End Sub
 
         Public Overridable Function TryGetArrayMapperGenerator(ByVal Dimension As Integer) As Func(Of Type, [Delegate])
             If Not ArrayMapperGeneratorCache.ContainsKey(Dimension) Then
                 If Dimension <> 1 Then Return Nothing
-                PutArrayMapperGenerator(DirectCast(AddressOf Provider.DefaultArrayMapper(Of DummyType), Action(Of DummyType(), R)))
+                Dim m = DirectCast(AddressOf ArrayToList(Of DummyType), Func(Of Action(Of DummyType(), R)))
+                Dim Gen = Function(ElementType As Type) DirectCast(m.MakeDelegateMethodFromDummy(ElementType).DynamicInvoke(), [Delegate])
+                ArrayMapperGeneratorCache.Add(Dimension, Gen)
             End If
             Return ArrayMapperGeneratorCache(Dimension)
         End Function
         Public Overridable Function TryGetListMapperGenerator(ByVal ListType As Type) As Func(Of Type, [Delegate])
             If Not ListMapperGeneratorCache.ContainsKey(ListType) Then
-                If Not ListType.IsListType() Then Throw New ArgumentException
-                If Not ListType.IsGenericType Then Throw New ArgumentException
+                If Not ListType.IsCollectionType() Then Throw New ArgumentException
                 If Not ListType.IsGenericTypeDefinition Then Throw New ArgumentException
                 If ListType.GetGenericArguments().Length <> 1 Then Return Nothing
                 Dim DummyListType = ListType.MakeGenericType(GetType(DummyType))
-                Dim DummyMethod As Action(Of List(Of DummyType), R) = AddressOf Provider.DefaultListMapper(Of DummyType, List(Of DummyType))
+
+                Dim DummyMethod = DirectCast(AddressOf Inner.ResolveAggregator(Of DummyType, List(Of DummyType)), Func(Of Action(Of List(Of DummyType), R)))
                 Dim m = DummyMethod.MakeDelegateMethodFromDummy(GetType(List(Of DummyType)), DummyListType)
-                PutListMapperGenerator(m)
+                Dim Gen = Function(ElementType As Type) DirectCast(m.MakeDelegateMethodFromDummy(ElementType).DynamicInvoke(), [Delegate])
+                ListMapperGeneratorCache.Add(ListType, Gen)
             End If
             Return ListMapperGeneratorCache(ListType)
         End Function
 
-        Private Provider As ICollectionDefaultPacker(Of R)
-        Public Sub New(ByVal Provider As ICollectionDefaultPacker(Of R))
-            Me.Provider = Provider
+        Private Function ArrayToList(Of D)() As Action(Of D(), R)
+            Dim Mapper = Inner.ResolveAggregator(Of D, List(Of D))()
+            Return Sub(List As D(), Value As R) Mapper(List.ToList(), Value)
+        End Function
+
+        Private Inner As IGenericListAggregatorResolver(Of R)
+        Public Sub New(ByVal Inner As IGenericListAggregatorResolver(Of R))
+            Me.Inner = Inner
         End Sub
     End Class
 
     Public Class RecordPacker(Of R)
         Implements IObjectAggregatorResolver
 
-        Public Function TryResolve(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectAggregatorResolver.TryResolveAggregator
+        Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectAggregatorResolver.TryResolveAggregator
             Dim DomainType = TypePair.Key
             Dim RangeType = TypePair.Value
             If RangeType IsNot GetType(R) Then Return Nothing
