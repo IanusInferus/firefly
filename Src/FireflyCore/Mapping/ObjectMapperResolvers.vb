@@ -410,22 +410,22 @@ Namespace Mapping
         End Sub
 
         Public Shared Function Create(Of D, M)(ByVal Resolver As IObjectMapperResolver, ByVal Translator As IProjectorToProjectorDomainTranslator(Of D, M)) As IObjectProjectorResolver
-            Return New DPP(Of D, M) With {.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver)), .Translator = Translator}
+            Return New DPP(Of D, M) With {.Inner = New NoncircularResolver(Resolver), .Translator = Translator}
         End Function
         Public Shared Function Create(Of D, M)(ByVal Resolver As IObjectMapperResolver, ByVal Translator As IAggregatorToAggregatorDomainTranslator(Of D, M)) As IObjectAggregatorResolver
-            Return New DAA(Of D, M) With {.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver)), .Translator = Translator}
+            Return New DAA(Of D, M) With {.Inner = New NoncircularResolver(Resolver), .Translator = Translator}
         End Function
         Public Shared Function Create(Of R, M)(ByVal Resolver As IObjectMapperResolver, ByVal Translator As IProjectorToProjectorRangeTranslator(Of R, M)) As IObjectProjectorResolver
-            Return New RPP(Of R, M) With {.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver)), .Translator = Translator}
+            Return New RPP(Of R, M) With {.Inner = New NoncircularResolver(Resolver), .Translator = Translator}
         End Function
         Public Shared Function Create(Of R, M)(ByVal Resolver As IObjectMapperResolver, ByVal Translator As IProjectorToAggregatorRangeTranslator(Of R, M)) As IObjectAggregatorResolver
-            Return New RPA(Of R, M) With {.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver)), .Translator = Translator}
+            Return New RPA(Of R, M) With {.Inner = New NoncircularResolver(Resolver), .Translator = Translator}
         End Function
         Public Shared Function Create(Of R, M)(ByVal Resolver As IObjectMapperResolver, ByVal Translator As IAggregatorToProjectorRangeTranslator(Of R, M)) As IObjectProjectorResolver
-            Return New RAP(Of R, M) With {.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver)), .Translator = Translator}
+            Return New RAP(Of R, M) With {.Inner = New NoncircularResolver(Resolver), .Translator = Translator}
         End Function
         Public Shared Function Create(Of R, M)(ByVal Resolver As IObjectMapperResolver, ByVal Translator As IAggregatorToAggregatorRangeTranslator(Of R, M)) As IObjectAggregatorResolver
-            Return New RAA(Of R, M) With {.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver)), .Translator = Translator}
+            Return New RAA(Of R, M) With {.Inner = New NoncircularResolver(Resolver), .Translator = Translator}
         End Function
 
 
@@ -433,7 +433,7 @@ Namespace Mapping
 
         Private Class DPP(Of D, M)
             Implements IObjectProjectorResolver
-            Public AbsResolver As AbsoluteResolver
+            Public Inner As IObjectMapperResolver
             Public Translator As IProjectorToProjectorDomainTranslator(Of D, M)
             Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
                 Dim DomainType = TypePair.Key
@@ -441,7 +441,8 @@ Namespace Mapping
                 If DomainType Is GetType(D) Then
                     Static DummyMethod As Func(Of Func(Of M, DummyType), Func(Of D, DummyType)) = AddressOf Translator.TranslateProjectorToProjectorDomain(Of DummyType)
                     Dim t = DummyMethod.MakeDelegateMethodFromDummy(RangeType)
-                    Dim m = AbsResolver.ResolveProjector(CreatePair(GetType(M), RangeType))
+                    Dim m = Inner.TryResolveProjector(CreatePair(GetType(M), RangeType))
+                    If m Is Nothing Then Return Nothing
                     Return DirectCast(t.DynamicInvoke(m), [Delegate])
                 End If
                 Return Nothing
@@ -449,7 +450,7 @@ Namespace Mapping
         End Class
         Private Class DAA(Of D, M)
             Implements IObjectAggregatorResolver
-            Public AbsResolver As AbsoluteResolver
+            Public Inner As IObjectMapperResolver
             Public Translator As IAggregatorToAggregatorDomainTranslator(Of D, M)
             Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectAggregatorResolver.TryResolveAggregator
                 Dim DomainType = TypePair.Key
@@ -457,7 +458,8 @@ Namespace Mapping
                 If DomainType Is GetType(D) Then
                     Static DummyMethod As Func(Of Action(Of M, DummyType), Action(Of D, DummyType)) = AddressOf Translator.TranslateAggregatorToAggregatorDomain(Of DummyType)
                     Dim t = DummyMethod.MakeDelegateMethodFromDummy(RangeType)
-                    Dim m = AbsResolver.ResolveAggregator(CreatePair(GetType(M), RangeType))
+                    Dim m = Inner.TryResolveAggregator(CreatePair(GetType(M), RangeType))
+                    If m Is Nothing Then Return Nothing
                     Return DirectCast(t.DynamicInvoke(m), [Delegate])
                 End If
                 Return Nothing
@@ -469,7 +471,7 @@ Namespace Mapping
 
         Private Class RPP(Of R, M)
             Implements IObjectProjectorResolver
-            Public AbsResolver As AbsoluteResolver
+            Public Inner As IObjectMapperResolver
             Public Translator As IProjectorToProjectorRangeTranslator(Of R, M)
             Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
                 Dim DomainType = TypePair.Key
@@ -477,7 +479,8 @@ Namespace Mapping
                 If RangeType Is GetType(R) Then
                     Static DummyMethod As Func(Of Func(Of DummyType, M), Func(Of DummyType, R)) = AddressOf Translator.TranslateProjectorToProjectorRange(Of DummyType)
                     Dim t = DummyMethod.MakeDelegateMethodFromDummy(DomainType)
-                    Dim m = AbsResolver.ResolveProjector(CreatePair(DomainType, GetType(M)))
+                    Dim m = Inner.TryResolveProjector(CreatePair(DomainType, GetType(M)))
+                    If m Is Nothing Then Return Nothing
                     Return DirectCast(t.DynamicInvoke(m), [Delegate])
                 End If
                 Return Nothing
@@ -485,7 +488,7 @@ Namespace Mapping
         End Class
         Private Class RPA(Of R, M)
             Implements IObjectAggregatorResolver
-            Public AbsResolver As AbsoluteResolver
+            Public Inner As IObjectMapperResolver
             Public Translator As IProjectorToAggregatorRangeTranslator(Of R, M)
             Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectAggregatorResolver.TryResolveAggregator
                 Dim DomainType = TypePair.Key
@@ -493,7 +496,8 @@ Namespace Mapping
                 If RangeType Is GetType(R) Then
                     Static DummyMethod As Func(Of Func(Of DummyType, M), Action(Of DummyType, R)) = AddressOf Translator.TranslateProjectorToAggregatorRange(Of DummyType)
                     Dim t = DummyMethod.MakeDelegateMethodFromDummy(DomainType)
-                    Dim m = AbsResolver.ResolveProjector(CreatePair(DomainType, GetType(M)))
+                    Dim m = Inner.TryResolveProjector(CreatePair(DomainType, GetType(M)))
+                    If m Is Nothing Then Return Nothing
                     Return DirectCast(t.DynamicInvoke(m), [Delegate])
                 End If
                 Return Nothing
@@ -501,7 +505,7 @@ Namespace Mapping
         End Class
         Private Class RAP(Of R, M)
             Implements IObjectProjectorResolver
-            Public AbsResolver As AbsoluteResolver
+            Public Inner As IObjectMapperResolver
             Public Translator As IAggregatorToProjectorRangeTranslator(Of R, M)
             Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
                 Dim DomainType = TypePair.Key
@@ -509,7 +513,8 @@ Namespace Mapping
                 If RangeType Is GetType(R) Then
                     Static DummyMethod As Func(Of Action(Of DummyType, M), Func(Of DummyType, R)) = AddressOf Translator.TranslateAggregatorToProjectorRange(Of DummyType)
                     Dim t = DummyMethod.MakeDelegateMethodFromDummy(DomainType)
-                    Dim m = AbsResolver.ResolveAggregator(CreatePair(DomainType, GetType(M)))
+                    Dim m = Inner.TryResolveAggregator(CreatePair(DomainType, GetType(M)))
+                    If m Is Nothing Then Return Nothing
                     Return DirectCast(t.DynamicInvoke(m), [Delegate])
                 End If
                 Return Nothing
@@ -517,7 +522,7 @@ Namespace Mapping
         End Class
         Private Class RAA(Of R, M)
             Implements IObjectAggregatorResolver
-            Public AbsResolver As AbsoluteResolver
+            Public Inner As IObjectMapperResolver
             Public Translator As IAggregatorToAggregatorRangeTranslator(Of R, M)
             Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectAggregatorResolver.TryResolveAggregator
                 Dim DomainType = TypePair.Key
@@ -525,7 +530,8 @@ Namespace Mapping
                 If RangeType Is GetType(R) Then
                     Static DummyMethod As Func(Of Action(Of DummyType, M), Action(Of DummyType, R)) = AddressOf Translator.TranslateAggregatorToAggregatorRange(Of DummyType)
                     Dim t = DummyMethod.MakeDelegateMethodFromDummy(DomainType)
-                    Dim m = AbsResolver.ResolveAggregator(CreatePair(DomainType, GetType(M)))
+                    Dim m = Inner.TryResolveAggregator(CreatePair(DomainType, GetType(M)))
+                    If m Is Nothing Then Return Nothing
                     Return DirectCast(t.DynamicInvoke(m), [Delegate])
                 End If
                 Return Nothing

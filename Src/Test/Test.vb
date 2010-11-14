@@ -602,6 +602,7 @@ Public Module Test
         XmlRoundTrip(xs, CType(123.123, Decimal))
 
         XmlRoundTripCollection(Of Byte, Byte())(xs, New Byte() {1, 2, 3})
+        XmlRoundTripCollection(Of Byte, LinkedList(Of Byte))(xs, New LinkedList(Of Byte)(New Byte() {1, 2, 3}))
         Stop
 
         Dim XmlRoundTripped As SerializerTestObject
