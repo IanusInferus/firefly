@@ -3,19 +3,14 @@
 '  File:        ObjectMapper.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Object映射器
-'  Version:     2010.11.14.
+'  Version:     2010.11.15.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
 
 Option Strict On
 Imports System
-Imports System.Collections
 Imports System.Collections.Generic
-Imports System.Linq
-Imports System.Linq.Expressions
-Imports System.Reflection
-Imports System.Runtime.CompilerServices
 
 Namespace Mapping
     Public Interface IObjectProjectorResolver
@@ -91,14 +86,14 @@ Namespace Mapping
         Public Sub New()
         End Sub
 
-        Private ProjectorResolversValue As New List(Of IObjectProjectorResolver)
-        Private AggregatorResolversValue As New List(Of IObjectAggregatorResolver)
-        Public ReadOnly Property ProjectorResolvers As List(Of IObjectProjectorResolver)
+        Private ProjectorResolversValue As New LinkedList(Of IObjectProjectorResolver)
+        Private AggregatorResolversValue As New LinkedList(Of IObjectAggregatorResolver)
+        Public ReadOnly Property ProjectorResolvers As LinkedList(Of IObjectProjectorResolver)
             Get
                 Return ProjectorResolversValue
             End Get
         End Property
-        Public ReadOnly Property AggregatorResolvers As List(Of IObjectAggregatorResolver)
+        Public ReadOnly Property AggregatorResolvers As LinkedList(Of IObjectAggregatorResolver)
             Get
                 Return AggregatorResolversValue
             End Get

@@ -33,7 +33,7 @@ Namespace Setting
     ''' 对于非简单类型，应提供自定义序列化器
     ''' 简单类型 ::= 简单类型
     '''           | Byte | UInt16 | UInt32 | UInt64 | SByte | Int16 | Int32 | Int64 | Single | Double
-    '''           | String
+    '''           | String | Decimal
     '''           | 枚举
     '''           | 数组(简单类型)
     '''           | ICollection(简单类型)
