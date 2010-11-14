@@ -17,10 +17,10 @@ Imports System.Reflection
 Imports System.Runtime.CompilerServices
 
 Namespace Mapping
-    Public Module MetaProgramming
-        Public Class DummyType
-        End Class
+    Public Class DummyType
+    End Class
 
+    Public Module MetaProgramming
         <Extension()> Public Function IsCollectionType(ByVal Type As Type) As Boolean
             Return Type.GetInterfaces().Any(Function(t) t.IsGenericType AndAlso t.GetGenericTypeDefinition Is GetType(ICollection(Of )))
         End Function

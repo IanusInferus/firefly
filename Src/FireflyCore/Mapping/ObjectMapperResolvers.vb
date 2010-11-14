@@ -1,8 +1,8 @@
 ﻿'==========================================================================
 '
-'  File:        ObjectMapper.vb
+'  File:        ObjectMapperResolvers.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
-'  Description: Object映射
+'  Description: Object映射器解析器
 '  Version:     2010.11.14.
 '  Copyright(C) F.R.C.
 '
@@ -10,22 +10,44 @@
 
 Option Strict On
 Imports System
-Imports System.Collections
 Imports System.Collections.Generic
 Imports System.Linq
 Imports System.Linq.Expressions
 Imports System.Reflection
-Imports System.Runtime.CompilerServices
 
 Namespace Mapping
     ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
     Public Interface IGenericListProjectorResolver(Of D)
         Function ResolveProjector(Of R, RList As {New, ICollection(Of R)})() As Func(Of D, RList)
     End Interface
-
     ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
     Public Interface IGenericListAggregatorResolver(Of R)
         Function ResolveAggregator(Of D, DList As ICollection(Of D))() As Action(Of DList, R)
+    End Interface
+
+    ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
+    Public Interface IProjectorToProjectorDomainTranslator(Of D, M)
+        Function TranslateProjectorToProjectorDomain(Of R)(ByVal Projector As Func(Of M, R)) As Func(Of D, R)
+    End Interface
+    ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
+    Public Interface IAggregatorToAggregatorDomainTranslator(Of D, M)
+        Function TranslateAggregatorToAggregatorDomain(Of R)(ByVal Aggregator As Action(Of M, R)) As Action(Of D, R)
+    End Interface
+    ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
+    Public Interface IProjectorToProjectorRangeTranslator(Of R, M)
+        Function TranslateProjectorToProjectorRange(Of D)(ByVal Projector As Func(Of D, M)) As Func(Of D, R)
+    End Interface
+    ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
+    Public Interface IProjectorToAggregatorRangeTranslator(Of R, M)
+        Function TranslateProjectorToAggregatorRange(Of D)(ByVal Projector As Func(Of D, M)) As Action(Of D, R)
+    End Interface
+    ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
+    Public Interface IAggregatorToProjectorRangeTranslator(Of R, M)
+        Function TranslateAggregatorToProjectorRange(Of D)(ByVal Aggregator As Action(Of D, M)) As Func(Of D, R)
+    End Interface
+    ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
+    Public Interface IAggregatorToAggregatorRangeTranslator(Of R, M)
+        Function TranslateAggregatorToAggregatorRange(Of D)(ByVal Aggregator As Action(Of D, M)) As Action(Of D, R)
     End Interface
 
     Public Class CollectionUnpacker(Of D)
@@ -126,82 +148,16 @@ Namespace Mapping
 
         Private Function ArrayToList(Of R)() As Func(Of D, R())
             Dim Mapper = Inner.ResolveProjector(Of R, List(Of R))()
-            Return Function(Key As D) Mapper(Key).ToArray()
+            Return Function(Key As D) As R()
+                       Dim l = Mapper(Key)
+                       If l Is Nothing Then Return Nothing
+                       Return l.ToArray()
+                   End Function
         End Function
 
         Private Inner As IGenericListProjectorResolver(Of D)
         Public Sub New(ByVal Inner As IGenericListProjectorResolver(Of D))
             Me.Inner = Inner
-        End Sub
-    End Class
-
-    Public Class RecordUnpacker(Of D)
-        Implements IObjectProjectorResolver
-
-        Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
-            Dim DomainType = TypePair.Key
-            Dim RangeType = TypePair.Value
-            If DomainType IsNot GetType(D) Then Return Nothing
-            If RangeType.IsValueType OrElse RangeType.IsClass Then
-                Dim FieldsAndProperties As FieldOrPropertyInfo() = Nothing
-                Dim Constructor As ConstructorInfo = Nothing
-                If FieldsAndProperties Is Nothing Then
-                    Dim iri = RangeType.TryGetImmutableRecordInfo()
-                    If iri IsNot Nothing Then
-                        FieldsAndProperties = iri.Members
-                        Constructor = iri.Constructor
-                    End If
-                End If
-                If FieldsAndProperties Is Nothing Then
-                    Dim mri = RangeType.TryGetMutableRecordInfo()
-                    If mri IsNot Nothing Then FieldsAndProperties = mri.Members
-                End If
-                If FieldsAndProperties Is Nothing Then Return Nothing
-
-                Dim dParam = Expression.Variable(GetType(D), "Key")
-                Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
-                Dim TypeToMapper As New Dictionary(Of Type, [Delegate])
-                For Each Pair In FieldsAndProperties
-                    Dim Type = Pair.Type
-                    Dim Mapper As [Delegate]
-                    If TypeToMapper.ContainsKey(Type) Then
-                        Mapper = TypeToMapper(Type)
-                    Else
-                        Mapper = AbsResolver.ResolveProjector(CreatePair(DomainType, Type))
-                        TypeToMapper.Add(Type, Mapper)
-                    End If
-                    DelegateCalls.Add(New KeyValuePair(Of [Delegate], Expression())(Mapper, New Expression() {dParam}))
-                Next
-                Dim Context = CreateDelegateExpressionContext(DelegateCalls)
-
-                If Constructor IsNot Nothing Then
-                    Dim CreateThis = Expression.[New](Constructor, Context.DelegateExpressions)
-                    Dim FunctionLambda = Expression.Lambda(Expression.Block(CreateThis), New ParameterExpression() {dParam})
-
-                    Return CreateDelegate(Context.ClosureParam, Context.Closure, FunctionLambda)
-                Else
-                    Dim rParam = Expression.Variable(RangeType, "Value")
-                    Dim CreateThis = Expression.Assign(rParam, Expression.[New](RangeType))
-                    Dim Statements As New List(Of Expression)
-                    Statements.Add(CreateThis)
-                    For Each Pair In FieldsAndProperties.Zip(Context.DelegateExpressions, Function(m, e) New With {.Member = m.Member, .Type = m.Type, .MapperCall = e})
-                        Dim Type = Pair.Type
-                        Dim FieldOrPropertyExpr = CreateFieldOrPropertyExpression(rParam, Pair.Member)
-                        Statements.Add(Expression.Assign(FieldOrPropertyExpr, Pair.MapperCall))
-                    Next
-                    Statements.Add(rParam)
-
-                    Dim FunctionLambda = Expression.Lambda(Expression.Block(New ParameterExpression() {rParam}, Statements), New ParameterExpression() {dParam})
-
-                    Return CreateDelegate(Context.ClosureParam, Context.Closure, FunctionLambda)
-                End If
-            End If
-            Return Nothing
-        End Function
-
-        Private AbsResolver As ObjectMapperAbsoluteResolver
-        Public Sub New(ByVal AbsResolver As IObjectMapperResolver)
-            Me.AbsResolver = New ObjectMapperAbsoluteResolver(AbsResolver)
         End Sub
     End Class
 
@@ -303,12 +259,88 @@ Namespace Mapping
 
         Private Function ArrayToList(Of D)() As Action(Of D(), R)
             Dim Mapper = Inner.ResolveAggregator(Of D, List(Of D))()
-            Return Sub(List As D(), Value As R) Mapper(List.ToList(), Value)
+            Return Sub(Arr As D(), Value As R)
+                       If Arr Is Nothing Then
+                           Mapper(Nothing, Value)
+                       Else
+                           Mapper(Arr.ToList(), Value)
+                       End If
+                   End Sub
         End Function
 
         Private Inner As IGenericListAggregatorResolver(Of R)
         Public Sub New(ByVal Inner As IGenericListAggregatorResolver(Of R))
             Me.Inner = Inner
+        End Sub
+    End Class
+
+    Public Class RecordUnpacker(Of D)
+        Implements IObjectProjectorResolver
+
+        Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
+            Dim DomainType = TypePair.Key
+            Dim RangeType = TypePair.Value
+            If DomainType IsNot GetType(D) Then Return Nothing
+            If RangeType.IsValueType OrElse RangeType.IsClass Then
+                Dim FieldsAndProperties As FieldOrPropertyInfo() = Nothing
+                Dim Constructor As ConstructorInfo = Nothing
+                If FieldsAndProperties Is Nothing Then
+                    Dim iri = RangeType.TryGetImmutableRecordInfo()
+                    If iri IsNot Nothing Then
+                        FieldsAndProperties = iri.Members
+                        Constructor = iri.Constructor
+                    End If
+                End If
+                If FieldsAndProperties Is Nothing Then
+                    Dim mri = RangeType.TryGetMutableRecordInfo()
+                    If mri IsNot Nothing Then FieldsAndProperties = mri.Members
+                End If
+                If FieldsAndProperties Is Nothing Then Return Nothing
+
+                Dim dParam = Expression.Variable(GetType(D), "Key")
+                Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
+                Dim TypeToMapper As New Dictionary(Of Type, [Delegate])
+                For Each Pair In FieldsAndProperties
+                    Dim Type = Pair.Type
+                    Dim Mapper As [Delegate]
+                    If TypeToMapper.ContainsKey(Type) Then
+                        Mapper = TypeToMapper(Type)
+                    Else
+                        Mapper = AbsResolver.ResolveProjector(CreatePair(DomainType, Type))
+                        TypeToMapper.Add(Type, Mapper)
+                    End If
+                    DelegateCalls.Add(New KeyValuePair(Of [Delegate], Expression())(Mapper, New Expression() {dParam}))
+                Next
+                Dim Context = CreateDelegateExpressionContext(DelegateCalls)
+
+                If Constructor IsNot Nothing Then
+                    Dim CreateThis = Expression.[New](Constructor, Context.DelegateExpressions)
+                    Dim FunctionLambda = Expression.Lambda(Expression.Block(CreateThis), New ParameterExpression() {dParam})
+
+                    Return CreateDelegate(Context.ClosureParam, Context.Closure, FunctionLambda)
+                Else
+                    Dim rParam = Expression.Variable(RangeType, "Value")
+                    Dim CreateThis = Expression.Assign(rParam, Expression.[New](RangeType))
+                    Dim Statements As New List(Of Expression)
+                    Statements.Add(CreateThis)
+                    For Each Pair In FieldsAndProperties.Zip(Context.DelegateExpressions, Function(m, e) New With {.Member = m.Member, .Type = m.Type, .MapperCall = e})
+                        Dim Type = Pair.Type
+                        Dim FieldOrPropertyExpr = CreateFieldOrPropertyExpression(rParam, Pair.Member)
+                        Statements.Add(Expression.Assign(FieldOrPropertyExpr, Pair.MapperCall))
+                    Next
+                    Statements.Add(rParam)
+
+                    Dim FunctionLambda = Expression.Lambda(Expression.Block(New ParameterExpression() {rParam}, Statements), New ParameterExpression() {dParam})
+
+                    Return CreateDelegate(Context.ClosureParam, Context.Closure, FunctionLambda)
+                End If
+            End If
+            Return Nothing
+        End Function
+
+        Private AbsResolver As AbsoluteResolver
+        Public Sub New(ByVal Resolver As IObjectMapperResolver)
+            Me.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver))
         End Sub
     End Class
 
@@ -357,9 +389,159 @@ Namespace Mapping
             Return Nothing
         End Function
 
-        Private AbsResolver As ObjectMapperAbsoluteResolver
-        Public Sub New(ByVal AbsResolver As IObjectMapperResolver)
-            Me.AbsResolver = New ObjectMapperAbsoluteResolver(AbsResolver)
+        Private AbsResolver As AbsoluteResolver
+        Public Sub New(ByVal Resolver As IObjectMapperResolver)
+            Me.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver))
+        End Sub
+    End Class
+
+    ''' <summary>映射分解器</summary>
+    ''' <remarks>
+    ''' IProjectorToProjectorDomainTranslator(D, M) = Projector(M, R) -> Projector(D, R)
+    ''' IAggregatorToAggregatorDomainTranslator(D, M) = Aggregator(M, R) -> Aggregator(D, R)
+    ''' IAggregatorToProjectorRangeTranslator(R, M) = Aggregator(D, M) -> Projector(D, R)
+    ''' IProjectorToAggregatorRangeTranslator(R, M) = Projector(D, M) -> Aggregator(D, R)
+    ''' 这样就能把(D, R)的映射器转换为(M, R)或者(D, M)的映射器，是一种化简。
+    ''' 不过使用的前提是(D, M)或者(R, M)静态已知。
+    ''' 本解析器应放在选择解析器列表的最后一个，以防止死递归导致无法解析。
+    ''' </remarks>
+    Public Class TranslatorResolver
+        Implements IObjectMapperResolver
+
+        'Domain
+        Private DPPTranslators As New Dictionary(Of Type, [Delegate])
+        Private DPPIntermediateTypes As New Dictionary(Of Type, Type)
+        Private DAATranslators As New Dictionary(Of Type, [Delegate])
+        Private DAAIntermediateTypes As New Dictionary(Of Type, Type)
+
+        'Range
+        Private RPPTranslators As New Dictionary(Of Type, [Delegate])
+        Private RPPIntermediateTypes As New Dictionary(Of Type, Type)
+        Private RPATranslators As New Dictionary(Of Type, [Delegate])
+        Private RPAIntermediateTypes As New Dictionary(Of Type, Type)
+        Private RAPTranslators As New Dictionary(Of Type, [Delegate])
+        Private RAPIntermediateTypes As New Dictionary(Of Type, Type)
+        Private RAATranslators As New Dictionary(Of Type, [Delegate])
+        Private RAAIntermediateTypes As New Dictionary(Of Type, Type)
+
+        Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
+            Dim DomainType = TypePair.Key
+            Dim RangeType = TypePair.Value
+            If DPPTranslators.ContainsKey(DomainType) Then
+                Dim t = DPPTranslators(DomainType).MakeDelegateMethodFromDummy(RangeType)
+                Dim mType = DPPIntermediateTypes(DomainType)
+                Dim m = AbsResolver.ResolveProjector(CreatePair(mType, RangeType))
+                Return DirectCast(t.DynamicInvoke(m), [Delegate])
+            End If
+            If RPPTranslators.ContainsKey(RangeType) Then
+                Dim t = RPPTranslators(RangeType).MakeDelegateMethodFromDummy(DomainType)
+                Dim mType = RPPIntermediateTypes(RangeType)
+                Dim m = AbsResolver.ResolveProjector(CreatePair(DomainType, mType))
+                Return DirectCast(t.DynamicInvoke(m), [Delegate])
+            End If
+            If RAPTranslators.ContainsKey(RangeType) Then
+                Dim t = RAPTranslators(RangeType).MakeDelegateMethodFromDummy(DomainType)
+                Dim mType = RAPIntermediateTypes(RangeType)
+                Dim m = AbsResolver.ResolveAggregator(CreatePair(DomainType, mType))
+                Return DirectCast(t.DynamicInvoke(m), [Delegate])
+            End If
+            Return Nothing
+        End Function
+        Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectAggregatorResolver.TryResolveAggregator
+            Dim DomainType = TypePair.Key
+            Dim RangeType = TypePair.Value
+            If DAATranslators.ContainsKey(DomainType) Then
+                Dim t = DAATranslators(DomainType).MakeDelegateMethodFromDummy(RangeType)
+                Dim mType = DAAIntermediateTypes(DomainType)
+                Dim m = AbsResolver.ResolveAggregator(CreatePair(mType, RangeType))
+                Return DirectCast(t.DynamicInvoke(m), [Delegate])
+            End If
+            If RPATranslators.ContainsKey(RangeType) Then
+                Dim t = RPATranslators(RangeType).MakeDelegateMethodFromDummy(DomainType)
+                Dim mType = RPAIntermediateTypes(RangeType)
+                Dim m = AbsResolver.ResolveProjector(CreatePair(DomainType, mType))
+                Return DirectCast(t.DynamicInvoke(m), [Delegate])
+            End If
+            If RAATranslators.ContainsKey(RangeType) Then
+                Dim t = RAATranslators(RangeType).MakeDelegateMethodFromDummy(DomainType)
+                Dim mType = RAAIntermediateTypes(RangeType)
+                Dim m = AbsResolver.ResolveAggregator(CreatePair(DomainType, mType))
+                Return DirectCast(t.DynamicInvoke(m), [Delegate])
+            End If
+            Return Nothing
+        End Function
+
+        Public Sub PutProjectorToProjectorTranslatorDomain(Of D, M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of D, M))
+            Dim DomainType = GetType(D)
+            Dim t = DirectCast(AddressOf Translator.TranslateProjectorToProjectorDomain(Of DummyType), Func(Of Func(Of M, DummyType), Func(Of D, DummyType)))
+            If DPPTranslators.ContainsKey(DomainType) Then
+                DPPTranslators(DomainType) = t
+                DPPIntermediateTypes(DomainType) = GetType(M)
+            Else
+                DPPTranslators.Add(DomainType, t)
+                DPPIntermediateTypes.Add(DomainType, GetType(M))
+            End If
+        End Sub
+        Public Sub PutAggregatorToAggregatorTranslatorDomain(Of D, M)(ByVal Translator As IAggregatorToAggregatorDomainTranslator(Of D, M))
+            Dim DomainType = GetType(D)
+            Dim t = DirectCast(AddressOf Translator.TranslateAggregatorToAggregatorDomain(Of DummyType), Func(Of Action(Of M, DummyType), Action(Of D, DummyType)))
+            If DAATranslators.ContainsKey(DomainType) Then
+                DAATranslators(DomainType) = t
+                DAAIntermediateTypes(DomainType) = GetType(M)
+            Else
+                DAATranslators.Add(DomainType, t)
+                DAAIntermediateTypes.Add(DomainType, GetType(M))
+            End If
+        End Sub
+
+        Public Sub PutProjectorToProjectorTranslatorRange(Of R, M)(ByVal Translator As IProjectorToProjectorRangeTranslator(Of R, M))
+            Dim RangeType = GetType(R)
+            Dim t = DirectCast(AddressOf Translator.TranslateProjectorToProjectorRange(Of DummyType), Func(Of Func(Of DummyType, M), Func(Of DummyType, R)))
+            If RPPTranslators.ContainsKey(RangeType) Then
+                RPPTranslators(RangeType) = t
+                RPPIntermediateTypes(RangeType) = GetType(M)
+            Else
+                RPPTranslators.Add(RangeType, t)
+                RPPIntermediateTypes.Add(RangeType, GetType(M))
+            End If
+        End Sub
+        Public Sub PutProjectorToAggregatorTranslatorRange(Of R, M)(ByVal Translator As IProjectorToAggregatorRangeTranslator(Of R, M))
+            Dim RangeType = GetType(R)
+            Dim t = DirectCast(AddressOf Translator.TranslateProjectorToAggregatorRange(Of DummyType), Func(Of Func(Of DummyType, M), Action(Of DummyType, R)))
+            If RPATranslators.ContainsKey(RangeType) Then
+                RPATranslators(RangeType) = t
+                RPAIntermediateTypes(RangeType) = GetType(M)
+            Else
+                RPATranslators.Add(RangeType, t)
+                RPAIntermediateTypes.Add(RangeType, GetType(M))
+            End If
+        End Sub
+        Public Sub PutAggregatorToProjectorTranslatorRange(Of R, M)(ByVal Translator As IAggregatorToProjectorRangeTranslator(Of R, M))
+            Dim RangeType = GetType(R)
+            Dim t = DirectCast(AddressOf Translator.TranslateAggregatorToProjectorRange(Of DummyType), Func(Of Action(Of DummyType, M), Func(Of DummyType, R)))
+            If RAPTranslators.ContainsKey(RangeType) Then
+                RAPTranslators(RangeType) = t
+                RAPIntermediateTypes(RangeType) = GetType(M)
+            Else
+                RAPTranslators.Add(RangeType, t)
+                RAPIntermediateTypes.Add(RangeType, GetType(M))
+            End If
+        End Sub
+        Public Sub PutAggregatorToAggregatorTranslatorRange(Of R, M)(ByVal Translator As IAggregatorToAggregatorRangeTranslator(Of R, M))
+            Dim RangeType = GetType(R)
+            Dim t = DirectCast(AddressOf Translator.TranslateAggregatorToAggregatorRange(Of DummyType), Func(Of Action(Of DummyType, M), Action(Of DummyType, R)))
+            If RAATranslators.ContainsKey(RangeType) Then
+                RAATranslators(RangeType) = t
+                RAAIntermediateTypes(RangeType) = GetType(M)
+            Else
+                RAATranslators.Add(RangeType, t)
+                RAAIntermediateTypes.Add(RangeType, GetType(M))
+            End If
+        End Sub
+
+        Private AbsResolver As AbsoluteResolver
+        Public Sub New(ByVal Resolver As IObjectMapperResolver)
+            Me.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver))
         End Sub
     End Class
 End Namespace
