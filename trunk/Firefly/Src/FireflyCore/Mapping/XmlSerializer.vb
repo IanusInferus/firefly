@@ -70,8 +70,8 @@ Namespace Mapping
             WriterResolverSet = New AlternativeResolver
             WriterCache = New CachedResolver(WriterResolverSet)
             Dim WriterProjectorList = New List(Of IObjectProjectorResolver) From {
-                TranslatorResolver.Create(ReaderCache, New XElementRangeTranslator),
-                TranslatorResolver.Create(ReaderCache, New CollectionToXElementListTranslator),
+                TranslatorResolver.Create(WriterCache, New XElementRangeTranslator),
+                TranslatorResolver.Create(WriterCache, New CollectionToXElementListTranslator),
                 PrimRes,
                 New EnumResolver(WriterCache)
             }
@@ -80,7 +80,7 @@ Namespace Mapping
             Next
             Dim WriterAggregatorList = New List(Of IObjectAggregatorResolver) From {
                 New CollectionPacker(Of List(Of XElement))(New GenericListAggregatorResolver(WriterCache)),
-                TranslatorResolver.Create(ReaderCache, New XElementListToCollectionTranslator),
+                TranslatorResolver.Create(WriterCache, New XElementListToCollectionTranslator),
                 New RecordPacker(Of XElement)(WriterCache)
             }
             For Each r In WriterAggregatorList
@@ -119,26 +119,6 @@ Namespace Mapping
             End If
             Return Type.Name
         End Function
-
-        Public Class XElementRangeTranslator
-            Implements IProjectorToProjectorRangeTranslator(Of XElement, String)
-
-            Public Function TranslateProjectorToProjectorRange(Of D)(ByVal Projector As Func(Of D, String)) As Func(Of D, XElement) Implements IProjectorToProjectorRangeTranslator(Of XElement, String).TranslateProjectorToProjectorRange
-                Dim FriendlyName = GetTypeFriendlyName(GetType(D))
-                Return Function(v)
-                           Dim s = Projector(v)
-                           Return New XElement(FriendlyName, s)
-                       End Function
-            End Function
-        End Class
-
-        Public Class XElementDomainTranslator
-            Implements IProjectorToProjectorDomainTranslator(Of XElement, String)
-
-            Public Function TranslateProjectorToProjectorDomain(Of R)(ByVal Projector As Func(Of String, R)) As Func(Of XElement, R) Implements IProjectorToProjectorDomainTranslator(Of XElement, String).TranslateProjectorToProjectorDomain
-                Return Function(v) Projector(v.Value)
-            End Function
-        End Class
 
         Public Class PrimitiveResolver
             Implements IObjectProjectorResolver
@@ -275,6 +255,26 @@ Namespace Mapping
             Public Sub New(ByVal Resolver As IObjectMapperResolver)
                 Me.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver))
             End Sub
+        End Class
+
+        Public Class XElementRangeTranslator
+            Implements IProjectorToProjectorRangeTranslator(Of XElement, String)
+
+            Public Function TranslateProjectorToProjectorRange(Of D)(ByVal Projector As Func(Of D, String)) As Func(Of D, XElement) Implements IProjectorToProjectorRangeTranslator(Of XElement, String).TranslateProjectorToProjectorRange
+                Dim FriendlyName = GetTypeFriendlyName(GetType(D))
+                Return Function(v)
+                           Dim s = Projector(v)
+                           Return New XElement(FriendlyName, s)
+                       End Function
+            End Function
+        End Class
+
+        Public Class XElementDomainTranslator
+            Implements IProjectorToProjectorDomainTranslator(Of XElement, String)
+
+            Public Function TranslateProjectorToProjectorDomain(Of R)(ByVal Projector As Func(Of String, R)) As Func(Of XElement, R) Implements IProjectorToProjectorDomainTranslator(Of XElement, String).TranslateProjectorToProjectorDomain
+                Return Function(v) Projector(v.Value)
+            End Function
         End Class
 
         Public Class CollectionToXElementListTranslator
