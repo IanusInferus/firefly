@@ -391,9 +391,10 @@ Public Module Test
         Public l3 As HashSet(Of UInt64)
         Public e1 As SerializerTestEnum
         Public p As KeyValuePair(Of Byte, Integer)
+        Public str As String
 
         Public Shared Operator =(ByVal Left As SerializerTestObject, ByVal Right As SerializerTestObject) As Boolean
-            Return Left.i = Right.i AndAlso Left.s = Right.s AndAlso Left.o.h = Right.o.h AndAlso Left.a.ArrayEqual(Right.a) AndAlso Left.l.ToArray.ArrayEqual(Right.l.ToArray) AndAlso Left.l2.ToArray.ArrayEqual(Right.l2.ToArray) AndAlso Left.l3.ToArray.ArrayEqual(Right.l3.ToArray) AndAlso Left.e1 = Right.e1 AndAlso Left.p.Key = Right.p.Key AndAlso Left.p.Value = Right.p.Value
+            Return Left.i = Right.i AndAlso Left.s = Right.s AndAlso Left.o.h = Right.o.h AndAlso Left.a.ArrayEqual(Right.a) AndAlso Left.l.ToArray.ArrayEqual(Right.l.ToArray) AndAlso Left.l2.ToArray.ArrayEqual(Right.l2.ToArray) AndAlso Left.l3.ToArray.ArrayEqual(Right.l3.ToArray) AndAlso Left.e1 = Right.e1 AndAlso Left.p.Key = Right.p.Key AndAlso Left.p.Value = Right.p.Value AndAlso Left.str = Right.str
         End Operator
         Public Shared Operator <>(ByVal Left As SerializerTestObject, ByVal Right As SerializerTestObject) As Boolean
             Return Not (Left = Right)
@@ -421,9 +422,9 @@ Public Module Test
             Return F
         End Function
 
-        Private AbsResolver As ObjectMapperAbsoluteResolver
-        Public Sub New(ByVal AbsResolver As IObjectMapperResolver)
-            Me.AbsResolver = New ObjectMapperAbsoluteResolver(AbsResolver)
+        Private AbsResolver As AbsoluteResolver
+        Public Sub New(ByVal Resolver As IObjectMapperResolver)
+            Me.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver))
         End Sub
     End Class
 
@@ -442,48 +443,57 @@ Public Module Test
             Return F
         End Function
 
-        Private AbsResolver As ObjectMapperAbsoluteResolver
-        Public Sub New(ByVal AbsResolver As IObjectMapperResolver)
-            Me.AbsResolver = New ObjectMapperAbsoluteResolver(AbsResolver)
+        Private AbsResolver As AbsoluteResolver
+        Public Sub New(ByVal Resolver As IObjectMapperResolver)
+            Me.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver))
         End Sub
     End Class
 
-    Public TestObject As New SerializerTestObject With {.i = 1, .s = 2, .o = New SerializerTestObject2 With {.h = 3}, .a = New Byte() {4, 5, 6}, .l = New List(Of Int16) From {7, 8, 9}, .l2 = New LinkedList(Of Int32)(New Int32() {10, 11, 12}), .l3 = New HashSet(Of UInt64) From {13, 14, 15}, .e1 = 16, .p = New KeyValuePair(Of Byte, Integer)(17, 18)}
+    Public TestObject As New SerializerTestObject With {.i = 1, .s = 2, .o = New SerializerTestObject2 With {.h = 3}, .a = New Byte() {4, 5, 6}, .l = New List(Of Int16) From {7, 8, 9}, .l2 = New LinkedList(Of Int32)(New Int32() {10, 11, 12}), .l3 = New HashSet(Of UInt64) From {13, 14, 15}, .e1 = 16, .p = New KeyValuePair(Of Byte, Integer)(17, 18), .str = "19"}
     Public Sub TestObjectTreeMapper()
         Dim Count = 0
 
         With Nothing
-            Dim mp As New ObjectMapper
-            Dim er = New BinarySerializer.EnumUnpacker(Of Integer)(mp)
-            mp.ProjectorResolvers.Add(er)
-            Dim cr = New CollectionUnpacker(Of Integer)(New GenericListProjectorResolver(Of Integer)(mp))
-            mp.ProjectorResolvers.Add(cr)
-            Dim csr = New RecordUnpacker(Of Integer)(mp)
-            mp.ProjectorResolvers.Add(csr)
-            mp.PutProjector(
+            Dim mprs As New AlternativeResolver
+            Dim pr = New PrimitiveResolver
+            mprs.ProjectorResolvers.Add(pr)
+            Dim er = New BinarySerializer.EnumUnpacker(Of Integer)(mprs)
+            mprs.ProjectorResolvers.Add(er)
+            Dim cr = New CollectionUnpacker(Of Integer)(New GenericListProjectorResolver(Of Integer)(mprs))
+            mprs.ProjectorResolvers.Add(cr)
+            Dim csr = New RecordUnpacker(Of Integer)(mprs)
+            mprs.ProjectorResolvers.Add(csr)
+            pr.PutProjector(
                 Function(i As Integer) As Byte
                     Count += 1
                     Return Count
                 End Function
             )
-            mp.PutProjector(
+            pr.PutProjector(
                 Function(i As Integer) As Int16
                     Count += 1
                     Return Count
                 End Function
             )
-            mp.PutProjector(
+            pr.PutProjector(
                 Function(i As Integer) As Int32
                     Count += 1
                     Return Count
                 End Function
             )
-            mp.PutProjector(
+            pr.PutProjector(
                 Function(i As Integer) As UInt64
                     Count += 1
                     Return Count
                 End Function
             )
+            pr.PutProjector(
+                Function(i As Integer) As String
+                    Count += 1
+                    Return Count.ToString()
+                End Function
+            )
+            Dim mp As New ObjectMapper(mprs)
 
             Dim BuiltObject = mp.Project(Of Integer, SerializerTestObject)(0)
             Assert(TestObject = BuiltObject)
@@ -491,44 +501,75 @@ Public Module Test
 
         Dim Count2 = 0
         With Nothing
-            Dim mp As New ObjectMapper
-            Dim er = New BinarySerializer.EnumPacker(Of Integer)(mp)
-            mp.AggregatorResolvers.Add(er)
-            Dim cr = New CollectionPacker(Of Integer)(New GenericListAggregatorResolver(Of Integer)(mp))
-            mp.AggregatorResolvers.Add(cr)
-            Dim csr = New RecordPacker(Of Integer)(mp)
-            mp.AggregatorResolvers.Add(csr)
-            mp.PutAggregator(
+            Dim mprs As New AlternativeResolver
+            Dim pr = New PrimitiveResolver
+            mprs.AggregatorResolvers.Add(pr)
+            Dim er = New BinarySerializer.EnumPacker(Of Integer)(mprs)
+            mprs.AggregatorResolvers.Add(er)
+            Dim cr = New CollectionPacker(Of Integer)(New GenericListAggregatorResolver(Of Integer)(mprs))
+            mprs.AggregatorResolvers.Add(cr)
+            Dim csr = New RecordPacker(Of Integer)(mprs)
+            mprs.AggregatorResolvers.Add(csr)
+            pr.PutAggregator(
                 Sub(Key As Byte, Value As Integer)
                     Count2 += 1
                 End Sub
             )
-            mp.PutAggregator(
+            pr.PutAggregator(
                 Sub(Key As Int16, Value As Integer)
                     Count2 += 1
                 End Sub
             )
-            mp.PutAggregator(
+            pr.PutAggregator(
                 Sub(Key As Int32, Value As Integer)
                     Count2 += 1
                 End Sub
             )
-            mp.PutAggregator(
+            pr.PutAggregator(
                 Sub(Key As UInt64, Value As Integer)
                     Count2 += 1
                 End Sub
             )
+            pr.PutAggregator(
+                Sub(Key As String, Value As Integer)
+                    Count2 += 1
+                End Sub
+            )
+            Dim mp As New ObjectMapper(mprs)
 
             mp.Aggregate(TestObject, 1)
             Assert(Count = Count2)
         End With
     End Sub
 
+    Public Class StringAndBytesTranslator
+        Implements IProjectorToProjectorRangeTranslator(Of String, Byte()) 'Reader
+        Implements IAggregatorToAggregatorDomainTranslator(Of String, Byte()) 'Writer
+        Implements IProjectorToProjectorDomainTranslator(Of String, Byte()) 'Counter
+
+        Public Function TranslateProjectorToProjector(Of D)(ByVal Projector As Func(Of D, Byte())) As Func(Of D, String) Implements IProjectorToProjectorRangeTranslator(Of String, Byte()).TranslateProjectorToProjectorRange
+            Return Function(v) UTF16.GetString(Projector(v))
+        End Function
+        Public Function TranslateAggregatorToAggregator(Of R)(ByVal Aggregator As Action(Of Byte(), R)) As Action(Of String, R) Implements IAggregatorToAggregatorDomainTranslator(Of String, Byte()).TranslateAggregatorToAggregatorDomain
+            Return Sub(s, v) Aggregator(UTF16.GetBytes(s), v)
+        End Function
+        Public Function TranslateProjectorToProjector(Of R)(ByVal Projector As Func(Of Byte(), R)) As Func(Of String, R) Implements IProjectorToProjectorDomainTranslator(Of String, Byte()).TranslateProjectorToProjectorDomain
+            Return Function(s) Projector(UTF16.GetBytes(s))
+        End Function
+    End Class
+
     Public Sub TestBinarySerializer()
         Dim BinaryRoundTripped As SerializerTestObject
 
         Using s As New StreamEx
             Dim bs As New BinarySerializer
+
+            Dim sbr As New StringAndBytesTranslator
+
+            bs.PutReaderTranslator(sbr)
+            bs.PutWriterTranslator(sbr)
+            bs.PutCounterTranslator(sbr)
+
             Dim Size = bs.Count(TestObject)
             bs.Write(s, TestObject)
             Assert(Size = s.Length)
