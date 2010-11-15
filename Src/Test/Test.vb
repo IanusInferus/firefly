@@ -394,11 +394,18 @@ Public Module Test
         Public str As String
 
         Public Shared Operator =(ByVal Left As SerializerTestObject, ByVal Right As SerializerTestObject) As Boolean
+            If Left Is Nothing AndAlso Right Is Nothing Then Return True
+            If Left Is Nothing OrElse Right Is Nothing Then Return False
             Return Left.i = Right.i AndAlso Left.s = Right.s AndAlso Left.o.h = Right.o.h AndAlso Left.a.ArrayEqual(Right.a) AndAlso Left.l.ToArray.ArrayEqual(Right.l.ToArray) AndAlso Left.l2.ToArray.ArrayEqual(Right.l2.ToArray) AndAlso Left.l3.ToArray.ArrayEqual(Right.l3.ToArray) AndAlso Left.e1 = Right.e1 AndAlso Left.p.Key = Right.p.Key AndAlso Left.p.Value = Right.p.Value AndAlso Left.str = Right.str
         End Operator
         Public Shared Operator <>(ByVal Left As SerializerTestObject, ByVal Right As SerializerTestObject) As Boolean
             Return Not (Left = Right)
         End Operator
+        Public Overrides Function Equals(ByVal obj As Object) As Boolean
+            Dim o = TryCast(obj, SerializerTestObject)
+            If o Is Nothing Then Return False
+            Return Me = o
+        End Function
     End Class
     Public TestObject As New SerializerTestObject With {.i = 1, .s = 2, .o = New SerializerTestObject2 With {.h = 3}, .a = New Byte() {4, 5, 6}, .l = New List(Of Int16) From {7, 8, 9}, .l2 = New LinkedList(Of Int32)(New Int32() {10, 11, 12}), .l3 = New HashSet(Of UInt64) From {13, 14, 15}, .e1 = 16, .p = New KeyValuePair(Of Byte, Integer)(17, 18), .str = "19"}
 
@@ -459,9 +466,9 @@ Public Module Test
             mprs.ProjectorResolvers.AddLast(pr)
             Dim er = New BinarySerializer.EnumUnpacker(Of Integer)(mprs)
             mprs.ProjectorResolvers.AddLast(er)
-            Dim cr = New CollectionUnpacker(Of Integer)(New GenericListProjectorResolver(Of Integer)(mprs))
+            Dim cr = New CollectionUnpackerTemplate(Of Integer)(New GenericListProjectorResolver(Of Integer)(mprs))
             mprs.ProjectorResolvers.AddLast(cr)
-            Dim csr = New RecordUnpacker(Of Integer)(mprs)
+            Dim csr = New RecordUnpackerTemplate(Of Integer)(New BinarySerializer.FieldOrPropertyProjectorResolver(Of Integer)(mprs))
             mprs.ProjectorResolvers.AddLast(csr)
             pr.PutProjector(
                 Function(i As Integer) As Byte
@@ -506,9 +513,9 @@ Public Module Test
             mprs.AggregatorResolvers.AddLast(pr)
             Dim er = New BinarySerializer.EnumPacker(Of Integer)(mprs)
             mprs.AggregatorResolvers.AddLast(er)
-            Dim cr = New CollectionPacker(Of Integer)(New GenericListAggregatorResolver(Of Integer)(mprs))
+            Dim cr = New CollectionPackerTemplate(Of Integer)(New GenericListAggregatorResolver(Of Integer)(mprs))
             mprs.AggregatorResolvers.AddLast(cr)
-            Dim csr = New RecordPacker(Of Integer)(mprs)
+            Dim csr = New RecordPackerTemplate(Of Integer)(New BinarySerializer.FieldOrPropertyAggregatorResolver(Of Integer)(mprs))
             mprs.AggregatorResolvers.AddLast(csr)
             pr.PutAggregator(
                 Sub(Key As Byte, Value As Integer)
@@ -579,19 +586,53 @@ Public Module Test
         Assert(TestObject = BinaryRoundTripped)
     End Sub
 
+    Public Class XmlTestObject
+        Public Test As XmlTestObject2
+        Public o As Object
+
+        Public Shared Operator =(ByVal Left As XmlTestObject, ByVal Right As XmlTestObject) As Boolean
+            If Left Is Nothing AndAlso Right Is Nothing Then Return True
+            If Left Is Nothing OrElse Right Is Nothing Then Return False
+            Return Left.Test = Right.Test AndAlso ((Left.o Is Nothing) = (Right.o Is Nothing))
+        End Operator
+        Public Shared Operator <>(ByVal Left As XmlTestObject, ByVal Right As XmlTestObject) As Boolean
+            Return Not (Left = Right)
+        End Operator
+        Public Overrides Function Equals(ByVal obj As Object) As Boolean
+            Dim o = TryCast(obj, XmlTestObject)
+            If o Is Nothing Then Return False
+            Return Me = o
+        End Function
+    End Class
+    Public Class XmlTestObject2
+        Public i As Integer = 1
+
+        Public Shared Operator =(ByVal Left As XmlTestObject2, ByVal Right As XmlTestObject2) As Boolean
+            If Left Is Nothing AndAlso Right Is Nothing Then Return True
+            If Left Is Nothing OrElse Right Is Nothing Then Return False
+            Return Left.i = Right.i
+        End Operator
+        Public Shared Operator <>(ByVal Left As XmlTestObject2, ByVal Right As XmlTestObject2) As Boolean
+            Return Not (Left = Right)
+        End Operator
+        Public Overrides Function Equals(ByVal obj As Object) As Boolean
+            Dim o = TryCast(obj, XmlTestObject2)
+            If o Is Nothing Then Return False
+            Return Me = o
+        End Function
+    End Class
     Public Sub XmlRoundTrip(Of T)(ByVal xs As XmlSerializer, ByVal v As T)
         Dim xe = xs.Write(v)
         Dim RoundTripped = xs.Read(Of T)(xe)
-        Assert(v.Equals(RoundTripped))
+        Assert(Object.Equals(v, RoundTripped))
     End Sub
     Public Sub XmlRoundTripCollection(Of E, T As IEnumerable(Of E))(ByVal xs As XmlSerializer, ByVal v As T)
         Dim xe = xs.Write(v)
         Dim RoundTripped = xs.Read(Of T)(xe)
         Dim va = v.ToArray()
         Dim ra = RoundTripped.ToArray()
-        Assert(va.SequenceEqual(ra))
+        Assert(Enumerable.SequenceEqual(va, ra))
     End Sub
-
     Public Sub TestXmlSerializer()
         Dim xs As New XmlSerializer
 
@@ -603,6 +644,16 @@ Public Module Test
 
         XmlRoundTripCollection(Of Byte, Byte())(xs, New Byte() {1, 2, 3})
         XmlRoundTripCollection(Of Byte, LinkedList(Of Byte))(xs, New LinkedList(Of Byte)(New Byte() {1, 2, 3}))
+
+        XmlRoundTrip(xs, TestObject)
+
+        XmlRoundTrip(Of XmlTestObject)(xs, Nothing)
+        XmlRoundTrip(xs, New XmlTestObject With {.Test = Nothing})
+        XmlRoundTrip(xs, New XmlTestObject With {.o = New Object})
+        XmlRoundTrip(Of Byte())(xs, Nothing)
+        XmlRoundTripCollection(Of Byte, Byte())(xs, New Byte() {})
+
+        If 1 = 1 Then Return
         Stop
 
         Dim XmlRoundTripped As SerializerTestObject

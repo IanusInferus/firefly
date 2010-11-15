@@ -81,7 +81,8 @@
     <Compile Include="Core\ArrayStream.vb" />
     <Compile Include="Core\ByteArrayStream.vb" />
     <Compile Include="Core\ListStringEx.vb" />
-    <Compile Include="Mapping\ObjectMapperResolvers.vb" />
+    <Compile Include="Mapping\ResolverTemplates.vb" />
+    <Compile Include="Mapping\TranslatorResolvers.vb" />
     <Compile Include="Mapping\XmlSerializer.vb" />
     <Compile Include="GlobalSuppressions.vb" />
     <Compile Include="Glyphing\FdGlyphDescriptionFile.vb" />

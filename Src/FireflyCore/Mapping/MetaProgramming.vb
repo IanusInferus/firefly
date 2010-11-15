@@ -15,11 +15,13 @@ Imports System.Linq
 Imports System.Linq.Expressions
 Imports System.Reflection
 Imports System.Runtime.CompilerServices
+Imports System.Diagnostics
 
 Namespace Mapping
     Public Class DummyType
     End Class
 
+    <DebuggerNonUserCode()>
     Public Module MetaProgramming
         <Extension()> Public Function IsCollectionType(ByVal Type As Type) As Boolean
             Return Type.GetInterfaces().Any(Function(t) t.IsGenericType AndAlso t.GetGenericTypeDefinition Is GetType(ICollection(Of )))
@@ -126,6 +128,9 @@ Namespace Mapping
                 End Function
             Return MakeGenericTypeFromDummy(Type, Mapping)
         End Function
+        <Extension()> Public Function MakeGenericTypeFromDummy(ByVal Type As Type, ByVal RealType As Type) As Type
+            Return MakeGenericTypeFromDummy(Type, GetType(DummyType), RealType)
+        End Function
         <Extension()> Public Function MakeGenericMethodFromDummy(ByVal Method As MethodInfo, ByVal Mapping As Func(Of Type, Type)) As MethodInfo
             If Not Method.IsGenericMethod Then Throw New ArgumentException
             If Method.IsGenericMethodDefinition Then Throw New ArgumentException
@@ -224,26 +229,34 @@ Namespace Mapping
             End If
             Return Compiled
         End Function
-        <Extension()> Public Function Compose(Of D, M, R)(ByVal InnerFunction As Func(Of D, M), ByVal OuterFunction As Func(Of M, R)) As Func(Of D, R)
-            Return Function(v) OuterFunction(InnerFunction(v))
-        End Function
-        <Extension()> Public Function Compose(ByVal InnerFunction As [Delegate], ByVal OuterFunction As [Delegate]) As [Delegate]
+        <Extension()> Public Function Compose(ByVal InnerFunction As [Delegate], ByVal OuterMethod As [Delegate]) As [Delegate]
             Dim D = InnerFunction.Method.GetParameters.Single.ParameterType
             Dim MI = InnerFunction.Method.ReturnType
-            Dim MO = OuterFunction.Method.GetParameters.Single.ParameterType
-            Dim R = OuterFunction.Method.ReturnType
+            Dim MO = OuterMethod.Method.GetParameters.Single.ParameterType
 
             Dim iParam = Expression.Variable(InnerFunction.GetType(), "<>_i")
-            Dim oParam = Expression.Variable(OuterFunction.GetType(), "<>_o")
+            Dim oParam = Expression.Variable(OuterMethod.GetType(), "<>_o")
 
             Dim vParam = Expression.Variable(D, "<>_v")
-            Dim l As LambdaExpression
+            Dim InnerLambda As LambdaExpression
             If MI Is MO Then
-                l = Expression.Lambda(Expression.Invoke(oParam, Expression.Invoke(iParam, vParam)), vParam)
+                InnerLambda = Expression.Lambda(Expression.Invoke(oParam, Expression.Invoke(iParam, vParam)), vParam)
             Else
-                l = Expression.Lambda(Expression.Invoke(oParam, Expression.ConvertChecked(Expression.Invoke(iParam, vParam), MO)), vParam)
+                InnerLambda = Expression.Lambda(Expression.Invoke(oParam, Expression.ConvertChecked(Expression.Invoke(iParam, vParam), MO)), vParam)
             End If
-            Return DirectCast(Expression.Lambda(l, iParam, oParam).Compile().DynamicInvoke(InnerFunction, OuterFunction), [Delegate])
+            Dim OuterLambda = Expression.Lambda(InnerLambda, iParam, oParam)
+            Return DirectCast(OuterLambda.Compile().DynamicInvoke(InnerFunction, OuterMethod), [Delegate])
+        End Function
+        <Extension()> Public Function Curry(ByVal Method As [Delegate], ByVal ParamArray Parameters As Object()) As [Delegate]
+            Dim ProvidedParameters = Method.Method.GetParameters().Take(Parameters.Length).Select(Function(p) Expression.Variable(p.ParameterType, p.Name)).ToArray()
+            Dim NotProvidedParameters = Method.Method.GetParameters().SubArray(Parameters.Length).Select(Function(p) Expression.Variable(p.ParameterType, p.Name)).ToArray()
+            Dim AllParameters = ProvidedParameters.Concat(NotProvidedParameters).ToArray
+            Dim mParam = Expression.Variable(Method.GetType(), "<>_m")
+            Dim InnerLambda = Expression.Lambda(Expression.Invoke(mParam, AllParameters), NotProvidedParameters)
+            Dim OuterLambda = Expression.Lambda(InnerLambda, (New ParameterExpression() {mParam}).Concat(ProvidedParameters))
+            Dim OuterDelegate = OuterLambda.Compile()
+            Dim ParamObjects = (New Object() {Method}).Concat(Parameters).ToArray()
+            Return DirectCast(OuterDelegate.DynamicInvoke(ParamObjects), [Delegate])
         End Function
 
         Public Function CreatePair(Of TKey, TValue)(ByVal Key As TKey, ByVal Value As TValue) As KeyValuePair(Of TKey, TValue)
