@@ -1,9 +1,11 @@
-﻿2010.11.15
+﻿2010.11.15.0
 Firefly.Core.Mapping:
 重构ObjectMapperResolvers。
 重构BinarySerializer。
 增加XmlSerializer。
 将ObjectMapperResolvers分解为TranslatorResolvers和ResolverTemplates。
+Firefly.Core.Setting:
+利用XmlSerializer转写Xml。
 
 2010.11.14
 Firefly.Core.Mapping:

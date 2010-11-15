@@ -13,12 +13,14 @@ Imports System
 Imports System.Collections.Generic
 Imports System.Linq
 Imports System.Linq.Expressions
+Imports Firefly
 
 Namespace Mapping
     ''' <remarks>
     ''' 对于非简单类型，应提供自定义序列化器
     ''' 简单类型 ::= 简单类型
     '''           | Byte(UInt8) | UInt16 | UInt32 | UInt64 | Int8(SByte) | Int16 | Int32 | Int64 | Float32(Single) | Float64(Double)
+    '''           | Boolean
     '''           | 枚举
     '''           | 数组(简单类型)
     '''           | ICollection(简单类型)
@@ -72,6 +74,7 @@ Namespace Mapping
             PutReader(Function(s As StreamEx) s.ReadInt64)
             PutReader(Function(s As StreamEx) s.ReadFloat32)
             PutReader(Function(s As StreamEx) s.ReadFloat64)
+            PutReader(Function(s As StreamEx) s.ReadByte <> 0)
 
             PutWriter(Sub(b As Byte, s As StreamEx) s.WriteByte(b))
             PutWriter(Sub(i As UInt16, s As StreamEx) s.WriteUInt16(i))
@@ -83,8 +86,9 @@ Namespace Mapping
             PutWriter(Sub(i As Int64, s As StreamEx) s.WriteInt64(i))
             PutWriter(Sub(f As Single, s As StreamEx) s.WriteFloat32(f))
             PutWriter(Sub(f As Double, s As StreamEx) s.WriteFloat64(f))
+            PutWriter(Sub(b As Boolean, s As StreamEx) s.WriteByte(CByte(b)))
 
-            PutCounter(Function(i As Byte) 1)
+            PutCounter(Function(b As Byte) 1)
             PutCounter(Function(i As UInt16) 2)
             PutCounter(Function(i As UInt32) 4)
             PutCounter(Function(i As UInt64) 8)
@@ -94,6 +98,7 @@ Namespace Mapping
             PutCounter(Function(i As Int64) 8)
             PutCounter(Function(f As Single) 4)
             PutCounter(Function(f As Double) 8)
+            PutCounter(Function(b As Boolean) 1)
 
             ReaderResolverSet = New AlternativeResolver
             ReaderCache = New CachedResolver(ReaderResolverSet)

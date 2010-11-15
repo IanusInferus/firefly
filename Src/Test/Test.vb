@@ -4,6 +4,7 @@ Imports System.Linq
 Imports System.IO
 Imports System.Diagnostics.Debug
 Imports System.Windows.Forms
+Imports System.Text.RegularExpressions
 Imports Firefly
 Imports Firefly.Compressing
 Imports Firefly.TextEncoding
@@ -643,9 +644,33 @@ Public Module Test
         End Function
     End Class
     Public Class XmlInheritanceObjectContainer
-        'TODO
-    End Class
+        Public b As XmlBaseObject
 
+        Public Shared Operator =(ByVal Left As XmlInheritanceObjectContainer, ByVal Right As XmlInheritanceObjectContainer) As Boolean
+            If Left Is Nothing AndAlso Right Is Nothing Then Return True
+            If Left Is Nothing OrElse Right Is Nothing Then Return False
+            Return Object.Equals(Left.b, Right.b)
+        End Operator
+        Public Shared Operator <>(ByVal Left As XmlInheritanceObjectContainer, ByVal Right As XmlInheritanceObjectContainer) As Boolean
+            Return Not (Left = Right)
+        End Operator
+        Public Overrides Function Equals(ByVal obj As Object) As Boolean
+            Dim o = TryCast(obj, XmlInheritanceObjectContainer)
+            If o Is Nothing Then Return False
+            Return Me = o
+        End Function
+    End Class
+    Public Class ByteArrayEncoder
+        Inherits Xml.Mapper(Of Byte(), String)
+
+        Public Overrides Function GetMappedObject(ByVal o As Byte()) As String
+            Return String.Join(" ", (From b In o Select b.ToString("X2")).ToArray)
+        End Function
+
+        Public Overrides Function GetInverseMappedObject(ByVal o As String) As Byte()
+            Return (From s In Regex.Split(o.Trim(" \t\r\n".Descape.ToCharArray), "( |\t|\r|\n)+", RegexOptions.ExplicitCapture) Select Byte.Parse(s, Globalization.NumberStyles.HexNumber)).ToArray
+        End Function
+    End Class
     Public Sub XmlRoundTrip(Of T)(ByVal xs As XmlSerializer, ByVal v As T)
         Dim xe = xs.Write(v)
         Dim RoundTripped = xs.Read(Of T)(xe)
@@ -664,6 +689,12 @@ Public Module Test
         Dim RoundTripped = xs.Read(Of B)(xe)
         Assert(Object.Equals(v, RoundTripped))
     End Sub
+    Public Sub XmlRoundTripInheritance2(Of T)(ByVal v As T, ByVal ExternalTypes As IEnumerable(Of Type))
+        Dim xs As New XmlSerializer(ExternalTypes)
+        Dim xe = xs.Write(Of T)(v)
+        Dim RoundTripped = xs.Read(Of T)(xe)
+        Assert(Object.Equals(v, RoundTripped))
+    End Sub
     Public Sub TestXmlSerializer()
         Dim xs As New XmlSerializer
 
@@ -672,6 +703,7 @@ Public Module Test
         XmlRoundTrip(xs, SerializerTestEnum.E3)
         XmlRoundTrip(xs, 123.123)
         XmlRoundTrip(xs, CType(123.123, Decimal))
+        XmlRoundTrip(xs, True)
 
         XmlRoundTripCollection(Of Byte, Byte())(xs, New Byte() {1, 2, 3})
         XmlRoundTripCollection(Of Byte, LinkedList(Of Byte))(xs, New LinkedList(Of Byte)(New Byte() {1, 2, 3}))
@@ -685,22 +717,20 @@ Public Module Test
         XmlRoundTripCollection(Of Byte, Byte())(xs, New Byte() {})
 
         XmlRoundTripInheritance(Of XmlBaseObject, XmlDerivedObject)(New XmlDerivedObject)
-
-        If 1 = 1 Then Return
-        Stop
+        XmlRoundTripInheritance2(New XmlInheritanceObjectContainer With {.b = New XmlDerivedObject}, New Type() {GetType(XmlDerivedObject)})
 
         Dim XmlRoundTripped As SerializerTestObject
 
         Using s As New StreamEx
             Using ps As New PartialStreamEx(s, 0, Int64.MaxValue, 0, False)
                 Using sw = Txt.CreateTextWriter(ps, UTF16)
-                    Xml.WriteFile(sw, TestObject)
+                    Xml.WriteFile(sw, TestObject, New Type() {}, New Xml.IMapper() {New ByteArrayEncoder})
                 End Using
             End Using
             s.Position = 0
             Using ps As New PartialStreamEx(s, 0, s.Length, False)
                 Using sr = Txt.CreateTextReader(ps, UTF16)
-                    XmlRoundTripped = Xml.ReadFile(Of SerializerTestObject)(sr)
+                    XmlRoundTripped = Xml.ReadFile(Of SerializerTestObject)(sr, New Type() {}, New Xml.IMapper() {New ByteArrayEncoder})
                 End Using
             End Using
         End Using
