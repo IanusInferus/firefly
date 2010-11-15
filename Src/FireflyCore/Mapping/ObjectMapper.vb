@@ -175,7 +175,12 @@ Namespace Mapping
             If ProjectorCache.ContainsKey(TypePair) Then Return ProjectorCache(TypePair)
             Dim Resolved = InnerResolver.TryResolveProjector(TypePair)
             If Resolved IsNot Nothing Then
-                ProjectorCache.Add(TypePair, Resolved)
+                '如果一个解析依赖于相同类型对的子解析，可能导致子解析已被加入缓存
+                If ProjectorCache.ContainsKey(TypePair) Then
+                    ProjectorCache(TypePair) = Resolved
+                Else
+                    ProjectorCache.Add(TypePair, Resolved)
+                End If
                 Return Resolved
             End If
             Return Nothing
@@ -184,7 +189,12 @@ Namespace Mapping
             If AggregatorCache.ContainsKey(TypePair) Then Return AggregatorCache(TypePair)
             Dim Resolved = InnerResolver.TryResolveAggregator(TypePair)
             If Resolved IsNot Nothing Then
-                AggregatorCache.Add(TypePair, Resolved)
+                '如果一个解析依赖于相同类型对的子解析，可能导致子解析已被加入缓存
+                If AggregatorCache.ContainsKey(TypePair) Then
+                    AggregatorCache(TypePair) = Resolved
+                Else
+                    AggregatorCache.Add(TypePair, Resolved)
+                End If
                 Return Resolved
             End If
             Return Nothing

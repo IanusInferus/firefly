@@ -621,6 +621,31 @@ Public Module Test
             Return Me = o
         End Function
     End Class
+    Public Class XmlBaseObject
+        Public i As Integer = 1
+    End Class
+    Public Class XmlDerivedObject
+        Inherits XmlBaseObject
+        Public i2 As Integer = 2
+
+        Public Shared Operator =(ByVal Left As XmlDerivedObject, ByVal Right As XmlDerivedObject) As Boolean
+            If Left Is Nothing AndAlso Right Is Nothing Then Return True
+            If Left Is Nothing OrElse Right Is Nothing Then Return False
+            Return Left.i = Right.i AndAlso Left.i2 = Right.i2
+        End Operator
+        Public Shared Operator <>(ByVal Left As XmlDerivedObject, ByVal Right As XmlDerivedObject) As Boolean
+            Return Not (Left = Right)
+        End Operator
+        Public Overrides Function Equals(ByVal obj As Object) As Boolean
+            Dim o = TryCast(obj, XmlDerivedObject)
+            If o Is Nothing Then Return False
+            Return Me = o
+        End Function
+    End Class
+    Public Class XmlInheritanceObjectContainer
+        'TODO
+    End Class
+
     Public Sub XmlRoundTrip(Of T)(ByVal xs As XmlSerializer, ByVal v As T)
         Dim xe = xs.Write(v)
         Dim RoundTripped = xs.Read(Of T)(xe)
@@ -632,6 +657,12 @@ Public Module Test
         Dim va = v.ToArray()
         Dim ra = RoundTripped.ToArray()
         Assert(Enumerable.SequenceEqual(va, ra))
+    End Sub
+    Public Sub XmlRoundTripInheritance(Of B, D As B)(ByVal v As D)
+        Dim xs As New XmlSerializer(New Type() {GetType(D)})
+        Dim xe = xs.Write(Of B)(v)
+        Dim RoundTripped = xs.Read(Of B)(xe)
+        Assert(Object.Equals(v, RoundTripped))
     End Sub
     Public Sub TestXmlSerializer()
         Dim xs As New XmlSerializer
@@ -652,6 +683,8 @@ Public Module Test
         XmlRoundTrip(xs, New XmlTestObject With {.o = New Object})
         XmlRoundTrip(Of Byte())(xs, Nothing)
         XmlRoundTripCollection(Of Byte, Byte())(xs, New Byte() {})
+
+        XmlRoundTripInheritance(Of XmlBaseObject, XmlDerivedObject)(New XmlDerivedObject)
 
         If 1 = 1 Then Return
         Stop
