@@ -32,7 +32,7 @@ Namespace Setting
     ''' 简单类型能够直接格式化
     ''' 对于非简单类型，应提供自定义序列化器
     ''' 简单类型 ::= 简单类型
-    '''           | Byte | UInt16 | UInt32 | UInt64 | SByte | Int16 | Int32 | Int64 | Single | Double
+    '''           | Byte(UInt8) | UInt16 | UInt32 | UInt64 | Int8(SByte) | Int16 | Int32 | Int64 | Float32(Single) | Float64(Double)
     '''           | String | Decimal
     '''           | 枚举
     '''           | 数组(简单类型)
@@ -44,6 +44,7 @@ Namespace Setting
     '''               | 类或结构(无参构造函数, 公共可读写字段(简单类型)*, 公共可写属性{0})
     '''               | 类或结构(无参构造函数, 公共可写字段{0}, 公共可读写属性(简单类型)*)
     '''               ) AND 类型结构为树状
+    ''' 对于类对象，允许出现null。
     ''' 允许使用继承，但所有不直接出现在根类型的类型声明的类型树中的类型必须添加到ExternalTypes中
     ''' ExternalTypes中不应有命名冲突
     ''' 
