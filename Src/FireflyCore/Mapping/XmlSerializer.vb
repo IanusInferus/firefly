@@ -15,12 +15,14 @@ Imports System.Linq
 Imports System.Linq.Expressions
 Imports System.Text.RegularExpressions
 Imports System.Xml.Linq
+Imports Firefly
 
 Namespace Mapping
     ''' <remarks>
     ''' 对于非简单类型，应提供自定义序列化器
     ''' 简单类型 ::= 简单类型
     '''           | Byte(UInt8) | UInt16 | UInt32 | UInt64 | Int8(SByte) | Int16 | Int32 | Int64 | Float32(Single) | Float64(Double)
+    '''           | Boolean
     '''           | String | Decimal
     '''           | 枚举
     '''           | 数组(简单类型)
@@ -62,7 +64,7 @@ Namespace Mapping
             'proj <- proj
             'PrimitiveResolver: (String proj Primitive) <- null
             'EnumResolver: (String proj Enum) <- null
-            'ListProjectorUnpacker: (XElement proj {R}) <- (XElement.SubElement proj R)
+            'ListUnpacker: (XElement proj {R}) <- (XElement.SubElement proj R)
             'FieldOrPropertyProjectorResolver: (Dictionary(String, XElement) proj R) <- (XElement.SubElement proj R.Field)
             'XElementToStringDomainTranslator: (XElement proj R) <- (String proj R)
             'InheritanceResolver: (XElement proj R) <- (XElement proj R.Derived)
@@ -78,7 +80,7 @@ Namespace Mapping
             '
             'Writer
             'aggr <- proj/aggr
-            'ListAggregatorPacker: ({D} aggr List(XElement)) <- (D aggr List(XElement))
+            'ListPacker: ({D} aggr List(XElement)) <- (D proj XElement)
             'FieldOrPropertyAggregatorResolver: (D aggr List(XElement)) <- (D.Field proj XElement)
             'XElementProjectorToAggregatorRangeTranslator: (D aggr List(XElement)) <- (D proj XElement)
 
@@ -94,6 +96,7 @@ Namespace Mapping
             PutReader(Function(s As String) Int64.Parse(s, Globalization.CultureInfo.InvariantCulture))
             PutReader(Function(s As String) Single.Parse(s, Globalization.CultureInfo.InvariantCulture))
             PutReader(Function(s As String) Double.Parse(s, Globalization.CultureInfo.InvariantCulture))
+            PutReader(Function(s As String) Boolean.Parse(s))
             PutReader(Function(s As String) s)
             PutReader(Function(s As String) Decimal.Parse(s, Globalization.CultureInfo.InvariantCulture))
 
@@ -107,6 +110,7 @@ Namespace Mapping
             PutWriter(Function(i As Int64) i.ToString(Globalization.CultureInfo.InvariantCulture))
             PutWriter(Function(f As Single) f.ToString("r", Globalization.CultureInfo.InvariantCulture))
             PutWriter(Function(f As Double) f.ToString("r", Globalization.CultureInfo.InvariantCulture))
+            PutWriter(Function(b As Boolean) b.ToString())
             PutWriter(Function(s As String) s)
             PutWriter(Function(d As Decimal) d.ToString(Globalization.CultureInfo.InvariantCulture))
 
@@ -115,7 +119,7 @@ Namespace Mapping
             Dim ReaderList = New List(Of IObjectProjectorResolver) From {
                 PrimitiveResolver,
                 New EnumResolver,
-                New CollectionUnpackerTemplate(Of XElement)(New ListProjectorUnpacker(ReaderCache)),
+                New CollectionUnpackerTemplate(Of XElement)(New ListUnpacker(ReaderCache)),
                 New RecordUnpackerTemplate(Of Dictionary(Of String, XElement))(New FieldOrPropertyProjectorResolver(ReaderCache)),
                 TranslatorResolver.Create(ReaderCache, New XElementToStringDomainTranslator),
                 New InheritanceResolver(ReaderCache, ExternalTypes),
@@ -137,7 +141,7 @@ Namespace Mapping
                 WriterResolverSet.ProjectorResolvers.AddLast(r)
             Next
             Dim WriterAggregatorList = New List(Of IObjectAggregatorResolver) From {
-                New CollectionPackerTemplate(Of List(Of XElement))(New ListAggregatorPacker(WriterCache)),
+                New CollectionPackerTemplate(Of List(Of XElement))(New ListPacker(WriterCache)),
                 New RecordPackerTemplate(Of List(Of XElement))(New FieldOrPropertyAggregatorResolver(WriterCache)),
                 TranslatorResolver.Create(WriterCache, New XElementProjectorToAggregatorRangeTranslator)
             }
@@ -213,7 +217,7 @@ Namespace Mapping
             End Function
         End Class
 
-        Private Class ListProjectorUnpacker
+        Private Class ListUnpacker
             Implements IGenericListProjectorResolver(Of XElement)
 
             Public Function ResolveProjector(Of R, RList As {New, ICollection(Of R)})() As Func(Of XElement, RList) Implements IGenericListProjectorResolver(Of XElement).ResolveProjector
@@ -238,16 +242,15 @@ Namespace Mapping
                 Me.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver))
             End Sub
         End Class
-
-        Private Class ListAggregatorPacker
+        Private Class ListPacker
             Implements IGenericListAggregatorResolver(Of List(Of XElement))
 
             Public Function ResolveAggregator(Of D, DList As ICollection(Of D))() As Action(Of DList, List(Of XElement)) Implements IGenericListAggregatorResolver(Of List(Of XElement)).ResolveAggregator
-                Dim Mapper = DirectCast(AbsResolver.ResolveAggregator(CreatePair(GetType(D), GetType(List(Of XElement)))), Action(Of D, List(Of XElement)))
+                Dim Mapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(D), GetType(XElement))), Func(Of D, XElement))
                 Dim F =
                     Sub(List As DList, Value As List(Of XElement))
                         For Each v In List
-                            Mapper(v, Value)
+                            Value.Add(Mapper(v))
                         Next
                     End Sub
                 Return F
@@ -359,9 +362,6 @@ Namespace Mapping
                 Dim F =
                     Sub(k As D, l As List(Of XElement))
                         Dim e = Mapper(k)
-                        If e.Name <> TypeName Then
-                            Stop
-                        End If
                         e.Name = Name
                         l.Add(e)
                     End Sub
@@ -387,12 +387,26 @@ Namespace Mapping
                 Dim Mapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(XElement), GetType(R))), Func(Of XElement, R))
                 Dim F =
                     Function(k As XElement) As R
-                        Return Mapper(k)
+                        If k.IsEmpty Then Return Mapper(k)
+                        If k.Attribute("Type") Is Nothing Then Return Mapper(k)
+                        Dim RealTypeName = k.Attribute("Type").Value
+                        If Not ExternalTypeDict.ContainsKey(RealTypeName) Then Throw New InvalidOperationException("ExternalTypeNotFound: {0}".Formats(RealTypeName))
+                        Dim RealType = ExternalTypeDict(RealTypeName)
+
+                        Dim TypePair = CreatePair(GetType(XElement), RealType)
+                        ProjectorCache.Add(TypePair)
+                        Try
+                            Dim DynamicMapper = AbsResolver.ResolveProjector(TypePair)
+                            Return DirectCast(DynamicMapper.DynamicInvoke(k), R)
+                        Finally
+                            ProjectorCache.Remove(TypePair)
+                        End Try
                     End Function
                 Return F
             End Function
             Private Function ResolveDomain(Of D)() As Func(Of D, XElement)
                 Dim Mapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(D), GetType(XElement))), Func(Of D, XElement))
+                Dim TypeName = GetTypeFriendlyName(GetType(D))
                 Dim F =
                     Function(k As D) As XElement
                         If k Is Nothing Then Return Mapper(k)
@@ -406,7 +420,10 @@ Namespace Mapping
                         ProjectorCache.Add(TypePair)
                         Try
                             Dim DynamicMapper = AbsResolver.ResolveProjector(TypePair)
-                            Return DirectCast(DynamicMapper.DynamicInvoke(k), XElement)
+                            Dim e = DirectCast(DynamicMapper.DynamicInvoke(k), XElement)
+                            If e.Name = RealTypeName Then e.Name = TypeName
+                            e.SetAttributeValue("Type", RealTypeName)
+                            Return e
                         Finally
                             ProjectorCache.Remove(TypePair)
                         End Try
