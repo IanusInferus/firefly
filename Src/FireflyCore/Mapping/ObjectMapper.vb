@@ -11,6 +11,7 @@
 Option Strict On
 Imports System
 Imports System.Collections.Generic
+Imports System.Diagnostics
 
 Namespace Mapping
     Public Interface IObjectProjectorResolver
@@ -30,6 +31,7 @@ Namespace Mapping
     End Interface
 
     ''' <remarks>解析器适配器，用于在无法解析时抛出异常。</remarks>
+    <DebuggerNonUserCode()>
     Public Class AbsoluteResolver
         Private InnerResolver As IObjectMapperResolver
         Public Sub New(ByVal InnerResolver As IObjectMapperResolver)
@@ -49,6 +51,7 @@ Namespace Mapping
     End Class
 
     ''' <remarks>不循环解析器，用于在出现循环引用时抛出异常。</remarks>
+    <DebuggerNonUserCode()>
     Public Class NoncircularResolver
         Implements IObjectMapperResolver
 
@@ -80,6 +83,7 @@ Namespace Mapping
     End Class
 
     ''' <remarks>选择解析器</remarks>
+    <DebuggerNonUserCode()>
     Public Class AlternativeResolver
         Implements IObjectMapperResolver
 
@@ -120,6 +124,7 @@ Namespace Mapping
     End Class
 
     ''' <remarks>基元解析器</remarks>
+    <DebuggerNonUserCode()>
     Public Class PrimitiveResolver
         Implements IObjectMapperResolver
 
@@ -154,6 +159,7 @@ Namespace Mapping
     End Class
 
     ''' <remarks>缓存解析器</remarks>
+    <DebuggerNonUserCode()>
     Public Class CachedResolver
         Implements IObjectMapperResolver
 
@@ -186,6 +192,7 @@ Namespace Mapping
     End Class
 
     ''' <summary>Object映射器</summary>
+    <DebuggerNonUserCode()>
     Public Class ObjectMapper
         Private AbsResolver As AbsoluteResolver
         Public Sub New(ByVal Resolver As IObjectMapperResolver)

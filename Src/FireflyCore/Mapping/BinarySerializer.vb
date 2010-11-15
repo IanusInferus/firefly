@@ -32,7 +32,7 @@ Namespace Mapping
     ''' 此外，对象树中不应有空引用，否则应提供自定义序列化器
     ''' </remarks>
     Public Class BinarySerializer
-        Private PrimRes As PrimitiveResolver
+        Private PrimitiveResolver As PrimitiveResolver
         Private ReaderMapper As ObjectMapper
         Private WriterMapper As ObjectMapper
         Private CounterMapper As ObjectMapper
@@ -60,14 +60,48 @@ Namespace Mapping
         End Property
 
         Public Sub New()
-            PrimRes = New PrimitiveResolver
+            PrimitiveResolver = New PrimitiveResolver
+
+            PutReader(Function(s As StreamEx) s.ReadByte)
+            PutReader(Function(s As StreamEx) s.ReadUInt16)
+            PutReader(Function(s As StreamEx) s.ReadUInt32)
+            PutReader(Function(s As StreamEx) s.ReadUInt64)
+            PutReader(Function(s As StreamEx) s.ReadInt8)
+            PutReader(Function(s As StreamEx) s.ReadInt16)
+            PutReader(Function(s As StreamEx) s.ReadInt32)
+            PutReader(Function(s As StreamEx) s.ReadInt64)
+            PutReader(Function(s As StreamEx) s.ReadFloat32)
+            PutReader(Function(s As StreamEx) s.ReadFloat64)
+
+            PutWriter(Sub(b As Byte, s As StreamEx) s.WriteByte(b))
+            PutWriter(Sub(i As UInt16, s As StreamEx) s.WriteUInt16(i))
+            PutWriter(Sub(i As UInt32, s As StreamEx) s.WriteUInt32(i))
+            PutWriter(Sub(i As UInt64, s As StreamEx) s.WriteUInt64(i))
+            PutWriter(Sub(i As SByte, s As StreamEx) s.WriteInt8(i))
+            PutWriter(Sub(i As Int16, s As StreamEx) s.WriteInt16(i))
+            PutWriter(Sub(i As Int32, s As StreamEx) s.WriteInt32(i))
+            PutWriter(Sub(i As Int64, s As StreamEx) s.WriteInt64(i))
+            PutWriter(Sub(f As Single, s As StreamEx) s.WriteFloat32(f))
+            PutWriter(Sub(f As Double, s As StreamEx) s.WriteFloat64(f))
+
+            PutCounter(Function(i As Byte) 1)
+            PutCounter(Function(i As UInt16) 2)
+            PutCounter(Function(i As UInt32) 4)
+            PutCounter(Function(i As UInt64) 8)
+            PutCounter(Function(i As SByte) 1)
+            PutCounter(Function(i As Int16) 2)
+            PutCounter(Function(i As Int32) 4)
+            PutCounter(Function(i As Int64) 8)
+            PutCounter(Function(f As Single) 4)
+            PutCounter(Function(f As Double) 8)
+
             ReaderResolverSet = New AlternativeResolver
             ReaderCache = New CachedResolver(ReaderResolverSet)
             Dim ReaderList = New List(Of IObjectProjectorResolver) From {
-                PrimRes,
+                PrimitiveResolver,
                 New EnumUnpacker(Of StreamEx)(ReaderCache),
-                New CollectionUnpacker(Of StreamEx)(New GenericListProjectorResolver(Of StreamEx)(ReaderCache)),
-                New RecordUnpacker(Of StreamEx)(ReaderCache)
+                New CollectionUnpackerTemplate(Of StreamEx)(New GenericListProjectorResolver(Of StreamEx)(ReaderCache)),
+                New RecordUnpackerTemplate(Of StreamEx)(New FieldOrPropertyProjectorResolver(Of StreamEx)(ReaderCache))
             }
             For Each r In ReaderList
                 ReaderResolverSet.ProjectorResolvers.AddLast(r)
@@ -75,10 +109,10 @@ Namespace Mapping
             WriterResolverSet = New AlternativeResolver
             WriterCache = New CachedResolver(WriterResolverSet)
             Dim WriterList = New List(Of IObjectAggregatorResolver) From {
-                PrimRes,
+                PrimitiveResolver,
                 New EnumPacker(Of StreamEx)(WriterCache),
-                New CollectionPacker(Of StreamEx)(New GenericListAggregatorResolver(Of StreamEx)(WriterCache)),
-                New RecordPacker(Of StreamEx)(WriterCache)
+                New CollectionPackerTemplate(Of StreamEx)(New GenericListAggregatorResolver(Of StreamEx)(WriterCache)),
+                New RecordPackerTemplate(Of StreamEx)(New FieldOrPropertyAggregatorResolver(Of StreamEx)(WriterCache))
             }
             For Each r In WriterList
                 WriterResolverSet.AggregatorResolvers.AddLast(r)
@@ -86,7 +120,7 @@ Namespace Mapping
             CounterResolverSet = New AlternativeResolver
             CounterCache = New CachedResolver(CounterResolverSet)
             Dim CounterProjectorList = New List(Of IObjectProjectorResolver) From {
-                PrimRes,
+                PrimitiveResolver,
                 TranslatorResolver.Create(CounterCache, New CounterStateToIntRangeTranslator)
             }
             For Each r In CounterProjectorList
@@ -94,8 +128,8 @@ Namespace Mapping
             Next
             Dim CounterAggregatorList = New List(Of IObjectAggregatorResolver) From {
                 New EnumPacker(Of CounterState)(CounterCache),
-                New CollectionPacker(Of CounterState)(New GenericListAggregatorResolver(Of CounterState)(CounterCache)),
-                New RecordPacker(Of CounterState)(CounterCache),
+                New CollectionPackerTemplate(Of CounterState)(New GenericListAggregatorResolver(Of CounterState)(CounterCache)),
+                New RecordPackerTemplate(Of CounterState)(New FieldOrPropertyAggregatorResolver(Of CounterState)(CounterCache)),
                 TranslatorResolver.Create(CounterCache, New IntToCounterStateRangeTranslator)
             }
             For Each r In CounterAggregatorList
@@ -107,13 +141,13 @@ Namespace Mapping
         End Sub
 
         Public Sub PutReader(Of T)(ByVal Reader As Func(Of StreamEx, T))
-            PrimRes.PutReader(Of T)(Reader)
+            PrimitiveResolver.PutProjector(Reader)
         End Sub
         Public Sub PutWriter(Of T)(ByVal Writer As Action(Of T, StreamEx))
-            PrimRes.PutWriter(Of T)(Writer)
+            PrimitiveResolver.PutAggregator(Writer)
         End Sub
         Public Sub PutCounter(Of T)(ByVal Counter As Func(Of T, Integer))
-            PrimRes.PutCounter(Of T)(Counter)
+            PrimitiveResolver.PutProjector(Counter)
         End Sub
         Public Sub PutReaderTranslator(Of R, M)(ByVal Translator As IProjectorToProjectorRangeTranslator(Of R, M))
             ReaderResolverSet.ProjectorResolvers.AddFirst(TranslatorResolver.Create(ReaderCache, Translator))
@@ -136,102 +170,23 @@ Namespace Mapping
         End Function
 
         Public Function Read(Of T)(ByVal s As StreamEx) As T
-            Return GetReader(Of T)()(s)
+            Dim m = GetReader(Of T)()
+            Return m(s)
         End Function
         Public Sub Write(Of T)(ByVal Value As T, ByVal s As StreamEx)
-            GetWriter(Of T)()(Value, s)
+            Dim m = GetWriter(Of T)()
+            m(Value, s)
         End Sub
         Public Sub Write(Of T)(ByVal s As StreamEx, ByVal Value As T)
             Write(Of T)(Value, s)
         End Sub
         Public Function Count(Of T)(ByVal Value As T) As Integer
-            Return GetCounter(Of T)()(Value)
+            Dim m = GetCounter(Of T)()
+            Return m(Value)
         End Function
 
         Public Class CounterState
             Public Number As Integer
-        End Class
-
-        Public Class PrimitiveResolver
-            Implements IObjectMapperResolver
-
-            Private Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
-                Dim DomainType = TypePair.Key
-                Dim RangeType = TypePair.Value
-                If DomainType Is GetType(StreamEx) Then Return TryResolveReader(RangeType)
-                If RangeType Is GetType(Integer) Then Return TryResolveCounter(DomainType)
-                Return Nothing
-            End Function
-            Private Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectAggregatorResolver.TryResolveAggregator
-                Dim DomainType = TypePair.Key
-                Dim RangeType = TypePair.Value
-                If RangeType Is GetType(StreamEx) Then Return TryResolveWriter(DomainType)
-                Return Nothing
-            End Function
-
-            Public Function TryResolveReader(ByVal RangeType As Type) As [Delegate]
-                If Readers.ContainsKey(RangeType) Then Return Readers(RangeType)
-                Return Nothing
-            End Function
-
-            Public Function TryResolveWriter(ByVal DomainType As Type) As [Delegate]
-                If Writers.ContainsKey(DomainType) Then Return Writers(DomainType)
-                Return Nothing
-            End Function
-
-            Public Function TryResolveCounter(ByVal DomainType As Type) As [Delegate]
-                If Counters.ContainsKey(DomainType) Then Return Counters(DomainType)
-                Return Nothing
-            End Function
-
-            Public Sub PutReader(Of T)(ByVal Reader As Func(Of StreamEx, T))
-                Readers.Add(GetType(T), Reader)
-            End Sub
-            Public Sub PutWriter(Of T)(ByVal Writer As Action(Of T, StreamEx))
-                Writers.Add(GetType(T), Writer)
-            End Sub
-            Public Sub PutCounter(Of T)(ByVal Counter As Func(Of T, Integer))
-                Counters.Add(GetType(T), Counter)
-            End Sub
-
-            Private Readers As New Dictionary(Of Type, [Delegate])
-            Private Writers As New Dictionary(Of Type, [Delegate])
-            Private Counters As New Dictionary(Of Type, [Delegate])
-
-            Public Sub New()
-                PutReader(Function(s As StreamEx) s.ReadByte)
-                PutReader(Function(s As StreamEx) s.ReadUInt16)
-                PutReader(Function(s As StreamEx) s.ReadUInt32)
-                PutReader(Function(s As StreamEx) s.ReadUInt64)
-                PutReader(Function(s As StreamEx) s.ReadInt8)
-                PutReader(Function(s As StreamEx) s.ReadInt16)
-                PutReader(Function(s As StreamEx) s.ReadInt32)
-                PutReader(Function(s As StreamEx) s.ReadInt64)
-                PutReader(Function(s As StreamEx) s.ReadFloat32)
-                PutReader(Function(s As StreamEx) s.ReadFloat64)
-
-                PutWriter(Sub(b As Byte, s As StreamEx) s.WriteByte(b))
-                PutWriter(Sub(i As UInt16, s As StreamEx) s.WriteUInt16(i))
-                PutWriter(Sub(i As UInt32, s As StreamEx) s.WriteUInt32(i))
-                PutWriter(Sub(i As UInt64, s As StreamEx) s.WriteUInt64(i))
-                PutWriter(Sub(i As SByte, s As StreamEx) s.WriteInt8(i))
-                PutWriter(Sub(i As Int16, s As StreamEx) s.WriteInt16(i))
-                PutWriter(Sub(i As Int32, s As StreamEx) s.WriteInt32(i))
-                PutWriter(Sub(i As Int64, s As StreamEx) s.WriteInt64(i))
-                PutWriter(Sub(f As Single, s As StreamEx) s.WriteFloat32(f))
-                PutWriter(Sub(f As Double, s As StreamEx) s.WriteFloat64(f))
-
-                PutCounter(Function(i As Byte) 1)
-                PutCounter(Function(i As UInt16) 2)
-                PutCounter(Function(i As UInt32) 4)
-                PutCounter(Function(i As UInt64) 8)
-                PutCounter(Function(i As SByte) 1)
-                PutCounter(Function(i As Int16) 2)
-                PutCounter(Function(i As Int32) 4)
-                PutCounter(Function(i As Int64) 8)
-                PutCounter(Function(f As Single) 4)
-                PutCounter(Function(f As Double) 8)
-            End Sub
         End Class
 
         Public Class EnumUnpacker(Of D)
@@ -338,6 +293,31 @@ Namespace Mapping
             Private AbsResolver As AbsoluteResolver
             Public Sub New(ByVal Resolver As IObjectMapperResolver)
                 Me.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver))
+            End Sub
+        End Class
+
+        Public Class FieldOrPropertyProjectorResolver(Of D)
+            Implements IFieldOrPropertyProjectorResolver(Of D)
+
+            Public Function ResolveProjector(ByVal Info As FieldOrPropertyInfo) As [Delegate] Implements IFieldOrPropertyProjectorResolver(Of D).ResolveProjector
+                Return AbsResolver.ResolveProjector(CreatePair(GetType(D), Info.Type))
+            End Function
+
+            Private AbsResolver As AbsoluteResolver
+            Public Sub New(ByVal Resolver As IObjectMapperResolver)
+                Me.AbsResolver = New AbsoluteResolver(New CachedResolver(New NoncircularResolver(Resolver)))
+            End Sub
+        End Class
+        Public Class FieldOrPropertyAggregatorResolver(Of R)
+            Implements IFieldOrPropertyAggregatorResolver(Of R)
+
+            Public Function ResolveAggregator(ByVal Info As FieldOrPropertyInfo) As [Delegate] Implements IFieldOrPropertyAggregatorResolver(Of R).ResolveAggregator
+                Return AbsResolver.ResolveAggregator(CreatePair(Info.Type, GetType(R)))
+            End Function
+
+            Private AbsResolver As AbsoluteResolver
+            Public Sub New(ByVal Resolver As IObjectMapperResolver)
+                Me.AbsResolver = New AbsoluteResolver(New CachedResolver(New NoncircularResolver(Resolver)))
             End Sub
         End Class
 
