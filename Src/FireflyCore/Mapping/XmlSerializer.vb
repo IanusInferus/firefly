@@ -65,7 +65,7 @@ Namespace Mapping
             'PrimitiveResolver: (String|XElement proj Primitive) <- null
             'EnumResolver: (String proj Enum) <- null
             'XElementToStringDomainTranslator: (XElement proj R) <- (String proj R)
-            'ListUnpacker: (XElement proj {R}) <- (XElement.SubElement proj R)
+            'CollectionUnpacker: (XElement proj {R}) <- (XElement.SubElement proj R)
             'FieldOrPropertyProjectorResolver: (Dictionary(String, XElement) proj R) <- (XElement.SubElement proj R.Field)
             'InheritanceResolver: (XElement proj R) <- (XElement proj R.Derived)
             'XElementProjectorToProjectorDomainTranslator: (XElement proj R) <- (Dictionary(String, XElement) proj R)
@@ -80,7 +80,7 @@ Namespace Mapping
             '
             'Writer
             'aggr <- proj/aggr
-            'ListPacker: ({D} aggr List(XElement)) <- (D proj XElement)
+            'CollectionPacker: ({D} aggr List(XElement)) <- (D proj XElement)
             'FieldOrPropertyAggregatorResolver: (D aggr List(XElement)) <- (D.Field proj XElement)
             'XElementProjectorToAggregatorRangeTranslator: (D aggr List(XElement)) <- (D proj XElement)
 
@@ -120,7 +120,7 @@ Namespace Mapping
                 PrimitiveResolver,
                 New EnumResolver,
                 TranslatorResolver.Create(ReaderCache, New XElementToStringDomainTranslator),
-                New CollectionUnpackerTemplate(Of XElement)(New ListUnpacker(ReaderCache)),
+                New CollectionUnpackerTemplate(Of XElement)(New CollectionUnpacker(ReaderCache)),
                 New RecordUnpackerTemplate(Of Dictionary(Of String, XElement))(New FieldOrPropertyProjectorResolver(ReaderCache)),
                 New InheritanceResolver(ReaderCache, ExternalTypes),
                 TranslatorResolver.Create(ReaderCache, New XElementProjectorToProjectorDomainTranslator)
@@ -229,15 +229,15 @@ Namespace Mapping
             End Function
         End Class
 
-        Private Class ListUnpacker
-            Implements IGenericListProjectorResolver(Of XElement)
+        Private Class CollectionUnpacker
+            Implements IGenericCollectionProjectorResolver(Of XElement)
 
-            Public Function ResolveProjector(Of R, RList As {New, ICollection(Of R)})() As Func(Of XElement, RList) Implements IGenericListProjectorResolver(Of XElement).ResolveProjector
+            Public Function ResolveProjector(Of R, RCollection As {New, ICollection(Of R)})() As Func(Of XElement, RCollection) Implements IGenericCollectionProjectorResolver(Of XElement).ResolveProjector
                 Dim Mapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(XElement), GetType(R))), Func(Of XElement, R))
                 Dim F =
-                    Function(Key As XElement) As RList
+                    Function(Key As XElement) As RCollection
                         If Not Key.IsEmpty Then
-                            Dim List = New RList()
+                            Dim List = New RCollection()
                             For Each k In Key.Elements
                                 List.Add(Mapper(k))
                             Next
@@ -255,9 +255,9 @@ Namespace Mapping
             End Sub
         End Class
         Private Class ListPacker
-            Implements IGenericListAggregatorResolver(Of List(Of XElement))
+            Implements IGenericCollectionAggregatorResolver(Of List(Of XElement))
 
-            Public Function ResolveAggregator(Of D, DList As ICollection(Of D))() As Action(Of DList, List(Of XElement)) Implements IGenericListAggregatorResolver(Of List(Of XElement)).ResolveAggregator
+            Public Function ResolveAggregator(Of D, DList As ICollection(Of D))() As Action(Of DList, List(Of XElement)) Implements IGenericCollectionAggregatorResolver(Of List(Of XElement)).ResolveAggregator
                 Dim Mapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(D), GetType(XElement))), Func(Of D, XElement))
                 Dim F =
                     Sub(List As DList, Value As List(Of XElement))
