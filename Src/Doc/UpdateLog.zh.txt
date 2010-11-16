@@ -3,6 +3,7 @@ Firefly.Core.Mapping:
 增加XmlCompatibility，用于兼容System.Xml.Serialization.XmlSerializer。
 增加ResolverTemplates对多参数泛型集合Dictionary(K, V)等的自动支持。
 排除对多次实现ICollection的类型的处理。
+去除所有Delegate.DynamicInvoke，以防止出现意义不明的TargetInvocationException。
 Examples:
 修改一些文件的编码。
 修正Packaging中示例代码过时的问题。
