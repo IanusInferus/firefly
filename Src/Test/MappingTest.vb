@@ -51,15 +51,15 @@ Public Module MappingTest
         Public h As Integer
     End Structure
 
-    Public Class GenericListProjectorResolver(Of D)
-        Implements IGenericListProjectorResolver(Of D)
+    Public Class GenericCollectionProjectorResolver(Of D)
+        Implements IGenericCollectionProjectorResolver(Of D)
 
-        Public Function ResolveProjector(Of R, RList As {New, ICollection(Of R)})() As Func(Of D, RList) Implements IGenericListProjectorResolver(Of D).ResolveProjector
+        Public Function ResolveProjector(Of R, RCollection As {New, ICollection(Of R)})() As Func(Of D, RCollection) Implements IGenericCollectionProjectorResolver(Of D).ResolveProjector
             Dim Mapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(D), GetType(R))), Func(Of D, R))
             Dim F =
-                Function(Key As D) As RList
+                Function(Key As D) As RCollection
                     Dim Size = 3
-                    Dim l = New RList()
+                    Dim l = New RCollection()
                     For n = 0 To Size - 1
                         l.Add(Mapper(Key))
                     Next
@@ -75,9 +75,9 @@ Public Module MappingTest
     End Class
 
     Public Class GenericListAggregatorResolver(Of R)
-        Implements IGenericListAggregatorResolver(Of R)
+        Implements IGenericCollectionAggregatorResolver(Of R)
 
-        Public Function ResolveAggregator(Of D, DList As ICollection(Of D))() As Action(Of DList, R) Implements IGenericListAggregatorResolver(Of R).ResolveAggregator
+        Public Function ResolveAggregator(Of D, DList As ICollection(Of D))() As Action(Of DList, R) Implements IGenericCollectionAggregatorResolver(Of R).ResolveAggregator
             Dim Mapper = DirectCast(AbsResolver.ResolveAggregator(CreatePair(GetType(D), GetType(R))), Action(Of D, R))
             Dim F =
                 Sub(list As DList, Value As R)
@@ -104,7 +104,7 @@ Public Module MappingTest
             mprs.ProjectorResolvers.AddLast(pr)
             Dim er = New BinarySerializer.EnumUnpacker(Of Integer)(mprs)
             mprs.ProjectorResolvers.AddLast(er)
-            Dim cr = New CollectionUnpackerTemplate(Of Integer)(New GenericListProjectorResolver(Of Integer)(mprs))
+            Dim cr = New CollectionUnpackerTemplate(Of Integer)(New GenericCollectionProjectorResolver(Of Integer)(mprs))
             mprs.ProjectorResolvers.AddLast(cr)
             Dim csr = New RecordUnpackerTemplate(Of Integer)(New BinarySerializer.FieldOrPropertyProjectorResolver(Of Integer)(mprs))
             mprs.ProjectorResolvers.AddLast(csr)
@@ -515,10 +515,10 @@ Public Module MappingTest
     End Sub
 
     Public Sub TestMapping()
-        'TestObjectTreeMapper()
-        'TestBinarySerializer()
-        'TestXmlSerializer()
+        TestObjectTreeMapper()
+        TestBinarySerializer()
+        TestXmlSerializer()
         TestXmlSerializerForDict()
-        'TestXmlSerializerCompatibility()
+        TestXmlSerializerCompatibility()
     End Sub
 End Module

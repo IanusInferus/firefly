@@ -3,7 +3,7 @@
 '  File:        BinarySerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 二进制序列化类
-'  Version:     2010.11.15.
+'  Version:     2010.11.16.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -105,7 +105,7 @@ Namespace Mapping
             Dim ReaderList = New List(Of IObjectProjectorResolver) From {
                 PrimitiveResolver,
                 New EnumUnpacker(Of StreamEx)(ReaderCache),
-                New CollectionUnpackerTemplate(Of StreamEx)(New GenericListProjectorResolver(Of StreamEx)(ReaderCache)),
+                New CollectionUnpackerTemplate(Of StreamEx)(New GenericCollectionProjectorResolver(Of StreamEx)(ReaderCache)),
                 New RecordUnpackerTemplate(Of StreamEx)(New FieldOrPropertyProjectorResolver(Of StreamEx)(ReaderCache))
             }
             For Each r In ReaderList
@@ -116,7 +116,7 @@ Namespace Mapping
             Dim WriterList = New List(Of IObjectAggregatorResolver) From {
                 PrimitiveResolver,
                 New EnumPacker(Of StreamEx)(WriterCache),
-                New CollectionPackerTemplate(Of StreamEx)(New GenericListAggregatorResolver(Of StreamEx)(WriterCache)),
+                New CollectionPackerTemplate(Of StreamEx)(New GenericCollectionAggregatorResolver(Of StreamEx)(WriterCache)),
                 New RecordPackerTemplate(Of StreamEx)(New FieldOrPropertyAggregatorResolver(Of StreamEx)(WriterCache))
             }
             For Each r In WriterList
@@ -133,7 +133,7 @@ Namespace Mapping
             Next
             Dim CounterAggregatorList = New List(Of IObjectAggregatorResolver) From {
                 New EnumPacker(Of CounterState)(CounterCache),
-                New CollectionPackerTemplate(Of CounterState)(New GenericListAggregatorResolver(Of CounterState)(CounterCache)),
+                New CollectionPackerTemplate(Of CounterState)(New GenericCollectionAggregatorResolver(Of CounterState)(CounterCache)),
                 New RecordPackerTemplate(Of CounterState)(New FieldOrPropertyAggregatorResolver(Of CounterState)(CounterCache)),
                 TranslatorResolver.Create(CounterCache, New IntToCounterStateRangeTranslator)
             }
@@ -254,16 +254,16 @@ Namespace Mapping
             End Sub
         End Class
 
-        Public Class GenericListProjectorResolver(Of D)
-            Implements IGenericListProjectorResolver(Of D)
+        Public Class GenericCollectionProjectorResolver(Of D)
+            Implements IGenericCollectionProjectorResolver(Of D)
 
-            Public Function ResolveProjector(Of R, RList As {New, ICollection(Of R)})() As Func(Of D, RList) Implements IGenericListProjectorResolver(Of D).ResolveProjector
+            Public Function ResolveProjector(Of R, RCollection As {New, ICollection(Of R)})() As Func(Of D, RCollection) Implements IGenericCollectionProjectorResolver(Of D).ResolveProjector
                 Dim Mapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(D), GetType(R))), Func(Of D, R))
                 Dim IntMapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(D), GetType(Integer))), Func(Of D, Integer))
                 Dim F =
-                    Function(Key As D) As RList
+                    Function(Key As D) As RCollection
                         Dim NumElement = IntMapper(Key)
-                        Dim List = New RList()
+                        Dim List = New RCollection()
                         For n = 0 To NumElement - 1
                             List.Add(Mapper(Key))
                         Next
@@ -278,14 +278,14 @@ Namespace Mapping
             End Sub
         End Class
 
-        Public Class GenericListAggregatorResolver(Of R)
-            Implements IGenericListAggregatorResolver(Of R)
+        Public Class GenericCollectionAggregatorResolver(Of R)
+            Implements IGenericCollectionAggregatorResolver(Of R)
 
-            Public Function ResolveAggregator(Of D, DList As ICollection(Of D))() As Action(Of DList, R) Implements IGenericListAggregatorResolver(Of R).ResolveAggregator
+            Public Function ResolveAggregator(Of D, DCollection As ICollection(Of D))() As Action(Of DCollection, R) Implements IGenericCollectionAggregatorResolver(Of R).ResolveAggregator
                 Dim Mapper = DirectCast(AbsResolver.ResolveAggregator(CreatePair(GetType(D), GetType(R))), Action(Of D, R))
                 Dim IntMapper = DirectCast(AbsResolver.ResolveAggregator(CreatePair(GetType(Integer), GetType(R))), Action(Of Integer, R))
                 Dim F =
-                    Sub(List As DList, Value As R)
+                    Sub(List As DCollection, Value As R)
                         Dim NumElement = List.Count
                         IntMapper(NumElement, Value)
                         For Each v In List
