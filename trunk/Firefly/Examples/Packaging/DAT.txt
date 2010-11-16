@@ -1,4 +1,4 @@
-¥×¥ê¥Ë DAT¸ñÊ½
+ï»¿ãƒ—ãƒªãƒ‹ DATæ ¼å¼
 
 Header 00h
 12      String          Identifier      "NISPACK" 00 00 00 00
@@ -15,5 +15,5 @@ Index 10h
 Data 800h
 (
 *       Byte()          FileData        00 00 00 00 A5 ..
-0x800¶ÔÆë
+0x800å¯¹é½
 ){NumFile}

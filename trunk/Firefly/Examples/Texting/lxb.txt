@@ -1,4 +1,4 @@
-Kung Fu Panda lxbÎÄ¼ş¸ñÊ½
+ï»¿Kung Fu Panda lxbæ–‡ä»¶æ ¼å¼
 1stplaya.lxb
 
 124	Byte()		Fixed
@@ -14,10 +14,10 @@ Kung Fu Panda lxbÎÄ¼ş¸ñÊ½
 (
 4	Int32		Key?			17 83 38 C8
 4	Int32		Offset			74 01 00 00
-			Ïà¶ÔÓÚOffset×ÔÉíµÄÆğÊ¼µØÖ·
+			ç›¸å¯¹äºOffsetè‡ªèº«çš„èµ·å§‹åœ°å€
 ){NumText}
 
 (
 *	String		Text			"I know you're trying to be all mysterious and Kung-Fu-ey, but where are we going?" 00
-			UTF-8, ÒÔ00½áÊø
+			UTF-8, ä»¥00ç»“æŸ
 )

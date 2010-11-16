@@ -1,34 +1,34 @@
-ө��溺�����ʾ��˵��
+﻿萤火虫汉化框架示例说明
 
-��������(F.R.C.)
+地狱门神(F.R.C.)
 
-ʾ��˵�����£����в���ʾ����Ҫ����Build.cmd���룬�����ȷ���б��뻷����
+示例说明如下，其中部分示例需要运行Build.cmd编译，因此请确保有编译环境：
 
 
 Compressing
-��ʾLZ77ѹ��ͨ�ÿ�ĵ��÷�����
+演示LZ77压缩通用库的调用方法。
 
 Encoding
-��ʾʹ��MappingGen������αShift-JIS����Ĵ�����
-ʹ��αShift-JIS����������ڲ��޸�������Ϸ�ı��봦�����ֵ�����£�ͨ���޸������ļ����ı�����ɺ�����
-ʹ��MappingGen������α����ᾡ����֤��Ӧԭ�ֻ�ԭ�ֵ������֡�
+演示使用MappingGen来进行伪Shift-JIS码表的创建。
+使用伪Shift-JIS码表，可以在不修改日文游戏的编码处理部分的情况下，通过修改字体文件和文本来完成汉化。
+使用MappingGen创建的伪码表会尽量保证对应原字或原字的异体字。
 
 Imaging\GIM
-��ʾGIM�ļ��ĵ����͵��롣
-�������Imaging\GIM\Bin��ʹ��GimTran���뵼����
-����ʱ��GIM/MIG�ļ��ϵ�GimTran�ϡ�
-����ʱ���������ļ��ϵ�GimTran�ϡ�
+演示GIM文件的导出和导入。
+编译后在Imaging\GIM\Bin中使用GimTran导入导出。
+导出时将GIM/MIG文件拖到GimTran上。
+导入时将导出的文件拖到GimTran上。
 
 Imaging\ImageSplitter
-��ʾͨ�����롣
-���Խ�.Net���֧�ֵļ���ͼ���ļ�(��png)�İ�ARGBͨ�������Aͨ����RGBͨ�������ļ���
+演示通道分离。
+可以将.Net类库支持的几种图像文件(如png)的按ARGB通道分离成A通道、RGB通道两个文件。
 
 Packaging
-��ʾ�ļ�����д��ܵ�ʹ�á�
-��ʾ�����Ե��ñ��⡣
-�ֱ���F#��VB��C#��C++/CLI�ĸ��汾��
+演示文件包读写框架的使用。
+演示跨语言调用本库。
+分别有F#、VB、C#、C++/CLI四个版本。
 
 Texting
-��ʾ�ı���д��
+演示文本读写。
 
-����ܵ�ʾ�����빫�����򣬿��������޸�ʹ�á�
+本框架的示例进入公有领域，可以随意修改使用。
