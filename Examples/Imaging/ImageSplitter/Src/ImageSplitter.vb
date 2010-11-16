@@ -3,7 +3,7 @@
 '  File:        ImageSplitter.vb
 '  Location:    Firefly.Examples <Visual Basic .Net>
 '  Description: 图像通道分离器 分离A与RGB
-'  Version:     2009.05.10.
+'  Version:     2010.11.16.
 '  Author:      F.R.C.
 '  Copyright(C) Public Domain
 '
@@ -18,10 +18,22 @@ Imports Firefly.Imaging
 
 Public Module ImageSplitter
 
-    Public Sub Main(ByVal argv As String())
-#If Not DEBUG Then
-        Try
-#End If
+    Public Function Main() As Integer
+        If System.Diagnostics.Debugger.IsAttached Then
+            Return MainInner()
+        Else
+            Try
+                Return MainInner()
+            Catch ex As Exception
+                Console.WriteLine(ExceptionInfo.GetExceptionInfo(ex))
+                Return -1
+            End Try
+        End If
+    End Function
+
+    Public Function MainInner() As Integer
+        Dim argv = CommandLine.GetCmdLine.Arguments
+
         For Each f In argv
             Dim FileName = GetFileName(f)
             Dim ExtName = GetExtendedFileName(FileName)
@@ -49,7 +61,7 @@ Public Module ImageSplitter
                     For x = 0 To Width - 1
                         Dim rgb = Rect(x, y)
                         Dim a = (RectA(x, y).Bits(23, 16) + RectA(x, y).Bits(15, 8) + RectA(x, y).Bits(7, 0)) \ 3
-                        Rect(x, y) = ComposeBits(a, 7, 0, rgb, 23, 0)
+                        Rect(x, y) = ConcatBits(a, 8, rgb, 24)
                     Next
                 Next
 
@@ -74,8 +86,8 @@ Public Module ImageSplitter
                             Dim argb = Rect(x, y)
                             Dim rgb = argb.Bits(23, 0)
                             Dim a = argb.Bits(31, 24)
-                            Rect(x, y) = ComposeBits(&HFF, 7, 0, rgb, 23, 0)
-                            RectA(x, y) = ComposeBits(&HFF, 7, 0, a, 7, 0, a, 7, 0, a, 7, 0)
+                            Rect(x, y) = ConcatBits(&HFF, 8, rgb, 24)
+                            RectA(x, y) = ConcatBits(&HFF, 8, a, 8, a, 8, a, 8)
                         Next
                     Next
                     b.SetRectangle(0, 0, Rect)
@@ -86,10 +98,7 @@ Public Module ImageSplitter
                 End Using
             End If
         Next
-#If Not DEBUG Then
-        Catch ex As Exception
-            ExceptionHandler.PopupException(ex)
-        End Try
-#End If
-    End Sub
+
+        Return 0
+    End Function
 End Module

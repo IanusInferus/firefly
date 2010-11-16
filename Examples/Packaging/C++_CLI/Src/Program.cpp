@@ -1,9 +1,9 @@
-//==========================================================================
+ï»¿//==========================================================================
 //
 //  File:        Program.cpp
 //  Location:    Firefly.Examples <Visual C++/CLI>
-//  Description: ÎÄ¼ş°ü¹ÜÀíÆ÷Ê¾Àı
-//  Version:     2009.07.07.
+//  Description: æ–‡ä»¶åŒ…ç®¡ç†å™¨ç¤ºä¾‹
+//  Version:     2010.11.16.
 //  Author:      F.R.C.
 //  Copyright(C) Public Domain
 //
@@ -14,22 +14,49 @@
 
 using namespace System;
 using namespace System::Windows::Forms;
+using namespace System::Diagnostics;
 using namespace Firefly;
 using namespace Firefly::Packaging;
+using namespace Firefly::GUI;
+
+void Application_ThreadException(Object^ sender, System::Threading::ThreadExceptionEventArgs^ e)
+{
+    ExceptionHandler::PopupException(e->Exception, gcnew StackTrace(4, true));
+}
+
+int MainWindow();
 
 [STAThreadAttribute]
-int main(array<System::String ^> ^args) {
-    try {
-        //ÔÚÕâÀïÌí¼ÓËùÓĞĞèÒªµÄÎÄ¼ş°üÀàĞÍ
-        PackageRegister::Register(DAT::Filter, gcnew PackageRegister::PackageOpenWithPath(DAT::Open), nullptr);
-        PackageRegister::Register(ISO::Filter, gcnew PackageRegister::PackageOpenWithPath(ISO::Open), nullptr);
+int main(array<System::String ^> ^args)
+{
+    System::Threading::ThreadExceptionEventHandler^ Application_ThreadException_Handler = gcnew System::Threading::ThreadExceptionEventHandler(Application_ThreadException);
 
-        Application::EnableVisualStyles();
-        Application::SetCompatibleTextRenderingDefault(false); 
-        Application::Run(gcnew Firefly::GUI::PackageManager());
+    Application::SetUnhandledExceptionMode(UnhandledExceptionMode::CatchException);
+    try
+    {
+        Application::ThreadException += Application_ThreadException_Handler;
+        return MainWindow();
     }
-    catch (Exception^ ex) {
-        ExceptionHandler::PopupException(ex, "·¢ÉúÒÔÏÂÒì³£:", "Examples.PackageManager");
+    catch (Exception^ ex)
+    {
+        ExceptionHandler::PopupException(ex, L"å‘ç”Ÿä»¥ä¸‹å¼‚å¸¸:", L"Examples.PackageManager");
+        return -1;
     }
-	return 0;
+    finally
+    {
+        Application::ThreadException -= Application_ThreadException_Handler;
+    }
+}
+
+int MainWindow()
+{
+    //åœ¨è¿™é‡Œæ·»åŠ æ‰€æœ‰éœ€è¦çš„æ–‡ä»¶åŒ…ç±»å‹
+    PackageRegister::Register(DAT::Filter, gcnew PackageRegister::PackageOpenWithPath(DAT::Open), nullptr);
+    PackageRegister::Register(ISO::Filter, gcnew PackageRegister::PackageOpenWithPath(ISO::Open), nullptr);
+
+    Application::EnableVisualStyles();
+    Application::SetCompatibleTextRenderingDefault(false); 
+    Application::Run(gcnew Firefly::GUI::PackageManager());
+
+    return 0;
 }

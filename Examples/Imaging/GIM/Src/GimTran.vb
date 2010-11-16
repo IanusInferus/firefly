@@ -3,7 +3,7 @@
 '  File:        GimTran.vb
 '  Location:    Firefly.Examples <Visual Basic .Net>
 '  Description: GIM/MIG操作实例
-'  Version:     2010.10.26.
+'  Version:     2010.11.16.
 '  Author:      F.R.C.
 '  Copyright(C) Public Domain
 '
@@ -20,19 +20,20 @@ Imports Firefly.Imaging
 
 Public Module GimTran
 
-    Public Sub Main()
+    Public Function Main() As Integer
         If System.Diagnostics.Debugger.IsAttached Then
-            MainInner()
+            Return MainInner()
         Else
             Try
-                MainInner()
+                Return MainInner()
             Catch ex As Exception
-                Console.Error.WriteLine(ExceptionInfo.GetExceptionInfo(ex))
+                Console.WriteLine(ExceptionInfo.GetExceptionInfo(ex))
+                Return -1
             End Try
         End If
-    End Sub
+    End Function
 
-    Public Sub MainInner()
+    Public Function MainInner() As Integer
         Dim argv = CommandLine.GetCmdLine.Arguments
 
         For Each f In argv
@@ -167,5 +168,7 @@ Public Module GimTran
                 End Using
             End If
         Next
-    End Sub
+
+        Return 0
+    End Function
 End Module
