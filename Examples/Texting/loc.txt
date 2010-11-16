@@ -1,4 +1,4 @@
-Velvet Assassin loc文件格式
+锘縑elvet Assassin loc鏂囦欢鏍煎紡
 eng.loc
 
 1	Byte		?			42
