@@ -1,6 +1,10 @@
 ﻿2010.11.16
 Firefly.Core.Mapping:
 增加XmlCompatibility，用于兼容System.Xml.Serialization.XmlSerializer。
+Examples:
+修改一些文件的编码。
+修正Packaging中示例代码过时的问题。
+增加BinarySerializerExample，演示二进制序列化。
 
 2010.11.15.0
 Firefly.Core.Mapping:
