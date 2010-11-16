@@ -80,7 +80,7 @@ Namespace Mapping
             '
             'Writer
             'aggr <- proj/aggr
-            'CollectionPacker: ({D} aggr List(XElement)) <- (D proj XElement)
+            'CollectionPacker: ({D} aggr Collection(XElement)) <- (D proj XElement)
             'FieldOrPropertyAggregatorResolver: (D aggr List(XElement)) <- (D.Field proj XElement)
             'XElementProjectorToAggregatorRangeTranslator: (D aggr List(XElement)) <- (D proj XElement)
 
@@ -141,7 +141,7 @@ Namespace Mapping
                 WriterResolverSet.ProjectorResolvers.AddLast(r)
             Next
             Dim WriterAggregatorList = New List(Of IObjectAggregatorResolver) From {
-                New CollectionPackerTemplate(Of List(Of XElement))(New ListPacker(WriterCache)),
+                New CollectionPackerTemplate(Of List(Of XElement))(New CollectionPacker(WriterCache)),
                 New RecordPackerTemplate(Of List(Of XElement))(New FieldOrPropertyAggregatorResolver(WriterCache)),
                 TranslatorResolver.Create(WriterCache, New XElementProjectorToAggregatorRangeTranslator)
             }
@@ -254,14 +254,14 @@ Namespace Mapping
                 Me.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver))
             End Sub
         End Class
-        Private Class ListPacker
+        Private Class CollectionPacker
             Implements IGenericCollectionAggregatorResolver(Of List(Of XElement))
 
-            Public Function ResolveAggregator(Of D, DList As ICollection(Of D))() As Action(Of DList, List(Of XElement)) Implements IGenericCollectionAggregatorResolver(Of List(Of XElement)).ResolveAggregator
+            Public Function ResolveAggregator(Of D, DCollection As ICollection(Of D))() As Action(Of DCollection, List(Of XElement)) Implements IGenericCollectionAggregatorResolver(Of List(Of XElement)).ResolveAggregator
                 Dim Mapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(D), GetType(XElement))), Func(Of D, XElement))
                 Dim F =
-                    Sub(List As DList, Value As List(Of XElement))
-                        For Each v In List
+                    Sub(c As DCollection, Value As List(Of XElement))
+                        For Each v In c
                             Value.Add(Mapper(v))
                         Next
                     End Sub
