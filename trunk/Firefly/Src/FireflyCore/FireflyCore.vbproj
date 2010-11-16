@@ -99,6 +99,7 @@
     <Compile Include="Packaging\PackageContinuous.vb" />
     <Compile Include="Packaging\PackageDiscrete.vb" />
     <Compile Include="Setting\Xml.vb" />
+    <Compile Include="Setting\XmlCompatibility.vb" />
     <Compile Include="TextEncoding\ControlChars.vb" />
     <Compile Include="TextEncoding\Encoding.vb" />
     <Compile Include="TextEncoding\EncodingString.vb" />

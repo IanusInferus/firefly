@@ -1,4 +1,8 @@
-﻿2010.11.15.0
+﻿2010.11.16
+Firefly.Core.Mapping:
+增加XmlCompatibility，用于兼容System.Xml.Serialization.XmlSerializer。
+
+2010.11.15.0
 Firefly.Core.Mapping:
 重构ObjectMapperResolvers。
 重构BinarySerializer。
