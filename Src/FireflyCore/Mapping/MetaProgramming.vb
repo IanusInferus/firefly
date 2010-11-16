@@ -239,7 +239,7 @@ Namespace Mapping
                 InnerLambda = Expression.Lambda(Expression.Invoke(oParam, Expression.ConvertChecked(Expression.Invoke(iParam, vParam), MO)), vParam)
             End If
             Dim OuterLambda = Expression.Lambda(InnerLambda, iParam, oParam)
-            Return OuterLambda.Compile().StaticDynamicInvoke(Of [Delegate])(InnerFunction, OuterMethod)
+            Return OuterLambda.Compile().StaticDynamicInvoke(Of [Delegate], [Delegate], [Delegate])(InnerFunction, OuterMethod)
         End Function
         <Extension()> Public Function Curry(ByVal Method As [Delegate], ByVal ParamArray Parameters As Object()) As [Delegate]
             Dim ProvidedParameters = Method.Method.GetParameters().Take(Parameters.Length).Select(Function(p) Expression.Variable(p.ParameterType, p.Name)).ToArray()
@@ -250,31 +250,53 @@ Namespace Mapping
             Dim OuterLambda = Expression.Lambda(InnerLambda, (New ParameterExpression() {mParam}).Concat(ProvidedParameters))
             Dim OuterDelegate = OuterLambda.Compile()
             Dim ParamObjects = (New Object() {Method}).Concat(Parameters).ToArray()
-            Return OuterDelegate.StaticDynamicInvoke(Of [Delegate])(ParamObjects)
+            Return OuterDelegate.StaticDynamicInvoke(Of Object(), [Delegate])(ParamObjects)
         End Function
-        <Extension()> Public Function StaticDynamicInvoke(Of TReturn)(ByVal Method As [Delegate], ByVal ParamArray Parameters As Object()) As TReturn
-            Dim ParameterTypes = Method.Method.GetParameters().Select(Function(p) p.ParameterType).ToArray()
+        <Extension()> Public Function AdaptFunction(ByVal Method As [Delegate], ByVal ReturnType As Type, ByVal ParamArray RequiredParameterTypes As Type()) As [Delegate]
+            Dim Parameters = Method.Method.GetParameters().Zip(RequiredParameterTypes, Function(p, r) New With {.InnerType = p.ParameterType, .OuterType = r, .OuterParamExpr = Expression.Variable(r, p.Name)}).ToArray
 
             Dim ClosureParam As ParameterExpression = Nothing
-            Dim AccessClosure As Func(Of Integer, Expression) = Nothing
-            Dim Closure = New Closure(Parameters.Concat(New Object() {Method}).ToArray, Nothing)
-            ClosureParam = Expression.Variable(GetType(Closure), "<>_Closure")
-            Dim ArrayIndex = Function(cl As Closure, i As Integer) cl.Constants(i)
-            AccessClosure = Function(n) Expression.Call(ArrayIndex.Method, ClosureParam, Expression.Constant(n))
+            ClosureParam = Expression.Variable(GetType([Delegate]), "<>_Closure")
             Dim ConvertExpressions As New List(Of Expression)
-            Dim k = 0
-            For Each t In ParameterTypes
-                ConvertExpressions.Add(Expression.ConvertChecked(AccessClosure(k), t))
-                k += 1
+            For Each p In Parameters
+                ConvertExpressions.Add(Expression.ConvertChecked(p.OuterParamExpr, p.InnerType))
             Next
-            Dim DelegateType = Method.GetType()
-            Dim DelegateFunc = Expression.ConvertChecked(AccessClosure(k), DelegateType)
-            Dim Ret = Expression.ConvertChecked(Expression.Invoke(DelegateFunc, ConvertExpressions), GetType(TReturn))
+            Dim Ret = Expression.ConvertChecked(Expression.Invoke(Expression.ConvertChecked(ClosureParam, Method.GetType()), ConvertExpressions), ReturnType)
+            Dim InnerLambda = Expression.Lambda(Ret, Parameters.Select(Function(p) p.OuterParamExpr))
+            Dim OuterLambda = Expression.Lambda(Expression.ConvertChecked(InnerLambda, GetType([Delegate])), ClosureParam)
 
-            Dim FunctionLambda = Expression.Lambda(Ret, New ParameterExpression() {ClosureParam})
-
-            Dim Compiled = FunctionLambda.Compile()
-            Return DirectCast(Compiled, Func(Of Closure, TReturn))(Closure)
+            Dim OuterDelegate = DirectCast(OuterLambda.Compile(), Func(Of [Delegate], [Delegate]))
+            Return OuterDelegate(Method)
+        End Function
+        <Extension()> Public Function AdaptFunction(Of TReturn)(ByVal Method As [Delegate]) As Func(Of TReturn)
+            Return DirectCast(AdaptFunction(Method, GetType(TReturn)), Func(Of TReturn))
+        End Function
+        <Extension()> Public Function AdaptFunction(Of T, TReturn)(ByVal Method As [Delegate]) As Func(Of T, TReturn)
+            Return DirectCast(AdaptFunction(Method, GetType(TReturn), GetType(T)), Func(Of T, TReturn))
+        End Function
+        <Extension()> Public Function AdaptFunction(Of T1, T2, TReturn)(ByVal Method As [Delegate]) As Func(Of T1, T2, TReturn)
+            Return DirectCast(AdaptFunction(Method, GetType(TReturn), GetType(T1), GetType(T2)), Func(Of T1, T2, TReturn))
+        End Function
+        <Extension()> Public Function AdaptFunction(Of T1, T2, T3, TReturn)(ByVal Method As [Delegate]) As Func(Of T1, T2, T3, TReturn)
+            Return DirectCast(AdaptFunction(Method, GetType(TReturn), GetType(T1), GetType(T2), GetType(T3)), Func(Of T1, T2, T3, TReturn))
+        End Function
+        <Extension()> Public Function AdaptFunction(Of T1, T2, T3, T4, TReturn)(ByVal Method As [Delegate]) As Func(Of T1, T2, T3, T4, TReturn)
+            Return DirectCast(AdaptFunction(Method, GetType(TReturn), GetType(T1), GetType(T2), GetType(T3)), Func(Of T1, T2, T3, T4, TReturn))
+        End Function
+        <Extension()> Public Function StaticDynamicInvoke(Of TReturn)(ByVal Method As [Delegate]) As TReturn
+            Return Method.AdaptFunction(Of TReturn)()()
+        End Function
+        <Extension()> Public Function StaticDynamicInvoke(Of T, TReturn)(ByVal Method As [Delegate], ByVal v As T) As TReturn
+            Return Method.AdaptFunction(Of T, TReturn)()(v)
+        End Function
+        <Extension()> Public Function StaticDynamicInvoke(Of T1, T2, TReturn)(ByVal Method As [Delegate], ByVal v1 As T1, ByVal v2 As T2) As TReturn
+            Return Method.AdaptFunction(Of T1, T2, TReturn)()(v1, v2)
+        End Function
+        <Extension()> Public Function StaticDynamicInvoke(Of T1, T2, T3, TReturn)(ByVal Method As [Delegate], ByVal v1 As T1, ByVal v2 As T2, ByVal v3 As T3) As TReturn
+            Return Method.AdaptFunction(Of T1, T2, T3, TReturn)()(v1, v2, v3)
+        End Function
+        <Extension()> Public Function StaticDynamicInvoke(Of T1, T2, T3, T4, TReturn)(ByVal Method As [Delegate], ByVal v1 As T1, ByVal v2 As T2, ByVal v3 As T3, ByVal v4 As T4) As TReturn
+            Return Method.AdaptFunction(Of T1, T2, T3, T4, TReturn)()(v1, v2, v3, v4)
         End Function
 
         Public Function CreatePair(Of TKey, TValue)(ByVal Key As TKey, ByVal Value As TValue) As KeyValuePair(Of TKey, TValue)
