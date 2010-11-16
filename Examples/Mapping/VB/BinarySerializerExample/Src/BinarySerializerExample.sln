@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{9449E7E1-8880-4F41-B32B-B04EB8CAA6AF}") = "BinarySerializerExample", "BinarySerializerExample.vbproj", "{BF576A19-976C-4D67-8900-155D07952E4E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BF576A19-976C-4D67-8900-155D07952E4E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF576A19-976C-4D67-8900-155D07952E4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF576A19-976C-4D67-8900-155D07952E4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF576A19-976C-4D67-8900-155D07952E4E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
