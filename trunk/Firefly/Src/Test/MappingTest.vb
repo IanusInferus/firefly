@@ -373,6 +373,19 @@ Public Module MappingTest
         End Using
         Assert(TestObject = XmlRoundTripped)
     End Sub
+    Public Sub TestXmlSerializerForDict()
+        Dim xs As New XmlSerializer
+
+        Dim dict As New Dictionary(Of String, Integer)
+        dict.Add("123", 0)
+        dict.Add("234", 1)
+
+        Dim xe = xs.Write(dict)
+        Dim RoundTripped = xs.Read(Of Dictionary(Of String, Integer))(xe)
+        Dim va = dict.ToArray()
+        Dim ra = RoundTripped.ToArray()
+        Assert(Enumerable.SequenceEqual(va, ra))
+    End Sub
 
     Public Class CompatibilityTestObject
         Public o01 As Byte() = {0, 1, 2}
@@ -502,9 +515,10 @@ Public Module MappingTest
     End Sub
 
     Public Sub TestMapping()
-        TestObjectTreeMapper()
-        TestBinarySerializer()
-        TestXmlSerializer()
-        TestXmlSerializerCompatibility()
+        'TestObjectTreeMapper()
+        'TestBinarySerializer()
+        'TestXmlSerializer()
+        TestXmlSerializerForDict()
+        'TestXmlSerializerCompatibility()
     End Sub
 End Module
