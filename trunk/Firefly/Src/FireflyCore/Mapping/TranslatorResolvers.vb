@@ -92,7 +92,7 @@ Namespace Mapping
                     Dim t = DummyMethod.MakeDelegateMethodFromDummy(RangeType)
                     Dim m = Inner.TryResolveProjector(CreatePair(GetType(M), RangeType))
                     If m Is Nothing Then Return Nothing
-                    Return t.StaticDynamicInvoke(Of [Delegate])(m)
+                    Return t.StaticDynamicInvoke(Of [Delegate], [Delegate])(m)
                 End If
                 Return Nothing
             End Function
@@ -110,7 +110,7 @@ Namespace Mapping
                     Dim t = DummyMethod.MakeDelegateMethodFromDummy(RangeType)
                     Dim m = Inner.TryResolveAggregator(CreatePair(GetType(M), RangeType))
                     If m Is Nothing Then Return Nothing
-                    Return t.StaticDynamicInvoke(Of [Delegate])(m)
+                    Return t.StaticDynamicInvoke(Of [Delegate], [Delegate])(m)
                 End If
                 Return Nothing
             End Function
@@ -132,7 +132,7 @@ Namespace Mapping
                     Dim t = DummyMethod.MakeDelegateMethodFromDummy(DomainType)
                     Dim m = Inner.TryResolveProjector(CreatePair(DomainType, GetType(M)))
                     If m Is Nothing Then Return Nothing
-                    Return t.StaticDynamicInvoke(Of [Delegate])(m)
+                    Return t.StaticDynamicInvoke(Of [Delegate], [Delegate])(m)
                 End If
                 Return Nothing
             End Function
@@ -150,7 +150,7 @@ Namespace Mapping
                     Dim t = DummyMethod.MakeDelegateMethodFromDummy(DomainType)
                     Dim m = Inner.TryResolveProjector(CreatePair(DomainType, GetType(M)))
                     If m Is Nothing Then Return Nothing
-                    Return t.StaticDynamicInvoke(Of [Delegate])(m)
+                    Return t.StaticDynamicInvoke(Of [Delegate], [Delegate])(m)
                 End If
                 Return Nothing
             End Function
@@ -168,7 +168,7 @@ Namespace Mapping
                     Dim t = DummyMethod.MakeDelegateMethodFromDummy(DomainType)
                     Dim m = Inner.TryResolveAggregator(CreatePair(DomainType, GetType(M)))
                     If m Is Nothing Then Return Nothing
-                    Return t.StaticDynamicInvoke(Of [Delegate])(m)
+                    Return t.StaticDynamicInvoke(Of [Delegate], [Delegate])(m)
                 End If
                 Return Nothing
             End Function
@@ -186,7 +186,7 @@ Namespace Mapping
                     Dim t = DummyMethod.MakeDelegateMethodFromDummy(DomainType)
                     Dim m = Inner.TryResolveAggregator(CreatePair(DomainType, GetType(M)))
                     If m Is Nothing Then Return Nothing
-                    Return t.StaticDynamicInvoke(Of [Delegate])(m)
+                    Return t.StaticDynamicInvoke(Of [Delegate], [Delegate])(m)
                 End If
                 Return Nothing
             End Function
