@@ -3,7 +3,7 @@
 '  File:        MetaProgramming.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 元编程
-'  Version:     2010.11.16.
+'  Version:     2010.11.17.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -178,16 +178,21 @@ Namespace Mapping
             End Select
         End Function
         Public Function CreateDelegateExpressionContext(ByVal DelegateCalls As IEnumerable(Of KeyValuePair(Of [Delegate], Expression()))) As DelegateExpressionContext
-            Dim DelegateToClosureField As New Dictionary(Of [Delegate], Integer)
+            Dim DelegateCallsArray = DelegateCalls.ToArray
+            Dim ClosureFieldIndices As New Dictionary(Of Integer, Integer)
             Dim ClosureObjects As New List(Of Object)
-            For Each DelegateCall In DelegateCalls
-                Dim d = DelegateCall.Key
-                If d.Target IsNot Nothing Then
-                    Dim n = ClosureObjects.Count
-                    DelegateToClosureField.Add(d, n)
-                    ClosureObjects.Add(d)
-                End If
-            Next
+            With Nothing
+                Dim k = 0
+                For Each DelegateCall In DelegateCallsArray
+                    Dim d = DelegateCall.Key
+                    If d.Target IsNot Nothing Then
+                        Dim n = ClosureObjects.Count
+                        ClosureFieldIndices.Add(k, n)
+                        ClosureObjects.Add(d)
+                    End If
+                    k += 1
+                Next
+            End With
             Dim ClosureParam As ParameterExpression = Nothing
             Dim Closure As Closure = Nothing
             Dim AccessClosure As Func(Of Integer, Expression) = Nothing
@@ -198,17 +203,21 @@ Namespace Mapping
                 AccessClosure = Function(n) Expression.Call(ArrayIndex.Method, ClosureParam, Expression.Constant(n))
             End If
             Dim DelegateExpressions As New List(Of Expression)
-            For Each DelegateCall In DelegateCalls
-                Dim d = DelegateCall.Key
-                If d.Target Is Nothing Then
-                    DelegateExpressions.Add(Expression.Call(d.Method, DelegateCall.Value))
-                Else
-                    Dim n = DelegateToClosureField(d)
-                    Dim DelegateType = d.GetType()
-                    Dim DelegateFunc = Expression.ConvertChecked(AccessClosure(n), DelegateType)
-                    DelegateExpressions.Add(Expression.Invoke(DelegateFunc, DelegateCall.Value))
-                End If
-            Next
+            With Nothing
+                Dim k = 0
+                For Each DelegateCall In DelegateCallsArray
+                    Dim d = DelegateCall.Key
+                    If d.Target Is Nothing Then
+                        DelegateExpressions.Add(Expression.Call(d.Method, DelegateCall.Value))
+                    Else
+                        Dim n = ClosureFieldIndices(k)
+                        Dim DelegateType = d.GetType()
+                        Dim DelegateFunc = Expression.ConvertChecked(AccessClosure(n), DelegateType)
+                        DelegateExpressions.Add(Expression.Invoke(DelegateFunc, DelegateCall.Value))
+                    End If
+                    k += 1
+                Next
+            End With
             Return New DelegateExpressionContext With {.ClosureParam = ClosureParam, .Closure = Closure, .DelegateExpressions = DelegateExpressions.ToArray()}
         End Function
         Public Function CreateDelegate(ByVal ClosureParam As ParameterExpression, ByVal Closure As Closure, ByVal Expr As LambdaExpression) As [Delegate]

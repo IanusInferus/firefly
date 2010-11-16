@@ -1,4 +1,8 @@
-﻿2010.11.16
+﻿2010.11.17
+Firefly.Core.Mapping:
+修正一处错误。
+
+2010.11.16
 Firefly.Core.Mapping:
 增加XmlCompatibility，用于兼容System.Xml.Serialization.XmlSerializer。
 增加ResolverTemplates对多参数泛型集合Dictionary(K, V)等的自动支持。
