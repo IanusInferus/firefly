@@ -3,7 +3,7 @@
 '  File:        Xml.vb
 '  Location:    Firefly.Setting <Visual Basic .Net>
 '  Description: Xml读写
-'  Version:     2010.11.15.
+'  Version:     2010.11.16.
 '  Copyright:   F.R.C.
 '
 '==========================================================================
@@ -70,12 +70,7 @@ Namespace Setting
                 End Using
             End Using
         End Function
-
         Public Shared Function ReadFile(Of T)(ByVal Reader As StreamReader, ByVal ExternalTypes As IEnumerable(Of Type), ByVal Mappers As IEnumerable(Of IMapper)) As T
-            Dim Root As XElement
-            Using r = XmlReader.Create(Reader)
-                Root = XElement.Load(r)
-            End Using
             Dim xs As New XmlSerializer(ExternalTypes)
             For Each m In Mappers
                 Dim SourceType = m.SourceType
@@ -95,6 +90,21 @@ Namespace Setting
                 )
                 DirectCast(f, Action(Of XmlSerializer, IMapper))(xs, m)
             Next
+            Return ReadFile(Of T)(xs, Reader)
+        End Function
+
+        Public Shared Function ReadFile(Of T)(ByVal xs As XmlSerializer, ByVal Path As String) As T
+            Using s As New FileStream(Path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
+                Using sr As New StreamReader(s)
+                    Return ReadFile(Of T)(xs, sr)
+                End Using
+            End Using
+        End Function
+        Public Shared Function ReadFile(Of T)(ByVal xs As XmlSerializer, ByVal Reader As StreamReader) As T
+            Dim Root As XElement
+            Using r = XmlReader.Create(Reader)
+                Root = XElement.Load(r)
+            End Using
             Return xs.Read(Of T)(Root)
         End Function
 
@@ -138,6 +148,19 @@ Namespace Setting
                 )
                 DirectCast(f, Action(Of XmlSerializer, IMapper))(xs, m)
             Next
+
+            WriteFile(xs, Writer, Value)
+        End Sub
+
+        Public Shared Sub WriteFile(Of T)(ByVal xs As XmlSerializer, ByVal Path As String, ByVal Value As T)
+            WriteFile(xs, Path, TextEncoding.WritingDefault, Value)
+        End Sub
+        Public Shared Sub WriteFile(Of T)(ByVal xs As XmlSerializer, ByVal Path As String, ByVal Encoding As Encoding, ByVal Value As T)
+            Using tw = Txt.CreateTextWriter(Path, Encoding)
+                WriteFile(xs, tw, Value)
+            End Using
+        End Sub
+        Public Shared Sub WriteFile(Of T)(ByVal xs As XmlSerializer, ByVal Writer As StreamWriter, ByVal Value As T)
             Dim Root = xs.Write(Of T)(Value)
             Dim Setting = New XmlWriterSettings With {.Encoding = Writer.Encoding, .Indent = True, .OmitXmlDeclaration = False}
             Using w = XmlWriter.Create(Writer, Setting)

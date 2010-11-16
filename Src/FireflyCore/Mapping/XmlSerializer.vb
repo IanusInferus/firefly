@@ -3,7 +3,7 @@
 '  File:        XmlSerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Xml序列化类
-'  Version:     2010.11.15.
+'  Version:     2010.11.16.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -62,17 +62,17 @@ Namespace Mapping
         Public Sub New(ByVal ExternalTypes As IEnumerable(Of Type))
             'Reader
             'proj <- proj
-            'PrimitiveResolver: (String proj Primitive) <- null
+            'PrimitiveResolver: (String|XElement proj Primitive) <- null
             'EnumResolver: (String proj Enum) <- null
+            'XElementToStringDomainTranslator: (XElement proj R) <- (String proj R)
             'ListUnpacker: (XElement proj {R}) <- (XElement.SubElement proj R)
             'FieldOrPropertyProjectorResolver: (Dictionary(String, XElement) proj R) <- (XElement.SubElement proj R.Field)
-            'XElementToStringDomainTranslator: (XElement proj R) <- (String proj R)
             'InheritanceResolver: (XElement proj R) <- (XElement proj R.Derived)
             'XElementProjectorToProjectorDomainTranslator: (XElement proj R) <- (Dictionary(String, XElement) proj R)
             '
             'Writer
             'proj <- proj/aggr
-            'PrimitiveResolver: (Primitive proj String) <- null
+            'PrimitiveResolver: (Primitive proj String|XElement) <- null
             'EnumResolver: (Enum proj String) <- null
             'XElementToStringRangeTranslator: (D proj XElement) <- (D proj String)
             'InheritanceResolver: (D proj XElement) <- (D.Derived proj XElement)
@@ -119,9 +119,9 @@ Namespace Mapping
             Dim ReaderList = New List(Of IObjectProjectorResolver) From {
                 PrimitiveResolver,
                 New EnumResolver,
+                TranslatorResolver.Create(ReaderCache, New XElementToStringDomainTranslator),
                 New CollectionUnpackerTemplate(Of XElement)(New ListUnpacker(ReaderCache)),
                 New RecordUnpackerTemplate(Of Dictionary(Of String, XElement))(New FieldOrPropertyProjectorResolver(ReaderCache)),
-                TranslatorResolver.Create(ReaderCache, New XElementToStringDomainTranslator),
                 New InheritanceResolver(ReaderCache, ExternalTypes),
                 TranslatorResolver.Create(ReaderCache, New XElementProjectorToProjectorDomainTranslator)
             }
@@ -158,10 +158,22 @@ Namespace Mapping
         Public Sub PutWriter(Of T)(ByVal Writer As Func(Of T, String))
             PrimitiveResolver.PutProjector(Writer)
         End Sub
+        Public Sub PutReader(Of T)(ByVal Reader As Func(Of XElement, T))
+            PrimitiveResolver.PutProjector(Reader)
+        End Sub
+        Public Sub PutWriter(Of T)(ByVal Writer As Func(Of T, XElement))
+            PrimitiveResolver.PutProjector(Writer)
+        End Sub
         Public Sub PutReaderTranslator(Of R, M)(ByVal Translator As IProjectorToProjectorRangeTranslator(Of R, M))
             ReaderResolverSet.ProjectorResolvers.AddFirst(TranslatorResolver.Create(ReaderCache, Translator))
         End Sub
         Public Sub PutWriterTranslator(Of D, M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of D, M))
+            WriterResolverSet.ProjectorResolvers.AddFirst(TranslatorResolver.Create(WriterCache, Translator))
+        End Sub
+        Public Sub PutReaderTranslator(Of M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of XElement, M))
+            ReaderResolverSet.ProjectorResolvers.AddFirst(TranslatorResolver.Create(ReaderCache, Translator))
+        End Sub
+        Public Sub PutWriterTranslator(Of M)(ByVal Translator As IProjectorToProjectorRangeTranslator(Of XElement, M))
             WriterResolverSet.ProjectorResolvers.AddFirst(TranslatorResolver.Create(WriterCache, Translator))
         End Sub
 
@@ -174,7 +186,7 @@ Namespace Mapping
             Return m(Value)
         End Function
 
-        Private Shared Function GetTypeFriendlyName(ByVal Type As Type) As String
+        Public Shared Function GetTypeFriendlyName(ByVal Type As Type) As String
             If Type.IsArray Then
                 Dim n = Type.GetArrayRank
                 Dim ElementTypeName = GetTypeFriendlyName(Type.GetElementType)
@@ -358,7 +370,6 @@ Namespace Mapping
 
             Private Function Resolve(Of D)(ByVal Name As String) As Action(Of D, List(Of XElement))
                 Dim Mapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(D), GetType(XElement))), Func(Of D, XElement))
-                Dim TypeName = GetTypeFriendlyName(GetType(D))
                 Dim F =
                     Sub(k As D, l As List(Of XElement))
                         Dim e = Mapper(k)
