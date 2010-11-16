@@ -357,7 +357,7 @@ Namespace Mapping
             Public Function ResolveProjector(ByVal Info As FieldOrPropertyInfo) As [Delegate] Implements IFieldOrPropertyProjectorResolver(Of Dictionary(Of String, XElement)).ResolveProjector
                 Dim Name = Info.Member.Name
                 Dim m = DirectCast(AddressOf Resolve(Of DummyType), Func(Of String, Func(Of Dictionary(Of String, XElement), DummyType)))
-                Return DirectCast(m.MakeDelegateMethodFromDummy(Info.Type).DynamicInvoke(Name), [Delegate])
+                Return m.MakeDelegateMethodFromDummy(Info.Type).StaticDynamicInvoke(Of [Delegate])(Name)
             End Function
 
             Private AbsResolver As AbsoluteResolver
@@ -382,7 +382,7 @@ Namespace Mapping
             Public Function ResolveAggregator(ByVal Info As FieldOrPropertyInfo) As [Delegate] Implements IFieldOrPropertyAggregatorResolver(Of List(Of XElement)).ResolveAggregator
                 Dim Name = Info.Member.Name
                 Dim m = DirectCast(AddressOf Resolve(Of DummyType), Func(Of String, Action(Of DummyType, List(Of XElement))))
-                Return DirectCast(m.MakeDelegateMethodFromDummy(Info.Type).DynamicInvoke(Name), [Delegate])
+                Return m.MakeDelegateMethodFromDummy(Info.Type).StaticDynamicInvoke(Of [Delegate])(Name)
             End Function
 
             Private AbsResolver As AbsoluteResolver
@@ -408,7 +408,7 @@ Namespace Mapping
                         ProjectorCache.Add(TypePair)
                         Try
                             Dim DynamicMapper = AbsResolver.ResolveProjector(TypePair)
-                            Return DirectCast(DynamicMapper.DynamicInvoke(k), R)
+                            Return DynamicMapper.StaticDynamicInvoke(Of R)(k)
                         Finally
                             ProjectorCache.Remove(TypePair)
                         End Try
@@ -431,7 +431,7 @@ Namespace Mapping
                         ProjectorCache.Add(TypePair)
                         Try
                             Dim DynamicMapper = AbsResolver.ResolveProjector(TypePair)
-                            Dim e = DirectCast(DynamicMapper.DynamicInvoke(k), XElement)
+                            Dim e = DynamicMapper.StaticDynamicInvoke(Of XElement)(k)
                             If e.Name = RealTypeName Then e.Name = TypeName
                             e.SetAttributeValue("Type", RealTypeName)
                             Return e
@@ -452,7 +452,7 @@ Namespace Mapping
                     Try
                         Dim DummyMethod = DirectCast(AddressOf ResolveRange(Of DummyType), Func(Of Func(Of XElement, DummyType)))
                         Dim m = DummyMethod.MakeDelegateMethodFromDummy(RangeType)
-                        Return DirectCast(m.DynamicInvoke(), [Delegate])
+                        Return m.StaticDynamicInvoke(Of [Delegate])()
                     Finally
                         ProjectorCache.Remove(TypePair)
                     End Try
@@ -463,7 +463,7 @@ Namespace Mapping
                     Try
                         Dim DummyMethod = DirectCast(AddressOf ResolveDomain(Of DummyType), Func(Of Func(Of DummyType, XElement)))
                         Dim m = DummyMethod.MakeDelegateMethodFromDummy(DomainType)
-                        Return DirectCast(m.DynamicInvoke(), [Delegate])
+                        Return m.StaticDynamicInvoke(Of [Delegate])()
                     Finally
                         ProjectorCache.Remove(TypePair)
                     End Try
