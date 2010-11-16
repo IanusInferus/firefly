@@ -164,7 +164,7 @@ Namespace Mapping
 
         Public Class DelegateExpressionContext
             Public ClosureParam As ParameterExpression
-            Public Closure As Object
+            Public Closure As Closure
             Public DelegateExpressions As Expression()
         End Class
         Public Function CreateFieldOrPropertyExpression(ByVal Param As ParameterExpression, ByVal Member As MemberInfo) As MemberExpression
@@ -178,30 +178,24 @@ Namespace Mapping
             End Select
         End Function
         Public Function CreateDelegateExpressionContext(ByVal DelegateCalls As IEnumerable(Of KeyValuePair(Of [Delegate], Expression()))) As DelegateExpressionContext
-            Dim ReaderToClosureField As New Dictionary(Of [Delegate], Integer)
+            Dim DelegateToClosureField As New Dictionary(Of [Delegate], Integer)
             Dim ClosureObjects As New List(Of Object)
             For Each DelegateCall In DelegateCalls
                 Dim d = DelegateCall.Key
                 If d.Target IsNot Nothing Then
                     Dim n = ClosureObjects.Count
-                    ReaderToClosureField.Add(d, n)
+                    DelegateToClosureField.Add(d, n)
                     ClosureObjects.Add(d)
                 End If
             Next
             Dim ClosureParam As ParameterExpression = Nothing
-            Dim Closure As Object = Nothing
+            Dim Closure As Closure = Nothing
             Dim AccessClosure As Func(Of Integer, Expression) = Nothing
             If ClosureObjects.Count > 0 Then
-                If ClosureObjects.Count = 1 Then
-                    Closure = ClosureObjects(0)
-                    ClosureParam = Expression.Variable(Closure.GetType(), "<>_Closure")
-                    AccessClosure = Function(n) ClosureParam
-                Else
-                    Closure = New Closure(ClosureObjects.ToArray, Nothing)
-                    ClosureParam = Expression.Variable(GetType(Closure), "<>_Closure")
-                    Dim ArrayIndex = Function(cl As Closure, i As Integer) cl.Constants(i)
-                    AccessClosure = Function(n) Expression.Call(ArrayIndex.Method, ClosureParam, Expression.Constant(n))
-                End If
+                Closure = New Closure(ClosureObjects.ToArray, Nothing)
+                ClosureParam = Expression.Variable(GetType(Closure), "<>_Closure")
+                Dim ArrayIndex = Function(cl As Closure, i As Integer) cl.Constants(i)
+                AccessClosure = Function(n) Expression.Call(ArrayIndex.Method, ClosureParam, Expression.Constant(n))
             End If
             Dim DelegateExpressions As New List(Of Expression)
             For Each DelegateCall In DelegateCalls
@@ -209,7 +203,7 @@ Namespace Mapping
                 If d.Target Is Nothing Then
                     DelegateExpressions.Add(Expression.Call(d.Method, DelegateCall.Value))
                 Else
-                    Dim n = ReaderToClosureField(d)
+                    Dim n = DelegateToClosureField(d)
                     Dim DelegateType = d.GetType()
                     Dim DelegateFunc = Expression.ConvertChecked(AccessClosure(n), DelegateType)
                     DelegateExpressions.Add(Expression.Invoke(DelegateFunc, DelegateCall.Value))
@@ -217,7 +211,7 @@ Namespace Mapping
             Next
             Return New DelegateExpressionContext With {.ClosureParam = ClosureParam, .Closure = Closure, .DelegateExpressions = DelegateExpressions.ToArray()}
         End Function
-        Public Function CreateDelegate(ByVal ClosureParam As ParameterExpression, ByVal Closure As Object, ByVal Expr As LambdaExpression) As [Delegate]
+        Public Function CreateDelegate(ByVal ClosureParam As ParameterExpression, ByVal Closure As Closure, ByVal Expr As LambdaExpression) As [Delegate]
             Dim FunctionLambda = Expr
             If Closure IsNot Nothing Then
                 FunctionLambda = Expression.Lambda(FunctionLambda, New ParameterExpression() {ClosureParam})
@@ -225,7 +219,7 @@ Namespace Mapping
 
             Dim Compiled = FunctionLambda.Compile()
             If Closure IsNot Nothing Then
-                Compiled = DirectCast(Compiled.DynamicInvoke(Closure), [Delegate])
+                Compiled = DirectCast(DirectCast(Compiled, Func(Of Closure, [Delegate]))(Closure), [Delegate])
             End If
             Return Compiled
         End Function
@@ -245,7 +239,7 @@ Namespace Mapping
                 InnerLambda = Expression.Lambda(Expression.Invoke(oParam, Expression.ConvertChecked(Expression.Invoke(iParam, vParam), MO)), vParam)
             End If
             Dim OuterLambda = Expression.Lambda(InnerLambda, iParam, oParam)
-            Return DirectCast(OuterLambda.Compile().DynamicInvoke(InnerFunction, OuterMethod), [Delegate])
+            Return OuterLambda.Compile().StaticDynamicInvoke(Of [Delegate])(InnerFunction, OuterMethod)
         End Function
         <Extension()> Public Function Curry(ByVal Method As [Delegate], ByVal ParamArray Parameters As Object()) As [Delegate]
             Dim ProvidedParameters = Method.Method.GetParameters().Take(Parameters.Length).Select(Function(p) Expression.Variable(p.ParameterType, p.Name)).ToArray()
@@ -256,7 +250,31 @@ Namespace Mapping
             Dim OuterLambda = Expression.Lambda(InnerLambda, (New ParameterExpression() {mParam}).Concat(ProvidedParameters))
             Dim OuterDelegate = OuterLambda.Compile()
             Dim ParamObjects = (New Object() {Method}).Concat(Parameters).ToArray()
-            Return DirectCast(OuterDelegate.DynamicInvoke(ParamObjects), [Delegate])
+            Return OuterDelegate.StaticDynamicInvoke(Of [Delegate])(ParamObjects)
+        End Function
+        <Extension()> Public Function StaticDynamicInvoke(Of TReturn)(ByVal Method As [Delegate], ByVal ParamArray Parameters As Object()) As TReturn
+            Dim ParameterTypes = Method.Method.GetParameters().Select(Function(p) p.ParameterType).ToArray()
+
+            Dim ClosureParam As ParameterExpression = Nothing
+            Dim AccessClosure As Func(Of Integer, Expression) = Nothing
+            Dim Closure = New Closure(Parameters.Concat(New Object() {Method}).ToArray, Nothing)
+            ClosureParam = Expression.Variable(GetType(Closure), "<>_Closure")
+            Dim ArrayIndex = Function(cl As Closure, i As Integer) cl.Constants(i)
+            AccessClosure = Function(n) Expression.Call(ArrayIndex.Method, ClosureParam, Expression.Constant(n))
+            Dim ConvertExpressions As New List(Of Expression)
+            Dim k = 0
+            For Each t In ParameterTypes
+                ConvertExpressions.Add(Expression.ConvertChecked(AccessClosure(k), t))
+                k += 1
+            Next
+            Dim DelegateType = Method.GetType()
+            Dim DelegateFunc = Expression.ConvertChecked(AccessClosure(k), DelegateType)
+            Dim Ret = Expression.ConvertChecked(Expression.Invoke(DelegateFunc, ConvertExpressions), GetType(TReturn))
+
+            Dim FunctionLambda = Expression.Lambda(Ret, New ParameterExpression() {ClosureParam})
+
+            Dim Compiled = FunctionLambda.Compile()
+            Return DirectCast(Compiled, Func(Of Closure, TReturn))(Closure)
         End Function
 
         Public Function CreatePair(Of TKey, TValue)(ByVal Key As TKey, ByVal Value As TValue) As KeyValuePair(Of TKey, TValue)

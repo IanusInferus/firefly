@@ -117,7 +117,7 @@ Namespace Mapping
                 If Dimension <> 1 Then Return Nothing
                 If Inner Is Nothing Then Return Nothing
                 Dim m = DirectCast(AddressOf ArrayToList(Of DummyType), Func(Of Func(Of D, DummyType())))
-                Dim Gen = Function(ElementType As Type) DirectCast(m.MakeDelegateMethodFromDummy(ElementType).DynamicInvoke(), [Delegate])
+                Dim Gen = Function(ElementType As Type) m.MakeDelegateMethodFromDummy(ElementType).StaticDynamicInvoke(Of [Delegate])()
                 ArrayMapperGeneratorCache.Add(Dimension, Gen)
             End If
             Return ArrayMapperGeneratorCache(Dimension)
@@ -143,7 +143,7 @@ Namespace Mapping
                                 End Select
                             End Function
                         )
-                        Return DirectCast(m.MakeDelegateMethodFromDummy(ElementType).DynamicInvoke(), [Delegate])
+                        Return m.MakeDelegateMethodFromDummy(ElementType).StaticDynamicInvoke(Of [Delegate])()
                     End Function
                 CollectionMapperGeneratorCache.Add(CollectionType, Gen)
             End If
@@ -243,7 +243,7 @@ Namespace Mapping
             If Not ArrayMapperGeneratorCache.ContainsKey(Dimension) Then
                 If Dimension <> 1 Then Return Nothing
                 Dim m = DirectCast(AddressOf ArrayToList(Of DummyType), Func(Of Action(Of DummyType(), R)))
-                Dim Gen = Function(ElementType As Type) DirectCast(m.MakeDelegateMethodFromDummy(ElementType).DynamicInvoke(), [Delegate])
+                Dim Gen = Function(ElementType As Type) m.MakeDelegateMethodFromDummy(ElementType).StaticDynamicInvoke(Of [Delegate])()
                 ArrayMapperGeneratorCache.Add(Dimension, Gen)
             End If
             Return ArrayMapperGeneratorCache(Dimension)
@@ -270,7 +270,7 @@ Namespace Mapping
                                 End Select
                             End Function
                         )
-                        Return DirectCast(m.MakeDelegateMethodFromDummy(ElementType).DynamicInvoke(), [Delegate])
+                        Return m.MakeDelegateMethodFromDummy(ElementType).StaticDynamicInvoke(Of [Delegate])()
                     End Function
                 CollectionMapperGeneratorCache.Add(CollectionType, Gen)
             End If
