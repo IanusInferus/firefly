@@ -263,11 +263,11 @@ Namespace Mapping
                 Dim F =
                     Function(Key As D) As RCollection
                         Dim NumElement = IntMapper(Key)
-                        Dim List = New RCollection()
+                        Dim c = New RCollection()
                         For n = 0 To NumElement - 1
-                            List.Add(Mapper(Key))
+                            c.Add(Mapper(Key))
                         Next
-                        Return List
+                        Return c
                     End Function
                 Return F
             End Function
@@ -285,10 +285,10 @@ Namespace Mapping
                 Dim Mapper = DirectCast(AbsResolver.ResolveAggregator(CreatePair(GetType(D), GetType(R))), Action(Of D, R))
                 Dim IntMapper = DirectCast(AbsResolver.ResolveAggregator(CreatePair(GetType(Integer), GetType(R))), Action(Of Integer, R))
                 Dim F =
-                    Sub(List As DCollection, Value As R)
-                        Dim NumElement = List.Count
+                    Sub(c As DCollection, Value As R)
+                        Dim NumElement = c.Count
                         IntMapper(NumElement, Value)
-                        For Each v In List
+                        For Each v In c
                             Mapper(v, Value)
                         Next
                     End Sub
