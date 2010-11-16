@@ -3,7 +3,7 @@
 '  File:        ExceptionInfo.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 异常信息
-'  Version:     2010.09.23.
+'  Version:     2010.11.16.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -165,10 +165,15 @@ Public NotInheritable Class ExceptionInfo
         If Frame.GetILOffset <> StackFrame.OFFSET_UNKNOWN Then Pos.Add(String.Format("IL {0:X4}", Frame.GetILOffset))
         If Frame.GetNativeOffset <> StackFrame.OFFSET_UNKNOWN Then Pos.Add(String.Format("N {0:X6}", Frame.GetNativeOffset))
 
-        If Frame.GetFileName <> "" Then
-            Return String.Format("{0}.{1}({2}) {3} : {4}", mi.DeclaringType.FullName, mi.Name, String.Join(", ", Params.ToArray), Frame.GetFileName, String.Join(", ", Pos.ToArray))
-        Else
-            Return String.Format("{0}.{1}({2}) : {3}", mi.DeclaringType.FullName, mi.Name, String.Join(", ", Params.ToArray), String.Join(", ", Pos.ToArray))
+        Dim l As New List(Of String)
+        If mi.DeclaringType IsNot Nothing Then l.Add("{0}.".Formats(mi.DeclaringType.FullName))
+        l.Add(mi.Name)
+        l.Add("({0})".Formats(String.Join(", ", Params.ToArray)))
+        If Frame.GetFileName <> "" Then l.Add(" {0}".Formats(Frame.GetFileName))
+        If Pos.Count > 0 Then
+            l.Add(" : ")
+            l.Add(String.Join(", ", Pos.ToArray))
         End If
+        Return String.Join("", l.ToArray)
     End Function
 End Class
