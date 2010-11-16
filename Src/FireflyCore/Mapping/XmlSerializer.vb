@@ -354,10 +354,18 @@ Namespace Mapping
                 Return F
             End Function
 
+            Private Dict As New Dictionary(Of Type, Func(Of String, [Delegate]))
             Public Function ResolveProjector(ByVal Info As FieldOrPropertyInfo) As [Delegate] Implements IFieldOrPropertyProjectorResolver(Of Dictionary(Of String, XElement)).ResolveProjector
                 Dim Name = Info.Member.Name
-                Dim m = DirectCast(AddressOf Resolve(Of DummyType), Func(Of String, Func(Of Dictionary(Of String, XElement), DummyType)))
-                Return m.MakeDelegateMethodFromDummy(Info.Type).StaticDynamicInvoke(Of [Delegate])(Name)
+                If Dict.ContainsKey(Info.Type) Then
+                    Dim m = Dict(Info.Type)
+                    Return m(Name)
+                Else
+                    Dim GenericMapper = DirectCast(AddressOf Resolve(Of DummyType), Func(Of String, Func(Of Dictionary(Of String, XElement), DummyType)))
+                    Dim m = GenericMapper.MakeDelegateMethodFromDummy(Info.Type).AdaptFunction(Of String, [Delegate])()
+                    Dict.Add(Info.Type, m)
+                    Return m(Name)
+                End If
             End Function
 
             Private AbsResolver As AbsoluteResolver
@@ -379,10 +387,18 @@ Namespace Mapping
                 Return F
             End Function
 
+            Private Dict As New Dictionary(Of Type, Func(Of String, [Delegate]))
             Public Function ResolveAggregator(ByVal Info As FieldOrPropertyInfo) As [Delegate] Implements IFieldOrPropertyAggregatorResolver(Of List(Of XElement)).ResolveAggregator
                 Dim Name = Info.Member.Name
-                Dim m = DirectCast(AddressOf Resolve(Of DummyType), Func(Of String, Action(Of DummyType, List(Of XElement))))
-                Return m.MakeDelegateMethodFromDummy(Info.Type).StaticDynamicInvoke(Of [Delegate])(Name)
+                If Dict.ContainsKey(Info.Type) Then
+                    Dim m = Dict(Info.Type)
+                    Return m(Name)
+                Else
+                    Dim GenericMapper = DirectCast(AddressOf Resolve(Of DummyType), Func(Of String, Action(Of DummyType, List(Of XElement))))
+                    Dim m = GenericMapper.MakeDelegateMethodFromDummy(Info.Type).AdaptFunction(Of String, [Delegate])()
+                    Dict.Add(Info.Type, m)
+                    Return m(Name)
+                End If
             End Function
 
             Private AbsResolver As AbsoluteResolver
@@ -396,6 +412,7 @@ Namespace Mapping
 
             Private Function ResolveRange(Of R)() As Func(Of XElement, R)
                 Dim Mapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(XElement), GetType(R))), Func(Of XElement, R))
+                Dim Dict As New Dictionary(Of Type, Func(Of XElement, R))
                 Dim F =
                     Function(k As XElement) As R
                         If k.IsEmpty Then Return Mapper(k)
@@ -404,11 +421,17 @@ Namespace Mapping
                         If Not ExternalTypeDict.ContainsKey(RealTypeName) Then Throw New InvalidOperationException("ExternalTypeNotFound: {0}".Formats(RealTypeName))
                         Dim RealType = ExternalTypeDict(RealTypeName)
 
+                        If Dict.ContainsKey(RealType) Then
+                            Dim DynamicMapper = Dict(RealType)
+                            Return DynamicMapper(k)
+                        End If
+
                         Dim TypePair = CreatePair(GetType(XElement), RealType)
                         ProjectorCache.Add(TypePair)
                         Try
-                            Dim DynamicMapper = AbsResolver.ResolveProjector(TypePair)
-                            Return DynamicMapper.StaticDynamicInvoke(Of R)(k)
+                            Dim DynamicMapper = AbsResolver.ResolveProjector(TypePair).AdaptFunction(Of XElement, R)()
+                            Dict.Add(RealType, DynamicMapper)
+                            Return DynamicMapper(k)
                         Finally
                             ProjectorCache.Remove(TypePair)
                         End Try
@@ -418,6 +441,7 @@ Namespace Mapping
             Private Function ResolveDomain(Of D)() As Func(Of D, XElement)
                 Dim Mapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(D), GetType(XElement))), Func(Of D, XElement))
                 Dim TypeName = GetTypeFriendlyName(GetType(D))
+                Dim Dict As New Dictionary(Of Type, Func(Of D, XElement))
                 Dim F =
                     Function(k As D) As XElement
                         If k Is Nothing Then Return Mapper(k)
@@ -427,11 +451,17 @@ Namespace Mapping
                         If Not ExternalTypeDict.ContainsKey(RealTypeName) Then Throw New InvalidOperationException("ExternalTypeNotFound: {0}".Formats(RealTypeName))
                         If ExternalTypeDict(RealTypeName) IsNot RealType Then Throw New InvalidOperationException("ExternalTypeMismatched: {0}".Formats(RealTypeName))
 
+                        If Dict.ContainsKey(RealType) Then
+                            Dim DynamicMapper = Dict(RealType)
+                            Return DynamicMapper(k)
+                        End If
+
                         Dim TypePair = CreatePair(RealType, GetType(XElement))
                         ProjectorCache.Add(TypePair)
                         Try
-                            Dim DynamicMapper = AbsResolver.ResolveProjector(TypePair)
-                            Dim e = DynamicMapper.StaticDynamicInvoke(Of XElement)(k)
+                            Dim DynamicMapper = AbsResolver.ResolveProjector(TypePair).AdaptFunction(Of D, XElement)()
+                            Dict.Add(RealType, DynamicMapper)
+                            Dim e = DynamicMapper(k)
                             If e.Name = RealTypeName Then e.Name = TypeName
                             e.SetAttributeValue("Type", RealTypeName)
                             Return e
