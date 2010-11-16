@@ -3,7 +3,7 @@
 '  File:        MetaProgramming.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 元编程
-'  Version:     2010.11.15.
+'  Version:     2010.11.16.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -23,8 +23,8 @@ Namespace Mapping
 
     <DebuggerNonUserCode()>
     Public Module MetaProgramming
-        <Extension()> Public Function IsCollectionType(ByVal Type As Type) As Boolean
-            Return Type.GetInterfaces().Any(Function(t) t.IsGenericType AndAlso t.GetGenericTypeDefinition Is GetType(ICollection(Of )))
+        <Extension()> Public Function IsProperCollectionType(ByVal Type As Type) As Boolean
+            Return Type.GetInterfaces().Where(Function(t) t.IsGenericType AndAlso t.GetGenericTypeDefinition Is GetType(ICollection(Of ))).Count = 1
         End Function
         <Extension()> Public Function GetCollectionElementType(ByVal Type As Type) As Type
             Return Type.GetInterfaces().Where(Function(t) t.IsGenericType AndAlso t.GetGenericTypeDefinition Is GetType(ICollection(Of ))).Single.GetGenericArguments()(0)
