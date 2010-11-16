@@ -50,7 +50,7 @@ Namespace Mapping
                     Return ArrayMapperGen(RangeType.GetElementType)
                 End If
             End If
-            If RangeType.IsCollectionType() Then
+            If RangeType.IsProperCollectionType() Then
                 Dim CollectionMapperGen = TryGetCollectionMapperGenerator(RangeType.GetGenericTypeDefinition)
                 If CollectionMapperGen IsNot Nothing Then
                     Return CollectionMapperGen(RangeType.GetGenericArguments())
@@ -90,7 +90,7 @@ Namespace Mapping
             If Not FuncType.IsGenericType Then Throw New ArgumentException
             If FuncType.GetGenericTypeDefinition IsNot GetType(Func(Of ,)) Then Throw New ArgumentException
             Dim DummyCollectionType = FuncType.GetGenericArguments()(1)
-            If Not DummyCollectionType.IsCollectionType() Then Throw New ArgumentException
+            If Not DummyCollectionType.IsProperCollectionType() Then Throw New ArgumentException
             Dim CollectionType = DummyCollectionType.GetGenericTypeDefinition
 
             Dim Gen =
@@ -124,7 +124,7 @@ Namespace Mapping
         End Function
         Public Function TryGetCollectionMapperGenerator(ByVal CollectionType As Type) As Func(Of Type(), [Delegate])
             If Not CollectionMapperGeneratorCache.ContainsKey(CollectionType) Then
-                If Not CollectionType.IsCollectionType() Then Throw New ArgumentException
+                If Not CollectionType.IsProperCollectionType() Then Throw New ArgumentException
                 If Not CollectionType.IsGenericTypeDefinition Then Throw New ArgumentException
                 Dim Gen =
                     Function(TypeArguments As Type()) As [Delegate]
@@ -179,7 +179,7 @@ Namespace Mapping
                     Return ArrayMapperGen(DomainType.GetElementType)
                 End If
             End If
-            If DomainType.IsCollectionType() Then
+            If DomainType.IsProperCollectionType() Then
                 Dim CollectionMapperGen = TryGetCollectionMapperGenerator(DomainType.GetGenericTypeDefinition)
                 If CollectionMapperGen IsNot Nothing Then
                     Return CollectionMapperGen(DomainType.GetGenericArguments())
@@ -219,7 +219,7 @@ Namespace Mapping
             If Not FuncType.IsGenericType Then Throw New ArgumentException
             If FuncType.GetGenericTypeDefinition IsNot GetType(Action(Of ,)) Then Throw New ArgumentException
             Dim DummyCollectionType = FuncType.GetGenericArguments()(0)
-            If Not DummyCollectionType.IsCollectionType() Then Throw New ArgumentException
+            If Not DummyCollectionType.IsProperCollectionType() Then Throw New ArgumentException
             Dim CollectionType = DummyCollectionType.GetGenericTypeDefinition
 
             Dim Gen =
@@ -250,7 +250,7 @@ Namespace Mapping
         End Function
         Public Overridable Function TryGetCollectionMapperGenerator(ByVal CollectionType As Type) As Func(Of Type(), [Delegate])
             If Not CollectionMapperGeneratorCache.ContainsKey(CollectionType) Then
-                If Not CollectionType.IsCollectionType() Then Throw New ArgumentException
+                If Not CollectionType.IsProperCollectionType() Then Throw New ArgumentException
                 If Not CollectionType.IsGenericTypeDefinition Then Throw New ArgumentException
 
                 Dim Gen =
