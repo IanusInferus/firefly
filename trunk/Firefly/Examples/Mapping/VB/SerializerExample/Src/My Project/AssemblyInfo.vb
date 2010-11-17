@@ -8,10 +8,10 @@ Imports System.Runtime.InteropServices
 
 ' 查看程序集属性的值
 
-<Assembly: AssemblyTitle("BinarySerializerExample")> 
+<Assembly: AssemblyTitle("SerializerExample")> 
 <Assembly: AssemblyDescription("")> 
 <Assembly: AssemblyCompany("Your Company")> 
-<Assembly: AssemblyProduct("Example.BinarySerializerExample")> 
+<Assembly: AssemblyProduct("Example.SerializerExample")> 
 <Assembly: AssemblyCopyright("Copyright © Your Company 2010")> 
 <Assembly: AssemblyTrademark("")> 
 
