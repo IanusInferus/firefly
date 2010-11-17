@@ -1,7 +1,8 @@
 ﻿2010.11.17
 Firefly.Core.Mapping:
-修正一处错误。
+修正一处MetaProgramming.CreateDelegateExpressionContext中的错误。
 增加BinarySerializer的写入器转换器转换器，使得其于XmlSerializer可接受相同的写入器转换器。
+明确无法解析和死递归时的异常是投影器还是聚合器。
 Examples\Mapping:
 增加SerializerExample，演示二进制序列化和XML序列化。
 
