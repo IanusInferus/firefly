@@ -8,7 +8,7 @@ del *.manifest /F /Q
 del *.user /F /Q
 cd..
 cd Src
-attrib -H BinarySerializerExample.suo
+attrib -H SerializerExample.suo
 del *.suo /F /Q
 del *.cache /F /Q
 pause

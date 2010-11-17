@@ -8,8 +8,8 @@
     <ProjectGuid>{BF576A19-976C-4D67-8900-155D07952E4E}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <StartupObject>Sub Main</StartupObject>
-    <RootNamespace>BinarySerializerExample</RootNamespace>
-    <AssemblyName>BinarySerializerExample</AssemblyName>
+    <RootNamespace>SerializerExample</RootNamespace>
+    <AssemblyName>SerializerExample</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <MyType>Console</MyType>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
@@ -40,19 +40,22 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
     <Reference Include="Firefly.Core">
       <HintPath>..\..\..\..\..\Bin\Firefly.Core.dll</HintPath>
     </Reference>
     <Reference Include="Firefly.GUI">
       <HintPath>..\..\..\..\..\Bin\Firefly.GUI.dll</HintPath>
     </Reference>
-    <Reference Include="System.Data" />
-    <Reference Include="System.Deployment" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CommonTranslators.vb" />
+    <Compile Include="DataModel.vb" />
     <Compile Include="Example.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
+    <Compile Include="MyBinarySerializer.vb" />
+    <Compile Include="MyXmlSerializer.vb" />
     <Compile Include="Program.vb" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
