@@ -1,6 +1,7 @@
 ﻿2010.11.17
 Firefly.Core.Mapping:
 修正一处错误。
+增加BinarySerializer的写入器转换器转换器，使得其于XmlSerializer可接受相同的写入器转换器。
 
 2010.11.16
 Firefly.Core.Mapping:

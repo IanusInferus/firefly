@@ -3,7 +3,7 @@
 '  File:        BinarySerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 二进制序列化类
-'  Version:     2010.11.16.
+'  Version:     2010.11.17.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -160,6 +160,10 @@ Namespace Mapping
         Public Sub PutWriterTranslator(Of D, M)(ByVal Translator As IAggregatorToAggregatorDomainTranslator(Of D, M))
             WriterResolverSet.AggregatorResolvers.AddFirst(TranslatorResolver.Create(WriterCache, Translator))
         End Sub
+        Public Sub PutWriterTranslator(Of D, M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of D, M))
+            Dim t = New PP2AADomainTranslatorTranslator(Of D, M)(Translator)
+            WriterResolverSet.AggregatorResolvers.AddFirst(TranslatorResolver.Create(WriterCache, t))
+        End Sub
         Public Sub PutCounterTranslator(Of D, M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of D, M))
             CounterResolverSet.ProjectorResolvers.AddFirst(TranslatorResolver.Create(CounterCache, Translator))
         End Sub
@@ -190,7 +194,7 @@ Namespace Mapping
             Return m(Value)
         End Function
 
-        Public Class CounterState
+        Private Class CounterState
             Public Number As Integer
         End Class
 
@@ -326,7 +330,7 @@ Namespace Mapping
             End Sub
         End Class
 
-        Public Class CounterStateToIntRangeTranslator
+        Private Class CounterStateToIntRangeTranslator
             Implements IAggregatorToProjectorRangeTranslator(Of Integer, CounterState)
             Public Function TranslateAggregatorToProjector(Of D)(ByVal Aggregator As Action(Of D, CounterState)) As Func(Of D, Integer) Implements IAggregatorToProjectorRangeTranslator(Of Integer, CounterState).TranslateAggregatorToProjectorRange
                 Return Function(Key)
@@ -336,13 +340,30 @@ Namespace Mapping
                        End Function
             End Function
         End Class
-        Public Class IntToCounterStateRangeTranslator
+        Private Class IntToCounterStateRangeTranslator
             Implements IProjectorToAggregatorRangeTranslator(Of CounterState, Integer)
             Public Function TranslateProjectorToAggregator(Of D)(ByVal Projector As Func(Of D, Integer)) As Action(Of D, CounterState) Implements IProjectorToAggregatorRangeTranslator(Of CounterState, Integer).TranslateProjectorToAggregatorRange
                 Return Sub(Key, c)
                            c.Number += Projector(Key)
                        End Sub
             End Function
+        End Class
+
+        'AA(D, M)(R): (M aggr R) -> (D aggr R) = (D proj M) @ (M aggr R)
+        'PP(D, M)(M): (M proj M) -> (D proj M) = (D proj M) @ (M proj M)
+        'PP2AA(D, M)(R): (M aggr R) -> (D aggr R) = PP(D, M)(M)(M -> M: m |-> m) @ AA(D, M)(R) = (D proj M) @ (M -> M: m |-> m) @ (M aggr R) = (D proj M) @ (M aggr R)
+        Private Class PP2AADomainTranslatorTranslator(Of D, M)
+            Implements IAggregatorToAggregatorDomainTranslator(Of D, M)
+
+            Public Function TranslateAggregatorToAggregatorDomain(Of R)(ByVal Aggregator As Action(Of M, R)) As Action(Of D, R) Implements IAggregatorToAggregatorDomainTranslator(Of D, M).TranslateAggregatorToAggregatorDomain
+                Dim Identity = Function(k As M) k
+                Return Sub(k As D, v As R) Aggregator(Inner.TranslateProjectorToProjectorDomain(Of M)(Identity)(k), v)
+            End Function
+
+            Private Inner As IProjectorToProjectorDomainTranslator(Of D, M)
+            Public Sub New(ByVal Inner As IProjectorToProjectorDomainTranslator(Of D, M))
+                Me.Inner = Inner
+            End Sub
         End Class
     End Class
 End Namespace
