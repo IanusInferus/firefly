@@ -3,7 +3,7 @@
 '  File:        ObjectMapper.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Object映射器
-'  Version:     2010.11.15.
+'  Version:     2010.11.17.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -41,12 +41,12 @@ Namespace Mapping
 
         Function ResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate]
             Dim Resolved = InnerResolver.TryResolveProjector(TypePair)
-            If Resolved Is Nothing Then Throw New NotSupportedException("NotResolved: ({0}, {1})".Formats(TypePair.Key.FullName, TypePair.Value.FullName))
+            If Resolved Is Nothing Then Throw New NotSupportedException("NotResolved: Projector({0}, {1})".Formats(TypePair.Key.FullName, TypePair.Value.FullName))
             Return Resolved
         End Function
         Function ResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate]
             Dim Resolved = InnerResolver.TryResolveAggregator(TypePair)
-            If Resolved Is Nothing Then Throw New NotSupportedException("NotResolved: ({0}, {1})".Formats(TypePair.Key.FullName, TypePair.Value.FullName))
+            If Resolved Is Nothing Then Throw New NotSupportedException("NotResolved: Aggregator({0}, {1})".Formats(TypePair.Key.FullName, TypePair.Value.FullName))
             Return Resolved
         End Function
     End Class
@@ -64,7 +64,7 @@ Namespace Mapping
         Private ResolvingProjectorTypePairs As New HashSet(Of KeyValuePair(Of Type, Type))
         Private ResolvingAggregatorTypePairs As New HashSet(Of KeyValuePair(Of Type, Type))
         Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
-            If ResolvingProjectorTypePairs.Contains(TypePair) Then Throw New InvalidOperationException("CircularReference: ({0}, {1})".Formats(TypePair.Key.FullName, TypePair.Value.FullName))
+            If ResolvingProjectorTypePairs.Contains(TypePair) Then Throw New InvalidOperationException("CircularReference: Projector({0}, {1})".Formats(TypePair.Key.FullName, TypePair.Value.FullName))
             ResolvingProjectorTypePairs.Add(TypePair)
             Try
                 Return InnerResolver.TryResolveProjector(TypePair)
@@ -73,7 +73,7 @@ Namespace Mapping
             End Try
         End Function
         Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectAggregatorResolver.TryResolveAggregator
-            If ResolvingAggregatorTypePairs.Contains(TypePair) Then Throw New InvalidOperationException("CircularReference: ({0}, {1})".Formats(TypePair.Key.FullName, TypePair.Value.FullName))
+            If ResolvingAggregatorTypePairs.Contains(TypePair) Then Throw New InvalidOperationException("CircularReference: Aggregator({0}, {1})".Formats(TypePair.Key.FullName, TypePair.Value.FullName))
             ResolvingAggregatorTypePairs.Add(TypePair)
             Try
                 Return InnerResolver.TryResolveAggregator(TypePair)
