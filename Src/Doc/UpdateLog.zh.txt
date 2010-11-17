@@ -2,6 +2,8 @@
 Firefly.Core.Mapping:
 修正一处错误。
 增加BinarySerializer的写入器转换器转换器，使得其于XmlSerializer可接受相同的写入器转换器。
+Examples\Mapping:
+增加SerializerExample，演示二进制序列化和XML序列化。
 
 2010.11.16
 Firefly.Core.Mapping:
