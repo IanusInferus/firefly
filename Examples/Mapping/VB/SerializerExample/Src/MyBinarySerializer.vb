@@ -100,10 +100,10 @@ Public Class MyBinarySerializer
         Implements IProjectorToProjectorRangeTranslator(Of String, Byte()) 'Reader
         Implements IAggregatorToAggregatorDomainTranslator(Of String, Byte()) 'Writer
 
-        Public Function TranslateProjectorToProjector(Of D)(ByVal Projector As Func(Of D, Byte())) As Func(Of D, String) Implements IProjectorToProjectorRangeTranslator(Of String, Byte()).TranslateProjectorToProjectorRange
+        Public Function TranslateProjectorToProjectorRange(Of D)(ByVal Projector As Func(Of D, Byte())) As Func(Of D, String) Implements IProjectorToProjectorRangeTranslator(Of String, Byte()).TranslateProjectorToProjectorRange
             Return Function(v) UTF16.GetString(Projector(v))
         End Function
-        Public Function TranslateAggregatorToAggregator(Of R)(ByVal Aggregator As Action(Of Byte(), R)) As Action(Of String, R) Implements IAggregatorToAggregatorDomainTranslator(Of String, Byte()).TranslateAggregatorToAggregatorDomain
+        Public Function TranslateAggregatorToAggregatorDomain(Of R)(ByVal Aggregator As Action(Of Byte(), R)) As Action(Of String, R) Implements IAggregatorToAggregatorDomainTranslator(Of String, Byte()).TranslateAggregatorToAggregatorDomain
             Return Sub(s, v) Aggregator(UTF16.GetBytes(s), v)
         End Function
     End Class

@@ -57,7 +57,7 @@ Public Class MyXmlSerializer
     Public Function Read(ByVal Element As XElement) As DataObject
         Dim SchemaType = Element.@<SchemaType>
         If SchemaType <> "MyDataFormat" Then Throw New InvalidDataException("数据不是MYDF格式数据")
-        Dim Version = Element.@<Version>
+        Dim Version = Integer.Parse(Element.@<Version>)
 
         Select Case Version
             Case 1
