@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{9449E7E1-8880-4F41-B32B-B04EB8CAA6AF}") = "BinarySerializerExample", "BinarySerializerExample.vbproj", "{BF576A19-976C-4D67-8900-155D07952E4E}"
+Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "SerializerExample", "SerializerExample.vbproj", "{BF576A19-976C-4D67-8900-155D07952E4E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
