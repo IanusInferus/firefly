@@ -189,14 +189,10 @@ Public Module MappingTest
 
     Public Class StringAndBytesTranslator
         Implements IProjectorToProjectorRangeTranslator(Of String, Byte()) 'Reader
-        Implements IAggregatorToAggregatorDomainTranslator(Of String, Byte()) 'Writer
-        Implements IProjectorToProjectorDomainTranslator(Of String, Byte()) 'Counter
+        Implements IProjectorToProjectorDomainTranslator(Of String, Byte()) 'Writer Counter
 
         Public Function TranslateProjectorToProjector(Of D)(ByVal Projector As Func(Of D, Byte())) As Func(Of D, String) Implements IProjectorToProjectorRangeTranslator(Of String, Byte()).TranslateProjectorToProjectorRange
             Return Function(v) UTF16.GetString(Projector(v))
-        End Function
-        Public Function TranslateAggregatorToAggregator(Of R)(ByVal Aggregator As Action(Of Byte(), R)) As Action(Of String, R) Implements IAggregatorToAggregatorDomainTranslator(Of String, Byte()).TranslateAggregatorToAggregatorDomain
-            Return Sub(s, v) Aggregator(UTF16.GetBytes(s), v)
         End Function
         Public Function TranslateProjectorToProjector(Of R)(ByVal Projector As Func(Of Byte(), R)) As Func(Of String, R) Implements IProjectorToProjectorDomainTranslator(Of String, Byte()).TranslateProjectorToProjectorDomain
             Return Function(s) Projector(UTF16.GetBytes(s))
