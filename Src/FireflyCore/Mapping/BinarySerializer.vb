@@ -3,7 +3,7 @@
 '  File:        BinarySerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 二进制序列化类
-'  Version:     2010.11.17.
+'  Version:     2010.11.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -208,7 +208,7 @@ Namespace Mapping
                 If RangeType.IsEnum Then
                     Dim UnderlyingType = RangeType.GetEnumUnderlyingType
                     Dim Mapper = AbsResolver.ResolveProjector(CreatePair(DomainType, UnderlyingType))
-                    Dim dParam = Expression.Variable(GetType(D), "Key")
+                    Dim dParam = Expression.Parameter(GetType(D), "Key")
 
                     Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
                     DelegateCalls.Add(New KeyValuePair(Of [Delegate], Expression())(Mapper, New Expression() {dParam}))
@@ -238,8 +238,8 @@ Namespace Mapping
                 If DomainType.IsEnum Then
                     Dim UnderlyingType = DomainType.GetEnumUnderlyingType
                     Dim Mapper = AbsResolver.ResolveAggregator(CreatePair(UnderlyingType, RangeType))
-                    Dim dParam = Expression.Variable(DomainType, "Key")
-                    Dim rParam = Expression.Variable(GetType(R), "Value")
+                    Dim dParam = Expression.Parameter(DomainType, "Key")
+                    Dim rParam = Expression.Parameter(GetType(R), "Value")
 
                     Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
                     DelegateCalls.Add(New KeyValuePair(Of [Delegate], Expression())(Mapper, New Expression() {Expression.ConvertChecked(dParam, UnderlyingType), rParam}))
