@@ -327,22 +327,16 @@ Namespace Mapping
 
                 If Constructor IsNot Nothing Then
                     Dim CreateThis = Expression.[New](Constructor, Context.DelegateExpressions)
-                    Dim FunctionLambda = Expression.Lambda(Expression.Block(CreateThis), New ParameterExpression() {dParam})
+                    Dim FunctionLambda = Expression.Lambda(CreateThis, New ParameterExpression() {dParam})
 
                     Return CreateDelegate(Context.ClosureParam, Context.Closure, FunctionLambda)
                 Else
-                    Dim rParam = Expression.Parameter(RangeType, "Value")
-                    Dim CreateThis = Expression.Assign(rParam, Expression.[New](RangeType))
-                    Dim Statements As New List(Of Expression)
-                    Statements.Add(CreateThis)
-                    For Each Pair In FieldsAndProperties.Zip(Context.DelegateExpressions, Function(m, e) New With {.Member = m.Member, .Type = m.Type, .MapperCall = e})
-                        Dim Type = Pair.Type
-                        Dim FieldOrPropertyExpr = CreateFieldOrPropertyExpression(rParam, Pair.Member)
-                        Statements.Add(Expression.Assign(FieldOrPropertyExpr, Pair.MapperCall))
+                    Dim CreateThis = Expression.[New](RangeType)
+                    Dim MemberBindings As New List(Of MemberBinding)
+                    For Each Pair In FieldsAndProperties.Zip(Context.DelegateExpressions, Function(m, e) New With {.Member = m.Member, .MapperCall = e})
+                        MemberBindings.Add(Expression.Bind(Pair.Member, Pair.MapperCall))
                     Next
-                    Statements.Add(rParam)
-
-                    Dim FunctionLambda = Expression.Lambda(Expression.Block(New ParameterExpression() {rParam}, Statements), New ParameterExpression() {dParam})
+                    Dim FunctionLambda = Expression.Lambda(Expression.MemberInit(CreateThis, MemberBindings.ToArray()), New ParameterExpression() {dParam})
 
                     Return CreateDelegate(Context.ClosureParam, Context.Closure, FunctionLambda)
                 End If
@@ -386,13 +380,13 @@ Namespace Mapping
                     DelegateCalls.Add(New KeyValuePair(Of [Delegate], Expression())(Inner.ResolveAggregator(Pair), New Expression() {FieldOrPropertyExpr, rParam}))
                 Next
                 Dim Context = CreateDelegateExpressionContext(DelegateCalls)
-                Dim Block As Expression
+                Dim Body As Expression
                 If DelegateCalls.Count > 0 Then
-                    Block = Expression.Block(Context.DelegateExpressions)
+                    Body = Expression.Block(Context.DelegateExpressions)
                 Else
-                    Block = Expression.Empty
+                    Body = Expression.Empty
                 End If
-                Dim FunctionLambda = Expression.Lambda(GetType(Action(Of ,)).MakeGenericType(DomainType, RangeType), Block, New ParameterExpression() {dParam, rParam})
+                Dim FunctionLambda = Expression.Lambda(GetType(Action(Of ,)).MakeGenericType(DomainType, RangeType), Body, New ParameterExpression() {dParam, rParam})
 
                 Return CreateDelegate(Context.ClosureParam, Context.Closure, FunctionLambda)
             End If
