@@ -3,7 +3,7 @@
 '  File:        ObjectMapperResolvers.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Object映射器解析器
-'  Version:     2010.11.16.
+'  Version:     2010.11.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -318,7 +318,7 @@ Namespace Mapping
                 End If
                 If FieldsAndProperties Is Nothing Then Return Nothing
 
-                Dim dParam = Expression.Variable(DomainType, "Key")
+                Dim dParam = Expression.Parameter(DomainType, "Key")
                 Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
                 For Each Pair In FieldsAndProperties
                     DelegateCalls.Add(CreatePair(Inner.ResolveProjector(Pair), New Expression() {dParam}))
@@ -331,7 +331,7 @@ Namespace Mapping
 
                     Return CreateDelegate(Context.ClosureParam, Context.Closure, FunctionLambda)
                 Else
-                    Dim rParam = Expression.Variable(RangeType, "Value")
+                    Dim rParam = Expression.Parameter(RangeType, "Value")
                     Dim CreateThis = Expression.Assign(rParam, Expression.[New](RangeType))
                     Dim Statements As New List(Of Expression)
                     Statements.Add(CreateThis)
@@ -378,8 +378,8 @@ Namespace Mapping
                 End If
                 If FieldsAndProperties Is Nothing Then Return Nothing
 
-                Dim dParam = Expression.Variable(DomainType, "Key")
-                Dim rParam = Expression.Variable(RangeType, "Value")
+                Dim dParam = Expression.Parameter(DomainType, "Key")
+                Dim rParam = Expression.Parameter(RangeType, "Value")
                 Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
                 For Each Pair In FieldsAndProperties
                     Dim FieldOrPropertyExpr = CreateFieldOrPropertyExpression(dParam, Pair.Member)

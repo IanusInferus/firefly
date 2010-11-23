@@ -1,4 +1,8 @@
-﻿2010.11.21
+﻿2010.11.23
+Firefly.Core.Mapping:
+修正所有Linq表达式的参数使用了Expression.Variable产生这个写法问题。
+
+2010.11.21
 Doc:
 从“萤火虫汉化框架”改名“萤火虫框架”。
 
