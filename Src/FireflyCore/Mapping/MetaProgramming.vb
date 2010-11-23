@@ -164,7 +164,7 @@ Namespace Mapping
 
         Public Class DelegateExpressionContext
             Public ClosureParam As ParameterExpression
-            Public Closure As Closure
+            Public Closure As Object()
             Public DelegateExpressions As Expression()
         End Class
         Public Function CreateFieldOrPropertyExpression(ByVal Param As ParameterExpression, ByVal Member As MemberInfo) As MemberExpression
@@ -194,12 +194,12 @@ Namespace Mapping
                 Next
             End With
             Dim ClosureParam As ParameterExpression = Nothing
-            Dim Closure As Closure = Nothing
+            Dim Closure As Object() = Nothing
             Dim AccessClosure As Func(Of Integer, Expression) = Nothing
             If ClosureObjects.Count > 0 Then
-                Closure = New Closure(ClosureObjects.ToArray, Nothing)
-                ClosureParam = Expression.Parameter(GetType(Closure), "<>_Closure")
-                Dim ArrayIndex = Function(cl As Closure, i As Integer) cl.Constants(i)
+                Closure = ClosureObjects.ToArray
+                ClosureParam = Expression.Parameter(GetType(Object()), "<>_Closure")
+                Dim ArrayIndex = Function(cl As Object(), i As Integer) cl(i)
                 AccessClosure = Function(n) Expression.Call(ArrayIndex.Method, ClosureParam, Expression.Constant(n))
             End If
             Dim DelegateExpressions As New List(Of Expression)
@@ -220,7 +220,7 @@ Namespace Mapping
             End With
             Return New DelegateExpressionContext With {.ClosureParam = ClosureParam, .Closure = Closure, .DelegateExpressions = DelegateExpressions.ToArray()}
         End Function
-        Public Function CreateDelegate(ByVal ClosureParam As ParameterExpression, ByVal Closure As Closure, ByVal Expr As LambdaExpression) As [Delegate]
+        Public Function CreateDelegate(ByVal ClosureParam As ParameterExpression, ByVal Closure As Object(), ByVal Expr As LambdaExpression) As [Delegate]
             Dim FunctionLambda = Expr
             If Closure IsNot Nothing Then
                 FunctionLambda = Expression.Lambda(FunctionLambda, New ParameterExpression() {ClosureParam})
@@ -228,7 +228,7 @@ Namespace Mapping
 
             Dim Compiled = FunctionLambda.Compile()
             If Closure IsNot Nothing Then
-                Compiled = DirectCast(DirectCast(Compiled, Func(Of Closure, [Delegate]))(Closure), [Delegate])
+                Compiled = DirectCast(DirectCast(Compiled, Func(Of Object(), [Delegate]))(Closure), [Delegate])
             End If
             Return Compiled
         End Function
@@ -256,7 +256,7 @@ Namespace Mapping
             Dim AllParameters = ProvidedParameters.Concat(NotProvidedParameters).ToArray
             Dim mParam = Expression.Parameter(Method.GetType(), "<>_m")
             Dim InnerLambda = Expression.Lambda(Expression.Invoke(mParam, AllParameters), NotProvidedParameters)
-            Dim OuterLambda = Expression.Lambda(InnerLambda, (New ParameterExpression() {mParam}).Concat(ProvidedParameters))
+            Dim OuterLambda = Expression.Lambda(InnerLambda, (New ParameterExpression() {mParam}).Concat(ProvidedParameters).ToArray())
             Dim OuterDelegate = OuterLambda.Compile()
             Dim ParamObjects = (New Object() {Method}).Concat(Parameters).ToArray()
             Return OuterDelegate.StaticDynamicInvoke(Of Object(), [Delegate])(ParamObjects)
