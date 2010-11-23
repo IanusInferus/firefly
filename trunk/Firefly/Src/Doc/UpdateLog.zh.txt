@@ -2,6 +2,8 @@
 Firefly.Core.Mapping:
 修正所有Linq表达式的参数使用了Expression.Variable产生这个写法问题。
 优化部分代码。
+Firefly.Core.Setting:
+优化部分代码。
 
 2010.11.21
 Doc:
