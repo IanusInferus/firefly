@@ -3,7 +3,7 @@
 '  File:        MetaProgramming.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 元编程
-'  Version:     2010.11.17.
+'  Version:     2010.11.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -198,7 +198,7 @@ Namespace Mapping
             Dim AccessClosure As Func(Of Integer, Expression) = Nothing
             If ClosureObjects.Count > 0 Then
                 Closure = New Closure(ClosureObjects.ToArray, Nothing)
-                ClosureParam = Expression.Variable(GetType(Closure), "<>_Closure")
+                ClosureParam = Expression.Parameter(GetType(Closure), "<>_Closure")
                 Dim ArrayIndex = Function(cl As Closure, i As Integer) cl.Constants(i)
                 AccessClosure = Function(n) Expression.Call(ArrayIndex.Method, ClosureParam, Expression.Constant(n))
             End If
@@ -237,10 +237,10 @@ Namespace Mapping
             Dim MI = InnerFunction.Method.ReturnType
             Dim MO = OuterMethod.Method.GetParameters.Single.ParameterType
 
-            Dim iParam = Expression.Variable(InnerFunction.GetType(), "<>_i")
-            Dim oParam = Expression.Variable(OuterMethod.GetType(), "<>_o")
+            Dim iParam = Expression.Parameter(InnerFunction.GetType(), "<>_i")
+            Dim oParam = Expression.Parameter(OuterMethod.GetType(), "<>_o")
 
-            Dim vParam = Expression.Variable(D, "<>_v")
+            Dim vParam = Expression.Parameter(D, "<>_v")
             Dim InnerLambda As LambdaExpression
             If MI Is MO Then
                 InnerLambda = Expression.Lambda(Expression.Invoke(oParam, Expression.Invoke(iParam, vParam)), vParam)
@@ -251,10 +251,10 @@ Namespace Mapping
             Return OuterLambda.Compile().StaticDynamicInvoke(Of [Delegate], [Delegate], [Delegate])(InnerFunction, OuterMethod)
         End Function
         <Extension()> Public Function Curry(ByVal Method As [Delegate], ByVal ParamArray Parameters As Object()) As [Delegate]
-            Dim ProvidedParameters = Method.Method.GetParameters().Take(Parameters.Length).Select(Function(p) Expression.Variable(p.ParameterType, p.Name)).ToArray()
-            Dim NotProvidedParameters = Method.Method.GetParameters().SubArray(Parameters.Length).Select(Function(p) Expression.Variable(p.ParameterType, p.Name)).ToArray()
+            Dim ProvidedParameters = Method.Method.GetParameters().Take(Parameters.Length).Select(Function(p) Expression.Parameter(p.ParameterType, p.Name)).ToArray()
+            Dim NotProvidedParameters = Method.Method.GetParameters().SubArray(Parameters.Length).Select(Function(p) Expression.Parameter(p.ParameterType, p.Name)).ToArray()
             Dim AllParameters = ProvidedParameters.Concat(NotProvidedParameters).ToArray
-            Dim mParam = Expression.Variable(Method.GetType(), "<>_m")
+            Dim mParam = Expression.Parameter(Method.GetType(), "<>_m")
             Dim InnerLambda = Expression.Lambda(Expression.Invoke(mParam, AllParameters), NotProvidedParameters)
             Dim OuterLambda = Expression.Lambda(InnerLambda, (New ParameterExpression() {mParam}).Concat(ProvidedParameters))
             Dim OuterDelegate = OuterLambda.Compile()
@@ -262,10 +262,10 @@ Namespace Mapping
             Return OuterDelegate.StaticDynamicInvoke(Of Object(), [Delegate])(ParamObjects)
         End Function
         <Extension()> Public Function AdaptFunction(ByVal Method As [Delegate], ByVal ReturnType As Type, ByVal ParamArray RequiredParameterTypes As Type()) As [Delegate]
-            Dim Parameters = Method.Method.GetParameters().Zip(RequiredParameterTypes, Function(p, r) New With {.InnerType = p.ParameterType, .OuterType = r, .OuterParamExpr = Expression.Variable(r, p.Name)}).ToArray
+            Dim Parameters = Method.Method.GetParameters().Zip(RequiredParameterTypes, Function(p, r) New With {.InnerType = p.ParameterType, .OuterType = r, .OuterParamExpr = Expression.Parameter(r, p.Name)}).ToArray
 
             Dim ClosureParam As ParameterExpression = Nothing
-            ClosureParam = Expression.Variable(GetType([Delegate]), "<>_Closure")
+            ClosureParam = Expression.Parameter(GetType([Delegate]), "<>_Closure")
             Dim ConvertExpressions As New List(Of Expression)
             For Each p In Parameters
                 ConvertExpressions.Add(Expression.ConvertChecked(p.OuterParamExpr, p.InnerType))
