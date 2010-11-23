@@ -271,7 +271,7 @@ Namespace Mapping
                 ConvertExpressions.Add(Expression.ConvertChecked(p.OuterParamExpr, p.InnerType))
             Next
             Dim Ret = Expression.ConvertChecked(Expression.Invoke(Expression.ConvertChecked(ClosureParam, Method.GetType()), ConvertExpressions), ReturnType)
-            Dim InnerLambda = Expression.Lambda(Ret, Parameters.Select(Function(p) p.OuterParamExpr))
+            Dim InnerLambda = Expression.Lambda(Ret, Parameters.Select(Function(p) p.OuterParamExpr).ToArray())
             Dim OuterLambda = Expression.Lambda(Expression.ConvertChecked(InnerLambda, GetType([Delegate])), ClosureParam)
 
             Dim OuterDelegate = DirectCast(OuterLambda.Compile(), Func(Of [Delegate], [Delegate]))
