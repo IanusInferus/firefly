@@ -3,7 +3,7 @@
 '  File:        Xml.vb
 '  Location:    Firefly.Setting <Visual Basic .Net>
 '  Description: Xml读写
-'  Version:     2010.11.16.
+'  Version:     2010.11.23.
 '  Copyright:   F.R.C.
 '
 '==========================================================================
@@ -78,14 +78,9 @@ Namespace Setting
                 Dim DummyMethod = DirectCast(AddressOf PutReaderTranslator(Of DummyType, DummyType2), Action(Of XmlSerializer, IMapper))
                 Dim f = DummyMethod.MakeDelegateMethodFromDummy(
                     Function(Type) As Type
-                        Select Case Type
-                            Case GetType(DummyType)
-                                Return SourceType
-                            Case GetType(DummyType2)
-                                Return TargetType
-                            Case Else
-                                Return Type
-                        End Select
+                        If Type Is GetType(DummyType) Then Return SourceType
+                        If Type Is GetType(DummyType2) Then Return TargetType
+                        Return Type
                     End Function
                 )
                 DirectCast(f, Action(Of XmlSerializer, IMapper))(xs, m)
@@ -136,14 +131,9 @@ Namespace Setting
                 Dim DummyMethod = DirectCast(AddressOf PutWriterTranslator(Of DummyType, DummyType2), Action(Of XmlSerializer, IMapper))
                 Dim f = DummyMethod.MakeDelegateMethodFromDummy(
                     Function(Type) As Type
-                        Select Case Type
-                            Case GetType(DummyType)
-                                Return SourceType
-                            Case GetType(DummyType2)
-                                Return TargetType
-                            Case Else
-                                Return Type
-                        End Select
+                        If Type Is GetType(DummyType) Then Return SourceType
+                        If Type Is GetType(DummyType2) Then Return TargetType
+                        Return Type
                     End Function
                 )
                 DirectCast(f, Action(Of XmlSerializer, IMapper))(xs, m)
