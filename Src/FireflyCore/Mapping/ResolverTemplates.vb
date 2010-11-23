@@ -367,7 +367,7 @@ Namespace Mapping
                 Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
                 For Each Pair In FieldsAndProperties
                     Dim FieldOrPropertyExpr = CreateFieldOrPropertyExpression(dParam, Pair.Member)
-                    DelegateCalls.Add(New KeyValuePair(Of [Delegate], Expression())(Inner.ResolveAggregator(Pair), New Expression() {FieldOrPropertyExpr, rParam}))
+                    DelegateCalls.Add(CreatePair(Inner.ResolveAggregator(Pair), New Expression() {FieldOrPropertyExpr, rParam}))
                 Next
                 Dim Context = CreateDelegateExpressionContext(DelegateCalls)
                 Dim Body As Expression
