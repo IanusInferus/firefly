@@ -133,14 +133,9 @@ Namespace Mapping
                         Dim DummyMethod = DirectCast(AddressOf Inner.ResolveProjector(Of DummyType, List(Of DummyType)), Func(Of Func(Of D, List(Of DummyType))))
                         Dim m = DummyMethod.MakeDelegateMethodFromDummy(
                             Function(Type As Type) As Type
-                                Select Case Type
-                                    Case GetType(DummyType)
-                                        Return ElementType
-                                    Case GetType(List(Of DummyType))
-                                        Return ConcreteCollectionType
-                                    Case Else
-                                        Return Type
-                                End Select
+                                If Type Is GetType(DummyType) Then Return ElementType
+                                If Type Is GetType(List(Of DummyType)) Then Return ConcreteCollectionType
+                                Return Type
                             End Function
                         )
                         Return m.MakeDelegateMethodFromDummy(ElementType).StaticDynamicInvoke(Of [Delegate])()
@@ -260,14 +255,9 @@ Namespace Mapping
                         Dim DummyMethod = DirectCast(AddressOf Inner.ResolveAggregator(Of DummyType, List(Of DummyType)), Func(Of Action(Of List(Of DummyType), R)))
                         Dim m = DummyMethod.MakeDelegateMethodFromDummy(
                             Function(Type As Type) As Type
-                                Select Case Type
-                                    Case GetType(DummyType)
-                                        Return ElementType
-                                    Case GetType(List(Of DummyType))
-                                        Return ConcreteCollectionType
-                                    Case Else
-                                        Return Type
-                                End Select
+                                If Type Is GetType(DummyType) Then Return ElementType
+                                If Type Is GetType(List(Of DummyType)) Then Return ConcreteCollectionType
+                                Return Type
                             End Function
                         )
                         Return m.MakeDelegateMethodFromDummy(ElementType).StaticDynamicInvoke(Of [Delegate])()
