@@ -34,7 +34,7 @@ Public Module MappingTest
         Public Shared Operator =(ByVal Left As SerializerTestObject, ByVal Right As SerializerTestObject) As Boolean
             If Left Is Nothing AndAlso Right Is Nothing Then Return True
             If Left Is Nothing OrElse Right Is Nothing Then Return False
-            Return Left.i = Right.i AndAlso Left.s = Right.s AndAlso Left.o.h = Right.o.h AndAlso Left.a.ArrayEqual(Right.a) AndAlso Left.l.ToArray.ArrayEqual(Right.l.ToArray) AndAlso Left.l2.ToArray.ArrayEqual(Right.l2.ToArray) AndAlso Left.l3.ToArray.ArrayEqual(Right.l3.ToArray) AndAlso Left.e1 = Right.e1 AndAlso Left.p.Key = Right.p.Key AndAlso Left.p.Value = Right.p.Value AndAlso Left.str = Right.str
+            Return Left.i = Right.i AndAlso Left.s = Right.s AndAlso Left.o.h = Right.o.h AndAlso Left.a.SequenceEqual(Right.a) AndAlso Left.l.ToArray.SequenceEqual(Right.l.ToArray) AndAlso Left.l2.ToArray.SequenceEqual(Right.l2.ToArray) AndAlso Left.l3.ToArray.SequenceEqual(Right.l3.ToArray) AndAlso Left.e1 = Right.e1 AndAlso Left.p.Key = Right.p.Key AndAlso Left.p.Value = Right.p.Value AndAlso Left.str = Right.str
         End Operator
         Public Shared Operator <>(ByVal Left As SerializerTestObject, ByVal Right As SerializerTestObject) As Boolean
             Return Not (Left = Right)

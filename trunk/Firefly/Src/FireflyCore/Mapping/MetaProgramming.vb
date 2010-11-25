@@ -3,7 +3,7 @@
 '  File:        MetaProgramming.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 元编程
-'  Version:     2010.11.23.
+'  Version:     2010.11.25.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -252,7 +252,7 @@ Namespace Mapping
         End Function
         <Extension()> Public Function Curry(ByVal Method As [Delegate], ByVal ParamArray Parameters As Object()) As [Delegate]
             Dim ProvidedParameters = Method.Method.GetParameters().Take(Parameters.Length).Select(Function(p) Expression.Parameter(p.ParameterType, p.Name)).ToArray()
-            Dim NotProvidedParameters = Method.Method.GetParameters().SubArray(Parameters.Length).Select(Function(p) Expression.Parameter(p.ParameterType, p.Name)).ToArray()
+            Dim NotProvidedParameters = Method.Method.GetParameters().Skip(Parameters.Length).Select(Function(p) Expression.Parameter(p.ParameterType, p.Name)).ToArray()
             Dim AllParameters = ProvidedParameters.Concat(NotProvidedParameters).ToArray
             Dim mParam = Expression.Parameter(Method.GetType(), "<>_m")
             Dim InnerLambda = Expression.Lambda(Expression.Invoke(mParam, AllParameters), NotProvidedParameters)
