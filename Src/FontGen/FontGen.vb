@@ -3,7 +3,7 @@
 '  File:        FontGen.vb
 '  Location:    Firefly.FontGen <Visual Basic .Net>
 '  Description: 字库图片生成器
-'  Version:     2010.09.11.
+'  Version:     2010.11.25.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -384,7 +384,7 @@ Public Class FontGen
                 Dim PartGlyphDescriptors = ga.GetGlyphArrangement(gl, PicWidth, PicHeight)
                 Dim pgd = PartGlyphDescriptors.ToArray
                 If pgd.Length = 0 Then Throw New InvalidDataException("PicSizeTooSmallForGlyphOfChar:{0}".Formats(gl(GlyphIndex).c.ToString()))
-                Dim pgl = gl.SubArray(GlyphIndex, pgd.Length)
+                Dim pgl = gl.Skip(GlyphIndex).Take(pgd.Length)
                 Using ImageWriter As New BmpFontImageFileWriter(ChangeExtension(FdPath, "bmp"), BitPerPixel)
                     FdGlyphDescriptionFile.WriteFont(FdPath, TextEncoding.WritingDefault, pgl, pgd, ImageWriter, PicWidth, PicHeight)
                 End Using
