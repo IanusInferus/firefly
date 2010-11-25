@@ -3,7 +3,7 @@
 '  File:        StringCode.vb
 '  Location:    Firefly.TextEncoding <Visual Basic .Net>
 '  Description: 字符串码点信息
-'  Version:     2010.09.11.
+'  Version:     2010.11.25.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -107,7 +107,7 @@ Namespace TextEncoding
 
                     Dim Bytes = New Byte((v.Count \ 2) - 1) {}
                     For n = 0 To Bytes.Length - 1
-                        Bytes(n) = Byte.Parse(v.SubArray(n * 2, 2).ToUTF16B, Globalization.NumberStyles.HexNumber)
+                        Bytes(n) = Byte.Parse(v.Skip(n * 2).Take(2).ToUTF16B, Globalization.NumberStyles.HexNumber)
                     Next
 
                     Codes = New StringEx(Of Byte)(Bytes)

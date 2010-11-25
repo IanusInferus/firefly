@@ -3,7 +3,7 @@
 '  File:        Char32.vb
 '  Location:    Firefly.TextEncoding <Visual Basic .Net>
 '  Description: UTF-32 字符
-'  Version:     2010.09.11.
+'  Version:     2010.11.25.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -11,6 +11,7 @@
 Option Strict On
 Imports System
 Imports System.Collections.Generic
+Imports System.Linq
 Imports System.Text
 Imports System.Text.RegularExpressions
 Imports System.IO
@@ -277,7 +278,7 @@ Namespace TextEncoding
             Dim s32 = s.ToUTF32
             For n = s32.Length - 1 To 0 Step -1
                 If s32(n) <> c Then
-                    Return s32.SubArray(0, n + 1).ToUTF16B
+                    Return s32.Take(n + 1).ToUTF16B
                 End If
             Next
             Return ""
@@ -288,7 +289,7 @@ Namespace TextEncoding
             Dim s32 = s.ToUTF32
             For n = 0 To s32.Length - 1
                 If s32(n) <> c Then
-                    Return s32.SubArray(n).ToUTF16B
+                    Return s32.Skip(n).ToUTF16B
                 End If
             Next
             Return ""

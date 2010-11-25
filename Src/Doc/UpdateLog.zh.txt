@@ -1,4 +1,9 @@
-﻿2010.11.23
+﻿2010.11.25
+Firefly.Core:
+在NumericOperations中添加IIf。
+将ArrayOperations修改为CollectionOperations，删去部分由于Linq无用的函数，增加一些函数。
+
+2010.11.23
 Firefly.Core.Mapping:
 修正所有Linq表达式的参数使用了Expression.Variable产生这个写法问题。
 优化部分代码。
