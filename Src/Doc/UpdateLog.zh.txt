@@ -1,4 +1,8 @@
-﻿2010.11.30
+﻿2010.12.01
+Firefly.Core.Streaming:
+重构StreamEx，利用扩展方法模拟trait或者mixin的一些特性。
+
+2010.11.30
 Firefly.Core.Streaming:
 从根命名空间分离Stream相关类型。所有相关源代码需要引入Firefly.Streaming。
 *:

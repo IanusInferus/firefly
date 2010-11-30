@@ -1,9 +1,9 @@
 ﻿'==========================================================================
 '
-'  File:        StreamCores.vb
+'  File:        Streams.vb
 '  Location:    Firefly.Streaming <Visual Basic .Net>
-'  Description: 流的核
-'  Version:     2010.11.30.
+'  Description: 流
+'  Version:     2010.12.01.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -12,22 +12,37 @@ Option Strict On
 Imports System
 
 Namespace Streaming
-    Public Interface IReadableStreamCore
+    Public Interface IReadableStream
         Function ReadByte() As Byte
         Sub Read(ByVal Buffer As Byte(), ByVal Offset As Integer, ByVal Count As Integer)
     End Interface
 
-    Public Interface IWritableStreamCore
+    Public Interface IWritableStream
         Sub WriteByte(ByVal b As Byte)
         Sub Write(ByVal Buffer As Byte(), ByVal Offset As Integer, ByVal Count As Integer)
     End Interface
 
-    Public Interface ISeekableStreamCore
+    Public Interface ISeekableStream
         Property Position() As Int64
         ReadOnly Property Length() As Int64
     End Interface
 
-    Public Interface IResizableStreamCore
+    Public Interface IResizableStream
         Sub SetLength(ByVal Value As Int64)
+    End Interface
+
+    Public Interface IReadableSeekableStream
+        Inherits IReadableStream
+        Inherits ISeekableStream
+    End Interface
+
+    Public Interface IReadableWritableSeekableStream
+        Inherits IReadableSeekableStream
+        Inherits IWritableStream
+    End Interface
+
+    Public Interface IStream
+        Inherits IReadableWritableSeekableStream
+        Inherits IResizableStream
     End Interface
 End Namespace
