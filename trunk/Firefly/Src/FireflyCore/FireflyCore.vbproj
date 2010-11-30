@@ -57,7 +57,6 @@
     <Compile Include="Compressing\LZ77Reversed.vb" />
     <Compile Include="Compressing\Pointer.vb" />
     <Compile Include="Compressing\RLE.vb" />
-    <Compile Include="Streaming\StreamCores.vb" />
     <Compile Include="Mapping\BinarySerializer.vb" />
     <Compile Include="Streaming\BitStream.vb" />
     <Compile Include="Core\CommandLine.vb" />
@@ -68,10 +67,10 @@
     <Compile Include="Core\N32.vb" />
     <Compile Include="Mapping\ObjectMapper.vb" />
     <Compile Include="Streaming\StreamAdapters.vb" />
-    <Compile Include="Streaming\StreamExComplex.vb" />
-    <Compile Include="Streaming\StreamExFloats.vb" />
-    <Compile Include="Streaming\StreamExInts.vb" />
-    <Compile Include="Streaming\StreamExStrings.vb" />
+    <Compile Include="Streaming\StreamExCompatibility.vb" />
+    <Compile Include="Streaming\StreamComplex.vb" />
+    <Compile Include="Streaming\StreamFloats.vb" />
+    <Compile Include="Streaming\StreamInts.vb" />
     <Compile Include="Core\StringEx.vb" />
     <Compile Include="Core\CollectionOperations.vb" />
     <Compile Include="Core\BitOperations.vb" />
@@ -101,6 +100,7 @@
     <Compile Include="Packaging\PackageDiscrete.vb" />
     <Compile Include="Setting\Xml.vb" />
     <Compile Include="Setting\XmlCompatibility.vb" />
+    <Compile Include="Streaming\Streams.vb" />
     <Compile Include="TextEncoding\ControlChars.vb" />
     <Compile Include="TextEncoding\Encoding.vb" />
     <Compile Include="TextEncoding\EncodingString.vb" />
