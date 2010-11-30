@@ -3,7 +3,7 @@
 '  File:        PackageFixed.vb
 '  Location:    Firefly.Packaging <Visual Basic .Net>
 '  Description: 固定索引文件包
-'  Version:     2010.05.11.
+'  Version:     2010.11.30.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -13,6 +13,7 @@ Option Compare Text
 Imports System
 Imports System.IO
 Imports System.Collections.Generic
+Imports Firefly.Streaming
 
 Namespace Packaging
     ''' <summary>

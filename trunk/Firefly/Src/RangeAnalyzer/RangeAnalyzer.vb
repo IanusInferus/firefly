@@ -3,7 +3,7 @@
 '  File:        RangeAnalyzer.vb
 '  Location:    Firefly.RangeAnalyzer <Visual Basic .Net>
 '  Description: 范围分析器
-'  Version:     2010.08.28.
+'  Version:     2010.11.30.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -14,6 +14,7 @@ Imports System.IO
 Imports System.Diagnostics
 Imports System.Windows.Forms
 Imports Firefly
+Imports Firefly.Streaming
 Imports Firefly.GUI
 
 Public Class RangeAnalyzer

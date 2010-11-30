@@ -3,7 +3,7 @@
 '  File:        LOC.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: LOC文件格式类(版本2)(图形文本)
-'  Version:     2010.09.14.
+'  Version:     2010.11.30.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -16,6 +16,7 @@ Imports System.Text.RegularExpressions
 Imports System.Drawing
 Imports Firefly
 Imports Firefly.TextEncoding
+Imports Firefly.Streaming
 Imports Firefly.Imaging
 Imports Firefly.Glyphing
 

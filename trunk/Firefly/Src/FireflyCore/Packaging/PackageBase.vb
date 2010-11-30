@@ -3,7 +3,7 @@
 '  File:        PackageBase.vb
 '  Location:    Firefly.Packaging <Visual Basic .Net>
 '  Description: 文件包基类
-'  Version:     2010.09.14.
+'  Version:     2010.11.30.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -16,6 +16,7 @@ Imports System.Collections.Generic
 Imports System.Linq
 Imports System.Text.RegularExpressions
 Imports Firefly.TextEncoding
+Imports Firefly.Streaming
 
 Namespace Packaging
     ''' <summary>

@@ -3,7 +3,7 @@
 '  File:        ISO.vb
 '  Location:    Firefly.Packaging <Visual Basic .Net>
 '  Description: ISO类
-'  Version:     2010.08.28.
+'  Version:     2010.11.30.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -15,6 +15,7 @@ Imports System.Collections.Generic
 Imports System.IO
 Imports System.Diagnostics
 Imports Firefly.TextEncoding
+Imports Firefly.Streaming
 
 Namespace Packaging
     Public Class ISO

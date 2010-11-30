@@ -3,7 +3,7 @@
 '  File:        Bmp.vb
 '  Location:    Firefly.Imaging <Visual Basic .Net>
 '  Description: 基本Bmp文件流类
-'  Version:     2010.09.14.
+'  Version:     2010.11.30.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -13,6 +13,7 @@ Imports System
 Imports System.Drawing
 Imports System.IO
 Imports Firefly.TextEncoding
+Imports Firefly.Streaming
 
 Namespace Imaging
 

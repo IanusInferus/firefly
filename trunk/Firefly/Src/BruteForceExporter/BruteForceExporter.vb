@@ -3,7 +3,7 @@
 '  File:        BruteForceExporter.vb
 '  Location:    Firefly.BruteForceExporter <Visual Basic .Net>
 '  Description: 暴力文本导出器
-'  Version:     2010.08.28.
+'  Version:     2010.11.30.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -15,6 +15,7 @@ Imports System.Text.RegularExpressions
 Imports System.IO
 Imports Firefly
 Imports Firefly.TextEncoding
+Imports Firefly.Streaming
 Imports Firefly.Texting
 Imports Firefly.Setting
 

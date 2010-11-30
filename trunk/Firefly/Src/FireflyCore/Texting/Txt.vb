@@ -3,7 +3,7 @@
 '  File:        Txt.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: 文本文件格式
-'  Version:     2010.11.10.
+'  Version:     2010.11.30.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -12,6 +12,7 @@ Imports System
 Imports System.IO
 Imports System.Text
 Imports Firefly.TextEncoding
+Imports Firefly.Streaming
 
 Namespace Texting
     Public NotInheritable Class Txt
