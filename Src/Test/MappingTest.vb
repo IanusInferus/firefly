@@ -1,16 +1,14 @@
 ﻿Imports System
 Imports System.Collections.Generic
 Imports System.Linq
-Imports System.Xml.Linq
-Imports System.IO
 Imports System.Diagnostics.Debug
 Imports System.Text.RegularExpressions
 Imports Firefly
 Imports Firefly.TextEncoding
+Imports Firefly.Streaming
 Imports Firefly.Texting
 Imports Firefly.Mapping
 Imports Firefly.Setting
-Imports System.Xml
 
 Public Module MappingTest
     Public Enum SerializerTestEnum

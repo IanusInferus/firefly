@@ -3,7 +3,7 @@
 '  File:        PackageDiscrete.vb
 '  Location:    Firefly.Packaging <Visual Basic .Net>
 '  Description: 离散数据文件包
-'  Version:     2010.08.30.
+'  Version:     2010.11.30.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -13,6 +13,7 @@ Option Compare Text
 Imports System
 Imports System.IO
 Imports System.Collections.Generic
+Imports Firefly.Streaming
 
 Namespace Packaging
     ''' <summary>
@@ -228,7 +229,7 @@ Namespace Packaging
         End Sub
 
         ''' <summary>已重载。替换包中的一个文件。</summary>
-        Protected Overrides Sub ReplaceSingleInner(ByVal File As FileDB, ByVal sp As Firefly.ZeroPositionStreamPasser)
+        Protected Overrides Sub ReplaceSingleInner(ByVal File As FileDB, ByVal sp As ZeroPositionStreamPasser)
             Dim s = sp.GetStream
 
             If File.Address <> FileAddressInPhysicalFileDB(File) Then Throw New ArgumentException("PhysicalFileAddressErrorPointing")

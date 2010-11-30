@@ -3,7 +3,7 @@
 '  File:        Gif.vb
 '  Location:    Firefly.Imaging <Visual Basic .Net>
 '  Description: 基本Gif文件类
-'  Version:     2010.09.14.
+'  Version:     2010.11.30.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -14,6 +14,7 @@ Imports System.Math
 Imports System.Collections.Generic
 Imports System.IO
 Imports Firefly.TextEncoding
+Imports Firefly.Streaming
 
 Namespace Imaging
     ''' <summary>基本Gif文件类</summary>
