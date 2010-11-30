@@ -1,4 +1,10 @@
-﻿2010.11.25
+﻿2010.11.30
+Firefly.Core.Streaming:
+从根命名空间分离Stream相关类型。所有相关源代码需要引入Firefly.Streaming。
+*:
+按照Stream的相关修改进行变更。
+
+2010.11.25
 Firefly.Core:
 在NumericOperations中添加IIf。
 将ArrayOperations修改为CollectionOperations，删去部分由于Linq无用的函数，增加一些函数。

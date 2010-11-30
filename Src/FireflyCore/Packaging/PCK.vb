@@ -3,7 +3,7 @@
 '  File:        PCK.vb
 '  Location:    Firefly.Packaging <Visual Basic .Net>
 '  Description: PCK文件流类(一个标准的文件包)
-'  Version:     2010.09.11.
+'  Version:     2010.11.30.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -13,6 +13,7 @@ Imports System
 Imports System.Math
 Imports System.IO
 Imports System.Collections.Generic
+Imports Firefly.Streaming
 
 Namespace Packaging
     ''' <summary>PCK文件流类</summary>

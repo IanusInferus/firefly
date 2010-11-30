@@ -3,7 +3,7 @@
 '  File:        FdGlyphDescriptionFile.vb
 '  Location:    Firefly.TextEncoding <Visual Basic .Net>
 '  Description: fd字形描述文件
-'  Version:     2010.10.11.
+'  Version:     2010.10.30.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -17,6 +17,7 @@ Imports System.Text.RegularExpressions
 Imports System.Drawing
 Imports System.IO
 Imports Firefly.TextEncoding
+Imports Firefly.Streaming
 Imports Firefly.Texting
 Imports Firefly.Imaging
 

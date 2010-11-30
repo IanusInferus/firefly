@@ -3,6 +3,7 @@ Imports System.Collections.Generic
 Imports System.Diagnostics.Debug
 Imports System.Windows.Forms
 Imports Firefly
+Imports Firefly.Streaming
 Imports Firefly.Compressing
 Imports Firefly.TextEncoding
 Imports Firefly.GUI

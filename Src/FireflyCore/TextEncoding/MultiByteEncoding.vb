@@ -3,7 +3,7 @@
 '  File:        MultiByteEncoding.vb
 '  Location:    Firefly.TextEncoding <Visual Basic .Net>
 '  Description: 多字节编码
-'  Version:     2010.09.11.
+'  Version:     2010.11.30.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -15,6 +15,7 @@ Imports System.Linq
 Imports System.IO
 Imports System.Text
 Imports System.Text.RegularExpressions
+Imports Firefly.Streaming
 
 Namespace TextEncoding
     Public NotInheritable Class MultiByteEncoding
