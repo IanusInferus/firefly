@@ -3,7 +3,7 @@
 '  File:        CompressorSelector.vb
 '  Location:    Firefly.Compressing <Visual Basic .Net>
 '  Description: 压缩方法选择器
-'  Version:     2008.11.08.
+'  Version:     2010.12.01.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -32,7 +32,7 @@ Namespace Compressing
     ''' 能够对数据尝试输入的一组压缩方法，返回最小的或第一个小于指定大小的压缩数据。
     ''' </summary>
     Public Class CompressorSelector
-        Protected Compressors As Compress()
+        Private Compressors As Compress()
 
         ''' <summary>
         ''' 靠前的压缩方法会被优先使用。
