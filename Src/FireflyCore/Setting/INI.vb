@@ -4,7 +4,7 @@
 '  Location:    Firefly.Setting <Visual Basic .Net>
 '  Description: INI控制类及相关
 '  Created:     2004.10.31.09:33:47(GMT+08:00)
-'  Version:     0.6 2010.02.22.
+'  Version:     0.6 2010.12.01.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -488,26 +488,26 @@ Namespace Setting
     ''' 
     ''' </remarks>
     Public Class IniLocalization
-        Protected LanRes As Ini
-        Protected LanFull As String
+        Private LanRes As Ini
+        Private LanFull As String
         ReadOnly Property LanguageIndentiySignFull() As String
             Get
                 Return LanFull
             End Get
         End Property
-        Protected LanParent As String
+        Private LanParent As String
         ReadOnly Property LanguageIndentiySignParent() As String
             Get
                 Return LanParent
             End Get
         End Property
-        Protected LanNative As String
+        Private LanNative As String
         ReadOnly Property LanguageIndentiySignNative() As String
             Get
                 Return LanNative
             End Get
         End Property
-        Protected LanDefault As String
+        Private LanDefault As String
         ReadOnly Property DefaultLanguageIndentiySign() As String
             Get
                 Return LanDefault

@@ -3,7 +3,7 @@
 '  File:        ArrayStream.vb
 '  Location:    Firefly.Streaming <Visual Basic .Net>
 '  Description: 数组流
-'  Version:     2010.11.30.
+'  Version:     2010.12.01.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -146,40 +146,9 @@ Namespace Streaming
             Write(Buffer, 0, LeftLength)
         End Sub
 
-#Region " IDisposable 支持 "
-        ''' <summary>释放托管对象或间接非托管对象(Stream等)。可在这里将大型字段设置为 null。</summary>
-        Protected Sub DisposeManagedResource()
-            BaseArray = Nothing
-        End Sub
-
-        ''' <summary>释放直接非托管对象(Handle等)。可在这里将大型字段设置为 null。</summary>
-        Protected Sub DisposeUnmanagedResource()
-        End Sub
-
-        '检测冗余的调用
-        Private DisposedValue As Boolean = False
-        ''' <summary>释放流的资源。请优先覆盖DisposeManagedResource、DisposeUnmanagedResource、DisposeNullify方法。如果你直接保存非托管对象(Handle等)，请覆盖Finalize方法，并在其中调用Dispose(False)。</summary>
-        Protected Sub Dispose(ByVal disposing As Boolean)
-            If DisposedValue Then Return
-            DisposedValue = True
-            If disposing Then
-                DisposeManagedResource()
-            End If
-            DisposeUnmanagedResource()
-        End Sub
-
         ''' <summary>释放流的资源。</summary>
         Public Sub Dispose() Implements IDisposable.Dispose
-            ' 不要更改此代码。
-            Dispose(True)
-            GC.SuppressFinalize(Me)
+            BaseArray = Nothing
         End Sub
-
-        ''' <summary>析构。</summary>
-        Protected Overrides Sub Finalize()
-            Dispose(False)
-        End Sub
-#End Region
-
     End Class
 End Namespace

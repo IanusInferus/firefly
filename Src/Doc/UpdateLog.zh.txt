@@ -5,6 +5,8 @@ Firefly.Core.Streaming:
 按照Stream的相关修改进行变更。
 MappingGen:
 修正无参数时不显示帮助信息的问题。
+Firefly.Core.Compressing,Firefly.Core.Setting,Firefly.Core.TextEncoding:
+清除类继承，清除Protected标记。目前Core中只有Firefly.Core.Packaging还有类继承。
 
 2010.11.30
 Firefly.Core.Streaming:
