@@ -3,7 +3,7 @@
 '  File:        CollectionOperations.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 集合操作
-'  Version:     2010.11.25.
+'  Version:     2010.12.01.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -16,6 +16,10 @@ Imports System.Runtime.CompilerServices
 
 ''' <summary>数组操作</summary>
 Public Module CollectionOperations
+    Public Function CreatePair(Of TKey, TValue)(ByVal Key As TKey, ByVal Value As TValue) As KeyValuePair(Of TKey, TValue)
+        Return New KeyValuePair(Of TKey, TValue)(Key, Value)
+    End Function
+
     ''' <summary>
     ''' 返回数组的扩展数组。
     ''' </summary>

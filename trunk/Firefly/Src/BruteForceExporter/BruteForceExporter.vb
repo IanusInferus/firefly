@@ -3,7 +3,7 @@
 '  File:        BruteForceExporter.vb
 '  Location:    Firefly.BruteForceExporter <Visual Basic .Net>
 '  Description: 暴力文本导出器
-'  Version:     2010.11.30.
+'  Version:     2010.12.01.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -180,7 +180,7 @@ Public Module BruteForceExporter
                 Dim BinFilePath = f
                 Dim WQSGPath = f & ".txt"
 
-                Using BinFile As New StreamEx(BinFilePath, IO.FileMode.Open, IO.FileAccess.Read)
+                Using BinFile = StreamEx.CreateReadable(BinFilePath, IO.FileMode.Open)
                     If BinFile.Length <= &H1000000 Then
                         Dim b = BinFile.Read(BinFile.Length)
                         Dim t = FindAllString(b, TextPattern, TextPatternExclude, Encoding)

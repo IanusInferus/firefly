@@ -23,119 +23,29 @@ Namespace Streaming
     ''' 本类主要用于封装System.IO.MemoryStream和System.IO.FileStream，对其他流可能抛出无法预期的异常。
     ''' 一切的异常都由调用者来处理。
     ''' </remarks>
-    Partial Public NotInheritable Class StreamEx
-        Implements IStream
-        Private BaseStream As Stream
-
-        ''' <summary>已重载。初始化新实例。</summary>
-        Public Sub New()
-            BaseStream = New MemoryStream
-        End Sub
-        ''' <summary>已重载。初始化新实例。</summary>
-        Public Sub New(ByVal Path As String, ByVal Mode As FileMode, ByVal Access As FileAccess, ByVal Share As FileShare)
-            BaseStream = New FileStream(Path, Mode, Access, Share)
-        End Sub
-        ''' <summary>已重载。初始化新实例。</summary>
-        Public Sub New(ByVal Path As String, ByVal Mode As FileMode, Optional ByVal Access As FileAccess = FileAccess.ReadWrite)
-            BaseStream = New FileStream(Path, Mode, Access, FileShare.Read)
-        End Sub
-        ''' <summary>已重载。初始化新实例。</summary>
-        Public Sub New(ByVal BaseStream As Stream)
-            Me.BaseStream = BaseStream
+    Partial Public Class StreamEx
+        Private Sub New()
         End Sub
 
-        ''' <summary>指示当前流是否支持读取。</summary>
-        Public ReadOnly Property CanRead() As Boolean
-            Get
-                Return BaseStream.CanRead
-            End Get
-        End Property
-        ''' <summary>指示当前流是否支持定位。</summary>
-        Public ReadOnly Property CanSeek() As Boolean
-            Get
-                Return BaseStream.CanSeek
-            End Get
-        End Property
-        ''' <summary>指示当前流是否支持写入。</summary>
-        Public ReadOnly Property CanWrite() As Boolean
-            Get
-                Return BaseStream.CanWrite
-            End Get
-        End Property
-        ''' <summary>强制同步缓冲数据。</summary>
-        Public Sub Flush() Implements IStream.Flush
-            BaseStream.Flush()
-        End Sub
-        ''' <summary>关闭流。</summary>
-        ''' <remarks>对继承者的说明：该方法调用Dispose()，不要覆盖该方法，而应覆盖Dispose(Boolean)</remarks>
-        Public Sub Close()
-            Static Closed As Boolean = False
-            If Closed Then Throw New InvalidOperationException
-            Dispose()
-            Closed = True
-        End Sub
-        ''' <summary>用字节表示的流的长度。</summary>
-        Public ReadOnly Property Length() As Int64 Implements ISeekableStream.Length
-            Get
-                Return BaseStream.Length
-            End Get
-        End Property
-        ''' <summary>流的当前位置。</summary>
-        Public Property Position() As Int64 Implements ISeekableStream.Position
-            Get
-                Return BaseStream.Position
-            End Get
-            Set(ByVal Value As Int64)
-                BaseStream.Position = Value
-            End Set
-        End Property
-        ''' <summary>设置流的长度。</summary>
-        Public Sub SetLength(ByVal Value As Int64) Implements IResizableStream.SetLength
-            BaseStream.SetLength(Value)
-        End Sub
-
-        ''' <summary>读取Byte。</summary>
-        Public Function ReadByte() As Byte Implements IReadableStream.ReadByte
-            Dim b As Integer = BaseStream.ReadByte
-            If b = -1 Then Throw New EndOfStreamException
-            Return CByte(b)
+        ''' <summary>初始化新实例。</summary>
+        Public Shared Function CreateReadable(ByVal Path As String, ByVal Mode As FileMode, Optional ByVal Share As FileShare = FileShare.Read) As IReadableSeekableStream
+            Return New IReadableSeekableStreamAdapter(New FileStream(Path, Mode, FileAccess.Read, Share))
         End Function
-        ''' <summary>写入Byte。</summary>
-        Public Sub WriteByte(ByVal b As Byte) Implements IWritableStream.WriteByte
-            BaseStream.WriteByte(b)
-        End Sub
-
-        ''' <summary>已重载。读取到字节数组。</summary>
-        ''' <param name="Offset">Buffer 中的从零开始的字节偏移量，从此处开始存储从当前流中读取的数据。</param>
-        Public Sub Read(ByVal Buffer As Byte(), ByVal Offset As Integer, ByVal Count As Integer) Implements IReadableStream.Read
-            Dim c As Integer = BaseStream.Read(Buffer, Offset, Count)
-            If c <> Count Then Throw New EndOfStreamException
-        End Sub
-        ''' <summary>已重载。写入字节数组。</summary>
-        ''' <param name="Offset">Buffer 中的从零开始的字节偏移量，从此处开始将字节复制到当前流。</param>
-        Public Sub Write(ByVal Buffer As Byte(), ByVal Offset As Integer, ByVal Count As Integer) Implements IWritableStream.Write
-            BaseStream.Write(Buffer, Offset, Count)
-        End Sub
-
-        Public Shared Widening Operator CType(ByVal s As StreamEx) As ZeroLengthStreamPasser
-            Return New ZeroLengthStreamPasser(s)
-        End Operator
-        Public Shared Widening Operator CType(ByVal s As StreamEx) As ZeroPositionStreamPasser
-            Return New ZeroPositionStreamPasser(s)
-        End Operator
-        Public Shared Widening Operator CType(ByVal s As StreamEx) As PositionedStreamPasser
-            Return New PositionedStreamPasser(s)
-        End Operator
-        Public Shared Widening Operator CType(ByVal s As StreamEx) As Stream
-            Return New StreamAdapter(s)
-        End Operator
-
-        ''' <summary>释放流的资源。</summary>
-        Public Sub Dispose() Implements IDisposable.Dispose
-            If BaseStream IsNot Nothing Then
-                BaseStream.Dispose()
-                BaseStream = Nothing
-            End If
-        End Sub
+        ''' <summary>初始化新实例。</summary>
+        Public Shared Function CreateWritable(ByVal Path As String, ByVal Mode As FileMode, Optional ByVal Share As FileShare = FileShare.Read) As IWritableSeekableStream
+            Return New IWritableSeekableStreamAdapter(New FileStream(Path, Mode, FileAccess.Write, Share))
+        End Function
+        ''' <summary>初始化新实例。</summary>
+        Public Shared Function CreateReadableWritable(ByVal Path As String, ByVal Mode As FileMode, Optional ByVal Share As FileShare = FileShare.Read) As IReadableWritableSeekableStream
+            Return New IReadableWritableSeekableStreamAdapter(New FileStream(Path, Mode, FileAccess.ReadWrite, Share))
+        End Function
+        ''' <summary>已重载。初始化新实例。</summary>
+        Public Shared Function Create() As IStream
+            Return New IStreamAdapter(New MemoryStream)
+        End Function
+        ''' <summary>已重载。初始化新实例。</summary>
+        Public Shared Function Create(ByVal Path As String, ByVal Mode As FileMode, Optional ByVal Share As FileShare = FileShare.Read) As IStream
+            Return New IStreamAdapter(New FileStream(Path, Mode, FileAccess.ReadWrite, Share))
+        End Function
     End Class
 End Namespace

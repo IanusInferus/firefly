@@ -3,7 +3,7 @@
 '  File:        PackageFixed.vb
 '  Location:    Firefly.Packaging <Visual Basic .Net>
 '  Description: 固定索引文件包
-'  Version:     2010.11.30.
+'  Version:     2010.12.01.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -39,17 +39,21 @@ Namespace Packaging
         Protected Sub New()
             MyBase.New()
         End Sub
+        ''' <summary>已重载。打开文件包。</summary>
+        Public Sub New(ByVal sp As NewReadingStreamPasser)
+            MyBase.New(sp)
+        End Sub
         ''' <summary>已重载。打开或创建文件包。</summary>
-        Public Sub New(ByVal sp As ZeroPositionStreamPasser)
+        Public Sub New(ByVal sp As NewReadingWritingStreamPasser)
             MyBase.New(sp)
         End Sub
 
         ''' <summary>已重载。替换包中的一个文件。</summary>
-        Protected Overrides Sub ReplaceSingleInner(ByVal File As FileDB, ByVal sp As ZeroPositionStreamPasser)
+        Protected Overrides Sub ReplaceSingleInner(ByVal File As FileDB, ByVal sp As NewReadingStreamPasser)
             Dim s = sp.GetStream
             If s.Length <> File.Length Then Throw New InvalidOperationException("LengthNotMatch")
 
-            Using f As New PartialStreamEx(BaseStream, File.Address, File.Length)
+            Using f = Writable.Partialize(File.Address, File.Length)
                 f.Position = 0
                 f.WriteFromStream(s, s.Length)
             End Using

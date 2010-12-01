@@ -3,7 +3,7 @@
 '  File:        WQSGImporter.vb
 '  Location:    Firefly.WQSGImporter <Visual Basic .Net>
 '  Description: WQSG文本导入器
-'  Version:     2010.11.30.
+'  Version:     2010.12.01.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -131,7 +131,7 @@ Public Module WQSGImporter
                 Dim WQSGPath = f & ".txt"
                 If IgnoreNonExistFile AndAlso Not File.Exists(WQSGPath) Then Continue For
                 Dim Triples = WQSG.ReadFile(WQSGPath)
-                Using s As New StreamEx(BinPath, FileMode.Open, FileAccess.ReadWrite)
+                Using s = StreamEx.Create(BinPath, FileMode.Open)
                     For Each t In Triples
                         s.Position = t.Offset
                         Dim Text = t.Text

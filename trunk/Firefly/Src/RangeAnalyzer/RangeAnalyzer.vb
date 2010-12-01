@@ -3,7 +3,7 @@
 '  File:        RangeAnalyzer.vb
 '  Location:    Firefly.RangeAnalyzer <Visual Basic .Net>
 '  Description: 范围分析器
-'  Version:     2010.11.30.
+'  Version:     2010.12.01.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -90,7 +90,7 @@ Public Class RangeAnalyzer
             MessageBox.Show("未选择文件", Me.Text, MessageBoxButtons.OK)
             Return
         End If
-        Using s As New StreamEx(FileSelectBox_File.Path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
+        Using s = StreamEx.CreateReadable(FileSelectBox_File.Path, FileMode.Open, FileShare.ReadWrite)
             If Dict.ContainsKey(ComboBox_Type.Text) Then
                 Dim f = Dict(ComboBox_Type.Text)
                 TextBox_Result.Text = f(s, NumericUpDown_StartPosition.Value, NumericUpDown_EndPosition.Value, NumericUpDown_Step.Value)
@@ -100,7 +100,7 @@ Public Class RangeAnalyzer
         End Using
     End Sub
 
-    Private Shared Function GetRangeSByte(ByVal s As StreamEx, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
+    Private Shared Function GetRangeSByte(ByVal s As IReadableSeekableStream, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
         If PStep <= 0 Then Throw New ArgumentOutOfRangeException("Step")
         Dim Lower = SByte.MaxValue
         Dim Upper = SByte.MinValue
@@ -117,7 +117,7 @@ Public Class RangeAnalyzer
         End If
     End Function
 
-    Private Shared Function GetRangeInt16(ByVal s As StreamEx, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
+    Private Shared Function GetRangeInt16(ByVal s As IReadableSeekableStream, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
         If PStep <= 0 Then Throw New ArgumentOutOfRangeException("Step")
         Dim Lower = Int16.MaxValue
         Dim Upper = Int16.MinValue
@@ -134,7 +134,7 @@ Public Class RangeAnalyzer
         End If
     End Function
 
-    Private Shared Function GetRangeInt32(ByVal s As StreamEx, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
+    Private Shared Function GetRangeInt32(ByVal s As IReadableSeekableStream, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
         If PStep <= 0 Then Throw New ArgumentOutOfRangeException("Step")
         Dim Lower = Int32.MaxValue
         Dim Upper = Int32.MinValue
@@ -151,7 +151,7 @@ Public Class RangeAnalyzer
         End If
     End Function
 
-    Private Shared Function GetRangeInt64(ByVal s As StreamEx, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
+    Private Shared Function GetRangeInt64(ByVal s As IReadableSeekableStream, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
         If PStep <= 0 Then Throw New ArgumentOutOfRangeException("Step")
         Dim Lower = Int64.MaxValue
         Dim Upper = Int64.MinValue
@@ -168,7 +168,7 @@ Public Class RangeAnalyzer
         End If
     End Function
 
-    Private Shared Function GetRangeByte(ByVal s As StreamEx, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
+    Private Shared Function GetRangeByte(ByVal s As IReadableSeekableStream, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
         If PStep <= 0 Then Throw New ArgumentOutOfRangeException("Step")
         Dim Lower = Byte.MaxValue
         Dim Upper = Byte.MinValue
@@ -185,7 +185,7 @@ Public Class RangeAnalyzer
         End If
     End Function
 
-    Private Shared Function GetRangeUInt16(ByVal s As StreamEx, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
+    Private Shared Function GetRangeUInt16(ByVal s As IReadableSeekableStream, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
         If PStep <= 0 Then Throw New ArgumentOutOfRangeException("Step")
         Dim Lower = UInt16.MaxValue
         Dim Upper = UInt16.MinValue
@@ -202,7 +202,7 @@ Public Class RangeAnalyzer
         End If
     End Function
 
-    Private Shared Function GetRangeUInt32(ByVal s As StreamEx, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
+    Private Shared Function GetRangeUInt32(ByVal s As IReadableSeekableStream, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
         If PStep <= 0 Then Throw New ArgumentOutOfRangeException("Step")
         Dim Lower = UInt32.MaxValue
         Dim Upper = UInt32.MinValue
@@ -219,7 +219,7 @@ Public Class RangeAnalyzer
         End If
     End Function
 
-    Private Shared Function GetRangeUInt64(ByVal s As StreamEx, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
+    Private Shared Function GetRangeUInt64(ByVal s As IReadableSeekableStream, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
         If PStep <= 0 Then Throw New ArgumentOutOfRangeException("Step")
         Dim Lower = UInt64.MaxValue
         Dim Upper = UInt64.MinValue
@@ -236,7 +236,7 @@ Public Class RangeAnalyzer
         End If
     End Function
 
-    Private Shared Function GetRangeInt16B(ByVal s As StreamEx, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
+    Private Shared Function GetRangeInt16B(ByVal s As IReadableSeekableStream, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
         If PStep <= 0 Then Throw New ArgumentOutOfRangeException("Step")
         Dim Lower = Int16.MaxValue
         Dim Upper = Int16.MinValue
@@ -253,7 +253,7 @@ Public Class RangeAnalyzer
         End If
     End Function
 
-    Private Shared Function GetRangeInt32B(ByVal s As StreamEx, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
+    Private Shared Function GetRangeInt32B(ByVal s As IReadableSeekableStream, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
         If PStep <= 0 Then Throw New ArgumentOutOfRangeException("Step")
         Dim Lower = Int32.MaxValue
         Dim Upper = Int32.MinValue
@@ -270,7 +270,7 @@ Public Class RangeAnalyzer
         End If
     End Function
 
-    Private Shared Function GetRangeInt64B(ByVal s As StreamEx, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
+    Private Shared Function GetRangeInt64B(ByVal s As IReadableSeekableStream, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
         If PStep <= 0 Then Throw New ArgumentOutOfRangeException("Step")
         Dim Lower = Int64.MaxValue
         Dim Upper = Int64.MinValue
@@ -287,7 +287,7 @@ Public Class RangeAnalyzer
         End If
     End Function
 
-    Private Shared Function GetRangeUInt16B(ByVal s As StreamEx, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
+    Private Shared Function GetRangeUInt16B(ByVal s As IReadableSeekableStream, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
         If PStep <= 0 Then Throw New ArgumentOutOfRangeException("Step")
         Dim Lower = UInt16.MaxValue
         Dim Upper = UInt16.MinValue
@@ -304,7 +304,7 @@ Public Class RangeAnalyzer
         End If
     End Function
 
-    Private Shared Function GetRangeUInt32B(ByVal s As StreamEx, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
+    Private Shared Function GetRangeUInt32B(ByVal s As IReadableSeekableStream, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
         If PStep <= 0 Then Throw New ArgumentOutOfRangeException("Step")
         Dim Lower = UInt32.MaxValue
         Dim Upper = UInt32.MinValue
@@ -321,7 +321,7 @@ Public Class RangeAnalyzer
         End If
     End Function
 
-    Private Shared Function GetRangeUInt64B(ByVal s As StreamEx, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
+    Private Shared Function GetRangeUInt64B(ByVal s As IReadableSeekableStream, ByVal PStart As Decimal, ByVal PEnd As Decimal, ByVal PStep As Decimal) As String
         If PStep <= 0 Then Throw New ArgumentOutOfRangeException("Step")
         Dim Lower = UInt64.MaxValue
         Dim Upper = UInt64.MinValue

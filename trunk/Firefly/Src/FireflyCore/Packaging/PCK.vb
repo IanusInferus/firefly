@@ -3,7 +3,7 @@
 '  File:        PCK.vb
 '  Location:    Firefly.Packaging <Visual Basic .Net>
 '  Description: PCK文件流类(一个标准的文件包)
-'  Version:     2010.11.30.
+'  Version:     2010.12.01.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -22,17 +22,25 @@ Namespace Packaging
     ''' </remarks>
     Public Class PCK
         Inherits PackageFixedAddress
-        Public Sub New(ByVal sp As ZeroPositionStreamPasser)
+        Public Sub New(ByVal sp As NewReadingStreamPasser)
             MyBase.New(sp)
-            BaseStream.Position = 0
+            Initializer()
+        End Sub
+        Public Sub New(ByVal sp As NewReadingWritingStreamPasser)
+            MyBase.New(sp)
+            Initializer()
+        End Sub
+
+        Private Sub Initializer()
+            Readable.Position = 0
             RootValue = OpenFileDB()
         End Sub
 
         Protected Function OpenFileDB() As FileDB
             Dim ret As New FileDB
-            PhysicalPosition.Add(ret, BaseStream.Position)
+            PhysicalPosition.Add(ret, Readable.Position)
             With ret
-                Dim s = BaseStream
+                Dim s = Readable
                 .Name = s.ReadSimpleString(36)
                 .Type = s.ReadInt32
                 .Length = s.ReadInt32
@@ -57,9 +65,9 @@ Namespace Packaging
 
         Protected Const DBLength As Integer = 48
         Public Sub WriteFileDB(ByVal File As FileDB)
-            PhysicalPosition.Add(File, BaseStream.Position)
+            PhysicalPosition.Add(File, Writable.Position)
             With File
-                Dim s = BaseStream
+                Dim s = Writable
                 s.WriteSimpleString(.Name, 36)
                 s.WriteInt32(.Type)
                 s.WriteInt32(.Length)
@@ -67,9 +75,10 @@ Namespace Packaging
             End With
         End Sub
 
-        Public Sub New(ByVal sp As ZeroLengthStreamPasser, ByVal Directory As String)
+        Public Sub New(ByVal sp As NewWritingStreamPasser, ByVal Directory As String)
             Dim s = sp.GetStream
-            BaseStream = s
+            Readable = s
+            Writable = s
 
             Dim FileQueue As New Queue(Of FileDB)
             Dim FileLengthAddressPointerQueue As New Queue(Of Integer)
@@ -88,7 +97,7 @@ Namespace Packaging
             WriteFileDB(CreateDirectoryEnd())
 
             For Each f As String In FilePathQueue
-                Using File As New StreamEx(f, FileMode.Open, FileAccess.Read)
+                Using File = StreamEx.CreateReadable(f, FileMode.Open)
                     GotoNextFilePoint()
                     FileLengthQueue.Enqueue(File.Length)
                     FileAddressQueue.Enqueue(s.Position)
@@ -117,7 +126,7 @@ Namespace Packaging
             s.Position = 0
         End Sub
         Private Sub ImportDirectory(ByVal Dir As String, ByVal DirDB As FileDB, ByVal FileQueue As Queue(Of FileDB), ByVal FileLengthAddressPointerQueue As Queue(Of Integer), ByVal FilePathQueue As Queue(Of String))
-            Dim s = BaseStream
+            Dim s = Writable
             Dim cFileDB As FileDB
             Dim Name As String
             For Each f As String In Directory.GetFiles(GetPath(Dir, DirDB.Name))
@@ -145,9 +154,9 @@ Namespace Packaging
             Next
         End Sub
         Sub GotoNextFilePoint()
-            Dim NewPosition = (BaseStream.Position \ &H800 + 1) * &H800
-            While BaseStream.Position < NewPosition
-                BaseStream.WriteByte(0)
+            Dim NewPosition = (Writable.Position \ &H800 + 1) * &H800
+            While Writable.Position < NewPosition
+                Writable.WriteByte(0)
             End While
         End Sub
         Public Shared Function CreateDirectory(ByVal Name As String, ByVal Address As Int32) As FileDB
@@ -160,12 +169,12 @@ Namespace Packaging
         Protected PhysicalPosition As New Dictionary(Of FileDB, Int32)
         Public Overrides Property FileLengthInPhysicalFileDB(ByVal File As FileDB) As Int64
             Get
-                BaseStream.Position = PhysicalPosition(File) + 40
-                Return BaseStream.ReadInt32
+                Readable.Position = PhysicalPosition(File) + 40
+                Return Readable.ReadInt32
             End Get
             Set(ByVal Value As Int64)
-                BaseStream.Position = PhysicalPosition(File) + 40
-                BaseStream.WriteInt32(Value)
+                Writable.Position = PhysicalPosition(File) + 40
+                Writable.WriteInt32(Value)
             End Set
         End Property
 
@@ -174,10 +183,13 @@ Namespace Packaging
                 Return "PCK(*.PCK)|*.PCK"
             End Get
         End Property
-        Public Shared Function Open(ByVal sp As ZeroPositionStreamPasser) As PackageBase
+        Public Shared Function OpenRead(ByVal sp As NewReadingStreamPasser) As PackageBase
             Return New PCK(sp)
         End Function
-        Public Shared Function Create(ByVal sp As ZeroLengthStreamPasser, ByVal Directory As String) As PackageBase
+        Public Shared Function OpenReadWrite(ByVal sp As NewReadingWritingStreamPasser) As PackageBase
+            Return New PCK(sp)
+        End Function
+        Public Shared Function Create(ByVal sp As NewWritingStreamPasser, ByVal Directory As String) As PackageBase
             Return New PCK(sp, Directory)
         End Function
     End Class

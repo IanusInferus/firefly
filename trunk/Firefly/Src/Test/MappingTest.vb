@@ -200,7 +200,7 @@ Public Module MappingTest
     Public Sub TestBinarySerializer()
         Dim BinaryRoundTripped As SerializerTestObject
 
-        Using s As New StreamEx
+        Using s = StreamEx.Create
             Dim bs As New BinarySerializer
 
             Dim sbr As New StringAndBytesTranslator
@@ -352,15 +352,15 @@ Public Module MappingTest
 
         Dim XmlRoundTripped As SerializerTestObject
 
-        Using s As New StreamEx
-            Using ps As New PartialStreamEx(s, 0, Int64.MaxValue, 0, False)
-                Using sw = Txt.CreateTextWriter(ps, UTF16)
+        Using s = StreamEx.Create
+            Using ps = s.Partialize(0, Int64.MaxValue, 0, False)
+                Using sw = Txt.CreateTextWriter(ps.AsNewWriting, UTF16)
                     Xml.WriteFile(sw, TestObject, New Type() {}, New Xml.IMapper() {New ByteArrayEncoder})
                 End Using
             End Using
             s.Position = 0
-            Using ps As New PartialStreamEx(s, 0, s.Length, False)
-                Using sr = Txt.CreateTextReader(ps, UTF16)
+            Using ps = s.Partialize(0, s.Length, False)
+                Using sr = Txt.CreateTextReader(ps.AsNewReading, UTF16)
                     XmlRoundTripped = Xml.ReadFile(Of SerializerTestObject)(sr, New Type() {}, New Xml.IMapper() {New ByteArrayEncoder})
                 End Using
             End Using
@@ -438,17 +438,17 @@ Public Module MappingTest
         '.Net Internal roundtrip
         With Nothing
             Dim oxs As New System.Xml.Serialization.XmlSerializer(GetType(CompatibilityTestObject))
-            Using s As New StreamEx
-                Using ps As New PartialStreamEx(s, 0, Int64.MaxValue, 0, False)
-                    Using sw = Txt.CreateTextWriter(ps, UTF16)
+            Using s = StreamEx.Create
+                Using ps = s.Partialize(0, Int64.MaxValue, 0, False)
+                    Using sw = Txt.CreateTextWriter(ps.AsNewWriting, UTF16)
                         oxs.Serialize(sw, v)
                     End Using
                 End Using
                 s.Position = 0
                 Dim Text = s.ReadStringWithNull(s.Length, UTF16)
                 Dim RoundTripped As CompatibilityTestObject
-                Using ps As New PartialStreamEx(s, 0, s.Length, False)
-                    Using sr = Txt.CreateTextReader(ps, UTF16)
+                Using ps = s.Partialize(0, s.Length, False)
+                    Using sr = Txt.CreateTextReader(ps.AsNewReading, UTF16)
                         RoundTripped = oxs.Deserialize(sr)
                     End Using
                 End Using
@@ -458,10 +458,10 @@ Public Module MappingTest
 
         '.Net Internal to XmlSerializer
         With Nothing
-            Using s As New StreamEx
+            Using s = StreamEx.Create
                 Dim oxs As New System.Xml.Serialization.XmlSerializer(GetType(CompatibilityTestObject))
-                Using ps As New PartialStreamEx(s, 0, Int64.MaxValue, 0, False)
-                    Using sw = Txt.CreateTextWriter(ps, UTF16)
+                Using ps = s.Partialize(0, Int64.MaxValue, 0, False)
+                    Using sw = Txt.CreateTextWriter(ps.AsNewWriting, UTF16)
                         oxs.Serialize(sw, v)
                     End Using
                 End Using
@@ -471,8 +471,8 @@ Public Module MappingTest
 
                 s.Position = 0
                 Dim RoundTripped As CompatibilityTestObject
-                Using ps As New PartialStreamEx(s, 0, Int64.MaxValue, s.Length, False)
-                    Using sr = Txt.CreateTextReader(ps, UTF16)
+                Using ps = s.Partialize(0, Int64.MaxValue, s.Length, False)
+                    Using sr = Txt.CreateTextReader(ps.AsNewReading, UTF16)
                         RoundTripped = XmlCompatibility.ReadFile(Of CompatibilityTestObject)(sr)
                     End Using
                 End Using
@@ -483,9 +483,9 @@ Public Module MappingTest
 
         '.Net Internal to XmlSerializer
         With Nothing
-            Using s As New StreamEx
-                Using ps As New PartialStreamEx(s, 0, Int64.MaxValue, 0, False)
-                    Using sw = Txt.CreateTextWriter(ps, UTF16)
+            Using s = StreamEx.Create
+                Using ps = s.Partialize(0, Int64.MaxValue, 0, False)
+                    Using sw = Txt.CreateTextWriter(ps.AsNewWriting, UTF16)
                         XmlCompatibility.WriteFile(sw, v)
                     End Using
                 End Using
@@ -496,8 +496,8 @@ Public Module MappingTest
                 s.Position = 0
                 Dim RoundTripped As CompatibilityTestObject
                 Dim oxs As New System.Xml.Serialization.XmlSerializer(GetType(CompatibilityTestObject))
-                Using ps As New PartialStreamEx(s, 0, Int64.MaxValue, s.Length, False)
-                    Using sr = Txt.CreateTextReader(ps, UTF16)
+                Using ps = s.Partialize(0, Int64.MaxValue, s.Length, False)
+                    Using sr = Txt.CreateTextReader(ps.AsNewReading, UTF16)
                         RoundTripped = oxs.Deserialize(sr)
                     End Using
                 End Using
