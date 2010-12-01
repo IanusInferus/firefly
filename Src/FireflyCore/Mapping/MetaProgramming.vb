@@ -3,7 +3,7 @@
 '  File:        MetaProgramming.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 元编程
-'  Version:     2010.11.25.
+'  Version:     2010.12.01.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -306,10 +306,6 @@ Namespace Mapping
         End Function
         <Extension()> Public Function StaticDynamicInvoke(Of T1, T2, T3, T4, TReturn)(ByVal Method As [Delegate], ByVal v1 As T1, ByVal v2 As T2, ByVal v3 As T3, ByVal v4 As T4) As TReturn
             Return Method.AdaptFunction(Of T1, T2, T3, T4, TReturn)()(v1, v2, v3, v4)
-        End Function
-
-        Public Function CreatePair(Of TKey, TValue)(ByVal Key As TKey, ByVal Value As TValue) As KeyValuePair(Of TKey, TValue)
-            Return New KeyValuePair(Of TKey, TValue)(Key, Value)
         End Function
     End Module
 End Namespace

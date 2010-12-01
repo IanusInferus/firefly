@@ -43,8 +43,12 @@ Namespace Packaging
         Protected Sub New()
             MyBase.New()
         End Sub
+        ''' <summary>已重载。打开文件包。</summary>
+        Public Sub New(ByVal sp As NewReadingStreamPasser)
+            MyBase.New(sp)
+        End Sub
         ''' <summary>已重载。打开或创建文件包。</summary>
-        Public Sub New(ByVal sp As ZeroPositionStreamPasser)
+        Public Sub New(ByVal sp As NewReadingWritingStreamPasser)
             MyBase.New(sp)
         End Sub
 
@@ -58,13 +62,13 @@ Namespace Packaging
         Public MustOverride Property FileLengthInPhysicalFileDB(ByVal File As FileDB) As Int64
 
         ''' <summary>已重载。替换包中的一个文件。</summary>
-        Protected Overrides Sub ReplaceSingleInner(ByVal File As FileDB, ByVal sp As ZeroPositionStreamPasser)
+        Protected Overrides Sub ReplaceSingleInner(ByVal File As FileDB, ByVal sp As NewReadingStreamPasser)
             Dim s = sp.GetStream
 
             If FileSetAddressSorted.Count = 0 Then Throw New InvalidOperationException("NullFileSetAddressSorted")
 
             s.Position = 0
-            Dim MaxSize As Int64 = BaseStream.Length - File.Address
+            Dim MaxSize As Int64 = Writable.Length - File.Address
             Dim NextIndex As Integer = FileSetAddressSorted.IndexOfKey(File) + 1
             If NextIndex < FileSetAddressSorted.Count Then
                 MaxSize = FileSetAddressSorted.Keys(NextIndex).Address - File.Address
@@ -74,7 +78,7 @@ Namespace Packaging
 
             If FileLengthInPhysicalFileDB(File) <> File.Length Then Throw New InvalidOperationException(String.Format("OriginalFileLenghtNotMatch: {0}", File.Name))
 
-            Using f As New PartialStreamEx(BaseStream, File.Address, MaxSize)
+            Using f = Writable.Partialize(File.Address, MaxSize)
                 f.Position = 0
                 f.WriteFromStream(s, s.Length)
             End Using

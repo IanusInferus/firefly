@@ -3,7 +3,7 @@
 '  File:        PackageContinuous.vb
 '  Location:    Firefly.Packaging <Visual Basic .Net>
 '  Description: 连续数据文件包
-'  Version:     2010.11.30.
+'  Version:     2010.12.01.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -56,8 +56,12 @@ Namespace Packaging
         Protected Sub New()
             MyBase.New()
         End Sub
+        ''' <summary>已重载。打开文件包。</summary>
+        Public Sub New(ByVal sp As NewReadingStreamPasser)
+            MyBase.New(sp)
+        End Sub
         ''' <summary>已重载。打开或创建文件包。</summary>
-        Public Sub New(ByVal sp As ZeroPositionStreamPasser)
+        Public Sub New(ByVal sp As NewReadingWritingStreamPasser)
             MyBase.New(sp)
         End Sub
 
@@ -68,11 +72,11 @@ Namespace Packaging
         End Sub
 
         ''' <summary>已重载。替换包中的一个文件。</summary>
-        Protected Overrides Sub ReplaceSingleInner(ByVal File As FileDB, ByVal sp As ZeroPositionStreamPasser)
-            ReplaceMultipleInner(New FileDB() {File}, New ZeroPositionStreamPasser() {sp})
+        Protected Overrides Sub ReplaceSingleInner(ByVal File As FileDB, ByVal sp As NewReadingStreamPasser)
+            ReplaceMultipleInner(New FileDB() {File}, New NewReadingStreamPasser() {sp})
         End Sub
 
-        Protected Overrides Sub ReplaceMultipleInner(ByVal Files As FileDB(), ByVal StreamPassers As ZeroPositionStreamPasser())
+        Protected Overrides Sub ReplaceMultipleInner(ByVal Files As FileDB(), ByVal StreamPassers As NewReadingStreamPasser())
             Dim FileIndex As New List(Of Integer)
             For Each File As FileDB In Files
                 If File.Length <> FileLengthInPhysicalFileDB(File) Then Throw New ArgumentException("PhysicalFileLengthErrorPointing")
@@ -98,7 +102,7 @@ Namespace Packaging
 
             '构建替换文件表与替换段保留文件表
             Dim ReplaceList As New SortedList(Of Integer, FileDB)
-            Dim ReplacePathList As New SortedList(Of Integer, ZeroPositionStreamPasser)
+            Dim ReplacePathList As New SortedList(Of Integer, NewReadingStreamPasser)
             For k = 0 To FileIndex.Count - 1
                 Dim n = FileIndex(k)
                 ReplaceList.Add(n, FileSetAddressSorted.Keys(n))
@@ -115,11 +119,11 @@ Namespace Packaging
             Dim ReplaceBlockStart As Int64 = FileSetAddressSorted.Keys(Min).Address
             Dim TailBlockStart As Int64
             If Max = FileSetAddressSorted.Count - 1 Then
-                TailBlockStart = BaseStream.Length
+                TailBlockStart = Writable.Length
             Else
                 TailBlockStart = FileSetAddressSorted.Keys(Max + 1).Address
             End If
-            Dim TailBlockLength As Int64 = BaseStream.Length - TailBlockStart
+            Dim TailBlockLength As Int64 = Writable.Length - TailBlockStart
             'Dim ReplaceBlockLength As Int64 = TailBlockStart - ReplaceBlockStart
 
             Dim ReplaceBlockSpaceList As New List(Of Int64)
@@ -130,10 +134,10 @@ Namespace Packaging
 
             '生成保留文件临时文件
             Dim TempFileName = Path.GetTempFileName
-            Using TempFile As New StreamEx(TempFileName, FileMode.Create, FileAccess.ReadWrite)
+            Using TempFile = StreamEx.Create(TempFileName, FileMode.Create)
                 For Each Pair In PreserveList
                     With Pair.Value
-                        Using f As New PartialStreamEx(BaseStream, .Address, .Length)
+                        Using f = Readable.Partialize(.Address, .Length)
                             TempFile.WriteFromStream(f, .Length)
                         End Using
                     End With
@@ -141,11 +145,11 @@ Namespace Packaging
 
                 '移动尾段
                 If TotalLengthDiff > 0 Then
-                    BaseStream.SetLength(BaseStream.Length + TotalLengthDiff)
+                    Writable.SetLength(Writable.Length + TotalLengthDiff)
                 End If
                 MoveData(TailBlockStart, TailBlockLength, TailBlockStart + TotalLengthDiff)
                 If TotalLengthDiff < 0 Then
-                    BaseStream.SetLength(BaseStream.Length + TotalLengthDiff)
+                    Writable.SetLength(Writable.Length + TotalLengthDiff)
                 End If
 
                 '更改尾段数据地址
@@ -158,7 +162,7 @@ Namespace Packaging
                 TempFile.Position = 0
                 For Each Pair In PreserveList
                     With Pair.Value
-                        Using f As New PartialStreamEx(BaseStream, ReplaceBlockAddressArray(Pair.Key - Min), GetSpace(.Length))
+                        Using f = Writable.Partialize(ReplaceBlockAddressArray(Pair.Key - Min), GetSpace(.Length))
                             TempFile.ReadToStream(f, .Length)
                             While f.Position < f.Length
                                 f.WriteByte(0)
@@ -171,7 +175,7 @@ Namespace Packaging
             '填入替换文件数据
             For Each Pair In ReplaceList
                 Dim p = ReplacePathList(Pair.Key)
-                Using f As New PartialStreamEx(BaseStream, ReplaceBlockAddressArray(Pair.Key - Min), GetSpace(ReplaceBlockLengthList(Pair.Key)))
+                Using f = Writable.Partialize(ReplaceBlockAddressArray(Pair.Key - Min), GetSpace(ReplaceBlockLengthList(Pair.Key)))
                     Dim fs = p.GetStream
                     fs.ReadToStream(f, ReplaceBlockLengthList(Pair.Key))
                     While f.Position < f.Length
@@ -217,47 +221,47 @@ Namespace Packaging
 
             If Diff > 0 Then
                 If LastLength > 0 Then
-                    BaseStream.Position = LastAddress
-                    BaseStream.Read(Buffer, 0, LastLength)
-                    BaseStream.Position = LastAddress + Diff
-                    BaseStream.Write(Buffer, 0, LastLength)
+                    Writable.Position = LastAddress
+                    Writable.Read(Buffer, 0, LastLength)
+                    Writable.Position = LastAddress + Diff
+                    Writable.Write(Buffer, 0, LastLength)
                 End If
 
                 For PieceAddress As Int64 = LastAddress - BufferSize To SecondAddress Step -BufferSize
                     If NotifyProgress IsNot Nothing Then NotifyProgress((LastAddress - PieceAddress) / (LastAddress - SecondAddress))
-                    BaseStream.Position = PieceAddress
-                    BaseStream.Read(Buffer, 0, BufferSize)
-                    BaseStream.Position = PieceAddress + Diff
-                    BaseStream.Write(Buffer, 0, BufferSize)
+                    Writable.Position = PieceAddress
+                    Writable.Read(Buffer, 0, BufferSize)
+                    Writable.Position = PieceAddress + Diff
+                    Writable.Write(Buffer, 0, BufferSize)
                 Next
 
                 If FirstLength > 0 Then
-                    BaseStream.Position = FirstAddress
-                    BaseStream.Read(Buffer, 0, FirstLength)
-                    BaseStream.Position = FirstAddress + Diff
-                    BaseStream.Write(Buffer, 0, FirstLength)
+                    Writable.Position = FirstAddress
+                    Writable.Read(Buffer, 0, FirstLength)
+                    Writable.Position = FirstAddress + Diff
+                    Writable.Write(Buffer, 0, FirstLength)
                 End If
             Else
                 If FirstLength > 0 Then
-                    BaseStream.Position = FirstAddress
-                    BaseStream.Read(Buffer, 0, FirstLength)
-                    BaseStream.Position = FirstAddress + Diff
-                    BaseStream.Write(Buffer, 0, FirstLength)
+                    Writable.Position = FirstAddress
+                    Writable.Read(Buffer, 0, FirstLength)
+                    Writable.Position = FirstAddress + Diff
+                    Writable.Write(Buffer, 0, FirstLength)
                 End If
 
                 For PieceAddress As Int64 = SecondAddress To LastAddress - BufferSize Step BufferSize
                     If NotifyProgress IsNot Nothing Then NotifyProgress((PieceAddress - SecondAddress) / (LastAddress - SecondAddress))
-                    BaseStream.Position = PieceAddress
-                    BaseStream.Read(Buffer, 0, BufferSize)
-                    BaseStream.Position = PieceAddress + Diff
-                    BaseStream.Write(Buffer, 0, BufferSize)
+                    Writable.Position = PieceAddress
+                    Writable.Read(Buffer, 0, BufferSize)
+                    Writable.Position = PieceAddress + Diff
+                    Writable.Write(Buffer, 0, BufferSize)
                 Next
 
                 If LastLength > 0 Then
-                    BaseStream.Position = LastAddress
-                    BaseStream.Read(Buffer, 0, LastLength)
-                    BaseStream.Position = LastAddress + Diff
-                    BaseStream.Write(Buffer, 0, LastLength)
+                    Writable.Position = LastAddress
+                    Writable.Read(Buffer, 0, LastLength)
+                    Writable.Position = LastAddress + Diff
+                    Writable.Write(Buffer, 0, LastLength)
                 End If
             End If
 

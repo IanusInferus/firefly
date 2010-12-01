@@ -57,6 +57,8 @@
     <Compile Include="Compressing\LZ77Reversed.vb" />
     <Compile Include="Compressing\Pointer.vb" />
     <Compile Include="Compressing\RLE.vb" />
+    <Compile Include="Glyphing\FdGlyphDescriptionFile.vb" />
+    <Compile Include="Imaging\Bmp.vb" />
     <Compile Include="Mapping\BinarySerializer.vb" />
     <Compile Include="Streaming\BitStream.vb" />
     <Compile Include="Core\CommandLine.vb" />
@@ -67,7 +69,6 @@
     <Compile Include="Core\N32.vb" />
     <Compile Include="Mapping\ObjectMapper.vb" />
     <Compile Include="Streaming\StreamAdapters.vb" />
-    <Compile Include="Streaming\StreamExCompatibility.vb" />
     <Compile Include="Streaming\StreamComplex.vb" />
     <Compile Include="Streaming\StreamFloats.vb" />
     <Compile Include="Streaming\StreamInts.vb" />
@@ -85,7 +86,6 @@
     <Compile Include="Mapping\TranslatorResolvers.vb" />
     <Compile Include="Mapping\XmlSerializer.vb" />
     <Compile Include="GlobalSuppressions.vb" />
-    <Compile Include="Glyphing\FdGlyphDescriptionFile.vb" />
     <Compile Include="Glyphing\Glyph.vb" />
     <Compile Include="Glyphing\GlyphArranger.vb" />
     <Compile Include="Glyphing\GlyphGenerator.vb" />
@@ -104,7 +104,6 @@
     <Compile Include="TextEncoding\ControlChars.vb" />
     <Compile Include="TextEncoding\Encoding.vb" />
     <Compile Include="TextEncoding\EncodingString.vb" />
-    <Compile Include="Imaging\Bmp.vb" />
     <Compile Include="Imaging\ColorSpace.vb" />
     <Compile Include="Core\CRC32.vb" />
     <Compile Include="Core\DirectIntConvert.vb" />
@@ -115,7 +114,7 @@
     <Compile Include="Setting\INI.vb" />
     <Compile Include="Packaging\ISO.vb" />
     <Compile Include="Packaging\PackageBase.vb" />
-    <Compile Include="Streaming\PartialStreamEx.vb" />
+    <Compile Include="Streaming\PartialStreams.vb" />
     <Compile Include="Packaging\PCK.vb" />
     <Compile Include="Streaming\StreamEx.vb" />
     <Compile Include="TextEncoding\MultiByteEncoding.vb" />

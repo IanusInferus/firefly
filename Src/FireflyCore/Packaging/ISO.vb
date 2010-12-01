@@ -29,23 +29,30 @@ Namespace Packaging
 
         Protected DataScanStart As Int64 = 0
 
-        Public Sub New(ByVal sp As ZeroPositionStreamPasser)
+        Public Sub New(ByVal sp As NewReadingStreamPasser)
             MyBase.New(sp)
-            Dim s = sp.GetStream
+            Initializer()
+        End Sub
+        Public Sub New(ByVal sp As NewReadingWritingStreamPasser)
+            MyBase.New(sp)
+            Initializer()
+        End Sub
+
+        Private Sub Initializer()
             For n As Integer = 16 To Integer.MaxValue
-                BaseStream.Position = &H800 * n
-                Dim Type As Byte = BaseStream.ReadByte
-                BaseStream.Position -= 1
+                Readable.Position = &H800 * n
+                Dim Type As Byte = Readable.ReadByte
+                Readable.Position -= 1
                 Select Case Type
                     Case 1
                         If PrimaryDescriptor IsNot Nothing Then Throw New InvalidDataException
-                        PrimaryDescriptor = New IsoPrimaryDescriptor(BaseStream)
+                        PrimaryDescriptor = New IsoPrimaryDescriptor(Readable)
                     Case 255
                         Exit For
                 End Select
             Next
             LogicalBlockSize = PrimaryDescriptor.LogicalBlockSize
-            DataScanStart = s.Position
+            DataScanStart = Readable.Position
             RootValue = ToFileDB(PrimaryDescriptor.RootDirectoryRecord, LogicalBlockSize)
             DataScanStart = GetSpace(DataScanStart)
             ScanHoles(DataScanStart)
@@ -57,43 +64,51 @@ Namespace Packaging
             End Get
         End Property
 
-        Public Shared Function OpenWithStream(ByVal sp As ZeroPositionStreamPasser) As PackageBase
+        Public Shared Function OpenRead(ByVal sp As NewReadingStreamPasser) As PackageBase
+            Return New ISO(sp)
+        End Function
+        Public Shared Function OpenReadWrite(ByVal sp As NewReadingWritingStreamPasser) As PackageBase
             Return New ISO(sp)
         End Function
 
         Public Shared Function Open(ByVal Path As String) As PackageBase
-            Dim s As StreamEx
+            Dim s As IStream = Nothing
+            Dim sRead As IReadableSeekableStream = Nothing
             Try
-                s = New StreamEx(Path, FileMode.Open, FileAccess.ReadWrite)
+                s = StreamEx.Create(Path, FileMode.Open)
             Catch
-                s = New StreamEx(Path, FileMode.Open, FileAccess.Read)
+                sRead = StreamEx.CreateReadable(Path, FileMode.Open)
             End Try
-            Return New ISO(s)
+            If s IsNot Nothing Then
+                Return New ISO(s.AsNewReadingWriting)
+            Else
+                Return New ISO(sRead.AsNewReading)
+            End If
         End Function
 
         Public Overrides Property FileAddressInPhysicalFileDB(ByVal File As FileDB) As Int64
             Get
-                BaseStream.Position = PhysicalAdressAddressOfFile(File)
-                Return CLng(BaseStream.ReadInt32) * CLng(LogicalBlockSize)
+                Readable.Position = PhysicalAdressAddressOfFile(File)
+                Return CLng(Readable.ReadInt32) * CLng(LogicalBlockSize)
             End Get
             Set(ByVal Value As Int64)
-                BaseStream.Position = PhysicalAdressAddressOfFile(File)
+                Writable.Position = PhysicalAdressAddressOfFile(File)
                 Dim ExtentLocation = CID(Value \ LogicalBlockSize)
-                BaseStream.WriteInt32(ExtentLocation)
-                BaseStream.WriteInt32B(ExtentLocation)
+                Writable.WriteInt32(ExtentLocation)
+                Writable.WriteInt32B(ExtentLocation)
             End Set
         End Property
 
         Public Overrides Property FileLengthInPhysicalFileDB(ByVal File As FileDB) As Int64
             Get
-                BaseStream.Position = PhysicalLengthAddressOfFile(File)
-                Return BaseStream.ReadInt32
+                Readable.Position = PhysicalLengthAddressOfFile(File)
+                Return Readable.ReadInt32
             End Get
             Set(ByVal Value As Int64)
-                BaseStream.Position = PhysicalLengthAddressOfFile(File)
+                Writable.Position = PhysicalLengthAddressOfFile(File)
                 Dim DataLength = CID(Value)
-                BaseStream.WriteInt32(DataLength)
-                BaseStream.WriteInt32B(DataLength)
+                Writable.WriteInt32(DataLength)
+                Writable.WriteInt32B(DataLength)
             End Set
         End Property
 
@@ -102,7 +117,7 @@ Namespace Packaging
         End Function
 
         Protected Function ToFileDB(ByVal dr As IsoDirectoryRecord, ByVal LogicalBlockSize As Integer) As FileDB
-            Dim s = BaseStream
+            Dim s = Readable
             Dim CurrentPosition As Int64 = s.Position
             Dim FileName As String = dr.FileId
             '处理含有revision号的文件名
