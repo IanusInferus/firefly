@@ -3,7 +3,7 @@
 '  File:        Main.vb
 '  Location:    Firefly.Examples <Visual Basic .Net>
 '  Description: Kung Fu Panda lxb文件导入导出器
-'  Version:     2009.08.24.
+'  Version:     2010.12.01.
 '  Author:      F.R.C.
 '  Copyright(C) Public Domain
 '
@@ -17,10 +17,22 @@ Imports Firefly.TextEncoding
 Imports Firefly.Texting
 
 Public Module Main
-    Public Sub Main(ByVal argv As String())
-#If Not DEBUG Then
-        Try
-#End If
+    Public Function Main() As Integer
+        If System.Diagnostics.Debugger.IsAttached Then
+            Return MainInner()
+        Else
+            Try
+                Return MainInner()
+            Catch ex As Exception
+                Console.WriteLine(ExceptionInfo.GetExceptionInfo(ex))
+                Return -1
+            End Try
+        End If
+    End Function
+
+    Public Function MainInner() As Integer
+        Dim argv = CommandLine.GetCmdLine.Arguments
+
         For Each f In argv
             Dim Dir = GetFileDirectory(f)
             Dim FileName = GetFileName(f)
@@ -35,10 +47,7 @@ Public Module Main
                 LXB.Write(ChangeExtension(f, "lxb"), Pairs)
             End If
         Next
-#If Not DEBUG Then
-        Catch ex As Exception
-            ExceptionHandler.PopupException(ex, "发生以下异常:", My.Application.Info.ProductName)
-        End Try
-#End If
-    End Sub
+
+        Return 0
+    End Function
 End Module
