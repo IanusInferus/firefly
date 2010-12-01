@@ -13,6 +13,12 @@ Firefly.Core:
 修正FileNameHandling去除Like运算符时出现的bug。
 Examples\Imaging:
 更新示例代码。
+Examples\Mapping:
+更新示例代码。
+Examples\Texting:
+更新示例代码。
+Examples\Examples:
+更新示例代码。
 
 2010.11.30
 Firefly.Core.Streaming:
