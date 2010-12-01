@@ -3,7 +3,7 @@
 '  File:        EncodingString.vb
 '  Location:    Firefly.TextEncoding <Visual Basic .Net>
 '  Description: 编码
-'  Version:     2008.11.28.
+'  Version:     2010.12.01.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -77,10 +77,10 @@ Namespace TextEncoding
 
         ''' <summary>编码文本生成器</summary>
         Public Class EncodingStringGenerator
-            Protected l As New List(Of Int32)
-            Protected s As New List(Of Char32)
-            Protected d As New Dictionary(Of Char32, Int32)
-            Protected dExclude As New Dictionary(Of Char32, Int32)
+            Private l As New List(Of Int32)
+            Private s As New List(Of Char32)
+            Private d As New Dictionary(Of Char32, Int32)
+            Private dExclude As New Dictionary(Of Char32, Int32)
 
             ''' <summary>已重载。创建新实例。</summary>
             Public Sub New()

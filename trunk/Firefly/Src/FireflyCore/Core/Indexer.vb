@@ -3,7 +3,7 @@
 '  File:        Indexer.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 离散索引器
-'  Version:     2010.09.10.
+'  Version:     2010.12.01.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -17,12 +17,12 @@ Imports System.IO
 ''' 离散索引器，用于表示离散整数区间，并提供遍历离散整数区间的函数与枚举器支持。
 ''' 支持使用For Each语法遍历区间内的所有点。
 ''' </summary>
-Public Class Indexer
+Public NotInheritable Class Indexer
     Implements IEnumerator(Of Integer)
     Implements IEnumerable(Of Integer)
-    Protected Descriptor As New SortedList(Of Integer, Range)
-    Protected Value As Integer
-    Protected Position As Integer
+    Private Descriptor As New SortedList(Of Integer, Range)
+    Private Value As Integer
+    Private Position As Integer
 
     Public Sub New(ByVal Descriptors As ICollection(Of Range))
         For Each d As Range In Descriptors
@@ -94,16 +94,8 @@ Public Class Indexer
         Position = 0
     End Sub
 
-    Private disposedValue As Boolean = False
-    Protected Overridable Sub Dispose(ByVal disposing As Boolean)
-        If Not Me.disposedValue Then
-            Descriptor = Nothing
-        End If
-        Me.disposedValue = True
-    End Sub
     Public Sub Dispose() Implements IDisposable.Dispose
-        Dispose(True)
-        GC.SuppressFinalize(Me)
+        Descriptor = Nothing
     End Sub
 
     Public Function GetEnumerator() As System.Collections.Generic.IEnumerator(Of Integer) Implements System.Collections.Generic.IEnumerable(Of Integer).GetEnumerator
