@@ -3,7 +3,7 @@
 '  File:        GIM.vb
 '  Location:    Firefly.Examples <Visual Basic .Net>
 '  Description: PSP GIM图像格式
-'  Version:     2010.10.26.
+'  Version:     2010.12.01.
 '  Author:      F.R.C.
 '  Copyright(C) Public Domain
 '
@@ -14,6 +14,7 @@ Imports System.Collections.Generic
 Imports System.Linq
 Imports System.IO
 Imports Firefly
+Imports Firefly.Streaming
 
 Public Class GIM
     Public Const Identifier As String = "MIG.00.1PSP"
@@ -39,7 +40,7 @@ Public Class GIM
     End Property
 
     Public Sub New(ByVal Data As Byte())
-        Using s As New StreamEx
+        Using s = StreamEx.Create
             s.Write(Data)
             s.Position = 0
 
@@ -49,7 +50,7 @@ Public Class GIM
     End Sub
 
     Public Function ToBytes() As Byte()
-        Using s As New StreamEx
+        Using s = StreamEx.Create
             s.WriteSimpleString(Identifier, 16)
             Root.Write(s)
 
@@ -101,8 +102,7 @@ Public Class GIM
         Protected Data As Byte()
         Protected SubBlocks As New List(Of Block)
 
-        Public Shared Function Read(ByVal sp As PositionedStreamPasser) As Block
-            Dim s = sp.GetStream
+        Public Shared Function Read(ByVal s As IReadableSeekableStream) As Block
             Dim HoldPosition = s.Position
             Dim BlockType As BlockTypes = s.ReadUInt16
             Dim Unknown = s.ReadUInt16
@@ -137,8 +137,7 @@ Public Class GIM
         Public Overridable Sub ReadData()
         End Sub
 
-        Public Sub Write(ByVal sp As PositionedStreamPasser)
-            Dim s = sp.GetStream
+        Public Sub Write(ByVal s As IWritableSeekableStream)
             WriteData()
             Dim HoldPosition = s.Position
             s.Position += 16
@@ -157,8 +156,10 @@ Public Class GIM
             s.WriteInt32(EndPosition - HoldPosition)
             s.WriteInt32(ContentLength)
             s.WriteInt32(16)
-            s.Position = EndPosition
-            If s.Position > s.Length Then s.SetLength(s.Position)
+            s.Position = s.Length
+            While s.Position < EndPosition
+                s.WriteByte(0)
+            End While
         End Sub
         Public Overridable Sub WriteData()
         End Sub
@@ -236,7 +237,7 @@ Public Class GIM
         End Property
 
         Public Overrides Sub ReadData()
-            Using s As New StreamEx
+            Using s = StreamEx.Create()
                 s.Write(Me.Data)
                 s.Position = 0
 
@@ -465,7 +466,7 @@ Public Class GIM
         End Sub
 
         Public Overrides Sub WriteData()
-            Using s As New StreamEx
+            Using s = StreamEx.Create()
                 s.Write(Me.Data)
                 s.Position = 0
 
@@ -701,7 +702,7 @@ Public Class GIM
 
 
         Public Overrides Sub ReadData()
-            Using s As New StreamEx
+            Using s = StreamEx.Create()
                 s.Write(Me.Data)
                 s.Position = 0
 
@@ -849,7 +850,7 @@ Public Class GIM
         End Sub
 
         Public Overrides Sub WriteData()
-            Using s As New StreamEx
+            Using s = StreamEx.Create()
                 s.Write(Me.Data)
                 s.Position = 0
 

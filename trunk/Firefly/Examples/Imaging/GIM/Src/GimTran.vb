@@ -3,7 +3,7 @@
 '  File:        GimTran.vb
 '  Location:    Firefly.Examples <Visual Basic .Net>
 '  Description: GIM/MIG操作实例
-'  Version:     2010.11.16.
+'  Version:     2010.12.01.
 '  Author:      F.R.C.
 '  Copyright(C) Public Domain
 '
@@ -16,6 +16,7 @@ Imports System.Drawing
 Imports System.Drawing.Imaging
 Imports System.IO
 Imports Firefly
+Imports Firefly.Streaming
 Imports Firefly.Imaging
 
 Public Module GimTran
@@ -42,7 +43,7 @@ Public Module GimTran
 
             If IsMatchFileMask(FileName, "*.mig") OrElse IsMatchFileMask(FileName, "*.gim") Then
                 Dim Data As Byte()
-                Using s As New StreamEx(f, FileMode.Open, FileAccess.Read)
+                Using s = StreamEx.CreateReadable(f, FileMode.Open)
                     Data = s.Read(s.Length)
                 End Using
 
@@ -92,7 +93,7 @@ Public Module GimTran
                 Dim GimName = GetMainFileName(GetMainFileName(f))
                 Dim GimPath = GetPath(GetFileDirectory(f), GimName)
                 Dim Data As Byte()
-                Using s As New StreamEx(GimPath, FileMode.Open, FileAccess.Read)
+                Using s = StreamEx.CreateReadable(GimPath, FileMode.Open)
                     Data = s.Read(s.Length)
                 End Using
 
@@ -163,7 +164,7 @@ Public Module GimTran
                 End If
                 Data = m.ToBytes
 
-                Using s As New StreamEx(GimPath, FileMode.Create, FileAccess.ReadWrite)
+                Using s = StreamEx.Create(GimPath, FileMode.Create)
                     s.Write(Data)
                 End Using
             End If
