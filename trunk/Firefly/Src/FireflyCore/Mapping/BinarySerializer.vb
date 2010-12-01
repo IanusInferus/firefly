@@ -17,6 +17,10 @@ Imports Firefly
 Imports Firefly.Streaming
 
 Namespace Mapping
+    Public Class BinarySerializer
+        Inherits BinarySerializer(Of IReadableStream, IWritableStream)
+    End Class
+
     ''' <remarks>
     ''' 对于非简单类型，应提供自定义序列化器
     ''' 简单类型 ::= 简单类型
@@ -34,7 +38,7 @@ Namespace Mapping
     '''               ) AND 类型结构为树状
     ''' 此外，对象树中不应有空引用，否则应提供自定义序列化器
     ''' </remarks>
-    Public Class BinarySerializer
+    Public Class BinarySerializer(Of TReadStream As IReadableStream, TWriteStream As IWritableStream)
         Private PrimitiveResolver As PrimitiveResolver
         Private ReaderMapper As ObjectMapper
         Private WriterMapper As ObjectMapper
@@ -65,29 +69,29 @@ Namespace Mapping
         Public Sub New()
             PrimitiveResolver = New PrimitiveResolver
 
-            PutReader(Function(s As IStream) s.ReadByte)
-            PutReader(Function(s As IStream) s.ReadUInt16)
-            PutReader(Function(s As IStream) s.ReadUInt32)
-            PutReader(Function(s As IStream) s.ReadUInt64)
-            PutReader(Function(s As IStream) s.ReadInt8)
-            PutReader(Function(s As IStream) s.ReadInt16)
-            PutReader(Function(s As IStream) s.ReadInt32)
-            PutReader(Function(s As IStream) s.ReadInt64)
-            PutReader(Function(s As IStream) s.ReadFloat32)
-            PutReader(Function(s As IStream) s.ReadFloat64)
-            PutReader(Function(s As IStream) s.ReadByte <> 0)
+            PutReader(Function(s As TReadStream) s.ReadByte)
+            PutReader(Function(s As TReadStream) s.ReadUInt16)
+            PutReader(Function(s As TReadStream) s.ReadUInt32)
+            PutReader(Function(s As TReadStream) s.ReadUInt64)
+            PutReader(Function(s As TReadStream) s.ReadInt8)
+            PutReader(Function(s As TReadStream) s.ReadInt16)
+            PutReader(Function(s As TReadStream) s.ReadInt32)
+            PutReader(Function(s As TReadStream) s.ReadInt64)
+            PutReader(Function(s As TReadStream) s.ReadFloat32)
+            PutReader(Function(s As TReadStream) s.ReadFloat64)
+            PutReader(Function(s As TReadStream) s.ReadByte <> 0)
 
-            PutWriter(Sub(b As Byte, s As IStream) s.WriteByte(b))
-            PutWriter(Sub(i As UInt16, s As IStream) s.WriteUInt16(i))
-            PutWriter(Sub(i As UInt32, s As IStream) s.WriteUInt32(i))
-            PutWriter(Sub(i As UInt64, s As IStream) s.WriteUInt64(i))
-            PutWriter(Sub(i As SByte, s As IStream) s.WriteInt8(i))
-            PutWriter(Sub(i As Int16, s As IStream) s.WriteInt16(i))
-            PutWriter(Sub(i As Int32, s As IStream) s.WriteInt32(i))
-            PutWriter(Sub(i As Int64, s As IStream) s.WriteInt64(i))
-            PutWriter(Sub(f As Single, s As IStream) s.WriteFloat32(f))
-            PutWriter(Sub(f As Double, s As IStream) s.WriteFloat64(f))
-            PutWriter(Sub(b As Boolean, s As IStream) s.WriteByte(CByte(b)))
+            PutWriter(Sub(b As Byte, s As TWriteStream) s.WriteByte(b))
+            PutWriter(Sub(i As UInt16, s As TWriteStream) s.WriteUInt16(i))
+            PutWriter(Sub(i As UInt32, s As TWriteStream) s.WriteUInt32(i))
+            PutWriter(Sub(i As UInt64, s As TWriteStream) s.WriteUInt64(i))
+            PutWriter(Sub(i As SByte, s As TWriteStream) s.WriteInt8(i))
+            PutWriter(Sub(i As Int16, s As TWriteStream) s.WriteInt16(i))
+            PutWriter(Sub(i As Int32, s As TWriteStream) s.WriteInt32(i))
+            PutWriter(Sub(i As Int64, s As TWriteStream) s.WriteInt64(i))
+            PutWriter(Sub(f As Single, s As TWriteStream) s.WriteFloat32(f))
+            PutWriter(Sub(f As Double, s As TWriteStream) s.WriteFloat64(f))
+            PutWriter(Sub(b As Boolean, s As TWriteStream) s.WriteByte(CByte(b)))
 
             PutCounter(Function(b As Byte) 1)
             PutCounter(Function(i As UInt16) 2)
@@ -105,9 +109,9 @@ Namespace Mapping
             ReaderCache = New CachedResolver(ReaderResolverSet)
             Dim ReaderList = New List(Of IObjectProjectorResolver) From {
                 PrimitiveResolver,
-                New EnumUnpacker(Of IStream)(ReaderCache),
-                New CollectionUnpackerTemplate(Of IStream)(New GenericCollectionProjectorResolver(Of IStream)(ReaderCache)),
-                New RecordUnpackerTemplate(Of IStream)(New FieldOrPropertyProjectorResolver(Of IStream)(ReaderCache))
+                New EnumUnpacker(Of TReadStream)(ReaderCache),
+                New CollectionUnpackerTemplate(Of TReadStream)(New GenericCollectionProjectorResolver(Of TReadStream)(ReaderCache)),
+                New RecordUnpackerTemplate(Of TReadStream)(New FieldOrPropertyProjectorResolver(Of TReadStream)(ReaderCache))
             }
             For Each r In ReaderList
                 ReaderResolverSet.ProjectorResolvers.AddLast(r)
@@ -116,9 +120,9 @@ Namespace Mapping
             WriterCache = New CachedResolver(WriterResolverSet)
             Dim WriterList = New List(Of IObjectAggregatorResolver) From {
                 PrimitiveResolver,
-                New EnumPacker(Of IStream)(WriterCache),
-                New CollectionPackerTemplate(Of IStream)(New GenericCollectionAggregatorResolver(Of IStream)(WriterCache)),
-                New RecordPackerTemplate(Of IStream)(New FieldOrPropertyAggregatorResolver(Of IStream)(WriterCache))
+                New EnumPacker(Of TWriteStream)(WriterCache),
+                New CollectionPackerTemplate(Of TWriteStream)(New GenericCollectionAggregatorResolver(Of TWriteStream)(WriterCache)),
+                New RecordPackerTemplate(Of TWriteStream)(New FieldOrPropertyAggregatorResolver(Of TWriteStream)(WriterCache))
             }
             For Each r In WriterList
                 WriterResolverSet.AggregatorResolvers.AddLast(r)
@@ -146,10 +150,10 @@ Namespace Mapping
             CounterMapper = New ObjectMapper(CounterCache)
         End Sub
 
-        Public Sub PutReader(Of T)(ByVal Reader As Func(Of IStream, T))
+        Public Sub PutReader(Of T)(ByVal Reader As Func(Of TReadStream, T))
             PrimitiveResolver.PutProjector(Reader)
         End Sub
-        Public Sub PutWriter(Of T)(ByVal Writer As Action(Of T, IStream))
+        Public Sub PutWriter(Of T)(ByVal Writer As Action(Of T, TWriteStream))
             PrimitiveResolver.PutAggregator(Writer)
         End Sub
         Public Sub PutCounter(Of T)(ByVal Counter As Func(Of T, Integer))
@@ -169,25 +173,25 @@ Namespace Mapping
             CounterResolverSet.ProjectorResolvers.AddFirst(TranslatorResolver.Create(CounterCache, Translator))
         End Sub
 
-        Public Function GetReader(Of T)() As Func(Of IStream, T)
-            Return ReaderMapper.GetProjector(Of IStream, T)()
+        Public Function GetReader(Of T)() As Func(Of TReadStream, T)
+            Return ReaderMapper.GetProjector(Of TReadStream, T)()
         End Function
-        Public Function GetWriter(Of T)() As Action(Of T, IStream)
-            Return WriterMapper.GetAggregator(Of T, IStream)()
+        Public Function GetWriter(Of T)() As Action(Of T, TWriteStream)
+            Return WriterMapper.GetAggregator(Of T, TWriteStream)()
         End Function
         Public Function GetCounter(Of T)() As Func(Of T, Integer)
             Return CounterMapper.GetProjector(Of T, Integer)()
         End Function
 
-        Public Function Read(Of T)(ByVal s As IStream) As T
+        Public Function Read(Of T)(ByVal s As TReadStream) As T
             Dim m = GetReader(Of T)()
             Return m(s)
         End Function
-        Public Sub Write(Of T)(ByVal Value As T, ByVal s As IStream)
+        Public Sub Write(Of T)(ByVal Value As T, ByVal s As TWriteStream)
             Dim m = GetWriter(Of T)()
             m(Value, s)
         End Sub
-        Public Sub Write(Of T)(ByVal s As IStream, ByVal Value As T)
+        Public Sub Write(Of T)(ByVal s As TWriteStream, ByVal Value As T)
             Write(Of T)(Value, s)
         End Sub
         Public Function Count(Of T)(ByVal Value As T) As Integer

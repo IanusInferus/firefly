@@ -19,6 +19,8 @@ Examples\Texting:
 更新示例代码。
 Examples\Examples:
 更新示例代码。
+Firefly.Core.Mapping:
+按照Firefly.Core.Streaming的新抽象修改BinarySerializer。
 
 2010.11.30
 Firefly.Core.Streaming:
