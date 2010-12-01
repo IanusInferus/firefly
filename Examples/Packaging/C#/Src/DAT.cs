@@ -3,7 +3,7 @@
 //  File:        DAT.cs
 //  Location:    Firefly.Examples <Visual C#>
 //  Description: プリニ DAT格式
-//  Version:     2010.02.24.
+//  Version:     2010.12.01.
 //  Author:      F.R.C.
 //  Copyright(C) public Domain
 //
@@ -36,14 +36,28 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Firefly;
+using Firefly.Streaming;
 using Firefly.Packaging;
 
-public class DAT : PackageDiscrete {
+public class DAT : PackageDiscrete
+{
     //使用离散文件包接口，表示文件数据不一定非要连续，即通过位置和长度来确定，连续文件一般只有长度一个数值
 
+    public DAT(NewReadingStreamPasser sp)
+        : base(sp)
+    {
+        Initialize();
+    }
+    public DAT(NewReadingWritingStreamPasser sp)
+        : base(sp)
+    {
+        Initialize();
+    }
+
     //在构造函数中填入文件包读取的部分，对每个文件需要调用PushFile以构造路径信息和各种映射信息
-    public DAT(ZeroPositionStreamPasser sp) : base(sp) {
-        var s = sp.GetStream();
+    public void Initialize()
+    {
+        var s = Readable;
 
         //判断文件头部是否正常
         if (s.ReadSimpleString(12) != "NISPACK") { throw new InvalidDataException(); }
@@ -52,7 +66,8 @@ public class DAT : PackageDiscrete {
 
         RootValue = FileDB.CreateDirectory("", "");
 
-        for (var n = 0; n < NumFile; n += 1) {
+        for (var n = 0; n < NumFile; n += 1)
+        {
 
             //读取索引的各部分
             var Name = s.ReadSimpleString(32);
@@ -76,46 +91,64 @@ public class DAT : PackageDiscrete {
     }
 
     //提供格式在打开文件包窗口中的过滤器
-    public static String Filter {
-        get {
+    public static String Filter
+    {
+        get
+        {
             return "プリニ DAT格式(*.DAT)|*.DAT";
         }
     }
 
     //打开文件包的函数
-    public static PackageBase Open(String Path) {
-        StreamEx s;
-        try {
-            s = new StreamEx(Path, FileMode.Open, FileAccess.ReadWrite);
+    public static PackageBase Open(String Path)
+    {
+        IStream s = null;
+        IReadableSeekableStream sRead = null;
+        try
+        {
+            s = StreamEx.Create(Path, FileMode.Open);
         }
-        catch {
-            s = new StreamEx(Path, FileMode.Open, FileAccess.Read);
+        catch
+        {
+            sRead = StreamEx.CreateReadable(Path, FileMode.Open);
         }
-        return new DAT(s);
+        if (s != null)
+        {
+            return new DAT(s.AsNewReadingWriting());
+        }
+        else
+        {
+            return new DAT(sRead.AsNewReading());
+        }
     }
 
     //读取文件在索引中的地址信息，所有索引中的地址信息应该在这里更新
-    public override Int64 get_FileAddressInPhysicalFileDB(FileDB File) {
-        BaseStream.Position = 16 + 44 * IndexOfFile[File] + 32;
-        return BaseStream.ReadInt32();
+    public override Int64 get_FileAddressInPhysicalFileDB(FileDB File)
+    {
+        Readable.Position = 16 + 44 * IndexOfFile[File] + 32;
+        return Readable.ReadInt32();
     }
-    public override void set_FileAddressInPhysicalFileDB(FileDB File, Int64 Value) {
-        BaseStream.Position = 16 + 44 * IndexOfFile[File] + 32;
-        BaseStream.WriteInt32(Convert.ToInt32(Value));
+    public override void set_FileAddressInPhysicalFileDB(FileDB File, Int64 Value)
+    {
+        Writable.Position = 16 + 44 * IndexOfFile[File] + 32;
+        Writable.WriteInt32(Convert.ToInt32(Value));
     }
 
     //读取文件在索引中的长度信息，所有索引中的长度信息应该在这里更新
-    public override Int64 get_FileLengthInPhysicalFileDB(FileDB File) {
-        BaseStream.Position = 16 + 44 * IndexOfFile[File] + 36;
-        return BaseStream.ReadInt32();
+    public override Int64 get_FileLengthInPhysicalFileDB(FileDB File)
+    {
+        Readable.Position = 16 + 44 * IndexOfFile[File] + 36;
+        return Readable.ReadInt32();
     }
-    public override void set_FileLengthInPhysicalFileDB(FileDB File, Int64 Value) {
-        BaseStream.Position = 16 + 44 * IndexOfFile[File] + 36;
-        BaseStream.WriteInt32(Convert.ToInt32(Value));
+    public override void set_FileLengthInPhysicalFileDB(FileDB File, Int64 Value)
+    {
+        Writable.Position = 16 + 44 * IndexOfFile[File] + 36;
+        Writable.WriteInt32(Convert.ToInt32(Value));
     }
 
     //提供文件数据的对齐的计算函数
-    protected override Int64 GetSpace(Int64 Length) {
+    protected override Int64 GetSpace(Int64 Length)
+    {
         return ((Length + 0x800 - 1) / 0x800) * 0x800;
     }
 }
