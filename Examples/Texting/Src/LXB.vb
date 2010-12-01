@@ -3,7 +3,7 @@
 '  File:        LXB.vb
 '  Location:    Firefly.Examples <Visual Basic .Net>
 '  Description: Kung Fu Panda lxb文件格式
-'  Version:     2009.08.24.
+'  Version:     2010.12.01.
 '  Author:      F.R.C.
 '  Copyright(C) Public Domain
 '
@@ -12,26 +12,28 @@
 Imports System
 Imports System.Collections.Generic
 Imports System.Linq
-Imports System.Text.Encoding
+Imports System.IO
 Imports Firefly
+Imports Firefly.Streaming
+Imports Firefly.TextEncoding
 
 Public NotInheritable Class LXB
     Private Sub New()
     End Sub
 
     Public Shared Function Read(ByVal Path As String) As KeyValuePair(Of Int32, String)()
-        Using s As New StreamEx(Path, IO.FileMode.Open, IO.FileAccess.Read)
-            Return Read(s)
+        Using s = StreamEx.CreateReadable(Path, FileMode.Open)
+            Return Read(s.AsNewReading)
         End Using
     End Function
 
     Public Shared Sub Write(ByVal Path As String, ByVal Text As IEnumerable(Of KeyValuePair(Of Int32, String)))
-        Using s As New StreamEx(Path, IO.FileMode.Create, IO.FileAccess.ReadWrite)
-            Write(s, Text)
+        Using s = StreamEx.Create(Path, FileMode.Create)
+            Write(s.AsNewWriting, Text)
         End Using
     End Sub
 
-    Public Shared Function Read(ByVal sp As ZeroPositionStreamPasser) As KeyValuePair(Of Int32, String)()
+    Public Shared Function Read(ByVal sp As NewReadingStreamPasser) As KeyValuePair(Of Int32, String)()
         Dim s = sp.GetStream
 
         s.Position = &H7C
@@ -59,7 +61,7 @@ Public NotInheritable Class LXB
         Return Text
     End Function
 
-    Public Shared Sub Write(ByVal sp As ZeroLengthStreamPasser, ByVal Text As IEnumerable(Of KeyValuePair(Of Int32, String)))
+    Public Shared Sub Write(ByVal sp As NewWritingStreamPasser, ByVal Text As IEnumerable(Of KeyValuePair(Of Int32, String)))
         Dim s = sp.GetStream
 
         s.Position = 0
