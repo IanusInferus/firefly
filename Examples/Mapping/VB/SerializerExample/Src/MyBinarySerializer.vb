@@ -3,7 +3,7 @@
 '  File:        MyBinarySerializer.vb
 '  Location:    Firefly.Examples <Visual Basic .Net>
 '  Description: 自定义二进制序列化器
-'  Version:     2010.11.17.
+'  Version:     2010.12.01.
 '  Author:      F.R.C.
 '  Copyright(C) Public Domain
 '
@@ -13,6 +13,7 @@ Imports System
 Imports System.Collections.Generic
 Imports System.IO
 Imports Firefly
+Imports Firefly.Streaming
 Imports Firefly.TextEncoding
 Imports Firefly.Mapping
 
@@ -51,7 +52,7 @@ Public Class MyBinarySerializer
 
     ''' <summary>读取版本1或2</summary>
     Public Function Read(ByVal Bytes As Byte()) As DataObject
-        Using s As New StreamEx
+        Using s = StreamEx.Create()
             s.Write(Bytes)
             s.Position = 0
 
@@ -71,7 +72,7 @@ Public Class MyBinarySerializer
 
     ''' <summary>写入版本1</summary>
     Public Function WriteVersion1(ByVal Obj As DataObject) As Byte()
-        Using s As New StreamEx
+        Using s = StreamEx.Create()
             Dim Version = 1
             s.WriteSimpleString("MYDF", 4)
             s.WriteUInt32(Version)
@@ -84,7 +85,7 @@ Public Class MyBinarySerializer
 
     ''' <summary>写入版本2</summary>
     Public Function Write(ByVal Obj As DataObject) As Byte()
-        Using s As New StreamEx
+        Using s = StreamEx.Create()
             Dim Version = 2
             s.WriteSimpleString("MYDF", 4)
             s.WriteUInt32(Version)
