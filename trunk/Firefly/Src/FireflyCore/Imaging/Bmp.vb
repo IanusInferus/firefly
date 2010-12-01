@@ -3,7 +3,7 @@
 '  File:        Bmp.vb
 '  Location:    Firefly.Imaging <Visual Basic .Net>
 '  Description: 基本Bmp文件流类
-'  Version:     2010.11.30.
+'  Version:     2010.12.01.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -136,7 +136,7 @@ Namespace Imaging
             End Set
         End Property
 
-        Private BaseStream As StreamEx
+        Private BaseStream As IStream
         Private r5g6b5 As Boolean
         Private Sub New()
         End Sub
@@ -281,15 +281,11 @@ Namespace Imaging
                 Throw
             End Try
         End Function
-        ''' <summary>关闭。</summary>
-        Public Sub Close()
-            BaseStream.Close()
-        End Sub
         ''' <summary>转换为System.Drawing.Bitmap。</summary>
         Public Function ToBitmap() As Bitmap
             BaseStream.Position = 0
             BaseStream.Flush()
-            Return New Bitmap(BaseStream)
+            Return New Bitmap(BaseStream.ToStream)
         End Function
         ''' <summary>保存到流。</summary>
         Public Sub SaveTo(ByVal sp As ZeroPositionStreamPasser)

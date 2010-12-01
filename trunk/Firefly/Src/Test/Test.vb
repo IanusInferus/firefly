@@ -371,7 +371,7 @@ Public Module Test
     End Sub
 
     Public Sub Main()
-        'TestStreamExStreamReadWrite()
+        TestStreamExStreamReadWrite()
         'TestListPartStringEx()
         'For Each Method In Methods()
         '    Dim Data = Method()

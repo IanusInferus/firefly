@@ -3,7 +3,7 @@
 '  File:        PackageBase.vb
 '  Location:    Firefly.Packaging <Visual Basic .Net>
 '  Description: 文件包基类
-'  Version:     2010.11.30.
+'  Version:     2010.12.01.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -34,7 +34,7 @@ Namespace Packaging
     ''' </summary>
     Public MustInherit Class PackageBase
         Implements IDisposable
-        Protected BaseStream As StreamEx
+        Protected BaseStream As IStream
 
         ''' <summary>全部文件的集合。</summary>
         Protected FileList As New List(Of FileDB)
@@ -46,7 +46,7 @@ Namespace Packaging
         End Sub
         ''' <summary>已重载。打开或创建文件包。</summary>
         Public Sub New(ByVal sp As ZeroPositionStreamPasser)
-            BaseStream = sp
+            BaseStream = sp.GetStream
         End Sub
 
         Protected RootValue As FileDB = New FileDB("", FileDB.FileType.Directory, -1, 0)

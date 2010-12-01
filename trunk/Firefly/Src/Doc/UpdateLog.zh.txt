@@ -1,6 +1,8 @@
 ﻿2010.12.01
 Firefly.Core.Streaming:
 重构StreamEx，利用扩展方法模拟trait或者mixin的一些特性。
+Firefly.Core.*:
+按照Stream的相关修改进行变更。
 
 2010.11.30
 Firefly.Core.Streaming:

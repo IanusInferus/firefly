@@ -3,7 +3,7 @@
 '  File:        ISO.vb
 '  Location:    Firefly.Packaging <Visual Basic .Net>
 '  Description: ISO类
-'  Version:     2010.11.30.
+'  Version:     2010.12.01.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -171,8 +171,7 @@ Namespace Packaging
         Public ApplicationData As IsoAnsiString
 
 
-        Public Sub New(ByVal sp As PositionedStreamPasser)
-            Dim s = sp.GetStream
+        Public Sub New(ByVal s As IReadableSeekableStream)
             Type = s.ReadByte
             Id = s.Read(5)
             Version = s.ReadByte
@@ -224,8 +223,7 @@ Namespace Packaging
 
         Public PhysicalAdressAddress As Int64
         Public PhysicalLengthAddress As Int64
-        Public Sub New(ByVal sp As PositionedStreamPasser)
-            Dim s = sp.GetStream
+        Public Sub New(ByVal s As IReadableSeekableStream)
             Dim CurrentPosition As Int64 = s.Position
             Length = s.ReadByte
             ExtAttrLength = s.ReadByte
