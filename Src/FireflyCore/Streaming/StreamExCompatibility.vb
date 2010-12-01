@@ -14,7 +14,7 @@ Imports System.Collections.Generic
 Imports System.IO
 
 Namespace Streaming
-    Partial Public Class StreamEx
+    Partial Class StreamEx
         ''' <summary>读取单精度浮点数。</summary>
         Public Function ReadSingle(ByVal This As IReadableStream) As Single
             Return This.ReadFloat32()

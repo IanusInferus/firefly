@@ -30,7 +30,7 @@ Namespace Streaming
         End Function
 
         ''' <summary>读取到外部流。</summary>
-        <Extension()> Public Sub ReadToStream(ByVal This As IReadableStream, ByVal s As StreamEx, ByVal Count As Int64)
+        <Extension()> Public Sub ReadToStream(ByVal This As IReadableStream, ByVal s As IWritableStream, ByVal Count As Int64)
             If Count <= 0 Then Return
             Dim Buffer As Byte() = New Byte(CInt(Min(Count, 4 * (1 << 20)) - 1)) {}
             For n As Int64 = 0 To Count - Buffer.Length Step Buffer.Length
@@ -79,7 +79,7 @@ Namespace Streaming
         End Sub
 
         ''' <summary>从外部流写入。</summary>
-        <Extension()> Public Sub WriteFromStream(ByVal This As IWritableStream, ByVal s As StreamEx, ByVal Count As Int64)
+        <Extension()> Public Sub WriteFromStream(ByVal This As IWritableStream, ByVal s As IReadableStream, ByVal Count As Int64)
             If Count <= 0 Then Return
             Dim Buffer As Byte() = New Byte(CInt(Min(Count, 4 * (1 << 20)) - 1)) {}
             For n As Int64 = 0 To Count - Buffer.Length Step Buffer.Length
