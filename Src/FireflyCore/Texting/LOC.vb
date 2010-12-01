@@ -40,13 +40,13 @@ Namespace Texting
         Private Shared ReadOnly IdentifierBmp As String = "BMP"
         Private Shared ReadOnly IdentifierAgemo As String = "AGEM"
 
-        Public Shared Function ReadFile(ByVal sp As ZeroPositionStreamPasser) As LOCText
+        Public Shared Function ReadFile(ByVal sp As NewReadingStreamPasser) As LOCText
             Dim sInput = sp.GetStream
 
             Dim Identifier As String = sInput.ReadSimpleString(4)
-            Using s As New StreamEx
+            Using s = StreamEx.Create
                 If Identifier = IdentifierCompression Then
-                    Using gz As New PartialStreamEx(sInput, 4, sInput.Length - 4)
+                    Using gz = sInput.Partialize(4, sInput.Length - 4)
                         Using gzDec As New IO.Compression.GZipStream(gz.ToUnsafeStream, IO.Compression.CompressionMode.Decompress, False)
                             While True
                                 Dim b As Int32 = gzDec.ReadByte
@@ -112,8 +112,8 @@ Namespace Texting
                         Dim BitmapLength As Int32 = s.ReadInt32
                         If BitmapLength > 0 Then
                             Dim HoldPosition = s.Position
-                            Using BitmapStream As New PartialStreamEx(s, s.Position, BitmapLength)
-                                Using Bitmap = Bmp.Open(BitmapStream)
+                            Using BitmapStream = s.Partialize(s.Position, BitmapLength)
+                                Using Bitmap = Bmp.Open(BitmapStream.AsNewReading)
                                     Dim NumGlyphInLine = Bitmap.Width \ GlyphWidth
                                     Dim GetGlyphVirtualBox = Function(GlyphIndex As Integer) New Rectangle(0, 0, WidthTable(GlyphIndex), GlyphHeight)
                                     Dim GetGlyphPhysicalBox = Function(GlyphIndex As Integer) New Rectangle((GlyphIndex Mod NumGlyphInLine) * GlyphWidth, (GlyphIndex \ NumGlyphInLine) * GlyphHeight, GlyphWidth, GlyphHeight)
@@ -157,7 +157,7 @@ Namespace Texting
                         Return New LOCText With {.Font = Font, .Text = Text}
                     Case Identifier2
                         Dim NumSection = s.ReadInt32
-                        Dim StreamDict As New Dictionary(Of String, StreamEx)
+                        Dim StreamDict As New Dictionary(Of String, IStream)
                         Try
                             For n = 0 To NumSection - 1
                                 Dim SectionIdentifier = s.ReadSimpleString(4)
@@ -168,7 +168,7 @@ Namespace Texting
                                     Case IdentifierFd, IdentifierBmp, "AGEM"
                                         Dim HoldPosition = s.Position
                                         s.Position = Address
-                                        Dim SectionStream As New StreamEx
+                                        Dim SectionStream = StreamEx.Create
                                         Try
                                             SectionStream.WriteFromStream(s, Length)
                                             SectionStream.Position = 0
@@ -188,7 +188,7 @@ Namespace Texting
                                 If IsContainFD AndAlso IsContainBMP Then
                                     Dim FdStream = StreamDict(IdentifierFd)
                                     Dim BmpStream = StreamDict(IdentifierBmp)
-                                    Using FdReader = Txt.CreateTextReader(FdStream, TextEncoding.Default)
+                                    Using FdReader = Txt.CreateTextReader(FdStream.AsNewReading, TextEncoding.Default)
                                         Using ImageReader As New BmpFontImageReader(BmpStream)
                                             Font = FdGlyphDescriptionFile.ReadFont(FdReader, ImageReader)
                                         End Using
@@ -201,7 +201,7 @@ Namespace Texting
                             Dim Text As IEnumerable(Of IEnumerable(Of StringCode)) = Nothing
                             If StreamDict.ContainsKey(IdentifierAgemo) Then
                                 Dim AgemoStream = StreamDict(IdentifierAgemo)
-                                Using AgemoReader = Txt.CreateTextReader(AgemoStream, TextEncoding.Default)
+                                Using AgemoReader = Txt.CreateTextReader(AgemoStream.AsNewReading, TextEncoding.Default)
                                     Dim AgemoText = Agemo.ReadFile(AgemoReader)
                                     Text = (From str In AgemoText Select Descape(str)).ToArray
                                 End Using
@@ -222,26 +222,26 @@ Namespace Texting
             End Using
         End Function
         Public Shared Function ReadFile(ByVal Path As String) As LOCText
-            Using s As New StreamEx(Path, FileMode.Open, FileAccess.Read)
-                Return ReadFile(s)
+            Using s = StreamEx.CreateReadable(Path, FileMode.Open)
+                Return ReadFile(s.AsNewReading)
             End Using
         End Function
 
-        Public Shared Sub WriteFile(ByVal sp As ZeroLengthStreamPasser, ByVal Value As LOCText, Optional ByVal Compress As Boolean = False)
-            Dim f As StreamEx = sp.GetStream
-            Using s As New StreamEx
+        Public Shared Sub WriteFile(ByVal sp As NewWritingStreamPasser, ByVal Value As LOCText, Optional ByVal Compress As Boolean = False)
+            Dim f = sp.GetStream
+            Using s = StreamEx.Create
                 Dim Font = Value.Font
                 Dim Text = Value.Text
 
-                Dim StreamList As New List(Of KeyValuePair(Of String, StreamEx))
+                Dim StreamList As New List(Of KeyValuePair(Of String, IStream))
                 Try
                     If Font IsNot Nothing Then
-                        Dim FdStream As New StreamEx
-                        Dim BmpStream As New StreamEx
+                        Dim FdStream = StreamEx.Create
+                        Dim BmpStream = StreamEx.Create
                         Try
-                            Using FdProtecter As New PartialStreamEx(FdStream, 0, Int64.MaxValue, FdStream.Length)
-                                Using FdWriter = Txt.CreateTextWriter(FdProtecter, TextEncoding.UTF16)
-                                    Using ImageProtecter As New PartialStreamEx(BmpStream, 0, Int64.MaxValue, BmpStream.Length)
+                            Using FdProtecter = FdStream.Partialize(0, Int64.MaxValue, FdStream.Length)
+                                Using FdWriter = Txt.CreateTextWriter(FdProtecter.AsNewWriting, TextEncoding.UTF16)
+                                    Using ImageProtecter = BmpStream.Partialize(0, Int64.MaxValue, BmpStream.Length)
                                         Using ImageWriter As New BmpFontImageWriter(ImageProtecter)
                                             FdGlyphDescriptionFile.WriteFont(FdWriter, Font, ImageWriter)
                                         End Using
@@ -249,22 +249,22 @@ Namespace Texting
                                 End Using
                             End Using
                         Finally
-                            StreamList.Add(New KeyValuePair(Of String, StreamEx)(IdentifierFd, FdStream))
-                            StreamList.Add(New KeyValuePair(Of String, StreamEx)(IdentifierBmp, BmpStream))
+                            StreamList.Add(CreatePair(IdentifierFd, FdStream))
+                            StreamList.Add(CreatePair(IdentifierBmp, BmpStream))
                         End Try
                     End If
 
                     If Text IsNot Nothing Then
                         Dim AgemoText = (From str In Text Select Escape(str)).ToArray
-                        Dim AgemoStream As New StreamEx
+                        Dim AgemoStream = StreamEx.Create
                         Try
-                            Using AgemoProtecter As New PartialStreamEx(AgemoStream, 0, Int64.MaxValue, AgemoStream.Length)
-                                Using AgemoWriter = Txt.CreateTextWriter(AgemoProtecter, TextEncoding.UTF16)
+                            Using AgemoProtecter = AgemoStream.Partialize(0, Int64.MaxValue, AgemoStream.Length)
+                                Using AgemoWriter = Txt.CreateTextWriter(AgemoProtecter.AsNewWriting, TextEncoding.UTF16)
                                     Agemo.WriteFile(AgemoWriter, AgemoText)
                                 End Using
                             End Using
                         Finally
-                            StreamList.Add(New KeyValuePair(Of String, StreamEx)(IdentifierAgemo, AgemoStream))
+                            StreamList.Add(CreatePair(IdentifierAgemo, AgemoStream))
                         End Try
                     End If
 
@@ -307,7 +307,7 @@ Namespace Texting
                     f.WriteFromStream(s, s.Length)
                 Else
                     f.WriteSimpleString(IdentifierCompression, 4)
-                    Using ps As New PartialStreamEx(f, 4, Int64.MaxValue)
+                    Using ps = f.Partialize(4, Int64.MaxValue)
                         Using gz As New IO.Compression.GZipStream(ps.ToStream, Compression.CompressionMode.Compress, True)
                             gz.Write(s.Read(CInt(s.Length)), 0, CInt(s.Length))
                         End Using
@@ -316,8 +316,8 @@ Namespace Texting
             End Using
         End Sub
         Public Shared Sub WriteFile(ByVal Path As String, ByVal Value As LOCText, Optional ByVal Compress As Boolean = False)
-            Using s As New StreamEx(Path, FileMode.Create, FileAccess.ReadWrite)
-                WriteFile(s, Value, Compress)
+            Using s = StreamEx.Create(Path, FileMode.Create)
+                WriteFile(s.AsNewWriting, Value, Compress)
             End Using
         End Sub
 

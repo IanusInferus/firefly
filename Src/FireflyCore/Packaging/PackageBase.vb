@@ -34,7 +34,8 @@ Namespace Packaging
     ''' </summary>
     Public MustInherit Class PackageBase
         Implements IDisposable
-        Protected BaseStream As IStream
+        Protected Readable As IReadableSeekableStream
+        Protected Writable As IStream
 
         ''' <summary>全部文件的集合。</summary>
         Protected FileList As New List(Of FileDB)
@@ -44,9 +45,14 @@ Namespace Packaging
         ''' <summary>已重载。默认构照函数。请手动初始化BaseStream。</summary>
         Protected Sub New()
         End Sub
+        ''' <summary>已重载。打开文件包。</summary>
+        Public Sub New(ByVal sp As NewReadingStreamPasser)
+            Readable = sp.GetStream
+        End Sub
         ''' <summary>已重载。打开或创建文件包。</summary>
-        Public Sub New(ByVal sp As ZeroPositionStreamPasser)
-            BaseStream = sp.GetStream
+        Public Sub New(ByVal sp As NewReadingWritingStreamPasser)
+            Readable = sp.GetStream
+            Writable = sp.GetStream
         End Sub
 
         Protected RootValue As FileDB = New FileDB("", FileDB.FileType.Directory, -1, 0)
@@ -169,35 +175,35 @@ Namespace Packaging
         End Function
 
         ''' <summary>从包中解出一个文件。</summary>
-        Protected Overridable Sub ExtractSingleInner(ByVal File As FileDB, ByVal sp As ZeroLengthStreamPasser)
+        Protected Overridable Sub ExtractSingleInner(ByVal File As FileDB, ByVal sp As NewWritingStreamPasser)
             Dim s = sp.GetStream
             With File
-                Using f As New PartialStreamEx(BaseStream, .Address, .Length)
+                Using f = Writable.Partialize(.Address, .Length)
                     s.WriteFromStream(f, f.Length)
                 End Using
             End With
         End Sub
         ''' <summary>从包中解出一个文件。应优先考虑覆盖ExtractSingleInner。默认实现调用ExtractSingleInner。</summary>
         Protected Overridable Sub ExtractSingleInnerPath(ByVal File As FileDB, ByVal Path As String)
-            Using t As New StreamEx(Path, FileMode.Create)
-                ExtractSingleInner(File, t)
+            Using t = StreamEx.Create(Path, FileMode.Create)
+                ExtractSingleInner(File, t.AsNewWriting)
             End Using
         End Sub
         ''' <summary>从包中解出多个文件。应优先考虑覆盖ExtractSingleInner。默认实现调用ExtractSingleInner。</summary>
-        Protected Overridable Sub ExtractMultipleInner(ByVal Files As FileDB(), ByVal StreamPassers As ZeroLengthStreamPasser())
+        Protected Overridable Sub ExtractMultipleInner(ByVal Files As FileDB(), ByVal StreamPassers As NewWritingStreamPasser())
             For n As Integer = 0 To Files.Length - 1
                 ExtractSingleInner(Files(n), StreamPassers(n))
             Next
         End Sub
         ''' <summary>从包中解出多个文件。应优先考虑覆盖ExtractMultipleInner。默认实现调用ExtractMultipleInner。</summary>
         Protected Overridable Sub ExtractMultipleInnerPath(ByVal Files As FileDB(), ByVal Paths As String())
-            Dim Streams As New List(Of StreamEx)
-            Dim StreamPassers As New List(Of ZeroLengthStreamPasser)
+            Dim Streams As New List(Of IStream)
+            Dim StreamPassers As New List(Of NewWritingStreamPasser)
             Try
                 For n As Integer = 0 To Files.Length - 1
-                    Dim s = New StreamEx(Paths(n), FileMode.Create, FileAccess.ReadWrite)
+                    Dim s = StreamEx.Create(Paths(n), FileMode.Create)
                     Streams.Add(s)
-                    StreamPassers.Add(s)
+                    StreamPassers.Add(s.AsNewWriting)
                 Next
                 ExtractMultipleInner(Files, StreamPassers.ToArray)
             Finally
@@ -208,7 +214,7 @@ Namespace Packaging
         End Sub
 
         ''' <summary>已重载。从包中解出一个文件。该函数不再可覆盖，请覆盖ExtractSingleInner。调用ExtractSingleInner。</summary>
-        Public Sub ExtractSingle(ByVal File As FileDB, ByVal sp As ZeroLengthStreamPasser)
+        Public Sub ExtractSingle(ByVal File As FileDB, ByVal sp As NewWritingStreamPasser)
             If File.Type <> FileDB.FileType.File Then Throw New ArgumentException
             ExtractSingleInner(File, sp)
         End Sub
@@ -220,7 +226,7 @@ Namespace Packaging
             ExtractSingleInnerPath(File, Path)
         End Sub
         ''' <summary>已重载。从包中解出多个文件。调用ExtractMultipleInner。</summary>
-        Public Sub ExtractMultiple(ByVal Files As IEnumerable(Of FileDB), ByVal StreamPassers As IEnumerable(Of ZeroLengthStreamPasser))
+        Public Sub ExtractMultiple(ByVal Files As IEnumerable(Of FileDB), ByVal StreamPassers As IEnumerable(Of NewWritingStreamPasser))
             If Files.Count <> StreamPassers.Count Then Throw New ArgumentException
             For Each File In Files
                 If File.Type <> FileDB.FileType.File Then Throw New ArgumentException
@@ -279,28 +285,28 @@ Namespace Packaging
         End Sub
 
         ''' <summary>替换包中的一个文件。</summary>
-        Protected MustOverride Sub ReplaceSingleInner(ByVal File As FileDB, ByVal sp As ZeroPositionStreamPasser)
+        Protected MustOverride Sub ReplaceSingleInner(ByVal File As FileDB, ByVal sp As NewReadingStreamPasser)
         ''' <summary>替换包中的一个文件。应优先考虑覆盖ReplaceSingleInner。默认实现调用ReplaceSingleInner。</summary>
         Protected Overridable Sub ReplaceSingleInnerPath(ByVal File As FileDB, ByVal Path As String)
-            Using t As New StreamEx(Path, FileMode.Open, FileAccess.Read)
-                ReplaceSingleInner(File, t)
+            Using t = StreamEx.CreateReadable(Path, FileMode.Open)
+                ReplaceSingleInner(File, t.AsNewReading)
             End Using
         End Sub
         ''' <summary>替换包中的多个文件。应优先考虑覆盖ReplaceSingleInner。默认实现调用ExtractSingleInner。</summary>
-        Protected Overridable Sub ReplaceMultipleInner(ByVal Files As FileDB(), ByVal StreamPassers As ZeroPositionStreamPasser())
+        Protected Overridable Sub ReplaceMultipleInner(ByVal Files As FileDB(), ByVal StreamPassers As NewReadingStreamPasser())
             For n As Integer = 0 To Files.Length - 1
                 ReplaceSingleInner(Files(n), StreamPassers(n))
             Next
         End Sub
         ''' <summary>替换包中的多个文件。应优先考虑覆盖ExtractMultipleInner。默认实现调用ExtractMultipleInner。</summary>
         Protected Overridable Sub ReplaceMultipleInnerPath(ByVal Files As FileDB(), ByVal Paths As String())
-            Dim Streams As New List(Of StreamEx)
-            Dim StreamPassers As New List(Of ZeroPositionStreamPasser)
+            Dim Streams As New List(Of IReadableSeekableStream)
+            Dim StreamPassers As New List(Of NewReadingStreamPasser)
             Try
                 For n As Integer = 0 To Files.Length - 1
-                    Dim s = New StreamEx(Paths(n), FileMode.Open, FileAccess.Read)
+                    Dim s = StreamEx.CreateReadable(Paths(n), FileMode.Open)
                     Streams.Add(s)
-                    StreamPassers.Add(s)
+                    StreamPassers.Add(s.AsNewReading)
                 Next
                 ReplaceMultipleInner(Files, StreamPassers.ToArray)
             Finally
@@ -311,7 +317,7 @@ Namespace Packaging
         End Sub
 
         ''' <summary>已重载。替换包中的一个文件。调用ReplaceSingleInner。</summary>
-        Public Sub ReplaceSingle(ByVal File As FileDB, ByVal sp As ZeroPositionStreamPasser)
+        Public Sub ReplaceSingle(ByVal File As FileDB, ByVal sp As NewReadingStreamPasser)
             If File.Type <> FileDB.FileType.File Then Throw New ArgumentException
             ReplaceSingleInner(File, sp)
         End Sub
@@ -321,7 +327,7 @@ Namespace Packaging
             ReplaceSingleInnerPath(File, Path)
         End Sub
         ''' <summary>已重载。替换包中的多个文件。调用ReplaceMultipleInner。</summary>
-        Public Sub ReplaceMultiple(ByVal Files As IEnumerable(Of FileDB), ByVal StreamPassers As IEnumerable(Of ZeroPositionStreamPasser))
+        Public Sub ReplaceMultiple(ByVal Files As IEnumerable(Of FileDB), ByVal StreamPassers As IEnumerable(Of NewReadingStreamPasser))
             If Files.Count <> StreamPassers.Count Then Throw New ArgumentException
             For Each File In Files
                 If File.Type <> FileDB.FileType.File Then Throw New ArgumentException
@@ -385,9 +391,13 @@ Namespace Packaging
 #Region " IDisposable 支持 "
         ''' <summary>释放托管对象或间接非托管对象(Stream等)。可在这里将大型字段设置为 null。</summary>
         Protected Overridable Sub DisposeManagedResource()
-            If BaseStream IsNot Nothing Then
-                BaseStream.Dispose()
-                BaseStream = Nothing
+            If Readable IsNot Nothing Then
+                Readable.Dispose()
+                Readable = Nothing
+            End If
+            If Writable IsNot Nothing Then
+                Writable.Dispose()
+                Writable = Nothing
             End If
         End Sub
 
@@ -541,23 +551,25 @@ Namespace Packaging
         End Sub
 
         ''' <summary>打开文件包。</summary>
-        Public Delegate Function PackageOpen(ByVal s As ZeroPositionStreamPasser) As PackageBase
+        Public Delegate Function PackageOpenRead(ByVal sp As NewReadingStreamPasser) As PackageBase
+        Public Delegate Function PackageOpenReadWrite(ByVal sp As NewReadingWritingStreamPasser) As PackageBase
         Public Delegate Function PackageOpenWithPath(ByVal Path As String) As PackageBase
         ''' <summary>创建新的文件包。</summary>
-        Public Delegate Function PackageCreate(ByVal s As ZeroLengthStreamPasser, ByVal Directory As String) As PackageBase
+        Public Delegate Function PackageCreate(ByVal sp As NewWritingStreamPasser, ByVal Directory As String) As PackageBase
         Public Delegate Function PackageCreateWithPath(ByVal Path As String, ByVal Directory As String) As PackageBase
 
         Private Class PackageInfo
             Public Filter As String
-            Public Open As PackageOpen
+            Public OpenRead As PackageOpenRead
+            Public OpenReadWrite As PackageOpenReadWrite
             Public OpenWithPath As PackageOpenWithPath
             Public Create As PackageCreate
             Public CreateWithPath As PackageCreateWithPath
         End Class
 
         Private Shared Packages As New Dictionary(Of String, PackageInfo)
-        Private Shared Readables As New List(Of PackageInfo)
-        Private Shared Writables As New List(Of PackageInfo)
+        Private Shared Openables As New List(Of PackageInfo)
+        Private Shared Creatables As New List(Of PackageInfo)
 
         ''' <summary>
         ''' 注册一个包类型
@@ -565,22 +577,23 @@ Namespace Packaging
         ''' <param name="Filter">
         ''' 文件包文件名筛选器，应按照“Package File(*.Package)|*.Package”的格式书写。
         ''' </param>
-        Shared Sub Register(ByVal Filter As String, ByVal Open As PackageOpen, Optional ByVal Create As PackageCreate = Nothing)
+        Public Shared Sub Register(ByVal Filter As String, ByVal OpenRead As PackageOpenRead, ByVal OpenReadWrite As PackageOpenReadWrite, Optional ByVal Create As PackageCreate = Nothing)
             Dim p As PackageInfo
             If Not Packages.ContainsKey(Filter) Then
-                If Open Is Nothing Then Throw New ArgumentNullException("OpenFunctionNull")
-                p = New PackageInfo With {.Filter = Filter, .Open = Open, .Create = Create}
+                If OpenRead Is Nothing AndAlso OpenReadWrite Is Nothing Then Throw New ArgumentNullException("OpenFunctionNull")
+                p = New PackageInfo With {.Filter = Filter, .OpenRead = OpenRead, .OpenReadWrite = OpenReadWrite, .Create = Create}
                 Packages.Add(Filter, p)
             Else
                 p = Packages(Filter)
-                If Open Is Nothing AndAlso p.Open Is Nothing AndAlso p.OpenWithPath Is Nothing Then Throw New ArgumentNullException("OpenFunctionNull")
-                p.Open = Open
+                If OpenRead Is Nothing AndAlso OpenReadWrite Is Nothing AndAlso p.OpenRead Is Nothing AndAlso p.OpenReadWrite Is Nothing AndAlso p.OpenWithPath Is Nothing Then Throw New ArgumentNullException("OpenFunctionNull")
+                p.OpenRead = OpenRead
+                p.OpenReadWrite = OpenReadWrite
                 If Create IsNot Nothing Then p.Create = Create
             End If
-            If Not Readables.Contains(p) Then Readables.Add(p)
-            If Create IsNot Nothing AndAlso Not Writables.Contains(p) Then Writables.Add(p)
+            If Not Openables.Contains(p) Then Openables.Add(p)
+            If Create IsNot Nothing AndAlso Not Creatables.Contains(p) Then Creatables.Add(p)
         End Sub
-        Shared Sub Register(ByVal Filter As String, ByVal Open As PackageOpenWithPath, Optional ByVal Create As PackageCreateWithPath = Nothing)
+        Public Shared Sub Register(ByVal Filter As String, ByVal Open As PackageOpenWithPath, Optional ByVal Create As PackageCreateWithPath = Nothing)
             Dim p As PackageInfo
             If Not Packages.ContainsKey(Filter) Then
                 If Open Is Nothing Then Throw New ArgumentNullException("OpenFunctionNull")
@@ -588,68 +601,75 @@ Namespace Packaging
                 Packages.Add(Filter, p)
             Else
                 p = Packages(Filter)
-                If Open Is Nothing AndAlso p.Open Is Nothing AndAlso p.OpenWithPath Is Nothing Then Throw New ArgumentNullException("OpenFunctionNull")
+                If Open Is Nothing AndAlso p.OpenRead Is Nothing AndAlso p.OpenReadWrite Is Nothing AndAlso p.OpenWithPath Is Nothing Then Throw New ArgumentNullException("OpenFunctionNull")
                 p.OpenWithPath = Open
                 If Create IsNot Nothing Then p.CreateWithPath = Create
             End If
-            If Not Readables.Contains(p) Then Readables.Add(p)
-            If Create IsNot Nothing AndAlso Not Writables.Contains(p) Then Writables.Add(p)
+            If Not Openables.Contains(p) Then Openables.Add(p)
+            If Create IsNot Nothing AndAlso Not Creatables.Contains(p) Then Creatables.Add(p)
         End Sub
-        Shared Sub Unregister(ByVal Filter As String)
+        Public Shared Sub Unregister(ByVal Filter As String)
             Dim p As PackageInfo = Packages(Filter)
             Packages.Remove(Filter)
-            Readables.Remove(p)
-            If Writables.Contains(p) Then Writables.Remove(p)
+            Openables.Remove(p)
+            If Creatables.Contains(p) Then Creatables.Remove(p)
         End Sub
-        Shared Function Open(ByVal Index As Integer, ByVal sp As ZeroPositionStreamPasser) As PackageBase
-            If Readables(Index).Open IsNot Nothing Then
-                Return Readables(Index).Open(sp)
+        Public Shared Function Open(ByVal Index As Integer, ByVal sp As NewReadingStreamPasser) As PackageBase
+            If Openables(Index).OpenRead IsNot Nothing Then
+                Return Openables(Index).OpenRead(sp)
             Else
-                Throw New InvalidOperationException("NoOpenWithStreamFunction")
+                Throw New InvalidOperationException("NoOpenReadWithStreamFunction")
             End If
         End Function
-        Shared Function Open(ByVal Index As Integer, ByVal Path As String) As PackageBase
-            If Readables(Index).OpenWithPath Is Nothing Then
+        Public Shared Function Open(ByVal Index As Integer, ByVal sp As NewReadingWritingStreamPasser) As PackageBase
+            If Openables(Index).OpenRead IsNot Nothing Then
+                Return Openables(Index).OpenReadWrite(sp)
+            Else
+                Throw New InvalidOperationException("NoOpenReadWriteWithStreamFunction")
+            End If
+        End Function
+        Public Shared Function Open(ByVal Index As Integer, ByVal Path As String) As PackageBase
+            If Openables(Index).OpenWithPath Is Nothing Then
                 If CBool(IO.File.GetAttributes(Path) And IO.FileAttributes.ReadOnly) Then
-                    Return Open(Index, New StreamEx(Path, FileMode.Open, FileAccess.Read))
+                    Return Open(Index, StreamEx.CreateReadable(Path, FileMode.Open).AsNewReading)
                 Else
-                    Return Open(Index, New StreamEx(Path, FileMode.Open, FileAccess.ReadWrite))
+                    Return Open(Index, StreamEx.Create(Path, FileMode.Open).AsNewReadingWriting)
                 End If
             Else
-                Return Readables(Index).OpenWithPath(Path)
+                Return Openables(Index).OpenWithPath(Path)
             End If
         End Function
-        Shared Function Create(ByVal WritableIndex As Integer, ByVal sp As ZeroLengthStreamPasser, ByVal Directory As String) As PackageBase
-            If Writables(WritableIndex).Create IsNot Nothing Then
-                Return Writables(WritableIndex).Create(sp, Directory)
+        Public Shared Function Create(ByVal WritableIndex As Integer, ByVal sp As NewWritingStreamPasser, ByVal Directory As String) As PackageBase
+            If Creatables(WritableIndex).Create IsNot Nothing Then
+                Return Creatables(WritableIndex).Create(sp, Directory)
             Else
                 Throw New InvalidOperationException("NoCreateWithStreamFunction")
             End If
         End Function
-        Shared Function Create(ByVal WritableIndex As Integer, ByVal Path As String, ByVal Directory As String) As PackageBase
-            If Writables(WritableIndex).OpenWithPath Is Nothing Then
-                Return Create(WritableIndex, New StreamEx(Path, FileMode.Create, FileAccess.ReadWrite), Directory)
+        Public Shared Function Create(ByVal WritableIndex As Integer, ByVal Path As String, ByVal Directory As String) As PackageBase
+            If Creatables(WritableIndex).OpenWithPath Is Nothing Then
+                Return Create(WritableIndex, StreamEx.Create(Path, FileMode.Create).AsNewWriting, Directory)
             Else
-                Return Writables(WritableIndex).CreateWithPath(Path, Directory)
+                Return Creatables(WritableIndex).CreateWithPath(Path, Directory)
             End If
         End Function
-        Shared Function GetFilter() As String
+        Public Shared Function GetFilter() As String
             Dim sb As New System.Text.StringBuilder
-            For Each p In Readables
+            For Each p In Openables
                 sb.Append(p.Filter)
                 sb.Append("|")
             Next
             Return sb.ToString.TrimEnd("|"c)
         End Function
-        Shared Function GetWritableFilter() As String
+        Public Shared Function GetWritableFilter() As String
             Dim sb As New System.Text.StringBuilder
-            For Each p In Writables
+            For Each p In Creatables
                 sb.Append(p.Filter)
                 sb.Append("|")
             Next
             Return sb.ToString.TrimEnd("|"c)
         End Function
-        Shared ReadOnly Property PackageTypeCount() As Integer
+        Public Shared ReadOnly Property PackageTypeCount() As Integer
             Get
                 Return Packages.Count
             End Get

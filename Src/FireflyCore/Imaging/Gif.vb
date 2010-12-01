@@ -85,7 +85,7 @@ Namespace Imaging
         End Sub
 
         Public Sub New(ByVal Path As String)
-            Using gf As New StreamEx(Path, FileMode.Open)
+            Using gf = StreamEx.Create(Path, FileMode.Open)
                 With Me
                     For n As Integer = 0 To 5
                         If gf.ReadByte <> AscW(Identifier(n)) Then
@@ -121,15 +121,14 @@ Namespace Imaging
                 End With
             End Using
         End Sub
-        Private Shared Function GetNextImageBlock(ByVal sp As PositionedStreamPasser) As GifImageBlock
-            Dim s = sp.GetStream
+        Private Shared Function GetNextImageBlock(ByVal s As IReadableStream) As GifImageBlock
             Dim ret As GifImageBlock = Nothing
             Select Case s.ReadByte()
                 Case GifImageBlock.ExtensionIntroducer
                     If s.ReadByte() <> GifImageBlock.ExtGraphicControlLabel Then
                         Dim Len As Integer = s.ReadByte()
                         While Len <> 0
-                            s.Position += Len
+                            s.Skip(Len)
                             Len = s.ReadByte()
                         End While
                         Return GetNextImageBlock(s)
@@ -146,10 +145,9 @@ Namespace Imaging
             End Select
             Return ret
         End Function
-        Private Shared Sub ReadNotExtendedImageBlock(ByVal sp As PositionedStreamPasser, ByRef i As GifImageBlock)
-            Dim s = sp.GetStream
+        Private Shared Sub ReadNotExtendedImageBlock(ByVal s As IReadableStream, ByRef i As GifImageBlock)
             With i
-                s.Position += 4
+                s.Skip(4)
                 .Width = s.ReadInt16
                 .Height = s.ReadInt16
                 Dim b As Byte = s.ReadByte
@@ -218,8 +216,7 @@ Namespace Imaging
                 End If
             End With
         End Sub
-        Private Shared Sub ReadExtendedImageBlock(ByVal sp As PositionedStreamPasser, ByRef i As GifImageBlock)
-            Dim s = sp.GetStream
+        Private Shared Sub ReadExtendedImageBlock(ByVal s As IReadableStream, ByRef i As GifImageBlock)
             With i
                 .EnableControlExtension = True
                 s.ReadByte()
@@ -233,7 +230,7 @@ Namespace Imaging
         End Sub
 
         Public Sub WriteToFile(ByVal Path As String)
-            Using gf As New StreamEx(Path, FileMode.Create)
+            Using gf = StreamEx.Create(Path, FileMode.Create)
                 For n As Integer = 0 To Identifier.Length - 1
                     gf.WriteByte(CByte(AscW(Identifier(n))))
                 Next
@@ -269,8 +266,7 @@ Namespace Imaging
                 gf.WriteByte(Trailer)
             End Using
         End Sub
-        Private Sub WriteImageBlock(ByVal sp As PositionedStreamPasser, ByVal i As GifImageBlock)
-            Dim s = sp.GetStream
+        Private Sub WriteImageBlock(ByVal s As IWritableStream, ByVal i As GifImageBlock)
             With i
                 If .EnableControlExtension Then
                     s.WriteByte(GifImageBlock.ExtensionIntroducer)

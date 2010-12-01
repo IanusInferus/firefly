@@ -53,9 +53,9 @@ Namespace Imaging
             Set(ByVal value As Int32)
                 If value >= 0 Then PicWidth = value Else Return
                 CalcLineBitLength()
-                BaseStream.SetLength(FileSize)
-                BaseStream.Position = 18
-                BaseStream.WriteInt32(PicWidth)
+                Writable.SetLength(FileSize)
+                Writable.Position = 18
+                Writable.WriteInt32(PicWidth)
             End Set
         End Property
         Private LineBitLength As Int32
@@ -74,9 +74,9 @@ Namespace Imaging
             End Get
             Set(ByVal value As Int32)
                 If value >= 0 Then PicHeight = value Else Return
-                BaseStream.SetLength(FileSize)
-                BaseStream.Position = 22
-                BaseStream.WriteInt32(PicHeight)
+                Writable.SetLength(FileSize)
+                Writable.Position = 22
+                Writable.WriteInt32(PicHeight)
             End Set
         End Property
         Private Const Planes As Int16 = 1
@@ -112,9 +112,9 @@ Namespace Imaging
                 Dim Value As Int32()
                 If (PicBitsPerPixel = 1) OrElse (PicBitsPerPixel = 4) OrElse (PicBitsPerPixel = 8) Then
                     Value = New Int32((1 << PicBitsPerPixel) - 1) {}
-                    BaseStream.Position = &H36
+                    Readable.Position = &H36
                     For n As Integer = 0 To (1 << PicBitsPerPixel) - 1
-                        Value(n) = BaseStream.ReadInt32
+                        Value(n) = Readable.ReadInt32
                     Next
                 Else
                     Throw New InvalidDataException
@@ -125,9 +125,9 @@ Namespace Imaging
             Set(ByVal Value As Int32())
                 If (PicBitsPerPixel = 1) OrElse (PicBitsPerPixel = 4) OrElse (PicBitsPerPixel = 8) Then
                     If Value.Length <> 1 << PicBitsPerPixel Then Throw New InvalidDataException
-                    BaseStream.Position = &H36
+                    Writable.Position = &H36
                     For n As Integer = 0 To (1 << PicBitsPerPixel) - 1
-                        BaseStream.WriteInt32(Value(n))
+                        Writable.WriteInt32(Value(n))
                     Next
                 Else
                     Throw New InvalidDataException
@@ -136,7 +136,9 @@ Namespace Imaging
             End Set
         End Property
 
-        Private BaseStream As IStream
+        Private Readable As IReadableSeekableStream
+        Private Writable As IStream
+
         Private r5g6b5 As Boolean
         Private Sub New()
         End Sub
@@ -144,10 +146,10 @@ Namespace Imaging
         ''' <summary>新建Bmp</summary>
         ''' <param name="BitsPerPixel">Bmp位数：可以取1、4、8、15、16、24、32</param>
         ''' <remarks>注意，流在Bmp关闭时会被关闭。</remarks>
-        Public Sub New(ByVal sp As ZeroLengthStreamPasser, ByVal Width As Int32, ByVal Height As Int32, Optional ByVal BitsPerPixel As Int16 = 24)
-            BaseStream = sp.GetStream
+        Public Sub New(ByVal sp As NewWritingStreamPasser, ByVal Width As Int32, ByVal Height As Int32, Optional ByVal BitsPerPixel As Int16 = 24)
+            Writable = sp.GetStream
             If Width < 0 OrElse Height < 0 Then
-                BaseStream.Dispose()
+                Writable.Dispose()
                 Throw New InvalidDataException
             End If
             PicWidth = Width
@@ -162,94 +164,94 @@ Namespace Imaging
             ElseIf (BitsPerPixel = 24) OrElse (BitsPerPixel = 32) Then
                 PicBitsPerPixel = BitsPerPixel
             Else
-                BaseStream.Dispose()
+                Writable.Dispose()
                 Throw New NotSupportedException("PicBitsPerPixelNotSupported")
             End If
             CalcLineBitLength()
-            BaseStream.SetLength(FileSize)
+            Writable.SetLength(FileSize)
 
-            BaseStream.Position = 0
+            Writable.Position = 0
             For n As Integer = 0 To Identifier.Length - 1
-                BaseStream.WriteByte(CByte(AscQ(Identifier(n))))
+                Writable.WriteByte(CByte(AscQ(Identifier(n))))
             Next
-            BaseStream.WriteInt32(FileSize)
-            BaseStream.WriteInt32(Reserved)
-            BaseStream.WriteInt32(BitmapDataOffset)
-            BaseStream.WriteInt32(BitmapHeaderSize)
-            BaseStream.WriteInt32(PicWidth)
-            BaseStream.WriteInt32(PicHeight)
-            BaseStream.WriteInt16(Planes)
-            BaseStream.WriteInt16(PicBitsPerPixel)
-            BaseStream.WriteInt32(PicCompression)
-            BaseStream.WriteInt32(BitmapDataSize)
-            BaseStream.WriteInt32(HResolution)
-            BaseStream.WriteInt32(VResolution)
-            BaseStream.WriteInt32(Colors)
-            BaseStream.WriteInt32(ImportantColors)
+            Writable.WriteInt32(FileSize)
+            Writable.WriteInt32(Reserved)
+            Writable.WriteInt32(BitmapDataOffset)
+            Writable.WriteInt32(BitmapHeaderSize)
+            Writable.WriteInt32(PicWidth)
+            Writable.WriteInt32(PicHeight)
+            Writable.WriteInt16(Planes)
+            Writable.WriteInt16(PicBitsPerPixel)
+            Writable.WriteInt32(PicCompression)
+            Writable.WriteInt32(BitmapDataSize)
+            Writable.WriteInt32(HResolution)
+            Writable.WriteInt32(VResolution)
+            Writable.WriteInt32(Colors)
+            Writable.WriteInt32(ImportantColors)
 
             If (PicCompression = 3) AndAlso (PicBitsPerPixel = 16) Then
                 If r5g6b5 Then
-                    BaseStream.WriteInt32(&HF800)
-                    BaseStream.WriteInt32(&H7E0)
-                    BaseStream.WriteInt32(&H1F)
-                    BaseStream.WriteInt32(&H0)
+                    Writable.WriteInt32(&HF800)
+                    Writable.WriteInt32(&H7E0)
+                    Writable.WriteInt32(&H1F)
+                    Writable.WriteInt32(&H0)
                 Else
-                    BaseStream.WriteInt32(&H7C00)
-                    BaseStream.WriteInt32(&H3E0)
-                    BaseStream.WriteInt32(&H1F)
-                    BaseStream.WriteInt32(&H0)
+                    Writable.WriteInt32(&H7C00)
+                    Writable.WriteInt32(&H3E0)
+                    Writable.WriteInt32(&H1F)
+                    Writable.WriteInt32(&H0)
                 End If
             End If
         End Sub
         ''' <summary>新建内存流Bmp</summary>
         ''' <param name="BitsPerPixel">Bmp位数：可以取1、4、8、15、16、24、32</param>
         Public Sub New(ByVal Width As Int32, ByVal Height As Int32, Optional ByVal BitsPerPixel As Int16 = 24)
-            Me.New(New StreamEx, Width, Height, BitsPerPixel)
+            Me.New(StreamEx.Create.AsNewWriting, Width, Height, BitsPerPixel)
         End Sub
         ''' <summary>新建文件流Bmp</summary>
         ''' <param name="BitsPerPixel">Bmp位数：可以取1、4、8、15、16、24、32</param>
         Public Sub New(ByVal Path As String, ByVal Width As Int32, ByVal Height As Int32, Optional ByVal BitsPerPixel As Int16 = 24)
-            Me.New(New StreamEx(Path, FileMode.Create), Width, Height, BitsPerPixel)
+            Me.New(StreamEx.Create(Path, FileMode.Create).AsNewWriting, Width, Height, BitsPerPixel)
         End Sub
 
         ''' <summary>已重载。从流打开一个位图。</summary>
-        Public Shared Function Open(ByVal sp As ZeroPositionStreamPasser) As Bmp
+        Public Shared Function Open(ByVal sp As NewReadingStreamPasser) As Bmp
             Dim s = sp.GetStream
             Dim bf As New Bmp
             With bf
-                .BaseStream = s
-                .BaseStream.Position = 0
+                .Readable = s
+                .Readable.Position = 0
                 For n As Integer = 0 To Identifier.Length - 1
-                    If .BaseStream.ReadByte() <> AscQ(Identifier(n)) Then
+                    If .Readable.ReadByte() <> AscQ(Identifier(n)) Then
                         bf.Dispose()
                         Throw New InvalidDataException
                     End If
                 Next
-                .BaseStream.ReadInt32() '跳过File Size
-                .BaseStream.ReadInt32() '跳过Reserved
-                .BaseStream.ReadInt32() '跳过Bitmap Data Offset
-                .BaseStream.ReadInt32() '跳过Bitmap Header Size
-                .PicWidth = .BaseStream.ReadInt32
-                .PicHeight = .BaseStream.ReadInt32
+                .Readable.ReadInt32() '跳过File Size
+                .Readable.ReadInt32() '跳过Reserved
+                .Readable.ReadInt32() '跳过Bitmap Data Offset
+                .Readable.ReadInt32() '跳过Bitmap Header Size
+                .PicWidth = .Readable.ReadInt32
+                .PicHeight = .Readable.ReadInt32
                 If .PicWidth < 0 OrElse .PicHeight < 0 Then
                     bf.Dispose()
                     Throw New InvalidDataException
                 End If
-                .BaseStream.ReadInt16() '跳过Planes
-                .PicBitsPerPixel = .BaseStream.ReadInt16
-                .PicCompression = .BaseStream.ReadInt32
-                .BaseStream.ReadInt32() '跳过Bitmap Data Size
-                .BaseStream.ReadInt32() '跳过HResolution
-                .BaseStream.ReadInt32() '跳过VResolution
-                .BaseStream.ReadInt32() '跳过Colors
-                .BaseStream.ReadInt32() '跳过Important Colors
+                .Readable.ReadInt16() '跳过Planes
+                .PicBitsPerPixel = .Readable.ReadInt16
+                .PicCompression = .Readable.ReadInt32
+                .Readable.ReadInt32() '跳过Bitmap Data Size
+                .Readable.ReadInt32() '跳过HResolution
+                .Readable.ReadInt32() '跳过VResolution
+                .Readable.ReadInt32() '跳过Colors
+                .Readable.ReadInt32() '跳过Important Colors
 
                 If .PicCompression <> 0 Then
                     If (.PicCompression = 3) AndAlso (.PicBitsPerPixel = 16) Then
-                        .r5g6b5 = CBool(.BaseStream.ReadInt32() And &H8000) '检验红色掩码是否从最高位开始
-                        .BaseStream.ReadInt32() '跳过绿色掩码
-                        .BaseStream.ReadInt32() '跳过蓝色掩码
-                        .BaseStream.ReadInt32()
+                        .r5g6b5 = CBool(.Readable.ReadInt32() And &H8000) '检验红色掩码是否从最高位开始
+                        .Readable.ReadInt32() '跳过绿色掩码
+                        .Readable.ReadInt32() '跳过蓝色掩码
+                        .Readable.ReadInt32()
                     Else
                         bf.Dispose()
                         Throw New InvalidDataException
@@ -259,7 +261,7 @@ Namespace Imaging
                 If (.PicBitsPerPixel = 1) OrElse (.PicBitsPerPixel = 4) OrElse (.PicBitsPerPixel = 8) Then
                     .PicPalette = New Int32((1 << .PicBitsPerPixel) - 1) {}
                     For n As Integer = 0 To (1 << .PicBitsPerPixel) - 1
-                        .PicPalette(n) = .BaseStream.ReadInt32()
+                        .PicPalette(n) = .Readable.ReadInt32()
                     Next
                 ElseIf (.PicBitsPerPixel = 16) OrElse (.PicBitsPerPixel = 24) OrElse (.PicBitsPerPixel = 32) Then
                 Else
@@ -271,27 +273,44 @@ Namespace Imaging
             End With
             Return bf
         End Function
+        ''' <summary>已重载。从流打开一个位图。</summary>
+        Public Shared Function Open(ByVal sp As NewReadingWritingStreamPasser) As Bmp
+            Dim s = sp.GetStream
+            Dim bf = Open(s.AsNewReading)
+            bf.Writable = s
+            Return bf
+        End Function
         ''' <summary>已重载。从文件打开一个位图。</summary>
         Public Shared Function Open(ByVal Path As String) As Bmp
-            Dim s As New StreamEx(Path, FileMode.Open)
             Try
-                Return Open(s)
+                Dim s = StreamEx.Create(Path, FileMode.Open)
+                Try
+                    Return Open(s.AsNewReadingWriting)
+                Catch
+                    s.Dispose()
+                    Throw
+                End Try
             Catch
-                s.Dispose()
-                Throw
+                Dim s = StreamEx.CreateReadable(Path, FileMode.Open)
+                Try
+                    Return Open(s.AsNewReading)
+                Catch
+                    s.Dispose()
+                    Throw
+                End Try
             End Try
         End Function
         ''' <summary>转换为System.Drawing.Bitmap。</summary>
         Public Function ToBitmap() As Bitmap
-            BaseStream.Position = 0
-            BaseStream.Flush()
-            Return New Bitmap(BaseStream.ToStream)
+            Readable.Position = 0
+            Readable.Flush()
+            Return New Bitmap(Readable.ToStream)
         End Function
         ''' <summary>保存到流。</summary>
-        Public Sub SaveTo(ByVal sp As ZeroPositionStreamPasser)
+        Public Sub SaveTo(ByVal sp As NewWritingStreamPasser)
             Dim s = sp.GetStream
-            BaseStream.Position = 0
-            s.WriteFromStream(BaseStream, BaseStream.Length)
+            Readable.Position = 0
+            s.WriteFromStream(Readable, Readable.Length)
         End Sub
 
         Private ReadOnly Property Pos(ByVal x As Int32, ByVal y As Int32) As Integer
@@ -302,20 +321,20 @@ Namespace Imaging
         ''' <summary>获得像素点。</summary>
         Public Function GetPixel(ByVal x As Int32, ByVal y As Int32) As Int32
             If x < 0 OrElse x > PicWidth - 1 OrElse y < 0 OrElse y > PicHeight - 1 Then Return 0
-            BaseStream.Position = BitmapDataOffset + Pos(x, y)
+            Readable.Position = BitmapDataOffset + Pos(x, y)
             Select Case PicBitsPerPixel
                 Case 1
-                    Return (BaseStream.ReadByte >> (7 - x Mod 8)) And 1
+                    Return (Readable.ReadByte >> (7 - x Mod 8)) And 1
                 Case 4
-                    Return (BaseStream.ReadByte >> (4 * (1 - x Mod 2))) And 15
+                    Return (Readable.ReadByte >> (4 * (1 - x Mod 2))) And 15
                 Case 8
-                    Return BaseStream.ReadByte
+                    Return Readable.ReadByte
                 Case 16
-                    Return BaseStream.ReadInt16
+                    Return Readable.ReadInt16
                 Case 24
-                    Return BaseStream.ReadInt32 And &HFFFFFF
+                    Return Readable.ReadInt32 And &HFFFFFF
                 Case 32
-                    Return BaseStream.ReadInt32
+                    Return Readable.ReadInt32
                 Case Else
                     Throw New InvalidOperationException
             End Select
@@ -323,27 +342,27 @@ Namespace Imaging
         ''' <summary>设置像素点。</summary>
         Public Sub SetPixel(ByVal x As Int32, ByVal y As Int32, ByVal c As Int32)
             If x < 0 OrElse x > PicWidth - 1 OrElse y < 0 OrElse y > PicHeight - 1 Then Return
-            BaseStream.Position = BitmapDataOffset + Pos(x, y)
+            Writable.Position = BitmapDataOffset + Pos(x, y)
             Select Case PicBitsPerPixel
                 Case 1
-                    Dim k As Byte = BaseStream.ReadByte
+                    Dim k As Byte = Writable.ReadByte
                     k = k And Not CByte(1 << (7 - x Mod 8)) Or CByte((CByte(c <> 0) And 1) << (7 - x Mod 8))
-                    BaseStream.Position -= 1
-                    BaseStream.WriteByte(k)
+                    Writable.Position -= 1
+                    Writable.WriteByte(k)
                 Case 4
-                    Dim k As Byte = BaseStream.ReadByte
+                    Dim k As Byte = Writable.ReadByte
                     k = k And Not CByte(15 << (4 * (1 - x Mod 2))) Or CByte((c And 15) << (4 * (1 - x Mod 2)))
-                    BaseStream.Position -= 1
-                    BaseStream.WriteByte(k)
+                    Writable.Position -= 1
+                    Writable.WriteByte(k)
                 Case 8
-                    BaseStream.WriteByte(CByte(c And &HFF))
+                    Writable.WriteByte(CByte(c And &HFF))
                 Case 16
-                    BaseStream.WriteInt16(CID(c And &HFFFF))
+                    Writable.WriteInt16(CID(c And &HFFFF))
                 Case 24
-                    BaseStream.WriteInt16(CID(c And &HFFFF))
-                    BaseStream.WriteByte(CByte((c >> 16) And &HFF))
+                    Writable.WriteInt16(CID(c And &HFFFF))
+                    Writable.WriteByte(CByte((c >> 16) And &HFF))
                 Case 32S
-                    BaseStream.WriteInt32(c)
+                    Writable.WriteInt32(c)
             End Select
         End Sub
         ''' <summary>获取矩形。</summary>
@@ -377,17 +396,17 @@ Namespace Imaging
             End If
 
             For m As Integer = oy + h - y - 1 To oy - y Step -1
-                BaseStream.Position = BitmapDataOffset + Pos(ox, oy + m)
+                Readable.Position = BitmapDataOffset + Pos(ox, oy + m)
                 Select Case PicBitsPerPixel
                     Case 1
                         Dim t As Byte
                         If (ox And 7) <> 0 Then
-                            t = BaseStream.ReadByte
+                            t = Readable.ReadByte
                             t = t << (ox And 7)
                         End If
                         For n As Integer = xl To xu
                             If (n And 7) = 0 Then
-                                t = BaseStream.ReadByte
+                                t = Readable.ReadByte
                             End If
                             a(n, m) = (t And 128) >> 7
                             t = t << 1
@@ -395,11 +414,11 @@ Namespace Imaging
                     Case 4
                         Dim t As Byte
                         If (ox And 1) = 1 Then
-                            t = BaseStream.ReadByte
+                            t = Readable.ReadByte
                         End If
                         For n As Integer = xl To xu
                             If (n And 1) = 0 Then
-                                t = BaseStream.ReadByte
+                                t = Readable.ReadByte
                                 a(n, m) = t >> 4
                             Else
                                 a(n, m) = t And 15
@@ -407,21 +426,21 @@ Namespace Imaging
                         Next
                     Case 8
                         For n As Integer = xl To xu
-                            a(n, m) = BaseStream.ReadByte
+                            a(n, m) = Readable.ReadByte
                         Next
                     Case 16
                         For n As Integer = xl To xu
-                            a(n, m) = EID(BaseStream.ReadInt16)
+                            a(n, m) = EID(Readable.ReadInt16)
                         Next
                     Case 24
                         For n As Integer = xl To xu
-                            a(n, m) = EID(BaseStream.ReadInt16)
-                            a(n, m) = a(n, m) Or (CInt(BaseStream.ReadByte) << 16)
+                            a(n, m) = EID(Readable.ReadInt16)
+                            a(n, m) = a(n, m) Or (CInt(Readable.ReadByte) << 16)
                             a(n, m) = &HFF000000 Or a(n, m)
                         Next
                     Case 32
                         For n As Integer = xl To xu
-                            a(n, m) = BaseStream.ReadInt32
+                            a(n, m) = Readable.ReadInt32
                         Next
                 End Select
             Next
@@ -458,17 +477,17 @@ Namespace Imaging
             End If
 
             For m As Integer = oy + h - y - 1 To oy - y Step -1
-                BaseStream.Position = BitmapDataOffset + Pos(ox, oy + m)
+                Readable.Position = BitmapDataOffset + Pos(ox, oy + m)
                 Select Case PicBitsPerPixel
                     Case 1
                         Dim t As Byte
                         If (ox And 7) <> 0 Then
-                            t = BaseStream.ReadByte
+                            t = Readable.ReadByte
                             t = t << (ox And 7)
                         End If
                         For n As Integer = xl To xu
                             If (n And 7) = 0 Then
-                                t = BaseStream.ReadByte
+                                t = Readable.ReadByte
                             End If
                             a(n, m) = CByte((t And 128) >> 7)
                             t = t << 1
@@ -476,11 +495,11 @@ Namespace Imaging
                     Case 4
                         Dim t As Byte
                         If (ox And 1) = 1 Then
-                            t = BaseStream.ReadByte
+                            t = Readable.ReadByte
                         End If
                         For n As Integer = xl To xu
                             If (n And 1) = 0 Then
-                                t = BaseStream.ReadByte
+                                t = Readable.ReadByte
                                 a(n, m) = t >> 4
                             Else
                                 a(n, m) = CByte(t And 15)
@@ -488,7 +507,7 @@ Namespace Imaging
                         Next
                     Case 8
                         For n As Integer = xl To xu
-                            a(n, m) = BaseStream.ReadByte
+                            a(n, m) = Readable.ReadByte
                         Next
                     Case 16, 24, 32
                         Throw New InvalidOperationException
@@ -528,60 +547,60 @@ Namespace Imaging
             End If
 
             For m As Integer = oy + h - y - 1 To oy - y Step -1
-                BaseStream.Position = BitmapDataOffset + Pos(ox, oy + m)
+                Writable.Position = BitmapDataOffset + Pos(ox, oy + m)
                 Select Case PicBitsPerPixel
                     Case 1
                         Dim t As Byte
                         If (ox And 7) <> 0 Then
-                            t = BaseStream.ReadByte >> (8 - ox And 7)
-                            BaseStream.Position -= 1
+                            t = Writable.ReadByte >> (8 - ox And 7)
+                            Writable.Position -= 1
                         End If
                         Dim n As Integer
                         For n = xl To xu
                             t = t << 1
                             If a(n, m) <> 0 Then t = t Or CByte(1)
                             If (n And 7) = 7 Then
-                                BaseStream.WriteByte(t)
+                                Writable.WriteByte(t)
                             End If
                         Next
                         If (n And 7) <> 0 Then
                             t = t << (7 - n And 7)
-                            BaseStream.WriteByte(t)
+                            Writable.WriteByte(t)
                         End If
                     Case 4
                         Dim t As Byte
                         If (ox And 1) <> 0 Then
-                            t = BaseStream.ReadByte >> (4 * (2 - ox And 1))
-                            BaseStream.Position -= 1
+                            t = Writable.ReadByte >> (4 * (2 - ox And 1))
+                            Writable.Position -= 1
                         End If
                         Dim n As Integer
                         For n = xl To xu
                             t = t << 4
                             t = t Or CByte(a(n, m) And 15)
                             If (n And 1) = 1 Then
-                                BaseStream.WriteByte(t)
+                                Writable.WriteByte(t)
                             End If
                         Next
                         If (n And 1) <> 0 Then
                             t = t << 4
-                            BaseStream.WriteByte(t)
+                            Writable.WriteByte(t)
                         End If
                     Case 8
                         For n As Integer = xl To xu
-                            BaseStream.WriteByte(CByte(a(n, m) And &HFF))
+                            Writable.WriteByte(CByte(a(n, m) And &HFF))
                         Next
                     Case 16
                         For n As Integer = xl To xu
-                            BaseStream.WriteInt16(CID(a(n, m) And &HFFFF))
+                            Writable.WriteInt16(CID(a(n, m) And &HFFFF))
                         Next
                     Case 24
                         For n As Integer = xl To xu
-                            BaseStream.WriteInt16(CID(a(n, m) And &HFFFF))
-                            BaseStream.WriteByte(CByte((a(n, m) >> 16) And &HFF))
+                            Writable.WriteInt16(CID(a(n, m) And &HFFFF))
+                            Writable.WriteByte(CByte((a(n, m) >> 16) And &HFF))
                         Next
                     Case 32
                         For n As Integer = xl To xu
-                            BaseStream.WriteInt32(a(n, m))
+                            Writable.WriteInt32(a(n, m))
                         Next
                 End Select
             Next
@@ -618,47 +637,47 @@ Namespace Imaging
             End If
 
             For m As Integer = oy + h - y - 1 To oy - y Step -1
-                BaseStream.Position = BitmapDataOffset + Pos(ox, oy + m)
+                Writable.Position = BitmapDataOffset + Pos(ox, oy + m)
                 Select Case PicBitsPerPixel
                     Case 1
                         Dim t As Byte
                         If (ox And 7) <> 0 Then
-                            t = BaseStream.ReadByte >> (8 - ox And 7)
-                            BaseStream.Position -= 1
+                            t = Writable.ReadByte >> (8 - ox And 7)
+                            Writable.Position -= 1
                         End If
                         Dim n As Integer
                         For n = xl To xu
                             t = t << 1
                             If a(n, m) <> 0 Then t = t Or CByte(1)
                             If (n And 7) = 7 Then
-                                BaseStream.WriteByte(t)
+                                Writable.WriteByte(t)
                             End If
                         Next
                         If (n And 7) <> 0 Then
                             t = t << (7 - n And 7)
-                            BaseStream.WriteByte(t)
+                            Writable.WriteByte(t)
                         End If
                     Case 4
                         Dim t As Byte
                         If (ox And 1) <> 0 Then
-                            t = BaseStream.ReadByte >> (4 * (2 - ox And 1))
-                            BaseStream.Position -= 1
+                            t = Writable.ReadByte >> (4 * (2 - ox And 1))
+                            Writable.Position -= 1
                         End If
                         Dim n As Integer
                         For n = xl To xu
                             t = t << 4
                             t = t Or CByte(a(n, m) And 15)
                             If (n And 1) = 1 Then
-                                BaseStream.WriteByte(t)
+                                Writable.WriteByte(t)
                             End If
                         Next
                         If (n And 1) <> 0 Then
                             t = t << 4
-                            BaseStream.WriteByte(t)
+                            Writable.WriteByte(t)
                         End If
                     Case 8
                         For n As Integer = xl To xu
-                            BaseStream.WriteByte(CByte(a(n, m) And &HFF))
+                            Writable.WriteByte(CByte(a(n, m) And &HFF))
                         Next
                     Case 16, 24, 32
                         Throw New InvalidOperationException
@@ -725,66 +744,66 @@ Namespace Imaging
             End If
 
             For m As Integer = oy + h - y - 1 To oy - y Step -1
-                BaseStream.Position = BitmapDataOffset + Pos(ox, oy + m)
+                Writable.Position = BitmapDataOffset + Pos(ox, oy + m)
                 Select Case PicBitsPerPixel
                     Case 1
                         Dim t As Byte
                         If (ox And 7) <> 0 Then
-                            t = BaseStream.ReadByte >> (8 - ox And 7)
-                            BaseStream.Position -= 1
+                            t = Writable.ReadByte >> (8 - ox And 7)
+                            Writable.Position -= 1
                         End If
                         Dim n As Integer
                         For n = xl To xu
                             t = t << 1
                             If Quantize(a(n, m)) <> 0 Then t = t Or CByte(1)
                             If (n And 7) = 7 Then
-                                BaseStream.WriteByte(t)
+                                Writable.WriteByte(t)
                             End If
                         Next
                         If (n And 7) <> 0 Then
                             t = t << (7 - n And 7)
-                            BaseStream.WriteByte(t)
+                            Writable.WriteByte(t)
                         End If
                     Case 4
                         Dim t As Byte
                         If (ox And 1) <> 0 Then
-                            t = BaseStream.ReadByte >> (4 * (2 - ox And 1))
-                            BaseStream.Position -= 1
+                            t = Writable.ReadByte >> (4 * (2 - ox And 1))
+                            Writable.Position -= 1
                         End If
                         Dim n As Integer
                         For n = xl To xu
                             t = t << 4
                             t = t Or CByte(Quantize(a(n, m)) And 15)
                             If (n And 1) = 1 Then
-                                BaseStream.WriteByte(t)
+                                Writable.WriteByte(t)
                             End If
                         Next
                         If (n And 1) <> 0 Then
                             t = t << 4
-                            BaseStream.WriteByte(t)
+                            Writable.WriteByte(t)
                         End If
                     Case 8
                         For n As Integer = xl To xu
-                            BaseStream.WriteByte(CByte(Quantize(a(n, m)) And &HFF))
+                            Writable.WriteByte(CByte(Quantize(a(n, m)) And &HFF))
                         Next
                     Case 16
                         If r5g6b5 Then
                             For n As Integer = xl To xu
-                                BaseStream.WriteInt16(CID(ColorSpace.RGB32To16(a(n, m)) And &HFFFF))
+                                Writable.WriteInt16(CID(ColorSpace.RGB32To16(a(n, m)) And &HFFFF))
                             Next
                         Else
                             For n As Integer = xl To xu
-                                BaseStream.WriteInt16(CID(ColorSpace.RGB32To15(a(n, m)) And &HFFFF))
+                                Writable.WriteInt16(CID(ColorSpace.RGB32To15(a(n, m)) And &HFFFF))
                             Next
                         End If
                     Case 24
                         For n As Integer = xl To xu
-                            BaseStream.WriteInt16(CID(a(n, m) And &HFFFF))
-                            BaseStream.WriteByte(CByte((a(n, m) >> 16) And &HFF))
+                            Writable.WriteInt16(CID(a(n, m) And &HFFFF))
+                            Writable.WriteByte(CByte((a(n, m) >> 16) And &HFF))
                         Next
                     Case 32
                         For n As Integer = xl To xu
-                            BaseStream.WriteInt32(a(n, m))
+                            Writable.WriteInt32(a(n, m))
                         Next
                 End Select
             Next
@@ -797,9 +816,13 @@ Namespace Imaging
 
         ''' <summary>释放资源。</summary>
         Public Sub Dispose() Implements IDisposable.Dispose
-            If BaseStream IsNot Nothing Then
-                BaseStream.Dispose()
-                BaseStream = Nothing
+            If Readable IsNot Nothing Then
+                Readable.Dispose()
+                Readable = Nothing
+            End If
+            If Writable IsNot Nothing Then
+                Writable.Dispose()
+                Writable = Nothing
             End If
         End Sub
     End Class

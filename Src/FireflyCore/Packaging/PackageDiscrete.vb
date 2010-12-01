@@ -89,8 +89,12 @@ Namespace Packaging
         Protected Sub New()
             MyBase.New()
         End Sub
+        ''' <summary>已重载。打开文件包。</summary>
+        Public Sub New(ByVal sp As NewReadingStreamPasser)
+            MyBase.New(sp)
+        End Sub
         ''' <summary>已重载。打开或创建文件包。</summary>
-        Public Sub New(ByVal sp As ZeroPositionStreamPasser)
+        Public Sub New(ByVal sp As NewReadingWritingStreamPasser)
             MyBase.New(sp)
         End Sub
 
@@ -105,7 +109,7 @@ Namespace Packaging
                     HoleMap.Remove(Address)
                 End If
             ElseIf OldFileCount > 0 AndAlso FileCount = 0 Then
-                Dim EndAddress = GetAlignedAddress(BaseStream.Length)
+                Dim EndAddress = GetAlignedAddress(Writable.Length)
                 Dim i = Blocks.IndexOfKey(Address)
                 If i + 1 < Blocks.Count Then EndAddress = Blocks.Keys(i + 1)
                 If EndAddress > Address Then
@@ -134,7 +138,7 @@ Namespace Packaging
                 Dim NewPreviousHole As New Hole With {.Address = PreviousAddress, .Length = Address - PreviousAddress}
                 Holes.Add(NewPreviousHole, 0)
                 HoleMap.Add(NewPreviousHole.Address, NewPreviousHole)
-                Dim NewHole As New Hole With {.Address = Address, .Length = GetAlignedAddress(BaseStream.Length) - Address}
+                Dim NewHole As New Hole With {.Address = Address, .Length = GetAlignedAddress(Writable.Length) - Address}
                 Holes.Add(NewHole, 0)
                 HoleMap.Add(NewHole.Address, NewHole)
             End If
@@ -196,7 +200,7 @@ Namespace Packaging
                 If Blocks(CurrentBlockAddress) = 0 Then
                     '清空原始数据
                     Dim Offset = CurrentBlockAddress - File.Address
-                    Using s As New PartialStreamEx(BaseStream, Blocks.Keys(i), Min(GetSpace(File.Length) - Offset, BaseStream.Length - CurrentBlockAddress))
+                    Using s = Writable.Partialize(Blocks.Keys(i), Min(GetSpace(File.Length) - Offset, Writable.Length - CurrentBlockAddress))
                         s.Position = 0
                         For n = 0 To File.Length - 1
                             s.WriteByte(0)
@@ -213,7 +217,7 @@ Namespace Packaging
         Protected Sub ScanHoles(ByVal DataStart As Int64)
             Me.DataStart = DataStart
             Blocks.Add(DataStart, 0)
-            Dim InitialHole As New Hole With {.Address = DataStart, .Length = GetAlignedAddress(BaseStream.Length) - DataStart}
+            Dim InitialHole As New Hole With {.Address = DataStart, .Length = GetAlignedAddress(Readable.Length) - DataStart}
             Holes.Add(InitialHole, 0)
             HoleMap.Add(InitialHole.Address, InitialHole)
             For Each f In FileList
@@ -229,7 +233,7 @@ Namespace Packaging
         End Sub
 
         ''' <summary>已重载。替换包中的一个文件。</summary>
-        Protected Overrides Sub ReplaceSingleInner(ByVal File As FileDB, ByVal sp As ZeroPositionStreamPasser)
+        Protected Overrides Sub ReplaceSingleInner(ByVal File As FileDB, ByVal sp As NewReadingStreamPasser)
             Dim s = sp.GetStream
 
             If File.Address <> FileAddressInPhysicalFileDB(File) Then Throw New ArgumentException("PhysicalFileAddressErrorPointing")
@@ -269,11 +273,11 @@ Namespace Packaging
             If Blocks(Address) <> 0 Then Throw New InvalidOperationException
             If Hole IsNot Nothing Then
                 If Hole.Address + Hole.Length >= Address Then
-                    BaseStream.SetLength(Hole.Address + Hole.Length)
+                    Writable.SetLength(Hole.Address + Hole.Length)
                 End If
             Else
                 Dim Length = GetSpace(s.Length)
-                BaseStream.SetLength(Address + Length)
+                Writable.SetLength(Address + Length)
                 Hole = New Hole With {.Address = Address, .Length = Length}
             End If
 
@@ -288,7 +292,7 @@ Namespace Packaging
             AddFileToBlocks(File)
 
             '改变文件数据
-            Using f As New PartialStreamEx(BaseStream, Hole.Address, Hole.Length)
+            Using f = Writable.Partialize(Hole.Address, Hole.Length)
                 f.Position = 0
                 f.WriteFromStream(s, s.Length)
                 For n = s.Length To f.Length - 1

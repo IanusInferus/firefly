@@ -10,12 +10,12 @@ Imports Firefly.GUI
 
 Public Module Test
     Public Sub TestStreamExStreamReadWrite()
-        Using a As New StreamEx
+        Using a = StreamEx.Create
             For n = 0 To 15 * (1 << 20) - 1
                 a.WriteByte((n * 7 + 13) And &HFF)
             Next
             a.Position = 0
-            Using b As New StreamEx
+            Using b = StreamEx.Create
                 b.WriteFromStream(a, 15 * (1 << 20))
                 b.Position = 0
                 For n = 0 To 15 * (1 << 20) - 1
@@ -31,7 +31,7 @@ Public Module Test
             End Using
         End Using
 
-        Using s As New StreamEx
+        Using s = StreamEx.Create
             Dim Flag As Boolean = False
             Try
                 s.WriteSimpleString("我", 10)
@@ -380,7 +380,7 @@ Public Module Test
         '    TestLZ77Reversed(Data)
         'Next
         'TestFileDialog()
-        'TestBitStreamReadWrite()
+        TestBitStreamReadWrite()
         'TestCommandLine()
         'TestMessageDialog()
         TestMapping()

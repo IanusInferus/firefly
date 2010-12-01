@@ -67,7 +67,7 @@ Namespace Glyphing
             Return ReadFile(Reader, Function(LineNumber) New InvalidTextFormatException(LineNumber))
         End Function
         Public Shared Function ReadFile(ByVal Path As String, ByVal Encoding As System.Text.Encoding) As IEnumerable(Of GlyphDescriptor)
-            Using s = Texting.Txt.CreateTextReader(Path, Encoding, True)
+            Using s = Txt.CreateTextReader(Path, Encoding, True)
                 Return ReadFile(s, Function(LineNumber) New InvalidTextFormatException(Path, LineNumber))
             End Using
         End Function
@@ -272,10 +272,10 @@ Namespace Glyphing
     Public NotInheritable Class BmpFontImageReader
         Implements IImageReader
 
-        Private sp As ZeroPositionStreamPasser
+        Private sp As NewReadingStreamPasser
         Private b As Bmp
 
-        Public Sub New(ByVal sp As ZeroPositionStreamPasser)
+        Public Sub New(ByVal sp As NewReadingStreamPasser)
             Me.sp = sp
         End Sub
 
@@ -298,12 +298,12 @@ Namespace Glyphing
     Public NotInheritable Class BmpFontImageFileReader
         Implements IImageReader
 
-        Private s As StreamEx
+        Private s As IReadableSeekableStream
         Private r As BmpFontImageReader
 
         Public Sub New(ByVal Path As String)
-            s = New StreamEx(Path, FileMode.Open, FileAccess.Read)
-            r = New BmpFontImageReader(s)
+            s = StreamEx.CreateReadable(Path, FileMode.Open)
+            r = New BmpFontImageReader(s.AsNewReading)
         End Sub
 
         Public Sub Load() Implements IImageReader.Load
@@ -328,16 +328,16 @@ Namespace Glyphing
     Public NotInheritable Class BmpFontImageWriter
         Implements IImageWriter
 
-        Private sp As ZeroLengthStreamPasser
+        Private sp As NewWritingStreamPasser
         Private b As Bmp
         Private BitPerPixel As Integer
         Private Palette As Int32()
         Private Quantize As Func(Of Int32, Byte)
 
-        Public Sub New(ByVal sp As ZeroLengthStreamPasser)
+        Public Sub New(ByVal sp As NewWritingStreamPasser)
             Me.New(sp, 8)
         End Sub
-        Public Sub New(ByVal sp As ZeroLengthStreamPasser, ByVal BitPerPixel As Integer)
+        Public Sub New(ByVal sp As NewWritingStreamPasser, ByVal BitPerPixel As Integer)
             Me.sp = sp
             Me.BitPerPixel = BitPerPixel
             Select Case BitPerPixel
@@ -359,12 +359,12 @@ Namespace Glyphing
                 Case Else
             End Select
         End Sub
-        Public Sub New(ByVal sp As ZeroLengthStreamPasser, ByVal BitPerPixel As Integer, ByVal Palette As Int32())
+        Public Sub New(ByVal sp As NewWritingStreamPasser, ByVal BitPerPixel As Integer, ByVal Palette As Int32())
             Me.sp = sp
             Me.BitPerPixel = BitPerPixel
             Me.Palette = Palette
         End Sub
-        Public Sub New(ByVal sp As ZeroLengthStreamPasser, ByVal BitPerPixel As Integer, ByVal Palette As Int32(), ByVal Quantize As Func(Of Int32, Byte))
+        Public Sub New(ByVal sp As NewWritingStreamPasser, ByVal BitPerPixel As Integer, ByVal Palette As Int32(), ByVal Quantize As Func(Of Int32, Byte))
             Me.sp = sp
             Me.BitPerPixel = BitPerPixel
             Me.Palette = Palette

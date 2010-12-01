@@ -15,19 +15,35 @@ Imports System.IO
 
 Namespace Streaming
     Public Module StreamPasser
-        <Extension()> Public Function PassAsZeroLength(ByVal This As IStream) As ZeroLengthStreamPasser
-            Return New ZeroLengthStreamPasser(This)
+        <Extension()> Public Function AsNewReading(ByVal This As IReadableSeekableStream) As NewReadingStreamPasser
+            Return New NewReadingStreamPasser(This)
         End Function
-        <Extension()> Public Function PassAsZeroPosition(ByVal This As IStream) As ZeroPositionStreamPasser
-            Return New ZeroPositionStreamPasser(This)
+        <Extension()> Public Function AsNewWriting(ByVal This As IStream) As NewWritingStreamPasser
+            Return New NewWritingStreamPasser(This)
         End Function
-        <Extension()> Public Function PassAsPositioned(ByVal This As IStream) As PositionedStreamPasser
-            Return New PositionedStreamPasser(This)
+        <Extension()> Public Function AsNewReadingWriting(ByVal This As IStream) As NewReadingWritingStreamPasser
+            Return New NewReadingWritingStreamPasser(This)
         End Function
 
-        <Extension()> Public Function ToIStream(ByVal This As Stream) As IStream
-            Return New StreamEx(This)
+        <Extension()> Public Function AsReadable(ByVal This As Stream) As IReadableStream
+            Return New IReadableStreamAdapter(This)
         End Function
+        <Extension()> Public Function AsWritable(ByVal This As Stream) As IWritableStream
+            Return New IWritableStreamAdapter(This)
+        End Function
+        <Extension()> Public Function AsReadableSeekable(ByVal This As Stream) As IReadableSeekableStream
+            Return New IReadableSeekableStreamAdapter(This)
+        End Function
+        <Extension()> Public Function AsWritableSeekable(ByVal This As Stream) As IWritableSeekableStream
+            Return New IWritableSeekableStreamAdapter(This)
+        End Function
+        <Extension()> Public Function AsReadableWritableSeekable(ByVal This As Stream) As IReadableWritableSeekableStream
+            Return New IReadableWritableSeekableStreamAdapter(This)
+        End Function
+        <Extension()> Public Function AsIStream(ByVal This As Stream) As IStream
+            Return New IStreamAdapter(This)
+        End Function
+
         <Extension()> Public Function ToStream(ByVal This As IBasicStream) As Stream
             Return New StreamAdapter(This)
         End Function
@@ -36,8 +52,23 @@ Namespace Streaming
         End Function
     End Module
 
-    ''' <summary>零长度零位置扩展流传递器。用于保证在函数传参时传递零长度零位置的流。</summary>
-    Public Class ZeroLengthStreamPasser
+    ''' <summary>新读取流传递器。保证在函数传参时传递零位置的流。</summary>
+    Public Class NewReadingStreamPasser
+        Private BaseStream As IReadableSeekableStream
+
+        Public Sub New(ByVal s As IReadableSeekableStream)
+            If s.Position <> 0 Then Throw New ArgumentException("PositionNotZero")
+            BaseStream = s
+        End Sub
+
+        Public Function GetStream() As IReadableSeekableStream
+            If BaseStream.Position <> 0 Then Throw New ArgumentException("PositionNotZero")
+            Return BaseStream
+        End Function
+    End Class
+
+    ''' <summary>新写入流传递器。保证在函数传参时传递零长度零位置的流。</summary>
+    Public Class NewWritingStreamPasser
         Private BaseStream As IStream
 
         Public Sub New(ByVal s As IStream)
@@ -53,8 +84,8 @@ Namespace Streaming
         End Function
     End Class
 
-    ''' <summary>零位置扩展流传递器。用于保证在函数传参时传递零位置的流。</summary>
-    Public Class ZeroPositionStreamPasser
+    ''' <summary>新读写流传递器。保证在函数传参时传递零位置的流。</summary>
+    Public Class NewReadingWritingStreamPasser
         Private BaseStream As IStream
 
         Public Sub New(ByVal s As IStream)
@@ -64,23 +95,6 @@ Namespace Streaming
 
         Public Function GetStream() As IStream
             If BaseStream.Position <> 0 Then Throw New ArgumentException("PositionNotZero")
-            Return BaseStream
-        End Function
-
-        Public Shared Widening Operator CType(ByVal p As ZeroLengthStreamPasser) As ZeroPositionStreamPasser
-            Return New ZeroPositionStreamPasser(p.GetStream())
-        End Operator
-    End Class
-
-    ''' <summary>有位置的扩展流传递器。用于显式申明函数传参时传递的流有位置信息。</summary>
-    Public Class PositionedStreamPasser
-        Private BaseStream As IStream
-
-        Public Sub New(ByVal s As IStream)
-            BaseStream = s
-        End Sub
-
-        Public Function GetStream() As IStream
             Return BaseStream
         End Function
     End Class

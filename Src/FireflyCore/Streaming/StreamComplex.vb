@@ -28,6 +28,12 @@ Namespace Streaming
             This.Read(d, 0, Count)
             Return d
         End Function
+        ''' <summary>已重载。跳过字节。</summary>
+        <Extension()> Public Sub Skip(ByVal This As IReadableStream, ByVal Count As Integer)
+            For n = 0 To Count - 1
+                This.ReadByte()
+            Next
+        End Sub
 
         ''' <summary>读取到外部流。</summary>
         <Extension()> Public Sub ReadToStream(ByVal This As IReadableStream, ByVal s As IWritableStream, ByVal Count As Int64)

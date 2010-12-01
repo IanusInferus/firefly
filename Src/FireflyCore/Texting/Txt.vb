@@ -3,7 +3,7 @@
 '  File:        Txt.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: 文本文件格式
-'  Version:     2010.11.30.
+'  Version:     2010.12.01.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -20,7 +20,7 @@ Namespace Texting
         End Sub
 
         ''' <summary>已重载。检查UTF-16(FF FE)、GB18030(84 31 95 33)、UTF-8(EF BB BF)、UTF-32(FF FE 00 00)、UTF-16B(FE FF)、UTF-32B(00 00 FE FF)这六种编码的BOM，如果失败，返回空。</summary>
-        Public Shared Function GetEncodingByBOM(ByVal sp As ZeroPositionStreamPasser) As Encoding
+        Public Shared Function GetEncodingByBOM(ByVal sp As NewReadingStreamPasser) As Encoding
             Dim s = sp.GetStream
             If s.Length >= 4 Then
                 s.Position = 0
@@ -45,20 +45,20 @@ Namespace Texting
         End Function
         ''' <summary>已重载。检查UTF-16(FF FE)、GB18030(84 31 95 33)、UTF-8(EF BB BF)、UTF-32(FF FE 00 00)、UTF-16B(FE FF)、UTF-32B(00 00 FE FF)这六种编码的BOM，如果失败，返回空。</summary>
         Public Shared Function GetEncodingByBOM(ByVal Path As String) As Encoding
-            Using s As New StreamEx(Path, FileMode.Open, FileAccess.Read)
-                Return GetEncodingByBOM(s)
+            Using s = StreamEx.Create(Path, FileMode.Open)
+                Return GetEncodingByBOM(s.AsNewReading)
             End Using
         End Function
         ''' <summary>已重载。检查UTF-16(FF FE)、GB18030(84 31 95 33)、UTF-8(EF BB BF)、UTF-32(FF FE 00 00)、UTF-16B(FE FF)、UTF-32B(00 00 FE FF)这六种编码的BOM，如果失败，返回默认编码。</summary>
-        Public Shared Function GetEncoding(ByVal sp As ZeroPositionStreamPasser, ByVal DefaultEncoding As Encoding) As Encoding
+        Public Shared Function GetEncoding(ByVal sp As NewReadingStreamPasser, ByVal DefaultEncoding As Encoding) As Encoding
             Dim Encoding = GetEncodingByBOM(sp)
             If Encoding IsNot Nothing Then Return Encoding
             Return DefaultEncoding
         End Function
         ''' <summary>已重载。检查UTF-16(FF FE)、GB18030(84 31 95 33)、UTF-8(EF BB BF)、UTF-32(FF FE 00 00)、UTF-16B(FE FF)、UTF-32B(00 00 FE FF)这六种编码的BOM，如果失败，返回默认编码。</summary>
         Public Shared Function GetEncoding(ByVal Path As String, ByVal DefaultEncoding As Encoding) As Encoding
-            Using s As New StreamEx(Path, FileMode.Open, FileAccess.Read)
-                Return GetEncoding(s, DefaultEncoding)
+            Using s = StreamEx.CreateReadable(Path, FileMode.Open)
+                Return GetEncoding(s.AsNewReading, DefaultEncoding)
             End Using
         End Function
         ''' <summary>已重载。检查UTF-16(FF FE)、GB18030(84 31 95 33)、UTF-8(EF BB BF)、UTF-32(FF FE 00 00)、UTF-16B(FE FF)、UTF-32B(00 00 FE FF)这六种编码的BOM，如果失败，返回系统默认编码(GB2312会被替换为GB18030)。</summary>
@@ -67,27 +67,27 @@ Namespace Texting
         End Function
 
         ''' <param name="DetectEncodingFromByteOrderMarks">如果为真，将检查UTF-16(FF FE)、GB18030(84 31 95 33)、UTF-8(EF BB BF)、UTF-32(FF FE 00 00)、UTF-16B(FE FF)、UTF-32B(00 00 FE FF)这六种编码的BOM。</param>
-        Public Shared Function CreateTextReader(ByVal sp As ZeroPositionStreamPasser, ByVal Encoding As Encoding, Optional ByVal DetectEncodingFromByteOrderMarks As Boolean = True) As StreamReader
+        Public Shared Function CreateTextReader(ByVal sp As NewReadingStreamPasser, ByVal Encoding As Encoding, Optional ByVal DetectEncodingFromByteOrderMarks As Boolean = True) As StreamReader
             Dim s = sp.GetStream
             If DetectEncodingFromByteOrderMarks Then
                 If s.Length >= 4 Then
                     s.Position = 0
                     Dim BOM As Int32 = s.ReadInt32B
-                    If BOM = &HFFFE0000 Then Return New StreamReader((New PartialStreamEx(s, 4, s.Length - 4, True)).ToUnsafeStream, TextEncoding.UTF32, False)
-                    If BOM = &HFEFF Then Return New StreamReader((New PartialStreamEx(s, 4, s.Length - 4, True)).ToUnsafeStream, TextEncoding.UTF32B, False)
-                    If BOM = &H84319533 Then Return New StreamReader((New PartialStreamEx(s, 4, s.Length - 4, True)).ToUnsafeStream, TextEncoding.GB18030, False)
+                    If BOM = &HFFFE0000 Then Return New StreamReader((s.Partialize(4, s.Length - 4, True)).ToUnsafeStream, TextEncoding.UTF32, False)
+                    If BOM = &HFEFF Then Return New StreamReader((s.Partialize(4, s.Length - 4, True)).ToUnsafeStream, TextEncoding.UTF32B, False)
+                    If BOM = &H84319533 Then Return New StreamReader((s.Partialize(4, s.Length - 4, True)).ToUnsafeStream, TextEncoding.GB18030, False)
                 End If
                 If s.Length >= 3 Then
                     s.Position = 0
                     Dim BOM As Int32 = s.ReadUInt16B
                     BOM = (BOM << 8) Or s.ReadByte
-                    If BOM = &HEFBBBF Then Return New StreamReader((New PartialStreamEx(s, 3, s.Length - 3, True)).ToUnsafeStream, TextEncoding.UTF8, False)
+                    If BOM = &HEFBBBF Then Return New StreamReader((s.Partialize(3, s.Length - 3, True)).ToUnsafeStream, TextEncoding.UTF8, False)
                 End If
                 If s.Length >= 2 Then
                     s.Position = 0
                     Dim BOM As UInt16 = s.ReadUInt16B
-                    If BOM = &HFFFEUS Then Return New StreamReader((New PartialStreamEx(s, 2, s.Length - 2, True)).ToUnsafeStream, TextEncoding.UTF16, False)
-                    If BOM = &HFEFFUS Then Return New StreamReader((New PartialStreamEx(s, 2, s.Length - 2, True)).ToUnsafeStream, TextEncoding.UTF16B, False)
+                    If BOM = &HFFFEUS Then Return New StreamReader((s.Partialize(2, s.Length - 2, True)).ToUnsafeStream, TextEncoding.UTF16, False)
+                    If BOM = &HFEFFUS Then Return New StreamReader((s.Partialize(2, s.Length - 2, True)).ToUnsafeStream, TextEncoding.UTF16B, False)
                 End If
                 s.Position = 0
                 Return New StreamReader(s.ToUnsafeStream, Encoding, True)
@@ -97,7 +97,7 @@ Namespace Texting
         End Function
         ''' <param name="DetectEncodingFromByteOrderMarks">如果为真，将检查UTF-16(FF FE)、GB18030(84 31 95 33)、UTF-8(EF BB BF)、UTF-32(FF FE 00 00)、UTF-16B(FE FF)、UTF-32B(00 00 FE FF)这六种编码的BOM。</param>
         Public Shared Function CreateTextReader(ByVal Path As String, ByVal Encoding As Encoding, Optional ByVal DetectEncodingFromByteOrderMarks As Boolean = True) As StreamReader
-            Return CreateTextReader(New StreamEx(Path, FileMode.Open, FileAccess.Read), Encoding, DetectEncodingFromByteOrderMarks)
+            Return CreateTextReader(StreamEx.CreateReadable(Path, FileMode.Open).AsNewReading, Encoding, DetectEncodingFromByteOrderMarks)
         End Function
         Public Shared Function CreateTextReader(ByVal Path As String) As StreamReader
             Return CreateTextReader(Path, TextEncoding.Default, True)
@@ -120,7 +120,7 @@ Namespace Texting
         End Function
 
         ''' <param name="WithByteOrderMarks">如果为真，将为UTF-16(FF FE)、GB18030(84 31 95 33)、UTF-8(EF BB BF)、UTF-32(FF FE 00 00)、UTF-16B(FE FF)、UTF-32B(00 00 FE FF)这六种编码写入BOM。</param>
-        Public Shared Function CreateTextWriter(ByVal sp As ZeroLengthStreamPasser, ByVal Encoding As Encoding, Optional ByVal WithByteOrderMarks As Boolean = True) As StreamWriter
+        Public Shared Function CreateTextWriter(ByVal sp As NewWritingStreamPasser, ByVal Encoding As Encoding, Optional ByVal WithByteOrderMarks As Boolean = True) As StreamWriter
             Dim s = sp.GetStream
             If WithByteOrderMarks Then
                 If Encoding Is UTF16 Then
@@ -147,11 +147,11 @@ Namespace Texting
                     s.WriteByte(&HFF)
                 End If
             End If
-            Return New StreamWriter(s, New EncodingNoPreambleWrapper(Encoding))
+            Return New StreamWriter(s.ToStream(), New EncodingNoPreambleWrapper(Encoding))
         End Function
         ''' <param name="WithByteOrderMarks">如果为真，将为UTF-16(FF FE)、GB18030(84 31 95 33)、UTF-8(EF BB BF)、UTF-32(FF FE 00 00)、UTF-16B(FE FF)、UTF-32B(00 00 FE FF)这六种编码写入BOM。</param>
-        Public Shared Function CreateTextWriter(ByVal Path As String, ByVal Encoding As System.Text.Encoding, Optional ByVal WithByteOrderMarks As Boolean = True) As StreamWriter
-            Return CreateTextWriter(New StreamEx(Path, FileMode.Create, FileAccess.ReadWrite), Encoding, WithByteOrderMarks)
+        Public Shared Function CreateTextWriter(ByVal Path As String, ByVal Encoding As Encoding, Optional ByVal WithByteOrderMarks As Boolean = True) As StreamWriter
+            Return CreateTextWriter(StreamEx.Create(Path, FileMode.Create).AsNewWriting, Encoding, WithByteOrderMarks)
         End Function
         Public Shared Function CreateTextWriter(ByVal Path As String) As StreamWriter
             Return CreateTextWriter(Path, TextEncoding.WritingDefault, True)
@@ -162,7 +162,7 @@ Namespace Texting
             s.Write(Value)
         End Sub
         ''' <param name="WithByteOrderMarks">如果为真，将为UTF-16(FF FE)、GB18030(84 31 95 33)、UTF-8(EF BB BF)、UTF-32(FF FE 00 00)、UTF-16B(FE FF)、UTF-32B(00 00 FE FF)这六种编码写入BOM。</param>
-        Public Shared Sub WriteFile(ByVal Path As String, ByVal Encoding As System.Text.Encoding, ByVal Value As String, Optional ByVal WithByteOrderMarks As Boolean = True)
+        Public Shared Sub WriteFile(ByVal Path As String, ByVal Encoding As Encoding, ByVal Value As String, Optional ByVal WithByteOrderMarks As Boolean = True)
             Using s = CreateTextWriter(Path, Encoding, WithByteOrderMarks)
                 s.Write(Value)
             End Using
