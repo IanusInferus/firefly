@@ -3,7 +3,7 @@
 '  File:        DAT.vb
 '  Location:    Firefly.Examples <Visual Basic .Net>
 '  Description: プリニ DAT格式
-'  Version:     2010.02.18.
+'  Version:     2010.12.01.
 '  Author:      F.R.C.
 '  Copyright(C) Public Domain
 '
@@ -35,16 +35,24 @@ Imports System
 Imports System.Collections.Generic
 Imports System.IO
 Imports Firefly
+Imports Firefly.Streaming
 Imports Firefly.Packaging
 
 Public Class DAT
     Inherits PackageDiscrete '使用离散文件包接口，表示文件数据不一定非要连续，即通过位置和长度来确定，连续文件一般只有长度一个数值
 
-    '在构造函数中填入文件包读取的部分，对每个文件需要调用PushFile以构造路径信息和各种映射信息
-    Public Sub New(ByVal sp As ZeroPositionStreamPasser)
+    Public Sub New(ByVal sp As NewReadingStreamPasser)
         MyBase.New(sp)
+        Initialize()
+    End Sub
+    Public Sub New(ByVal sp As NewReadingWritingStreamPasser)
+        MyBase.New(sp)
+        Initialize()
+    End Sub
 
-        Dim s = sp.GetStream
+    '在构造函数中填入文件包读取的部分，对每个文件需要调用PushFile以构造路径信息和各种映射信息
+    Public Sub Initialize()
+        Dim s = Readable
 
         '判断文件头部是否正常
         If s.ReadSimpleString(12) <> "NISPACK" Then Throw New InvalidDataException
@@ -83,36 +91,41 @@ Public Class DAT
 
     '打开文件包的函数
     Public Shared Function Open(ByVal Path As String) As PackageBase
-        Dim s As StreamEx
+        Dim s As IStream = Nothing
+        Dim sRead As IReadableSeekableStream = Nothing
         Try
-            s = New StreamEx(Path, FileMode.Open, FileAccess.ReadWrite)
+            s = StreamEx.Create(Path, FileMode.Open)
         Catch
-            s = New StreamEx(Path, FileMode.Open, FileAccess.Read)
+            sRead = StreamEx.CreateReadable(Path, FileMode.Open)
         End Try
-        Return New DAT(s)
+        If s IsNot Nothing Then
+            Return New DAT(s.AsNewReadingWriting)
+        Else
+            Return New DAT(sRead.AsNewReading)
+        End If
     End Function
 
     '读取文件在索引中的地址信息，所有索引中的地址信息应该在这里更新
     Public Overrides Property FileAddressInPhysicalFileDB(ByVal File As FileDB) As Int64
         Get
-            BaseStream.Position = 16 + 44 * IndexOfFile(File) + 32
-            Return BaseStream.ReadInt32
+            Readable.Position = 16 + 44 * IndexOfFile(File) + 32
+            Return Readable.ReadInt32
         End Get
         Set(ByVal Value As Int64)
-            BaseStream.Position = 16 + 44 * IndexOfFile(File) + 32
-            BaseStream.WriteInt32(Value)
+            Writable.Position = 16 + 44 * IndexOfFile(File) + 32
+            Writable.WriteInt32(Value)
         End Set
     End Property
 
     '读取文件在索引中的长度信息，所有索引中的长度信息应该在这里更新
     Public Overrides Property FileLengthInPhysicalFileDB(ByVal File As FileDB) As Int64
         Get
-            BaseStream.Position = 16 + 44 * IndexOfFile(File) + 36
-            Return BaseStream.ReadInt32
+            Readable.Position = 16 + 44 * IndexOfFile(File) + 36
+            Return Readable.ReadInt32
         End Get
         Set(ByVal Value As Int64)
-            BaseStream.Position = 16 + 44 * IndexOfFile(File) + 36
-            BaseStream.WriteInt32(Value)
+            Writable.Position = 16 + 44 * IndexOfFile(File) + 36
+            Writable.WriteInt32(Value)
         End Set
     End Property
 

@@ -3,7 +3,7 @@
 //  File:        DAT.h
 //  Location:    Firefly.Examples <Visual C++/CLI>
 //  Description: プリニ DAT格式
-//  Version:     2010.02.18.
+//  Version:     2010.12.01.
 //  Author:      F.R.C.
 //  Copyright(C) public Domain
 //
@@ -36,28 +36,36 @@ using namespace System;
 using namespace System::Collections::Generic;
 using namespace System::IO;
 using namespace Firefly;
+using namespace Firefly::Streaming;
 using namespace Firefly::Packaging;
 
 public ref class DAT : public PackageDiscrete {
     //使用离散文件包接口，表示文件数据不一定非要连续，即通过位置和长度来确定，连续文件一般只有长度一个数值
 
 public:
+    DAT(NewReadingStreamPasser^ sp) : PackageDiscrete(sp) {
+        Initialize();
+    }
+    DAT(NewReadingWritingStreamPasser^ sp) : PackageDiscrete(sp) {
+        Initialize();
+    }
+
     //在构造函数中填入文件包读取的部分，对每个文件需要调用PushFile以构造路径信息和各种映射信息
-    DAT(ZeroPositionStreamPasser^ sp) : PackageDiscrete(sp) {
-        StreamEx^ s = sp->GetStream();
+    void Initialize() {
+        auto s = Readable;
 
         //判断文件头部是否正常
-        if (s->ReadSimpleString(12) != "NISPACK") { throw gcnew InvalidDataException(); }
+        if (ReadableStreamComplex::ReadSimpleString(s, 12) != "NISPACK") { throw gcnew InvalidDataException(); }
 
-        Int32 NumFile = s->ReadInt32();
+        Int32 NumFile = ReadableStreamInts::ReadInt32(s);
 
         for (Int32 n = 0; n < NumFile; n += 1) {
 
             //读取索引的各部分
-            String^ Name = s->ReadSimpleString(32);
-            Int32 Address = s->ReadInt32();
-            Int32 Length = s->ReadInt32();
-            Int32 Unknown = s->ReadInt32();
+            String^ Name = ReadableStreamComplex::ReadSimpleString(s, 32);
+            Int32 Address = ReadableStreamInts::ReadInt32(s);
+            Int32 Length = ReadableStreamInts::ReadInt32(s);
+            Int32 Unknown = ReadableStreamInts::ReadInt32(s);
 
             //创建一个文件描述信息，包括文件名、文件大小、文件地址
             FileDB^ f = gcnew FileDB(Name, FileDB::FileType::File, Length, Address, nullptr);
@@ -83,37 +91,43 @@ public:
 
     //打开文件包的函数
     static PackageBase^ Open(String^ Path) {
-        StreamEx^ s;
+        IStream^ s = nullptr;
+        IReadableSeekableStream^ sRead = nullptr;
         try {
-            s = gcnew StreamEx(Path, FileMode::Open, FileAccess::ReadWrite);
+            s = StreamEx::Create(Path, FileMode::Open, FileShare::Read);
         }
         catch (...){
-            s = gcnew StreamEx(Path, FileMode::Open, FileAccess::Read);
+            sRead = StreamEx::CreateReadable(Path, FileMode::Open, FileShare::Read);
         }
-        return gcnew DAT(s);
+        if (s != nullptr) {
+            return gcnew DAT(StreamPasser::AsNewReadingWriting(s));
+        }
+        else {
+            return gcnew DAT(StreamPasser::AsNewReading(sRead));
+        }
     }
 
     //读取文件在索引中的地址信息，所有索引中的地址信息应该在这里更新
     virtual property Int64 FileAddressInPhysicalFileDB[FileDB^] {
         Int64 get(FileDB^ File) override {
-            BaseStream->Position = 16 + 44 * IndexOfFile[File] + 32;
-            return BaseStream->ReadInt32();
+            Readable->Position = 16 + 44 * IndexOfFile[File] + 32;
+            return ReadableStreamInts::ReadInt32(Readable);
         }
         void set(FileDB^ File, Int64 Value) override {
-            BaseStream->Position = 16 + 44 * IndexOfFile[File] + 32;
-            BaseStream->WriteInt32((Int32)(Value));
+            Writable->Position = 16 + 44 * IndexOfFile[File] + 32;
+            WritableStreamInts::WriteInt32(Writable, (Int32)(Value));
         }
     }
 
     //读取文件在索引中的长度信息，所有索引中的长度信息应该在这里更新
     virtual property Int64 FileLengthInPhysicalFileDB[FileDB^] {
         Int64 get(FileDB^ File) override {
-            BaseStream->Position = 16 + 44 * IndexOfFile[File] + 36;
-            return BaseStream->ReadInt32();
+            Readable->Position = 16 + 44 * IndexOfFile[File] + 36;
+            return ReadableStreamInts::ReadInt32(Readable);
         }
         void set(FileDB^ File, Int64 Value) override {
-            BaseStream->Position = 16 + 44 * IndexOfFile[File] + 36;
-            BaseStream->WriteInt32((Int32)(Value));
+            Writable->Position = 16 + 44 * IndexOfFile[File] + 36;
+            WritableStreamInts::WriteInt32(Writable, (Int32)(Value));
         }
     }
 
