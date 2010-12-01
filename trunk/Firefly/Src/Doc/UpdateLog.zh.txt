@@ -3,6 +3,8 @@ Firefly.Core.Streaming:
 重构StreamEx和PartialStreamEx，利用扩展方法模拟trait或者mixin的一些特性。(breaking change)
 *:
 按照Stream的相关修改进行变更。
+MappingGen:
+修正无参数时不显示帮助信息的问题。
 
 2010.11.30
 Firefly.Core.Streaming:
