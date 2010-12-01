@@ -147,7 +147,9 @@ Namespace Imaging
         ''' <param name="BitsPerPixel">Bmp位数：可以取1、4、8、15、16、24、32</param>
         ''' <remarks>注意，流在Bmp关闭时会被关闭。</remarks>
         Public Sub New(ByVal sp As NewWritingStreamPasser, ByVal Width As Int32, ByVal Height As Int32, Optional ByVal BitsPerPixel As Int16 = 24)
-            Writable = sp.GetStream
+            Dim s = sp.GetStream
+            Readable = s
+            Writable = s
             If Width < 0 OrElse Height < 0 Then
                 Writable.Dispose()
                 Throw New InvalidDataException

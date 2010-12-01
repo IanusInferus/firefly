@@ -3,7 +3,7 @@
 '  File:        MappingGen.vb
 '  Location:    Firefly.MappingGen <Visual Basic .Net>
 '  Description: 字符映射表生成器
-'  Version:     2010.09.15.
+'  Version:     2010.12.01.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -108,6 +108,11 @@ Public Module MappingGen
                     Return 0
             End Select
         Next
+
+        If CmdLine.Arguments.Count = 0 AndAlso CmdLine.Options.Count = 0 Then
+            DisplayInfo()
+            Return 0
+        End If
 
         Select Case CmdLine.Arguments.Count
             Case 0
