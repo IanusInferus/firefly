@@ -18,21 +18,21 @@ Namespace Streaming
     ''' <remarks>
     ''' 请显式调用Close或Dispose来关闭流。
     ''' </remarks>
-    Public Class BitStream
+    Public NotInheritable Class BitStream
         Implements IDisposable
         Private BaseArray As Byte()
         Private PositionValue As Integer
         Private LengthValue As Integer
 
         ''' <summary>已重载。初始化新实例。</summary>
-        Sub New(ByVal Length As Integer)
+        Public Sub New(ByVal Length As Integer)
             If Length < 0 Then Throw New ArgumentOutOfRangeException
             BaseArray = New Byte(Length - 1) {}
             PositionValue = 0
             LengthValue = Length
         End Sub
         ''' <summary>已重载。初始化新实例。</summary>
-        Sub New(ByVal BaseArray As Byte())
+        Public Sub New(ByVal BaseArray As Byte())
             If BaseArray Is Nothing Then Throw New ArgumentNullException
             Me.BaseArray = BaseArray
             Me.PositionValue = 0
@@ -40,7 +40,7 @@ Namespace Streaming
         End Sub
 
         ''' <summary>读取到Byte。</summary>
-        Overridable Function ReadToByte(ByVal i As Integer) As Byte
+        Public Function ReadToByte(ByVal i As Integer) As Byte
             If i < 0 Then Throw New ArgumentOutOfRangeException
             If i = 0 Then Return 0
 
@@ -59,7 +59,7 @@ Namespace Streaming
             Return v
         End Function
         ''' <summary>从Byte写入。</summary>
-        Overridable Sub WriteFromByte(ByVal v As Byte, ByVal i As Integer)
+        Public Sub WriteFromByte(ByVal v As Byte, ByVal i As Integer)
             If i < 0 Then Throw New ArgumentOutOfRangeException
             If i = 0 Then Return
 
@@ -82,7 +82,7 @@ Namespace Streaming
         End Sub
 
         ''' <summary>读取到Int32。</summary>
-        Overridable Function ReadToInt32(ByVal i As Integer) As Int32
+        Public Function ReadToInt32(ByVal i As Integer) As Int32
             If i < 0 Then Throw New ArgumentOutOfRangeException
             If i = 0 Then Return 0
 
@@ -100,7 +100,7 @@ Namespace Streaming
             Return v
         End Function
         ''' <summary>从Int32写入。</summary>
-        Overridable Sub WriteFromInt32(ByVal v As Int32, ByVal i As Integer)
+        Public Sub WriteFromInt32(ByVal v As Int32, ByVal i As Integer)
             If i < 0 Then Throw New ArgumentOutOfRangeException
             If i = 0 Then Return
 
@@ -128,24 +128,16 @@ Namespace Streaming
         End Sub
 
         ''' <summary>强制同步缓冲数据。</summary>
-        Overridable Sub Flush()
-        End Sub
-        ''' <summary>关闭流。</summary>
-        ''' <remarks>对继承者的说明：该方法调用Dispose()，不要覆盖该方法，而应覆盖Dispose(Boolean)</remarks>
-        Overridable Sub Close()
-            Static Closed As Boolean = False
-            If Closed Then Throw New InvalidOperationException
-            Dispose()
-            Closed = True
+        Public Sub Flush()
         End Sub
         ''' <summary>用字节表示的流的长度。</summary>
-        Overridable ReadOnly Property Length() As Int64
+        Public ReadOnly Property Length() As Int64
             Get
                 Return LengthValue
             End Get
         End Property
         ''' <summary>流的当前位置。</summary>
-        Overridable Property Position() As Integer
+        Public Property Position() As Integer
             Get
                 Return PositionValue
             End Get
@@ -154,40 +146,9 @@ Namespace Streaming
             End Set
         End Property
 
-#Region " IDisposable 支持 "
-        ''' <summary>释放托管对象或间接非托管对象(Stream等)。可在这里将大型字段设置为 null。</summary>
-        Protected Overridable Sub DisposeManagedResource()
-            BaseArray = Nothing
-        End Sub
-
-        ''' <summary>释放直接非托管对象(Handle等)。可在这里将大型字段设置为 null。</summary>
-        Protected Overridable Sub DisposeUnmanagedResource()
-        End Sub
-
-        '检测冗余的调用
-        Private DisposedValue As Boolean = False
-        ''' <summary>释放流的资源。请优先覆盖DisposeManagedResource、DisposeUnmanagedResource、DisposeNullify方法。如果你直接保存非托管对象(Handle等)，请覆盖Finalize方法，并在其中调用Dispose(False)。</summary>
-        Protected Overridable Sub Dispose(ByVal disposing As Boolean)
-            If DisposedValue Then Return
-            DisposedValue = True
-            If disposing Then
-                DisposeManagedResource()
-            End If
-            DisposeUnmanagedResource()
-        End Sub
-
         ''' <summary>释放流的资源。</summary>
         Public Sub Dispose() Implements IDisposable.Dispose
-            ' 不要更改此代码。
-            Dispose(True)
-            GC.SuppressFinalize(Me)
+            BaseArray = Nothing
         End Sub
-
-        ''' <summary>析构。</summary>
-        Protected Overrides Sub Finalize()
-            Dispose(False)
-        End Sub
-#End Region
-
     End Class
 End Namespace

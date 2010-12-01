@@ -3,7 +3,7 @@
 '  File:        LOC.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: LOC文件格式类(版本2)(图形文本)
-'  Version:     2010.11.30.
+'  Version:     2010.12.01.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -308,7 +308,7 @@ Namespace Texting
                 Else
                     f.WriteSimpleString(IdentifierCompression, 4)
                     Using ps As New PartialStreamEx(f, 4, Int64.MaxValue)
-                        Using gz As New IO.Compression.GZipStream(ps, Compression.CompressionMode.Compress, True)
+                        Using gz As New IO.Compression.GZipStream(ps.ToStream, Compression.CompressionMode.Compress, True)
                             gz.Write(s.Read(CInt(s.Length)), 0, CInt(s.Length))
                         End Using
                     End Using

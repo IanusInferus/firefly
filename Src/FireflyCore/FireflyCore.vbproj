@@ -76,7 +76,7 @@
     <Compile Include="Core\BitOperations.vb" />
     <Compile Include="Core\ExceptionInfo.vb" />
     <Compile Include="Core\NumericOperations.vb" />
-    <Compile Include="Streaming\StreamExPasser.vb" />
+    <Compile Include="Streaming\StreamPasser.vb" />
     <Compile Include="Core\StringDescape.vb" />
     <Compile Include="Streaming\ArrayStream.vb" />
     <Compile Include="Streaming\ByteArrayStream.vb" />
