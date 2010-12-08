@@ -1,4 +1,6 @@
-﻿2010.12.01
+﻿2010.12.09.0
+
+2010.12.01
 Firefly.Core.Streaming:
 重构StreamEx和PartialStreamEx，利用扩展方法模拟trait或者mixin的一些特性。(breaking change)
 *:
