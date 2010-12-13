@@ -292,7 +292,7 @@ Namespace Mapping
             Public Function TranslateProjectorToProjectorDomain(Of R)(ByVal Projector As Func(Of String, R)) As Func(Of XElement, R) Implements IProjectorToProjectorDomainTranslator(Of XElement, String).TranslateProjectorToProjectorDomain
                 Return Function(v)
                            If v.IsEmpty Then Return Nothing
-                           Projector(v.Value)
+                           Return Projector(v.Value)
                        End Function
             End Function
         End Class
