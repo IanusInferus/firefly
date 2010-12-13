@@ -1,4 +1,8 @@
-﻿2010.12.09.0
+﻿2010.12.13
+Firefly.Core.Mapping:
+修正反序列化时XmlSerializer中对于空引用和空字符串的处理。
+
+2010.12.09.0
 
 2010.12.01
 Firefly.Core.Streaming:

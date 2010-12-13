@@ -3,7 +3,7 @@
 '  File:        XmlSerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Xml序列化类
-'  Version:     2010.11.16.
+'  Version:     2010.12.13.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -290,7 +290,10 @@ Namespace Mapping
             Implements IProjectorToProjectorDomainTranslator(Of XElement, String)
 
             Public Function TranslateProjectorToProjectorDomain(Of R)(ByVal Projector As Func(Of String, R)) As Func(Of XElement, R) Implements IProjectorToProjectorDomainTranslator(Of XElement, String).TranslateProjectorToProjectorDomain
-                Return Function(v) Projector(v.Value)
+                Return Function(v)
+                           If v.IsEmpty Then Return Nothing
+                           Projector(v.Value)
+                       End Function
             End Function
         End Class
 
