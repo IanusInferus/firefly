@@ -1,4 +1,8 @@
-﻿2010.12.13
+﻿2010.12.26.0
+Firefly.Core.Texting:
+修正文本格式异常对于消息生成的处理，避免无法通过Message属性获得完整的提示信息。
+
+2010.12.13
 Firefly.Core.Mapping:
 修正反序列化时XmlSerializer中对于空引用和空字符串的处理。
 
