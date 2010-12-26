@@ -3,12 +3,13 @@
 '  File:        TextExceptions.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: 文本异常
-'  Version:     2010.10.11.
+'  Version:     2010.10.26.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
 
 Imports System
+Imports System.Collections.Generic
 Imports System.IO
 
 Namespace Texting
@@ -19,17 +20,17 @@ Namespace Texting
         End Sub
 
         Public Sub New(ByVal Path As String, ByVal Message As String)
-            MyBase.New(Message)
+            MyBase.New(GetMessage(Path, "", Message))
             PathValue = Path
         End Sub
 
         Public Sub New(ByVal LineNumber As Integer, ByVal Message As String)
-            MyBase.New(Message)
+            MyBase.New(GetMessage("", LineNumber, Message))
             LineNumberValue = LineNumber
         End Sub
 
         Public Sub New(ByVal Path As String, ByVal LineNumber As Integer, ByVal Message As String)
-            MyBase.New(Message)
+            MyBase.New(GetMessage(Path, LineNumber, Message))
             PathValue = Path
             LineNumberValue = LineNumber
         End Sub
@@ -61,12 +62,12 @@ Namespace Texting
             End Get
         End Property
 
-        Public Overrides Function ToString() As String
-            If Message = "" Then
-                Return String.Format("{0}({1})", PathValue, LineNumberValue)
-            Else
-                Return String.Format("{0}({1}) : {2}", PathValue, LineNumberValue, Message)
-            End If
+        Private Shared Function GetMessage(ByVal Path As String, ByVal LineNumber As String, ByVal Message As String) As String
+            Dim l As New List(Of String)
+            If Path <> "" Then l.Add(Path)
+            If LineNumber <> "" Then l.Add("({0})".Formats(LineNumber))
+            If Message <> "" Then l.Add(" : {0}".Formats(Message))
+            Return String.Join("", l.ToArray())
         End Function
     End Class
 
@@ -77,17 +78,17 @@ Namespace Texting
         End Sub
 
         Public Sub New(ByVal Path As String, ByVal Message As String)
-            MyBase.New(Message)
+            MyBase.New(GetMessage(Path, "", Message))
             PathValue = Path
         End Sub
 
         Public Sub New(ByVal LineNumber As Integer, ByVal Message As String)
-            MyBase.New(Message)
+            MyBase.New(GetMessage("", LineNumber, Message))
             LineNumberValue = LineNumber
         End Sub
 
         Public Sub New(ByVal Path As String, ByVal LineNumber As Integer, ByVal Message As String)
-            MyBase.New(Message)
+            MyBase.New(GetMessage(Path, LineNumber, Message))
             PathValue = Path
             LineNumberValue = LineNumber
         End Sub
@@ -119,12 +120,12 @@ Namespace Texting
             End Get
         End Property
 
-        Public Overrides Function ToString() As String
-            If Message = "" Then
-                Return String.Format("{0}({1})", PathValue, LineNumberValue)
-            Else
-                Return String.Format("{0}({1}) : {2}", PathValue, LineNumberValue, Message)
-            End If
+        Private Shared Function GetMessage(ByVal Path As String, ByVal LineNumber As String, ByVal Message As String) As String
+            Dim l As New List(Of String)
+            If Path <> "" Then l.Add(Path)
+            If LineNumber <> "" Then l.Add("({0})".Formats(LineNumber))
+            If Message <> "" Then l.Add(" : {0}".Formats(Message))
+            Return String.Join("", l.ToArray())
         End Function
     End Class
 End Namespace
