@@ -3,7 +3,7 @@
 '  File:        MessageDialog.vb
 '  Location:    Firefly.GUI <Visual Basic .Net>
 '  Description: 进度显示框
-'  Version:     2010.09.23.
+'  Version:     2010.12.27.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -372,7 +372,7 @@ Public Class MessageDialog
         Return Show(Message, Information, Caption, MessageBoxButtons.OK)
     End Function
     Public Shared Shadows Function Show(ByVal Message As String, ByVal Caption As String, ByVal Buttons As MessageBoxButtons, ByVal Icon As MessageBoxIcon, ByVal DefaultButton As MessageBoxDefaultButton) As DialogResult
-        Return Show(Message, Nothing, Caption, Buttons, Icon, Buttons)
+        Return Show(Message, Nothing, Caption, Buttons, Icon, DefaultButton)
     End Function
     Public Shared Shadows Function Show(ByVal Message As String, ByVal Caption As String, ByVal Buttons As MessageBoxButtons, ByVal Icon As MessageBoxIcon) As DialogResult
         Return Show(Message, Caption, Buttons, Icon, MessageBoxDefaultButton.Button1)
