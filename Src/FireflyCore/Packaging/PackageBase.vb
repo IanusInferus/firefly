@@ -3,7 +3,7 @@
 '  File:        PackageBase.vb
 '  Location:    Firefly.Packaging <Visual Basic .Net>
 '  Description: 文件包基类
-'  Version:     2010.12.01.
+'  Version:     2011.02.10.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -254,7 +254,7 @@ Namespace Packaging
             Dim lFiles As New List(Of FileDB)
             Dim lPaths As New List(Of String)
 
-            For Each Pair In Files.Zip(Paths, Function(f, p) New With {.File = f, .Path = p})
+            For Each Pair In Files.ZipStrict(Paths, Function(f, p) New With {.File = f, .Path = p})
                 Dim File = Pair.File
                 Dim Path = Pair.Path
 
@@ -351,7 +351,7 @@ Namespace Packaging
             Dim lFiles As New List(Of FileDB)
             Dim lPaths As New List(Of String)
 
-            For Each Pair In Files.Zip(Paths, Function(f, p) New With {.File = f, .Path = p})
+            For Each Pair In Files.ZipStrict(Paths, Function(f, p) New With {.File = f, .Path = p})
                 Dim File = Pair.File
                 Dim Path = Pair.Path
 

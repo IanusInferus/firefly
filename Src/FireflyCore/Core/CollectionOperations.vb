@@ -57,4 +57,11 @@ Public Module CollectionOperations
             Return DefaultValue
         End If
     End Function
+
+    ''' <summary>
+    ''' 严格的Zip操作，长度不匹配将抛出异常
+    ''' </summary>
+    <Extension()> Public Function ZipStrict(Of T1, T2, TResult)(ByVal This As IEnumerable(Of T1), ByVal Right As IEnumerable(Of T2), ByVal Selector As Func(Of T1, T2, TResult)) As IEnumerable(Of TResult)
+        Return New EnumeratorEnumerable(Of TResult)(New ZippedEnumerator(Of T1, T2, TResult)(This.GetEnumerator(), Right.GetEnumerator(), Selector))
+    End Function
 End Module
