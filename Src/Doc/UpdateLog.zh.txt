@@ -1,7 +1,7 @@
 ﻿2011.02.10
 Firefly.Core.Mapping:
 修正一个因为静态函数作委托时指定Target会作为第一个参数，引起参数数量不正常，在MetaProgramming的Compose和Curry导致异常的问题。
-去除BinarySerializer和XmlSerializer的几个Resolver属性，提高封装性。
+修改BinarySerializer和XmlSerializer的几个Resolver属性，提高封装性。
 
 2010.12.27
 Firefly.GUI:
