@@ -3,7 +3,7 @@
 '  File:        BinarySerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 二进制序列化类
-'  Version:     2010.12.01.
+'  Version:     2011.02.10.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -49,22 +49,6 @@ Namespace Mapping
         Private ReaderResolverSet As AlternativeResolver
         Private WriterResolverSet As AlternativeResolver
         Private CounterResolverSet As AlternativeResolver
-
-        Public ReadOnly Property ReaderResolver As AlternativeResolver
-            Get
-                Return ReaderResolverSet
-            End Get
-        End Property
-        Public ReadOnly Property WriterResolver As AlternativeResolver
-            Get
-                Return WriterResolverSet
-            End Get
-        End Property
-        Public ReadOnly Property CounterResolver As AlternativeResolver
-            Get
-                Return CounterResolverSet
-            End Get
-        End Property
 
         Public Sub New()
             PrimitiveResolver = New PrimitiveResolver
