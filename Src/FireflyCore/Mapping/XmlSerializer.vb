@@ -3,7 +3,7 @@
 '  File:        XmlSerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Xml序列化类
-'  Version:     2010.12.13.
+'  Version:     2011.02.10.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -44,17 +44,6 @@ Namespace Mapping
         Private WriterCache As CachedResolver
         Private ReaderResolverSet As AlternativeResolver
         Private WriterResolverSet As AlternativeResolver
-
-        Public ReadOnly Property ReaderResolver As AlternativeResolver
-            Get
-                Return ReaderResolverSet
-            End Get
-        End Property
-        Public ReadOnly Property WriterResolver As AlternativeResolver
-            Get
-                Return WriterResolverSet
-            End Get
-        End Property
 
         Public Sub New()
             MyClass.New(New Type() {})
