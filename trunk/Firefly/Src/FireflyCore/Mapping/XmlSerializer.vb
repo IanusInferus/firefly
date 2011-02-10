@@ -45,6 +45,17 @@ Namespace Mapping
         Private ReaderResolverSet As AlternativeResolver
         Private WriterResolverSet As AlternativeResolver
 
+        Public ReadOnly Property ReaderResolver As IObjectMapperResolver
+            Get
+                Return ReaderCache
+            End Get
+        End Property
+        Public ReadOnly Property WriterResolver As IObjectMapperResolver
+            Get
+                Return WriterCache
+            End Get
+        End Property
+
         Public Sub New()
             MyClass.New(New Type() {})
         End Sub
