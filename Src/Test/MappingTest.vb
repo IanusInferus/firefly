@@ -11,6 +11,22 @@ Imports Firefly.Mapping
 Imports Firefly.Setting
 
 Public Module MappingTest
+    Public Sub TestMetaProgramming()
+        Dim g = Function(i As Integer) i
+        Dim h = Function(i As Integer) i
+
+        Dim hg = DirectCast(g.Compose(h), Func(Of Integer, Integer))
+
+        Assert(hg(1) = 1)
+        Assert(hg(2) = 2)
+
+        Dim k = Function(i As Integer, j As Integer) i + j
+        Dim l = k.Curry(1).AdaptFunction(Of Integer, Integer)()
+
+        Assert(l(1) = 2)
+        Assert(l(2) = 3)
+    End Sub
+
     Public Enum SerializerTestEnum
         E1
         E2
@@ -509,6 +525,7 @@ Public Module MappingTest
     End Sub
 
     Public Sub TestMapping()
+        TestMetaProgramming()
         TestObjectTreeMapper()
         TestBinarySerializer()
         TestXmlSerializer()

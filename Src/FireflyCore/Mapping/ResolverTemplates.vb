@@ -3,7 +3,7 @@
 '  File:        ObjectMapperResolvers.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Object映射器解析器
-'  Version:     2010.11.23.
+'  Version:     2011.02.10.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -323,7 +323,7 @@ Namespace Mapping
                 Else
                     Dim CreateThis = Expression.[New](RangeType)
                     Dim MemberBindings As New List(Of MemberBinding)
-                    For Each Pair In FieldsAndProperties.Zip(Context.DelegateExpressions, Function(m, e) New With {.Member = m.Member, .MapperCall = e})
+                    For Each Pair In FieldsAndProperties.ZipStrict(Context.DelegateExpressions, Function(m, e) New With {.Member = m.Member, .MapperCall = e})
                         MemberBindings.Add(Expression.Bind(Pair.Member, Pair.MapperCall))
                     Next
                     Dim FunctionLambda = Expression.Lambda(Expression.MemberInit(CreateThis, MemberBindings.ToArray()), New ParameterExpression() {dParam})

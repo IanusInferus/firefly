@@ -1,4 +1,8 @@
-﻿2010.12.27
+﻿2011.02.10
+Firefly.Core.Mapping:
+修正一个因为静态函数作委托时指定Target会作为第一个参数，引起参数数量不正常，在MetaProgramming的Compose和Curry导致异常的问题。
+
+2010.12.27
 Firefly.GUI:
 修复一个MessageDialog参数写错的问题。
 
