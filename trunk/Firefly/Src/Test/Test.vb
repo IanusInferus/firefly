@@ -144,9 +144,9 @@ Public Module Test
     End Sub
 
     Public Sub Main()
-        TestCompressing()
+        'TestCompressing()
         'TestFileDialog()
-        TestBitStreamReadWrite()
+        'TestBitStreamReadWrite()
         'TestCommandLine()
         'TestMessageDialog()
         TestMapping()

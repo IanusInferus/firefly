@@ -3,7 +3,7 @@
 '  File:        MetaProgramming.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 元编程
-'  Version:     2010.12.01.
+'  Version:     2011.02.10.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -232,10 +232,34 @@ Namespace Mapping
             End If
             Return Compiled
         End Function
+        ''' <summary>获得委托的参数</summary>
+        <Extension()> Public Function GetParameters(ByVal d As [Delegate]) As ParameterInfo()
+            Dim m = d.Method
+            Dim Parameters = d.Method.GetParameters()
+            If d.Target Is Nothing Then
+                If d.Method.IsStatic Then
+                    Return Parameters
+                Else
+                    Throw New ArgumentException
+                End If
+            Else
+                If d.Method.IsStatic Then
+                    'A static method and a target object assignable to the first parameter of the method. The delegate is said to be closed over its first argument.
+                    '此时应抛弃第一个参数
+                    Return Parameters.Skip(1).ToArray()
+                Else
+                    Return Parameters
+                End If
+            End If
+            Return Parameters
+        End Function
+        <Extension()> Public Function ReturnType(ByVal d As [Delegate]) As Type
+            Return d.Method.ReturnType
+        End Function
         <Extension()> Public Function Compose(ByVal InnerFunction As [Delegate], ByVal OuterMethod As [Delegate]) As [Delegate]
-            Dim D = InnerFunction.Method.GetParameters.Single.ParameterType
-            Dim MI = InnerFunction.Method.ReturnType
-            Dim MO = OuterMethod.Method.GetParameters.Single.ParameterType
+            Dim D = InnerFunction.GetParameters.Single.ParameterType
+            Dim MI = InnerFunction.ReturnType
+            Dim MO = OuterMethod.GetParameters.Single.ParameterType
 
             Dim iParam = Expression.Parameter(InnerFunction.GetType(), "<>_i")
             Dim oParam = Expression.Parameter(OuterMethod.GetType(), "<>_o")
@@ -248,21 +272,23 @@ Namespace Mapping
                 InnerLambda = Expression.Lambda(Expression.Invoke(oParam, Expression.ConvertChecked(Expression.Invoke(iParam, vParam), MO)), vParam)
             End If
             Dim OuterLambda = Expression.Lambda(InnerLambda, iParam, oParam)
-            Return OuterLambda.Compile().StaticDynamicInvoke(Of [Delegate], [Delegate], [Delegate])(InnerFunction, OuterMethod)
+            Dim OuterDelegate = OuterLambda.Compile()
+            Return OuterDelegate.StaticDynamicInvoke(Of [Delegate], [Delegate], [Delegate])(InnerFunction, OuterMethod)
         End Function
         <Extension()> Public Function Curry(ByVal Method As [Delegate], ByVal ParamArray Parameters As Object()) As [Delegate]
-            Dim ProvidedParameters = Method.Method.GetParameters().Take(Parameters.Length).Select(Function(p) Expression.Parameter(p.ParameterType, p.Name)).ToArray()
-            Dim NotProvidedParameters = Method.Method.GetParameters().Skip(Parameters.Length).Select(Function(p) Expression.Parameter(p.ParameterType, p.Name)).ToArray()
-            Dim AllParameters = ProvidedParameters.Concat(NotProvidedParameters).ToArray
+            Dim ProvidedParameters = Method.GetParameters().Take(Parameters.Length).Select(Function(p) Expression.Parameter(p.ParameterType, p.Name)).ToArray()
+            Dim NotProvidedParameters = Method.GetParameters().Skip(Parameters.Length).Select(Function(p) Expression.Parameter(p.ParameterType, p.Name)).ToArray()
+            Dim AllParameters = ProvidedParameters.Concat(NotProvidedParameters).ToArray()
             Dim mParam = Expression.Parameter(Method.GetType(), "<>_m")
+            Dim OuterLambdaParameters = (New ParameterExpression() {mParam}).Concat(ProvidedParameters).ToArray()
             Dim InnerLambda = Expression.Lambda(Expression.Invoke(mParam, AllParameters), NotProvidedParameters)
-            Dim OuterLambda = Expression.Lambda(InnerLambda, (New ParameterExpression() {mParam}).Concat(ProvidedParameters).ToArray())
+            Dim OuterLambda = Expression.Lambda(InnerLambda, OuterLambdaParameters)
             Dim OuterDelegate = OuterLambda.Compile()
             Dim ParamObjects = (New Object() {Method}).Concat(Parameters).ToArray()
-            Return OuterDelegate.StaticDynamicInvoke(Of Object(), [Delegate])(ParamObjects)
+            Return OuterDelegate.StaticDynamicInvokeWithObjects(Of [Delegate])(ParamObjects)
         End Function
         <Extension()> Public Function AdaptFunction(ByVal Method As [Delegate], ByVal ReturnType As Type, ByVal ParamArray RequiredParameterTypes As Type()) As [Delegate]
-            Dim Parameters = Method.Method.GetParameters().Zip(RequiredParameterTypes, Function(p, r) New With {.InnerType = p.ParameterType, .OuterType = r, .OuterParamExpr = Expression.Parameter(r, p.Name)}).ToArray
+            Dim Parameters = Method.GetParameters().ZipStrict(RequiredParameterTypes, Function(p, r) New With {.InnerType = p.ParameterType, .OuterType = r, .OuterParamExpr = Expression.Parameter(r, p.Name)}).ToArray
 
             Dim ClosureParam As ParameterExpression = Nothing
             ClosureParam = Expression.Parameter(GetType([Delegate]), "<>_Closure")
@@ -292,6 +318,30 @@ Namespace Mapping
         <Extension()> Public Function AdaptFunction(Of T1, T2, T3, T4, TReturn)(ByVal Method As [Delegate]) As Func(Of T1, T2, T3, T4, TReturn)
             Return DirectCast(AdaptFunction(Method, GetType(TReturn), GetType(T1), GetType(T2), GetType(T3)), Func(Of T1, T2, T3, T4, TReturn))
         End Function
+        <Extension()> Public Function AdaptFunctionWithObjects(ByVal Method As [Delegate], ByVal ReturnType As Type) As [Delegate]
+            Dim Parameters = Method.GetParameters().Select(Function(p) New With {.InnerType = p.ParameterType}).ToArray
+
+            Dim ClosureParam As ParameterExpression = Nothing
+            ClosureParam = Expression.Parameter(GetType([Delegate]), "<>_Closure")
+
+            Dim ObjectsParam = Expression.Parameter(GetType(Object()))
+
+            Dim ConvertExpressions As New List(Of Expression)
+            Dim n = 0
+            For Each p In Parameters
+                ConvertExpressions.Add(Expression.ConvertChecked(Expression.ArrayIndex(ObjectsParam, Expression.Constant(n)), p.InnerType))
+                n += 1
+            Next
+            Dim Ret = Expression.ConvertChecked(Expression.Invoke(Expression.ConvertChecked(ClosureParam, Method.GetType()), ConvertExpressions), ReturnType)
+            Dim InnerLambda = Expression.Lambda(Ret, ObjectsParam)
+            Dim OuterLambda = Expression.Lambda(Expression.ConvertChecked(InnerLambda, GetType([Delegate])), ClosureParam)
+
+            Dim OuterDelegate = DirectCast(OuterLambda.Compile(), Func(Of [Delegate], [Delegate]))
+            Return OuterDelegate(Method)
+        End Function
+        <Extension()> Public Function AdaptFunctionWithObjects(Of TReturn)(ByVal Method As [Delegate]) As Func(Of Object(), TReturn)
+            Return DirectCast(Method.AdaptFunctionWithObjects(GetType(TReturn)), Func(Of Object(), TReturn))
+        End Function
         <Extension()> Public Function StaticDynamicInvoke(Of TReturn)(ByVal Method As [Delegate]) As TReturn
             Return Method.AdaptFunction(Of TReturn)()()
         End Function
@@ -306,6 +356,9 @@ Namespace Mapping
         End Function
         <Extension()> Public Function StaticDynamicInvoke(Of T1, T2, T3, T4, TReturn)(ByVal Method As [Delegate], ByVal v1 As T1, ByVal v2 As T2, ByVal v3 As T3, ByVal v4 As T4) As TReturn
             Return Method.AdaptFunction(Of T1, T2, T3, T4, TReturn)()(v1, v2, v3, v4)
+        End Function
+        <Extension()> Public Function StaticDynamicInvokeWithObjects(Of TReturn)(ByVal Method As [Delegate], ByVal o As Object()) As TReturn
+            Return Method.AdaptFunctionWithObjects(Of TReturn)()(o)
         End Function
     End Module
 End Namespace
