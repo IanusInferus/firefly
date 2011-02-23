@@ -45,7 +45,7 @@ Namespace Texting
         End Function
         ''' <summary>已重载。检查UTF-16(FF FE)、GB18030(84 31 95 33)、UTF-8(EF BB BF)、UTF-32(FF FE 00 00)、UTF-16B(FE FF)、UTF-32B(00 00 FE FF)这六种编码的BOM，如果失败，返回空。</summary>
         Public Shared Function GetEncodingByBOM(ByVal Path As String) As Encoding
-            Using s = StreamEx.Create(Path, FileMode.Open)
+            Using s = Streams.CreateResizable(Path, FileMode.Open)
                 Return GetEncodingByBOM(s.AsNewReading)
             End Using
         End Function
@@ -57,7 +57,7 @@ Namespace Texting
         End Function
         ''' <summary>已重载。检查UTF-16(FF FE)、GB18030(84 31 95 33)、UTF-8(EF BB BF)、UTF-32(FF FE 00 00)、UTF-16B(FE FF)、UTF-32B(00 00 FE FF)这六种编码的BOM，如果失败，返回默认编码。</summary>
         Public Shared Function GetEncoding(ByVal Path As String, ByVal DefaultEncoding As Encoding) As Encoding
-            Using s = StreamEx.CreateReadable(Path, FileMode.Open)
+            Using s = Streams.OpenReadable(Path, FileMode.Open)
                 Return GetEncoding(s.AsNewReading, DefaultEncoding)
             End Using
         End Function
@@ -97,7 +97,7 @@ Namespace Texting
         End Function
         ''' <param name="DetectEncodingFromByteOrderMarks">如果为真，将检查UTF-16(FF FE)、GB18030(84 31 95 33)、UTF-8(EF BB BF)、UTF-32(FF FE 00 00)、UTF-16B(FE FF)、UTF-32B(00 00 FE FF)这六种编码的BOM。</param>
         Public Shared Function CreateTextReader(ByVal Path As String, ByVal Encoding As Encoding, Optional ByVal DetectEncodingFromByteOrderMarks As Boolean = True) As StreamReader
-            Return CreateTextReader(StreamEx.CreateReadable(Path, FileMode.Open).AsNewReading, Encoding, DetectEncodingFromByteOrderMarks)
+            Return CreateTextReader(Streams.OpenReadable(Path, FileMode.Open).AsNewReading, Encoding, DetectEncodingFromByteOrderMarks)
         End Function
         Public Shared Function CreateTextReader(ByVal Path As String) As StreamReader
             Return CreateTextReader(Path, TextEncoding.Default, True)
@@ -151,7 +151,7 @@ Namespace Texting
         End Function
         ''' <param name="WithByteOrderMarks">如果为真，将为UTF-16(FF FE)、GB18030(84 31 95 33)、UTF-8(EF BB BF)、UTF-32(FF FE 00 00)、UTF-16B(FE FF)、UTF-32B(00 00 FE FF)这六种编码写入BOM。</param>
         Public Shared Function CreateTextWriter(ByVal Path As String, ByVal Encoding As Encoding, Optional ByVal WithByteOrderMarks As Boolean = True) As StreamWriter
-            Return CreateTextWriter(StreamEx.Create(Path, FileMode.Create).AsNewWriting, Encoding, WithByteOrderMarks)
+            Return CreateTextWriter(Streams.CreateResizable(Path, FileMode.Create).AsNewWriting, Encoding, WithByteOrderMarks)
         End Function
         Public Shared Function CreateTextWriter(ByVal Path As String) As StreamWriter
             Return CreateTextWriter(Path, TextEncoding.WritingDefault, True)

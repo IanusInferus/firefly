@@ -3,7 +3,7 @@
 '  File:        PackageBase.vb
 '  Location:    Firefly.Packaging <Visual Basic .Net>
 '  Description: 文件包基类
-'  Version:     2011.02.10.
+'  Version:     2011.02.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -185,7 +185,7 @@ Namespace Packaging
         End Sub
         ''' <summary>从包中解出一个文件。应优先考虑覆盖ExtractSingleInner。默认实现调用ExtractSingleInner。</summary>
         Protected Overridable Sub ExtractSingleInnerPath(ByVal File As FileDB, ByVal Path As String)
-            Using t = StreamEx.Create(Path, FileMode.Create)
+            Using t = Streams.CreateResizable(Path)
                 ExtractSingleInner(File, t.AsNewWriting)
             End Using
         End Sub
@@ -197,17 +197,17 @@ Namespace Packaging
         End Sub
         ''' <summary>从包中解出多个文件。应优先考虑覆盖ExtractMultipleInner。默认实现调用ExtractMultipleInner。</summary>
         Protected Overridable Sub ExtractMultipleInnerPath(ByVal Files As FileDB(), ByVal Paths As String())
-            Dim Streams As New List(Of IStream)
+            Dim StreamList As New List(Of IStream)
             Dim StreamPassers As New List(Of NewWritingStreamPasser)
             Try
                 For n As Integer = 0 To Files.Length - 1
-                    Dim s = StreamEx.Create(Paths(n), FileMode.Create)
-                    Streams.Add(s)
+                    Dim s = Streams.CreateResizable(Paths(n))
+                    StreamList.Add(s)
                     StreamPassers.Add(s.AsNewWriting)
                 Next
                 ExtractMultipleInner(Files, StreamPassers.ToArray)
             Finally
-                For Each s In Streams
+                For Each s In StreamList
                     s.Dispose()
                 Next
             End Try
@@ -288,7 +288,7 @@ Namespace Packaging
         Protected MustOverride Sub ReplaceSingleInner(ByVal File As FileDB, ByVal sp As NewReadingStreamPasser)
         ''' <summary>替换包中的一个文件。应优先考虑覆盖ReplaceSingleInner。默认实现调用ReplaceSingleInner。</summary>
         Protected Overridable Sub ReplaceSingleInnerPath(ByVal File As FileDB, ByVal Path As String)
-            Using t = StreamEx.CreateReadable(Path, FileMode.Open)
+            Using t = Streams.OpenReadable(Path)
                 ReplaceSingleInner(File, t.AsNewReading)
             End Using
         End Sub
@@ -300,17 +300,17 @@ Namespace Packaging
         End Sub
         ''' <summary>替换包中的多个文件。应优先考虑覆盖ExtractMultipleInner。默认实现调用ExtractMultipleInner。</summary>
         Protected Overridable Sub ReplaceMultipleInnerPath(ByVal Files As FileDB(), ByVal Paths As String())
-            Dim Streams As New List(Of IReadableSeekableStream)
+            Dim StreamList As New List(Of IReadableSeekableStream)
             Dim StreamPassers As New List(Of NewReadingStreamPasser)
             Try
                 For n As Integer = 0 To Files.Length - 1
-                    Dim s = StreamEx.CreateReadable(Paths(n), FileMode.Open)
-                    Streams.Add(s)
+                    Dim s = Streams.OpenReadable(Paths(n))
+                    StreamList.Add(s)
                     StreamPassers.Add(s.AsNewReading)
                 Next
                 ReplaceMultipleInner(Files, StreamPassers.ToArray)
             Finally
-                For Each s In Streams
+                For Each s In StreamList
                     s.Dispose()
                 Next
             End Try
@@ -631,9 +631,9 @@ Namespace Packaging
         Public Shared Function Open(ByVal Index As Integer, ByVal Path As String) As PackageBase
             If Openables(Index).OpenWithPath Is Nothing Then
                 If CBool(IO.File.GetAttributes(Path) And IO.FileAttributes.ReadOnly) Then
-                    Return Open(Index, StreamEx.CreateReadable(Path, FileMode.Open).AsNewReading)
+                    Return Open(Index, Streams.OpenReadable(Path).AsNewReading)
                 Else
-                    Return Open(Index, StreamEx.Create(Path, FileMode.Open).AsNewReadingWriting)
+                    Return Open(Index, Streams.OpenResizable(Path).AsNewReadingWriting)
                 End If
             Else
                 Return Openables(Index).OpenWithPath(Path)
@@ -648,7 +648,7 @@ Namespace Packaging
         End Function
         Public Shared Function Create(ByVal WritableIndex As Integer, ByVal Path As String, ByVal Directory As String) As PackageBase
             If Creatables(WritableIndex).OpenWithPath Is Nothing Then
-                Return Create(WritableIndex, StreamEx.Create(Path, FileMode.Create).AsNewWriting, Directory)
+                Return Create(WritableIndex, Streams.CreateResizable(Path).AsNewWriting, Directory)
             Else
                 Return Creatables(WritableIndex).CreateWithPath(Path, Directory)
             End If

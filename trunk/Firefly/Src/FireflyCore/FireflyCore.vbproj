@@ -100,7 +100,7 @@
     <Compile Include="Packaging\PackageDiscrete.vb" />
     <Compile Include="Setting\Xml.vb" />
     <Compile Include="Setting\XmlCompatibility.vb" />
-    <Compile Include="Streaming\Streams.vb" />
+    <Compile Include="Streaming\StreamInterfaces.vb" />
     <Compile Include="TextEncoding\ControlChars.vb" />
     <Compile Include="TextEncoding\Encoding.vb" />
     <Compile Include="TextEncoding\EncodingString.vb" />
@@ -116,7 +116,7 @@
     <Compile Include="Packaging\PackageBase.vb" />
     <Compile Include="Streaming\PartialStreams.vb" />
     <Compile Include="Packaging\PCK.vb" />
-    <Compile Include="Streaming\StreamEx.vb" />
+    <Compile Include="Streaming\Streams.vb" />
     <Compile Include="TextEncoding\MultiByteEncoding.vb" />
     <Compile Include="TextEncoding\TblCharMappingFile.vb" />
     <Compile Include="TextEncoding\Char32.vb" />

@@ -85,7 +85,7 @@ Namespace Imaging
         End Sub
 
         Public Sub New(ByVal Path As String)
-            Using gf = StreamEx.Create(Path, FileMode.Open)
+            Using gf = Streams.CreateResizable(Path, FileMode.Open)
                 With Me
                     For n As Integer = 0 To 5
                         If gf.ReadByte <> AscW(Identifier(n)) Then
@@ -230,7 +230,7 @@ Namespace Imaging
         End Sub
 
         Public Sub WriteToFile(ByVal Path As String)
-            Using gf = StreamEx.Create(Path, FileMode.Create)
+            Using gf = Streams.CreateResizable(Path, FileMode.Create)
                 For n As Integer = 0 To Identifier.Length - 1
                     gf.WriteByte(CByte(AscW(Identifier(n))))
                 Next

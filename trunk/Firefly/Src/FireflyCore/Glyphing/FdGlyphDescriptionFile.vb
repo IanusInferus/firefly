@@ -3,7 +3,7 @@
 '  File:        FdGlyphDescriptionFile.vb
 '  Location:    Firefly.TextEncoding <Visual Basic .Net>
 '  Description: fd字形描述文件
-'  Version:     2010.10.30.
+'  Version:     2011.02.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -302,7 +302,7 @@ Namespace Glyphing
         Private r As BmpFontImageReader
 
         Public Sub New(ByVal Path As String)
-            s = StreamEx.CreateReadable(Path, FileMode.Open)
+            s = Streams.OpenReadable(Path)
             r = New BmpFontImageReader(s.AsNewReading)
         End Sub
 

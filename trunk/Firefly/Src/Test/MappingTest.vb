@@ -216,7 +216,7 @@ Public Module MappingTest
     Public Sub TestBinarySerializer()
         Dim BinaryRoundTripped As SerializerTestObject
 
-        Using s = StreamEx.Create
+        Using s = Streams.CreateMemoryStream
             Dim bs As New BinarySerializer
 
             Dim sbr As New StringAndBytesTranslator
@@ -368,7 +368,7 @@ Public Module MappingTest
 
         Dim XmlRoundTripped As SerializerTestObject
 
-        Using s = StreamEx.Create
+        Using s = Streams.CreateMemoryStream
             Using ps = s.Partialize(0, Int64.MaxValue, 0, False)
                 Using sw = Txt.CreateTextWriter(ps.AsNewWriting, UTF16)
                     Xml.WriteFile(sw, TestObject, New Type() {}, New Xml.IMapper() {New ByteArrayEncoder})
@@ -454,7 +454,7 @@ Public Module MappingTest
         '.Net Internal roundtrip
         With Nothing
             Dim oxs As New System.Xml.Serialization.XmlSerializer(GetType(CompatibilityTestObject))
-            Using s = StreamEx.Create
+            Using s = Streams.CreateMemoryStream
                 Using ps = s.Partialize(0, Int64.MaxValue, 0, False)
                     Using sw = Txt.CreateTextWriter(ps.AsNewWriting, UTF16)
                         oxs.Serialize(sw, v)
@@ -474,7 +474,7 @@ Public Module MappingTest
 
         '.Net Internal to XmlSerializer
         With Nothing
-            Using s = StreamEx.Create
+            Using s = Streams.CreateMemoryStream
                 Dim oxs As New System.Xml.Serialization.XmlSerializer(GetType(CompatibilityTestObject))
                 Using ps = s.Partialize(0, Int64.MaxValue, 0, False)
                     Using sw = Txt.CreateTextWriter(ps.AsNewWriting, UTF16)
@@ -499,7 +499,7 @@ Public Module MappingTest
 
         '.Net Internal to XmlSerializer
         With Nothing
-            Using s = StreamEx.Create
+            Using s = Streams.CreateMemoryStream
                 Using ps = s.Partialize(0, Int64.MaxValue, 0, False)
                     Using sw = Txt.CreateTextWriter(ps.AsNewWriting, UTF16)
                         XmlCompatibility.WriteFile(sw, v)

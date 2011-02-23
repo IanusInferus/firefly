@@ -180,7 +180,7 @@ Public Module BruteForceExporter
                 Dim BinFilePath = f
                 Dim WQSGPath = f & ".txt"
 
-                Using BinFile = StreamEx.CreateReadable(BinFilePath, IO.FileMode.Open)
+                Using BinFile = Streams.OpenReadable(BinFilePath, IO.FileMode.Open)
                     If BinFile.Length <= &H1000000 Then
                         Dim b = BinFile.Read(BinFile.Length)
                         Dim t = FindAllString(b, TextPattern, TextPatternExclude, Encoding)
