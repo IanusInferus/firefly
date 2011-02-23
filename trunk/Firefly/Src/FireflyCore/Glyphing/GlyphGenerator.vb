@@ -3,11 +3,12 @@
 '  File:        GlyphGenerator.vb
 '  Location:    Firefly.Glyphing <Visual Basic .Net>
 '  Description: 字形生成器
-'  Version:     2010.09.10.
+'  Version:     2011.02.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
 
+Option Strict Off
 Imports System
 Imports System.Math
 Imports System.Linq
@@ -87,7 +88,7 @@ Namespace Glyphing
                 Return New Glyph With {.c = c, .Block = Block, .VirtualBox = New Rectangle(0, 0, PhysicalWidthValue, PhysicalHeightValue)}
             End If
 
-            Dim GetGray = Function(ARGB) CByte((((ARGB And &HFF0000) >> 16) + ((ARGB And &HFF00) >> 8) + (ARGB And &HFF) + 2) \ 3)
+            Dim GetGray = Function(ARGB As Int32) CByte((((ARGB And &HFF0000) >> 16) + ((ARGB And &HFF00) >> 8) + (ARGB And &HFF) + 2) \ 3)
 
             Dim DrawedRectangle = g.MeasureStringRectangle(c.UnicodeString, Font)
             Dim X As Integer = Round(DrawedRectangle.Left)
@@ -219,7 +220,7 @@ Namespace Glyphing
                 Return New Glyph With {.c = c, .Block = Block, .VirtualBox = New Rectangle(0, 0, PhysicalWidthValue, PhysicalHeightValue)}
             End If
 
-            Dim GetGray = Function(ARGB) CByte((((ARGB And &HFF0000) >> 16) + ((ARGB And &HFF00) >> 8) + (ARGB And &HFF) + 2) \ 3)
+            Dim GetGray = Function(ARGB As Int32) CByte((((ARGB And &HFF0000) >> 16) + ((ARGB And &HFF00) >> 8) + (ARGB And &HFF) + 2) \ 3)
 
             Dim DrawedRectangle = g.MeasureStringRectangle(c.UnicodeString, Font)
             Dim X As Integer = Round(DrawedRectangle.Left)

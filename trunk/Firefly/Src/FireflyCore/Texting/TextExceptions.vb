@@ -3,7 +3,7 @@
 '  File:        TextExceptions.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: 文本异常
-'  Version:     2010.10.26.
+'  Version:     2011.02.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -25,12 +25,12 @@ Namespace Texting
         End Sub
 
         Public Sub New(ByVal LineNumber As Integer, ByVal Message As String)
-            MyBase.New(GetMessage("", LineNumber, Message))
+            MyBase.New(GetMessage("", CStr(LineNumber), Message))
             LineNumberValue = LineNumber
         End Sub
 
         Public Sub New(ByVal Path As String, ByVal LineNumber As Integer, ByVal Message As String)
-            MyBase.New(GetMessage(Path, LineNumber, Message))
+            MyBase.New(GetMessage(Path, CStr(LineNumber), Message))
             PathValue = Path
             LineNumberValue = LineNumber
         End Sub
@@ -83,12 +83,12 @@ Namespace Texting
         End Sub
 
         Public Sub New(ByVal LineNumber As Integer, ByVal Message As String)
-            MyBase.New(GetMessage("", LineNumber, Message))
+            MyBase.New(GetMessage("", CStr(LineNumber), Message))
             LineNumberValue = LineNumber
         End Sub
 
         Public Sub New(ByVal Path As String, ByVal LineNumber As Integer, ByVal Message As String)
-            MyBase.New(GetMessage(Path, LineNumber, Message))
+            MyBase.New(GetMessage(Path, CStr(LineNumber), Message))
             PathValue = Path
             LineNumberValue = LineNumber
         End Sub
