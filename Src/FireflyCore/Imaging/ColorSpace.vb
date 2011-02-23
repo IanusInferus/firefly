@@ -3,11 +3,12 @@
 '  File:        ColorSpace.vb
 '  Location:    Firefly.Imaging <Visual Basic .Net>
 '  Description: 颜色空间变换
-'  Version:     2009.10.31.
+'  Version:     2011.02.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
 
+Option Strict Off
 Imports System
 Imports System.Math
 
