@@ -3,7 +3,7 @@
 '  File:        Bmp.vb
 '  Location:    Firefly.Imaging <Visual Basic .Net>
 '  Description: 基本Bmp文件流类
-'  Version:     2010.12.01.
+'  Version:     2011.02.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -208,12 +208,12 @@ Namespace Imaging
         ''' <summary>新建内存流Bmp</summary>
         ''' <param name="BitsPerPixel">Bmp位数：可以取1、4、8、15、16、24、32</param>
         Public Sub New(ByVal Width As Int32, ByVal Height As Int32, Optional ByVal BitsPerPixel As Int16 = 24)
-            Me.New(StreamEx.Create.AsNewWriting, Width, Height, BitsPerPixel)
+            Me.New(Streams.CreateMemoryStream.AsNewWriting, Width, Height, BitsPerPixel)
         End Sub
         ''' <summary>新建文件流Bmp</summary>
         ''' <param name="BitsPerPixel">Bmp位数：可以取1、4、8、15、16、24、32</param>
         Public Sub New(ByVal Path As String, ByVal Width As Int32, ByVal Height As Int32, Optional ByVal BitsPerPixel As Int16 = 24)
-            Me.New(StreamEx.Create(Path, FileMode.Create).AsNewWriting, Width, Height, BitsPerPixel)
+            Me.New(Streams.CreateResizable(Path).AsNewWriting, Width, Height, BitsPerPixel)
         End Sub
 
         ''' <summary>已重载。从流打开一个位图。</summary>
@@ -285,7 +285,7 @@ Namespace Imaging
         ''' <summary>已重载。从文件打开一个位图。</summary>
         Public Shared Function Open(ByVal Path As String) As Bmp
             Try
-                Dim s = StreamEx.Create(Path, FileMode.Open)
+                Dim s = Streams.OpenResizable(Path)
                 Try
                     Return Open(s.AsNewReadingWriting)
                 Catch
@@ -293,7 +293,7 @@ Namespace Imaging
                     Throw
                 End Try
             Catch
-                Dim s = StreamEx.CreateReadable(Path, FileMode.Open)
+                Dim s = Streams.OpenReadable(Path)
                 Try
                     Return Open(s.AsNewReading)
                 Catch

@@ -3,7 +3,7 @@
 '  File:        PackageContinuous.vb
 '  Location:    Firefly.Packaging <Visual Basic .Net>
 '  Description: 连续数据文件包
-'  Version:     2010.12.01.
+'  Version:     2011.02.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -134,7 +134,7 @@ Namespace Packaging
 
             '生成保留文件临时文件
             Dim TempFileName = Path.GetTempFileName
-            Using TempFile = StreamEx.Create(TempFileName, FileMode.Create)
+            Using TempFile = Streams.CreateResizable(TempFileName)
                 For Each Pair In PreserveList
                     With Pair.Value
                         Using f = Readable.Partialize(.Address, .Length)

@@ -3,7 +3,7 @@
 '  File:        RangeAnalyzer.vb
 '  Location:    Firefly.RangeAnalyzer <Visual Basic .Net>
 '  Description: 范围分析器
-'  Version:     2010.12.01.
+'  Version:     2011.02.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -60,11 +60,11 @@ Public Class RangeAnalyzer
         Return 0
     End Function
 
-    Private Shared ReadOnly Property Dict() As Dictionary(Of String, Func(Of StreamEx, Decimal, Decimal, Decimal, String))
+    Private Shared ReadOnly Property Dict() As Dictionary(Of String, Func(Of IReadableSeekableStream, Decimal, Decimal, Decimal, String))
         Get
-            Static d As Dictionary(Of String, Func(Of StreamEx, Decimal, Decimal, Decimal, String))
+            Static d As Dictionary(Of String, Func(Of IReadableSeekableStream, Decimal, Decimal, Decimal, String))
             If d Is Nothing Then
-                d = New Dictionary(Of String, Func(Of StreamEx, Decimal, Decimal, Decimal, String))(StringComparer.OrdinalIgnoreCase)
+                d = New Dictionary(Of String, Func(Of IReadableSeekableStream, Decimal, Decimal, Decimal, String))(StringComparer.OrdinalIgnoreCase)
                 d.Add("SByte", AddressOf GetRangeSByte)
                 d.Add("Int16", AddressOf GetRangeInt16)
                 d.Add("Int32", AddressOf GetRangeInt32)
@@ -90,7 +90,7 @@ Public Class RangeAnalyzer
             MessageBox.Show("未选择文件", Me.Text, MessageBoxButtons.OK)
             Return
         End If
-        Using s = StreamEx.CreateReadable(FileSelectBox_File.Path, FileMode.Open, FileShare.ReadWrite)
+        Using s = Streams.OpenReadable(FileSelectBox_File.Path, FileShare.ReadWrite)
             If Dict.ContainsKey(ComboBox_Type.Text) Then
                 Dim f = Dict(ComboBox_Type.Text)
                 TextBox_Result.Text = f(s, NumericUpDown_StartPosition.Value, NumericUpDown_EndPosition.Value, NumericUpDown_Step.Value)
