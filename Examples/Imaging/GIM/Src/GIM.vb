@@ -3,7 +3,7 @@
 '  File:        GIM.vb
 '  Location:    Firefly.Examples <Visual Basic .Net>
 '  Description: PSP GIM图像格式
-'  Version:     2010.12.01.
+'  Version:     2011.02.23.
 '  Author:      F.R.C.
 '  Copyright(C) Public Domain
 '
@@ -40,7 +40,7 @@ Public Class GIM
     End Property
 
     Public Sub New(ByVal Data As Byte())
-        Using s = StreamEx.Create
+        Using s = Streams.CreateMemoryStream()
             s.Write(Data)
             s.Position = 0
 
@@ -50,7 +50,7 @@ Public Class GIM
     End Sub
 
     Public Function ToBytes() As Byte()
-        Using s = StreamEx.Create
+        Using s = Streams.CreateMemoryStream()
             s.WriteSimpleString(Identifier, 16)
             Root.Write(s)
 
@@ -237,7 +237,7 @@ Public Class GIM
         End Property
 
         Public Overrides Sub ReadData()
-            Using s = StreamEx.Create()
+            Using s = Streams.CreateMemoryStream()
                 s.Write(Me.Data)
                 s.Position = 0
 
@@ -466,7 +466,7 @@ Public Class GIM
         End Sub
 
         Public Overrides Sub WriteData()
-            Using s = StreamEx.Create()
+            Using s = Streams.CreateMemoryStream()
                 s.Write(Me.Data)
                 s.Position = 0
 
@@ -702,7 +702,7 @@ Public Class GIM
 
 
         Public Overrides Sub ReadData()
-            Using s = StreamEx.Create()
+            Using s = Streams.CreateMemoryStream()
                 s.Write(Me.Data)
                 s.Position = 0
 
@@ -850,7 +850,7 @@ Public Class GIM
         End Sub
 
         Public Overrides Sub WriteData()
-            Using s = StreamEx.Create()
+            Using s = Streams.CreateMemoryStream()
                 s.Write(Me.Data)
                 s.Position = 0
 

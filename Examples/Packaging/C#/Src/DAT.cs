@@ -3,7 +3,7 @@
 //  File:        DAT.cs
 //  Location:    Firefly.Examples <Visual C#>
 //  Description: プリニ DAT格式
-//  Version:     2010.12.01.
+//  Version:     2012.02.23.
 //  Author:      F.R.C.
 //  Copyright(C) public Domain
 //
@@ -106,11 +106,11 @@ public class DAT : PackageDiscrete
         IReadableSeekableStream sRead = null;
         try
         {
-            s = StreamEx.Create(Path, FileMode.Open);
+            s = Streams.OpenResizable(Path);
         }
         catch
         {
-            sRead = StreamEx.CreateReadable(Path, FileMode.Open);
+            sRead = Streams.OpenReadable(Path);
         }
         if (s != null)
         {

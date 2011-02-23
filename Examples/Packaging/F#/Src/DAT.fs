@@ -3,7 +3,7 @@
 //  File:        DAT.fs
 //  Location:    Firefly.Examples <Visual F#>
 //  Description: プリニ DAT格式
-//  Version:     2010.12.01.
+//  Version:     2011.02.23.
 //  Author:      F.R.C.
 //  Copyright(C) Public Domain
 //
@@ -84,11 +84,11 @@ type DAT =
     static member Open (path : String) : PackageBase =
         let s =
             try
-                (StreamEx.Create (path, FileMode.Open)).AsNewReadingWriting ()
+                (Streams.OpenResizable path).AsNewReadingWriting ()
             with _ ->
                 null
         match s with
-        | null -> new DAT ((StreamEx.CreateReadable (path, FileMode.Open)).AsNewReading ()) :> PackageBase
+        | null -> new DAT ((Streams.OpenReadable path).AsNewReading ()) :> PackageBase
         | _ -> new DAT (s) :> PackageBase
 
     //读取文件在索引中的地址信息，所有索引中的地址信息应该在这里更新
