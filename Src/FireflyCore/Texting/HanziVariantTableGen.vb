@@ -3,7 +3,7 @@
 '  File:        HanziVariantTableGen.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: 简繁日汉字异体对应表生成器
-'  Version:     2010.10.11.
+'  Version:     2011.02.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -444,15 +444,15 @@ Namespace Texting
         End Function
 
         Public Function GetGChars() As IEnumerable(Of Char32)
-            Return GChars
+            Return GChars.Keys
         End Function
 
         Public Function GetTChars() As IEnumerable(Of Char32)
-            Return TChars
+            Return TChars.Keys
         End Function
 
         Public Function GetJChars() As IEnumerable(Of Char32)
-            Return JChars
+            Return JChars.Keys
         End Function
 
         Public Function GetGNorm() As IEnumerable(Of Char32)
@@ -469,7 +469,7 @@ Namespace Texting
 
         Private Shared Function ParseUnicodes(ByVal Value As String) As IEnumerable(Of Char32)
             Static r As New Regex("U\+(?<Unicode>[0-9A-F]{4,5})", RegexOptions.ExplicitCapture)
-            Return From m As Match In r.Matches(Value) Select New Char32(Integer.Parse(m.Result("${Unicode}"), Globalization.NumberStyles.HexNumber))
+            Return r.Matches(Value).OfType(Of Match).Select(Function(m) New Char32(Integer.Parse(m.Result("${Unicode}"), Globalization.NumberStyles.HexNumber)))
         End Function
 
         Private Shared r As New Regex("^(?<Level>[0-9A-Z_]*)-(?<Code>[0-9A-F]{4})$", RegexOptions.ExplicitCapture)

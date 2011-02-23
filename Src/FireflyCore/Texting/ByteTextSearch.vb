@@ -3,7 +3,7 @@
 '  File:        ByteTextSearch.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: 基于字节的正则表达式搜索
-'  Version:     2009.10.31.
+'  Version:     2011.02.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -30,7 +30,7 @@ Namespace Texting
         Public Shared Function DecodeFromByteString(ByVal Input As String) As Byte()
             Dim bb = New Byte(Input.Length - 1) {}
             For n = 0 To Input.Length - 1
-                bb(n) = AscQ(Input(n))
+                bb(n) = CByte(AscQ(Input(n)))
             Next
             Return bb
         End Function

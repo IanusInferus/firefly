@@ -3,7 +3,7 @@
 '  File:        LOC.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: LOC文件格式类(版本2)(图形文本)
-'  Version:     2010.12.01.
+'  Version:     2011.02.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -189,7 +189,7 @@ Namespace Texting
                                     Dim FdStream = StreamDict(IdentifierFd)
                                     Dim BmpStream = StreamDict(IdentifierBmp)
                                     Using FdReader = Txt.CreateTextReader(FdStream.AsNewReading, TextEncoding.Default)
-                                        Using ImageReader As New BmpFontImageReader(BmpStream)
+                                        Using ImageReader As New BmpFontImageReader(BmpStream.AsNewReading)
                                             Font = FdGlyphDescriptionFile.ReadFont(FdReader, ImageReader)
                                         End Using
                                     End Using
@@ -222,7 +222,7 @@ Namespace Texting
             End Using
         End Function
         Public Shared Function ReadFile(ByVal Path As String) As LOCText
-            Using s = Streams.OpenReadable(Path, FileMode.Open)
+            Using s = Streams.OpenReadable(Path)
                 Return ReadFile(s.AsNewReading)
             End Using
         End Function
@@ -242,7 +242,7 @@ Namespace Texting
                             Using FdProtecter = FdStream.Partialize(0, Int64.MaxValue, FdStream.Length)
                                 Using FdWriter = Txt.CreateTextWriter(FdProtecter.AsNewWriting, TextEncoding.UTF16)
                                     Using ImageProtecter = BmpStream.Partialize(0, Int64.MaxValue, BmpStream.Length)
-                                        Using ImageWriter As New BmpFontImageWriter(ImageProtecter)
+                                        Using ImageWriter As New BmpFontImageWriter(ImageProtecter.AsNewWriting)
                                             FdGlyphDescriptionFile.WriteFont(FdWriter, Font, ImageWriter)
                                         End Using
                                     End Using
@@ -280,7 +280,7 @@ Namespace Texting
                         s.WriteInt32(Address)
                         Dim Length = ss.Length
                         Dim Space = ((Length + 15) \ 16) * 16
-                        s.WriteInt32(Length)
+                        s.WriteInt32(CInt(Length))
 
                         Dim HoldPosition = s.Position
                         s.Position = Address
@@ -291,7 +291,7 @@ Namespace Texting
                         Next
                         s.Position = HoldPosition
 
-                        Address += Space
+                        Address = CInt(Address + Space)
                     Next
                 Finally
                     For Each sPair In StreamList
@@ -316,7 +316,7 @@ Namespace Texting
             End Using
         End Sub
         Public Shared Sub WriteFile(ByVal Path As String, ByVal Value As LOCText, Optional ByVal Compress As Boolean = False)
-            Using s = Streams.CreateResizable(Path, FileMode.Create)
+            Using s = Streams.CreateResizable(Path)
                 WriteFile(s.AsNewWriting, Value, Compress)
             End Using
         End Sub
@@ -449,13 +449,13 @@ Namespace Texting
                 Case -1
                     Return Nothing
                 Case 0 To &HFF
-                    Return New StringEx(Of Byte)(New Byte() {Code.Bits(7, 0)})
+                    Return New StringEx(Of Byte)(New Byte() {CByte(Code.Bits(7, 0))})
                 Case &H100 To &HFFFF
-                    Return New StringEx(Of Byte)(New Byte() {Code.Bits(7, 0), Code.Bits(15, 8)})
+                    Return New StringEx(Of Byte)(New Byte() {CByte(Code.Bits(7, 0)), CByte(Code.Bits(15, 8))})
                 Case &H10000 To &HFFFFFF
-                    Return New StringEx(Of Byte)(New Byte() {Code.Bits(7, 0), Code.Bits(15, 8), Code.Bits(23, 16)})
+                    Return New StringEx(Of Byte)(New Byte() {CByte(Code.Bits(7, 0)), CByte(Code.Bits(15, 8)), CByte(Code.Bits(23, 16))})
                 Case Else
-                    Return New StringEx(Of Byte)(New Byte() {Code.Bits(7, 0), Code.Bits(15, 8), Code.Bits(23, 16), Code.Bits(31, 24)})
+                    Return New StringEx(Of Byte)(New Byte() {CByte(Code.Bits(7, 0)), CByte(Code.Bits(15, 8)), CByte(Code.Bits(23, 16)), CByte(Code.Bits(31, 24))})
             End Select
         End Function
         Private Shared Function CodesToCodeInt32(ByVal Codes As StringEx(Of Byte)) As Int32

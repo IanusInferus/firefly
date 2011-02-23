@@ -3,11 +3,12 @@
 '  File:        GlyphArranger.vb
 '  Location:    Firefly.Glyphing <Visual Basic .Net>
 '  Description: 字形集合
-'  Version:     2010.04.22.
+'  Version:     2011.02.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
 
+Option Strict Off
 Imports System
 Imports System.Math
 Imports System.Collections.Generic

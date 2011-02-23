@@ -3,7 +3,7 @@
 '  File:        Gif.vb
 '  Location:    Firefly.Imaging <Visual Basic .Net>
 '  Description: 基本Gif文件类
-'  Version:     2010.11.30.
+'  Version:     2011.02.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -85,7 +85,7 @@ Namespace Imaging
         End Sub
 
         Public Sub New(ByVal Path As String)
-            Using gf = Streams.CreateResizable(Path, FileMode.Open)
+            Using gf = Streams.OpenResizable(Path)
                 With Me
                     For n As Integer = 0 To 5
                         If gf.ReadByte <> AscW(Identifier(n)) Then
@@ -230,7 +230,7 @@ Namespace Imaging
         End Sub
 
         Public Sub WriteToFile(ByVal Path As String)
-            Using gf = Streams.CreateResizable(Path, FileMode.Create)
+            Using gf = Streams.CreateResizable(Path)
                 For n As Integer = 0 To Identifier.Length - 1
                     gf.WriteByte(CByte(AscW(Identifier(n))))
                 Next

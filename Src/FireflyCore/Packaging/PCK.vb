@@ -3,7 +3,7 @@
 '  File:        PCK.vb
 '  Location:    Firefly.Packaging <Visual Basic .Net>
 '  Description: PCK文件流类(一个标准的文件包)
-'  Version:     2010.12.01.
+'  Version:     2011.02.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -38,11 +38,11 @@ Namespace Packaging
 
         Protected Function OpenFileDB() As FileDB
             Dim ret As New FileDB
-            PhysicalPosition.Add(ret, Readable.Position)
+            PhysicalPosition.Add(ret, CInt(Readable.Position))
             With ret
                 Dim s = Readable
                 .Name = s.ReadSimpleString(36)
-                .Type = s.ReadInt32
+                .Type = CType(s.ReadInt32, FileDB.FileType)
                 .Length = s.ReadInt32
                 .Address = s.ReadInt32
                 If .Type = FileDB.FileType.Directory Then
@@ -65,13 +65,13 @@ Namespace Packaging
 
         Protected Const DBLength As Integer = 48
         Public Sub WriteFileDB(ByVal File As FileDB)
-            PhysicalPosition.Add(File, Writable.Position)
+            PhysicalPosition.Add(File, CInt(Writable.Position))
             With File
                 Dim s = Writable
                 s.WriteSimpleString(.Name, 36)
                 s.WriteInt32(.Type)
-                s.WriteInt32(.Length)
-                s.WriteInt32(.Address)
+                s.WriteInt32(CInt(.Length))
+                s.WriteInt32(CInt(.Address))
             End With
         End Sub
 
@@ -97,12 +97,12 @@ Namespace Packaging
             WriteFileDB(CreateDirectoryEnd())
 
             For Each f As String In FilePathQueue
-                Using File = Streams.OpenReadable(f, FileMode.Open)
+                Using File = Streams.OpenReadable(f)
                     GotoNextFilePoint()
-                    FileLengthQueue.Enqueue(File.Length)
-                    FileAddressQueue.Enqueue(s.Position)
+                    FileLengthQueue.Enqueue(CInt(File.Length))
+                    FileAddressQueue.Enqueue(CInt(s.Position))
                     If s.Length - s.Position < File.Length Then
-                        s.SetLength(s.Length + Max(16777216, Ceiling(File.Length / 16777216) * 16777216))
+                        s.SetLength(CLng(s.Length + Max(16777216, Ceiling(File.Length / 16777216) * 16777216)))
                     End If
                     s.WriteFromStream(File, File.Length)
                 End Using
@@ -138,13 +138,13 @@ Namespace Packaging
                 DirDB.SubFile.Add(cFileDB)
                 DirDB.SubFileNameRef.Add(cFileDB.Name, cFileDB)
                 FileQueue.Enqueue(cFileDB)
-                FileLengthAddressPointerQueue.Enqueue(s.Position - 8)
+                FileLengthAddressPointerQueue.Enqueue(CInt(s.Position - 8))
                 FilePathQueue.Enqueue(f)
             Next
             For Each d As String In Directory.GetDirectories(GetPath(Dir, DirDB.Name))
                 Name = GetFileName(d)
                 If Name.Length > 36 Then Throw New InvalidDataException(d)
-                cFileDB = CreateDirectory(Name, s.Position + DBLength)
+                cFileDB = CreateDirectory(Name, CInt(s.Position + DBLength))
                 WriteFileDB(cFileDB)
                 cFileDB.ParentFileDB = DirDB
                 DirDB.SubFile.Add(cFileDB)
@@ -160,10 +160,10 @@ Namespace Packaging
             End While
         End Sub
         Public Shared Function CreateDirectory(ByVal Name As String, ByVal Address As Int32) As FileDB
-            Return New FileDB(Name, 1, &HFFFFFFFF, Address)
+            Return New FileDB(Name, CType(1, FileDB.FileType), &HFFFFFFFF, Address)
         End Function
         Public Shared Function CreateDirectoryEnd() As FileDB
-            Return New FileDB(Nothing, 255, &HFFFFFFFF, &HFFFFFFFF)
+            Return New FileDB(Nothing, CType(255, FileDB.FileType), &HFFFFFFFF, &HFFFFFFFF)
         End Function
 
         Protected PhysicalPosition As New Dictionary(Of FileDB, Int32)
@@ -174,7 +174,7 @@ Namespace Packaging
             End Get
             Set(ByVal Value As Int64)
                 Writable.Position = PhysicalPosition(File) + 40
-                Writable.WriteInt32(Value)
+                Writable.WriteInt32(CInt(Value))
             End Set
         End Property
 
