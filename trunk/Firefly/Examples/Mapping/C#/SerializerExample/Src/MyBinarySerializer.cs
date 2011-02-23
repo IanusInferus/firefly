@@ -3,7 +3,7 @@
 //  File:        MyBinarySerializer.cs
 //  Location:    Firefly.Examples <Visual Basic .Net>
 //  Description: 自定义二进制序列化器
-//  Version:     2010.12.01.
+//  Version:     2011.02.23.
 //  Author:      F.R.C.
 //  Copyright(C) public Domain
 //
@@ -60,7 +60,7 @@ public class MyBinarySerializer
     /// <summary>读取版本1或2</summary>
     public DataObject Read(Byte[] Bytes)
     {
-        using (var s = StreamEx.Create())
+        using (var s = Streams.CreateMemoryStream())
         {
             s.Write(Bytes);
             s.Position = 0;
@@ -83,7 +83,7 @@ public class MyBinarySerializer
     /// <summary>写入版本1</summary>
     public Byte[] WriteVersion1(DataObject Obj)
     {
-        using (var s = StreamEx.Create())
+        using (var s = Streams.CreateMemoryStream())
         {
             var Version = 1U;
             s.WriteSimpleString("MYDF", 4);
@@ -98,7 +98,7 @@ public class MyBinarySerializer
     /// <summary>写入版本2</summary>
     public Byte[] Write(DataObject Obj)
     {
-        using (var s = StreamEx.Create())
+        using (var s = Streams.CreateMemoryStream())
         {
             var Version = 2U;
             s.WriteSimpleString("MYDF", 4);

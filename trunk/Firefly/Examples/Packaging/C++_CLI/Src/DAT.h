@@ -3,7 +3,7 @@
 //  File:        DAT.h
 //  Location:    Firefly.Examples <Visual C++/CLI>
 //  Description: プリニ DAT格式
-//  Version:     2010.12.01.
+//  Version:     2011.02.23.
 //  Author:      F.R.C.
 //  Copyright(C) public Domain
 //
@@ -94,10 +94,10 @@ public:
         IStream^ s = nullptr;
         IReadableSeekableStream^ sRead = nullptr;
         try {
-            s = StreamEx::Create(Path, FileMode::Open, FileShare::Read);
+            s = Streams::OpenResizable(Path, FileShare::Read);
         }
         catch (...){
-            sRead = StreamEx::CreateReadable(Path, FileMode::Open, FileShare::Read);
+            sRead = Streams::OpenReadable(Path, FileShare::Read);
         }
         if (s != nullptr) {
             return gcnew DAT(StreamPasser::AsNewReadingWriting(s));

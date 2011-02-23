@@ -3,7 +3,7 @@
 '  File:        LXB.vb
 '  Location:    Firefly.Examples <Visual Basic .Net>
 '  Description: Kung Fu Panda lxb文件格式
-'  Version:     2010.12.01.
+'  Version:     2011.02.23.
 '  Author:      F.R.C.
 '  Copyright(C) Public Domain
 '
@@ -22,13 +22,13 @@ Public NotInheritable Class LXB
     End Sub
 
     Public Shared Function Read(ByVal Path As String) As KeyValuePair(Of Int32, String)()
-        Using s = StreamEx.CreateReadable(Path, FileMode.Open)
+        Using s = Streams.OpenReadable(Path)
             Return Read(s.AsNewReading)
         End Using
     End Function
 
     Public Shared Sub Write(ByVal Path As String, ByVal Text As IEnumerable(Of KeyValuePair(Of Int32, String)))
-        Using s = StreamEx.Create(Path, FileMode.Create)
+        Using s = Streams.CreateResizable(Path)
             Write(s.AsNewWriting, Text)
         End Using
     End Sub
