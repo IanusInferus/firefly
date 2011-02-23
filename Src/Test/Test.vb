@@ -148,7 +148,7 @@ Public Module Test
         'TestFileDialog()
         'TestBitStreamReadWrite()
         'TestCommandLine()
-        'TestMessageDialog()
+        'TestUI()
         TestMapping()
     End Sub
 End Module
