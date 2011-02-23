@@ -44,7 +44,7 @@ Namespace Texting
             Dim sInput = sp.GetStream
 
             Dim Identifier As String = sInput.ReadSimpleString(4)
-            Using s = StreamEx.Create
+            Using s = Streams.CreateMemoryStream
                 If Identifier = IdentifierCompression Then
                     Using gz = sInput.Partialize(4, sInput.Length - 4)
                         Using gzDec As New IO.Compression.GZipStream(gz.ToUnsafeStream, IO.Compression.CompressionMode.Decompress, False)
@@ -168,7 +168,7 @@ Namespace Texting
                                     Case IdentifierFd, IdentifierBmp, "AGEM"
                                         Dim HoldPosition = s.Position
                                         s.Position = Address
-                                        Dim SectionStream = StreamEx.Create
+                                        Dim SectionStream = Streams.CreateMemoryStream
                                         Try
                                             SectionStream.WriteFromStream(s, Length)
                                             SectionStream.Position = 0
@@ -222,22 +222,22 @@ Namespace Texting
             End Using
         End Function
         Public Shared Function ReadFile(ByVal Path As String) As LOCText
-            Using s = StreamEx.CreateReadable(Path, FileMode.Open)
+            Using s = Streams.OpenReadable(Path, FileMode.Open)
                 Return ReadFile(s.AsNewReading)
             End Using
         End Function
 
         Public Shared Sub WriteFile(ByVal sp As NewWritingStreamPasser, ByVal Value As LOCText, Optional ByVal Compress As Boolean = False)
             Dim f = sp.GetStream
-            Using s = StreamEx.Create
+            Using s = Streams.CreateMemoryStream
                 Dim Font = Value.Font
                 Dim Text = Value.Text
 
                 Dim StreamList As New List(Of KeyValuePair(Of String, IStream))
                 Try
                     If Font IsNot Nothing Then
-                        Dim FdStream = StreamEx.Create
-                        Dim BmpStream = StreamEx.Create
+                        Dim FdStream = Streams.CreateMemoryStream
+                        Dim BmpStream = Streams.CreateMemoryStream
                         Try
                             Using FdProtecter = FdStream.Partialize(0, Int64.MaxValue, FdStream.Length)
                                 Using FdWriter = Txt.CreateTextWriter(FdProtecter.AsNewWriting, TextEncoding.UTF16)
@@ -256,7 +256,7 @@ Namespace Texting
 
                     If Text IsNot Nothing Then
                         Dim AgemoText = (From str In Text Select Escape(str)).ToArray
-                        Dim AgemoStream = StreamEx.Create
+                        Dim AgemoStream = Streams.CreateMemoryStream
                         Try
                             Using AgemoProtecter = AgemoStream.Partialize(0, Int64.MaxValue, AgemoStream.Length)
                                 Using AgemoWriter = Txt.CreateTextWriter(AgemoProtecter.AsNewWriting, TextEncoding.UTF16)
@@ -316,7 +316,7 @@ Namespace Texting
             End Using
         End Sub
         Public Shared Sub WriteFile(ByVal Path As String, ByVal Value As LOCText, Optional ByVal Compress As Boolean = False)
-            Using s = StreamEx.Create(Path, FileMode.Create)
+            Using s = Streams.CreateResizable(Path, FileMode.Create)
                 WriteFile(s.AsNewWriting, Value, Compress)
             End Using
         End Sub

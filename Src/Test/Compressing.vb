@@ -21,12 +21,12 @@ Imports Firefly.GUI
 
 Public Module Compressing
     Public Sub TestStreamExStreamReadWrite()
-        Using a = StreamEx.Create
+        Using a = Streams.CreateMemoryStream
             For n = 0 To 15 * (1 << 20) - 1
                 a.WriteByte((n * 7 + 13) And &HFF)
             Next
             a.Position = 0
-            Using b = StreamEx.Create
+            Using b = Streams.CreateMemoryStream
                 b.WriteFromStream(a, 15 * (1 << 20))
                 b.Position = 0
                 For n = 0 To 15 * (1 << 20) - 1
@@ -42,7 +42,7 @@ Public Module Compressing
             End Using
         End Using
 
-        Using s = StreamEx.Create
+        Using s = Streams.CreateMemoryStream
             Dim Flag As Boolean = False
             Try
                 s.WriteSimpleString("我", 10)

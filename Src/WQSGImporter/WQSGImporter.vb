@@ -131,7 +131,7 @@ Public Module WQSGImporter
                 Dim WQSGPath = f & ".txt"
                 If IgnoreNonExistFile AndAlso Not File.Exists(WQSGPath) Then Continue For
                 Dim Triples = WQSG.ReadFile(WQSGPath)
-                Using s = StreamEx.Create(BinPath, FileMode.Open)
+                Using s = Streams.CreateResizable(BinPath, FileMode.Open)
                     For Each t In Triples
                         s.Position = t.Offset
                         Dim Text = t.Text

@@ -3,7 +3,7 @@
 '  File:        ISO.vb
 '  Location:    Firefly.Packaging <Visual Basic .Net>
 '  Description: ISO类
-'  Version:     2010.12.01.
+'  Version:     2011.02.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -75,9 +75,9 @@ Namespace Packaging
             Dim s As IStream = Nothing
             Dim sRead As IReadableSeekableStream = Nothing
             Try
-                s = StreamEx.Create(Path, FileMode.Open)
+                s = Streams.OpenResizable(Path)
             Catch
-                sRead = StreamEx.CreateReadable(Path, FileMode.Open)
+                sRead = Streams.OpenReadable(Path)
             End Try
             If s IsNot Nothing Then
                 Return New ISO(s.AsNewReadingWriting)

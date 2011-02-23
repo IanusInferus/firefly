@@ -97,7 +97,7 @@ Namespace Packaging
             WriteFileDB(CreateDirectoryEnd())
 
             For Each f As String In FilePathQueue
-                Using File = StreamEx.CreateReadable(f, FileMode.Open)
+                Using File = Streams.OpenReadable(f, FileMode.Open)
                     GotoNextFilePoint()
                     FileLengthQueue.Enqueue(File.Length)
                     FileAddressQueue.Enqueue(s.Position)
