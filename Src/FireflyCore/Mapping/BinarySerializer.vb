@@ -40,9 +40,9 @@ Namespace Mapping
     ''' </remarks>
     Public Class BinarySerializer(Of TReadStream As IReadableStream, TWriteStream As IWritableStream)
         Private PrimitiveResolver As PrimitiveResolver
-        Private ReaderCache As CachedResolver
-        Private WriterCache As CachedResolver
-        Private CounterCache As CachedResolver
+        Private ReaderCache As IObjectMapperResolver
+        Private WriterCache As IObjectMapperResolver
+        Private CounterCache As IObjectMapperResolver
         Private ReaderResolverSet As AlternativeResolver
         Private WriterResolverSet As AlternativeResolver
         Private CounterResolverSet As AlternativeResolver
@@ -103,7 +103,7 @@ Namespace Mapping
             PutCounter(Function(b As Boolean) 1)
 
             ReaderResolverSet = New AlternativeResolver
-            ReaderCache = New CachedResolver(ReaderResolverSet)
+            ReaderCache = ReaderResolverSet.AsCached
             Dim ReaderList = New List(Of IObjectProjectorResolver) From {
                 PrimitiveResolver,
                 New EnumUnpacker(Of TReadStream)(ReaderCache),
@@ -114,7 +114,7 @@ Namespace Mapping
                 ReaderResolverSet.ProjectorResolvers.AddLast(r)
             Next
             WriterResolverSet = New AlternativeResolver
-            WriterCache = New CachedResolver(WriterResolverSet)
+            WriterCache = WriterResolverSet.AsCached
             Dim WriterList = New List(Of IObjectAggregatorResolver) From {
                 PrimitiveResolver,
                 New EnumPacker(Of TWriteStream)(WriterCache),
@@ -125,7 +125,7 @@ Namespace Mapping
                 WriterResolverSet.AggregatorResolvers.AddLast(r)
             Next
             CounterResolverSet = New AlternativeResolver
-            CounterCache = New CachedResolver(CounterResolverSet)
+            CounterCache = CounterResolverSet.AsCached
             Dim CounterProjectorList = New List(Of IObjectProjectorResolver) From {
                 PrimitiveResolver,
                 TranslatorResolver.Create(CounterCache, New CounterStateToIntRangeTranslator)
@@ -221,9 +221,9 @@ Namespace Mapping
                 Return Nothing
             End Function
 
-            Private InnerResolver As IObjectMapperResolver
-            Public Sub New(ByVal Resolver As IObjectMapperResolver)
-                Me.InnerResolver = New NoncircularResolver(Resolver)
+            Private InnerResolver As IObjectProjectorResolver
+            Public Sub New(ByVal Resolver As IObjectProjectorResolver)
+                Me.InnerResolver = Resolver.AsNoncircular
             End Sub
         End Class
 
@@ -251,9 +251,9 @@ Namespace Mapping
                 Return Nothing
             End Function
 
-            Private InnerResolver As IObjectMapperResolver
-            Public Sub New(ByVal Resolver As IObjectMapperResolver)
-                Me.InnerResolver = New NoncircularResolver(Resolver)
+            Private InnerResolver As IObjectAggregatorResolver
+            Public Sub New(ByVal Resolver As IObjectAggregatorResolver)
+                Me.InnerResolver = Resolver.AsNoncircular
             End Sub
         End Class
 
@@ -275,9 +275,9 @@ Namespace Mapping
                 Return F
             End Function
 
-            Private InnerResolver As IObjectMapperResolver
-            Public Sub New(ByVal Resolver As IObjectMapperResolver)
-                Me.InnerResolver = New NoncircularResolver(Resolver)
+            Private InnerResolver As IObjectProjectorResolver
+            Public Sub New(ByVal Resolver As IObjectProjectorResolver)
+                Me.InnerResolver = Resolver.AsNoncircular
             End Sub
         End Class
 
@@ -298,9 +298,9 @@ Namespace Mapping
                 Return F
             End Function
 
-            Private InnerResolver As IObjectMapperResolver
-            Public Sub New(ByVal Resolver As IObjectMapperResolver)
-                Me.InnerResolver = New NoncircularResolver(Resolver)
+            Private InnerResolver As IObjectAggregatorResolver
+            Public Sub New(ByVal Resolver As IObjectAggregatorResolver)
+                Me.InnerResolver = Resolver.AsNoncircular
             End Sub
         End Class
 
@@ -311,9 +311,9 @@ Namespace Mapping
                 Return InnerResolver.ResolveProjector(CreatePair(GetType(D), Info.Type))
             End Function
 
-            Private InnerResolver As IObjectMapperResolver
-            Public Sub New(ByVal Resolver As IObjectMapperResolver)
-                Me.InnerResolver = New CachedResolver(New NoncircularResolver(Resolver))
+            Private InnerResolver As IObjectProjectorResolver
+            Public Sub New(ByVal Resolver As IObjectProjectorResolver)
+                Me.InnerResolver = Resolver.AsNoncircular.AsCached
             End Sub
         End Class
         Public Class FieldOrPropertyAggregatorResolver(Of R)
@@ -323,9 +323,9 @@ Namespace Mapping
                 Return InnerResolver.ResolveAggregator(CreatePair(Info.Type, GetType(R)))
             End Function
 
-            Private InnerResolver As IObjectMapperResolver
-            Public Sub New(ByVal Resolver As IObjectMapperResolver)
-                Me.InnerResolver = New CachedResolver(New NoncircularResolver(Resolver))
+            Private InnerResolver As IObjectAggregatorResolver
+            Public Sub New(ByVal Resolver As IObjectAggregatorResolver)
+                Me.InnerResolver = Resolver.AsNoncircular.AsCached
             End Sub
         End Class
 

@@ -38,8 +38,8 @@ Namespace Mapping
     ''' </remarks>
     Public Class XmlSerializer
         Private PrimitiveResolver As PrimitiveResolver
-        Private ReaderCache As CachedResolver
-        Private WriterCache As CachedResolver
+        Private ReaderCache As IObjectMapperResolver
+        Private WriterCache As IObjectMapperResolver
         Private ReaderResolverSet As AlternativeResolver
         Private WriterResolverSet As AlternativeResolver
 
@@ -113,7 +113,7 @@ Namespace Mapping
             PutWriter(Function(d As Decimal) d.ToString(Globalization.CultureInfo.InvariantCulture))
 
             ReaderResolverSet = New AlternativeResolver
-            ReaderCache = New CachedResolver(ReaderResolverSet)
+            ReaderCache = ReaderResolverSet.AsCached
             Dim ReaderList = New List(Of IObjectProjectorResolver) From {
                 PrimitiveResolver,
                 New EnumResolver,
@@ -127,7 +127,7 @@ Namespace Mapping
                 ReaderResolverSet.ProjectorResolvers.AddLast(r)
             Next
             WriterResolverSet = New AlternativeResolver
-            WriterCache = New CachedResolver(WriterResolverSet)
+            WriterCache = WriterResolverSet.AsCached
             Dim WriterProjectorList = New List(Of IObjectProjectorResolver) From {
                 PrimitiveResolver,
                 New EnumResolver,
@@ -245,9 +245,9 @@ Namespace Mapping
                 Return F
             End Function
 
-            Private InnerResolver As IObjectMapperResolver
-            Public Sub New(ByVal Resolver As IObjectMapperResolver)
-                Me.InnerResolver = New NoncircularResolver(Resolver)
+            Private InnerResolver As IObjectProjectorResolver
+            Public Sub New(ByVal Resolver As IObjectProjectorResolver)
+                Me.InnerResolver = Resolver.AsNoncircular
             End Sub
         End Class
         Private Class CollectionPacker
@@ -264,9 +264,9 @@ Namespace Mapping
                 Return F
             End Function
 
-            Private InnerResolver As IObjectMapperResolver
-            Public Sub New(ByVal Resolver As IObjectMapperResolver)
-                Me.InnerResolver = New NoncircularResolver(Resolver)
+            Private InnerResolver As IObjectProjectorResolver
+            Public Sub New(ByVal Resolver As IObjectProjectorResolver)
+                Me.InnerResolver = Resolver.AsNoncircular
             End Sub
         End Class
 
@@ -367,9 +367,9 @@ Namespace Mapping
                 End If
             End Function
 
-            Private InnerResolver As IObjectMapperResolver
-            Public Sub New(ByVal Resolver As IObjectMapperResolver)
-                Me.InnerResolver = New CachedResolver(New NoncircularResolver(Resolver))
+            Private InnerResolver As IObjectProjectorResolver
+            Public Sub New(ByVal Resolver As IObjectProjectorResolver)
+                Me.InnerResolver = Resolver.AsNoncircular.AsCached
             End Sub
         End Class
         Private Class FieldOrPropertyAggregatorResolver
@@ -400,9 +400,9 @@ Namespace Mapping
                 End If
             End Function
 
-            Private InnerResolver As IObjectMapperResolver
-            Public Sub New(ByVal Resolver As IObjectMapperResolver)
-                Me.InnerResolver = New CachedResolver(New NoncircularResolver(Resolver))
+            Private InnerResolver As IObjectProjectorResolver
+            Public Sub New(ByVal Resolver As IObjectProjectorResolver)
+                Me.InnerResolver = Resolver.AsNoncircular.AsCached
             End Sub
         End Class
 
@@ -500,10 +500,10 @@ Namespace Mapping
                 Return Nothing
             End Function
 
-            Private InnerResolver As IObjectMapperResolver
+            Private InnerResolver As IObjectProjectorResolver
             Private ExternalTypeDict As Dictionary(Of String, Type)
-            Public Sub New(ByVal Resolver As IObjectMapperResolver, ByVal ExternalTypes As IEnumerable(Of Type))
-                Me.InnerResolver = New CachedResolver(New NoncircularResolver(Resolver))
+            Public Sub New(ByVal Resolver As IObjectProjectorResolver, ByVal ExternalTypes As IEnumerable(Of Type))
+                Me.InnerResolver = Resolver.AsNoncircular.AsCached
                 Me.ExternalTypeDict = ExternalTypes.ToDictionary(Function(type) GetTypeFriendlyName(type), StringComparer.OrdinalIgnoreCase)
             End Sub
         End Class

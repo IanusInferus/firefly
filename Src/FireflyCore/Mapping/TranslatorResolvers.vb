@@ -3,7 +3,7 @@
 '  File:        TranslatorResolvers.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 映射分解器
-'  Version:     2010.11.15.
+'  Version:     2011.02.26.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -58,22 +58,22 @@ Namespace Mapping
         End Sub
 
         Public Shared Function Create(Of D, M)(ByVal Resolver As IObjectMapperResolver, ByVal Translator As IProjectorToProjectorDomainTranslator(Of D, M)) As IObjectProjectorResolver
-            Return New DPP(Of D, M) With {.Inner = New NoncircularResolver(Resolver), .Translator = Translator}
+            Return New DPP(Of D, M) With {.Inner = Resolver.AsNoncircular, .Translator = Translator}
         End Function
         Public Shared Function Create(Of D, M)(ByVal Resolver As IObjectMapperResolver, ByVal Translator As IAggregatorToAggregatorDomainTranslator(Of D, M)) As IObjectAggregatorResolver
-            Return New DAA(Of D, M) With {.Inner = New NoncircularResolver(Resolver), .Translator = Translator}
+            Return New DAA(Of D, M) With {.Inner = Resolver.AsNoncircular, .Translator = Translator}
         End Function
         Public Shared Function Create(Of R, M)(ByVal Resolver As IObjectMapperResolver, ByVal Translator As IProjectorToProjectorRangeTranslator(Of R, M)) As IObjectProjectorResolver
-            Return New RPP(Of R, M) With {.Inner = New NoncircularResolver(Resolver), .Translator = Translator}
+            Return New RPP(Of R, M) With {.Inner = Resolver.AsNoncircular, .Translator = Translator}
         End Function
         Public Shared Function Create(Of R, M)(ByVal Resolver As IObjectMapperResolver, ByVal Translator As IProjectorToAggregatorRangeTranslator(Of R, M)) As IObjectAggregatorResolver
-            Return New RPA(Of R, M) With {.Inner = New NoncircularResolver(Resolver), .Translator = Translator}
+            Return New RPA(Of R, M) With {.Inner = Resolver.AsNoncircular, .Translator = Translator}
         End Function
         Public Shared Function Create(Of R, M)(ByVal Resolver As IObjectMapperResolver, ByVal Translator As IAggregatorToProjectorRangeTranslator(Of R, M)) As IObjectProjectorResolver
-            Return New RAP(Of R, M) With {.Inner = New NoncircularResolver(Resolver), .Translator = Translator}
+            Return New RAP(Of R, M) With {.Inner = Resolver.AsNoncircular, .Translator = Translator}
         End Function
         Public Shared Function Create(Of R, M)(ByVal Resolver As IObjectMapperResolver, ByVal Translator As IAggregatorToAggregatorRangeTranslator(Of R, M)) As IObjectAggregatorResolver
-            Return New RAA(Of R, M) With {.Inner = New NoncircularResolver(Resolver), .Translator = Translator}
+            Return New RAA(Of R, M) With {.Inner = Resolver.AsNoncircular, .Translator = Translator}
         End Function
 
 
