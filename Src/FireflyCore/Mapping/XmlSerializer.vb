@@ -40,8 +40,9 @@ Namespace Mapping
         Private PrimitiveResolver As PrimitiveResolver
         Private ReaderCache As IObjectMapperResolver
         Private WriterCache As IObjectMapperResolver
-        Private ReaderResolverSet As AlternativeResolver
-        Private WriterResolverSet As AlternativeResolver
+        Private ReaderProjectorResolverList As LinkedList(Of IObjectProjectorResolver)
+        Private WriterProjectorResolverList As LinkedList(Of IObjectProjectorResolver)
+        Private WriterAggregatorResolverList As LinkedList(Of IObjectAggregatorResolver)
 
         Public ReadOnly Property ReaderResolver As IObjectMapperResolver
             Get
@@ -112,9 +113,9 @@ Namespace Mapping
             PutWriter(Function(s As String) s)
             PutWriter(Function(d As Decimal) d.ToString(Globalization.CultureInfo.InvariantCulture))
 
-            ReaderResolverSet = New AlternativeResolver
-            ReaderCache = ReaderResolverSet.AsCached
-            Dim ReaderList = New List(Of IObjectProjectorResolver) From {
+            Dim ReaderReference As New ReferenceMapperResolver
+            ReaderCache = ReaderReference
+            ReaderProjectorResolverList = New LinkedList(Of IObjectProjectorResolver)({
                 PrimitiveResolver,
                 New EnumResolver,
                 TranslatorResolver.Create(ReaderCache, New XElementToStringDomainTranslator),
@@ -122,30 +123,24 @@ Namespace Mapping
                 New RecordUnpackerTemplate(Of Dictionary(Of String, XElement))(New FieldOrPropertyProjectorResolver(ReaderCache)),
                 New InheritanceResolver(ReaderCache, ExternalTypes),
                 TranslatorResolver.Create(ReaderCache, New XElementProjectorToProjectorDomainTranslator)
-            }
-            For Each r In ReaderList
-                ReaderResolverSet.ProjectorResolvers.AddLast(r)
-            Next
-            WriterResolverSet = New AlternativeResolver
-            WriterCache = WriterResolverSet.AsCached
-            Dim WriterProjectorList = New List(Of IObjectProjectorResolver) From {
+            })
+            ReaderReference.Inner = CreateMapper(ReaderProjectorResolverList.Concatenated.AsCached, EmptyAggregatorResolver)
+
+            Dim WriterReference As New ReferenceMapperResolver
+            WriterCache = WriterReference
+            WriterProjectorResolverList = New LinkedList(Of IObjectProjectorResolver)({
                 PrimitiveResolver,
                 New EnumResolver,
                 TranslatorResolver.Create(WriterCache, New XElementToStringRangeTranslator),
                 New InheritanceResolver(WriterCache, ExternalTypes),
                 TranslatorResolver.Create(WriterCache, New XElementAggregatorToProjectorRangeTranslator)
-            }
-            For Each r In WriterProjectorList
-                WriterResolverSet.ProjectorResolvers.AddLast(r)
-            Next
-            Dim WriterAggregatorList = New List(Of IObjectAggregatorResolver) From {
+            })
+            WriterAggregatorResolverList = New LinkedList(Of IObjectAggregatorResolver)({
                 New CollectionPackerTemplate(Of List(Of XElement))(New CollectionPacker(WriterCache)),
                 New RecordPackerTemplate(Of List(Of XElement))(New FieldOrPropertyAggregatorResolver(WriterCache)),
                 TranslatorResolver.Create(WriterCache, New XElementProjectorToAggregatorRangeTranslator)
-            }
-            For Each r In WriterAggregatorList
-                WriterResolverSet.AggregatorResolvers.AddLast(r)
-            Next
+            })
+            WriterReference.Inner = CreateMapper(WriterProjectorResolverList.Concatenated.AsCached, WriterAggregatorResolverList.Concatenated.AsCached)
         End Sub
 
         Public Sub PutReader(Of T)(ByVal Reader As Func(Of String, T))
@@ -161,16 +156,16 @@ Namespace Mapping
             PrimitiveResolver.PutProjector(Writer)
         End Sub
         Public Sub PutReaderTranslator(Of R, M)(ByVal Translator As IProjectorToProjectorRangeTranslator(Of R, M))
-            ReaderResolverSet.ProjectorResolvers.AddFirst(TranslatorResolver.Create(ReaderCache, Translator))
+            ReaderProjectorResolverList.AddFirst(TranslatorResolver.Create(ReaderCache, Translator))
         End Sub
         Public Sub PutWriterTranslator(Of D, M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of D, M))
-            WriterResolverSet.ProjectorResolvers.AddFirst(TranslatorResolver.Create(WriterCache, Translator))
+            WriterProjectorResolverList.AddFirst(TranslatorResolver.Create(WriterCache, Translator))
         End Sub
         Public Sub PutReaderTranslator(Of M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of XElement, M))
-            ReaderResolverSet.ProjectorResolvers.AddFirst(TranslatorResolver.Create(ReaderCache, Translator))
+            ReaderProjectorResolverList.AddFirst(TranslatorResolver.Create(ReaderCache, Translator))
         End Sub
         Public Sub PutWriterTranslator(Of M)(ByVal Translator As IProjectorToProjectorRangeTranslator(Of XElement, M))
-            WriterResolverSet.ProjectorResolvers.AddFirst(TranslatorResolver.Create(WriterCache, Translator))
+            WriterProjectorResolverList.AddFirst(TranslatorResolver.Create(WriterCache, Translator))
         End Sub
 
         Public Function Read(Of T)(ByVal s As XElement) As T

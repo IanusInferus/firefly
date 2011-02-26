@@ -82,9 +82,9 @@ Public Module MappingTest
             Return F
         End Function
 
-        Private InnerResolver As IObjectMapperResolver
-        Public Sub New(ByVal Resolver As IObjectMapperResolver)
-            Me.InnerResolver = New NoncircularResolver(Resolver)
+        Private InnerResolver As IObjectProjectorResolver
+        Public Sub New(ByVal Resolver As IObjectProjectorResolver)
+            Me.InnerResolver = Resolver.AsNoncircular
         End Sub
     End Class
 
@@ -103,9 +103,9 @@ Public Module MappingTest
             Return F
         End Function
 
-        Private InnerResolver As IObjectMapperResolver
-        Public Sub New(ByVal Resolver As IObjectMapperResolver)
-            Me.InnerResolver = New NoncircularResolver(Resolver)
+        Private InnerResolver As IObjectAggregatorResolver
+        Public Sub New(ByVal Resolver As IObjectAggregatorResolver)
+            Me.InnerResolver = Resolver.AsNoncircular
         End Sub
     End Class
 
@@ -113,15 +113,12 @@ Public Module MappingTest
         Dim Count = 0
 
         With Nothing
-            Dim mprs As New AlternativeResolver
+            Dim mp As New ReferenceProjectorResolver
             Dim pr = New PrimitiveResolver
-            mprs.ProjectorResolvers.AddLast(pr)
-            Dim er = New BinarySerializer.EnumUnpacker(Of Integer)(mprs)
-            mprs.ProjectorResolvers.AddLast(er)
-            Dim cr = New CollectionUnpackerTemplate(Of Integer)(New GenericCollectionProjectorResolver(Of Integer)(mprs))
-            mprs.ProjectorResolvers.AddLast(cr)
-            Dim csr = New RecordUnpackerTemplate(Of Integer)(New BinarySerializer.FieldOrPropertyProjectorResolver(Of Integer)(mprs))
-            mprs.ProjectorResolvers.AddLast(csr)
+            Dim er = New BinarySerializer.EnumUnpacker(Of Integer)(mp)
+            Dim cr = New CollectionUnpackerTemplate(Of Integer)(New GenericCollectionProjectorResolver(Of Integer)(mp))
+            Dim csr = New RecordUnpackerTemplate(Of Integer)(New BinarySerializer.FieldOrPropertyProjectorResolver(Of Integer)(mp))
+            Dim mprs As New List(Of IObjectProjectorResolver) From {pr, er, cr, csr}
             pr.PutProjector(
                 Function(i As Integer) As Byte
                     Count += 1
@@ -152,7 +149,7 @@ Public Module MappingTest
                     Return Count.ToString()
                 End Function
             )
-            Dim mp = mprs
+            mp.Inner = mprs.Concatenated
 
             Dim BuiltObject = mp.Project(Of Integer, SerializerTestObject)(0)
             Assert(TestObject = BuiltObject)
@@ -160,15 +157,12 @@ Public Module MappingTest
 
         Dim Count2 = 0
         With Nothing
-            Dim mprs As New AlternativeResolver
+            Dim mp As New ReferenceAggregatorResolver
             Dim pr = New PrimitiveResolver
-            mprs.AggregatorResolvers.AddLast(pr)
-            Dim er = New BinarySerializer.EnumPacker(Of Integer)(mprs)
-            mprs.AggregatorResolvers.AddLast(er)
-            Dim cr = New CollectionPackerTemplate(Of Integer)(New GenericListAggregatorResolver(Of Integer)(mprs))
-            mprs.AggregatorResolvers.AddLast(cr)
-            Dim csr = New RecordPackerTemplate(Of Integer)(New BinarySerializer.FieldOrPropertyAggregatorResolver(Of Integer)(mprs))
-            mprs.AggregatorResolvers.AddLast(csr)
+            Dim er = New BinarySerializer.EnumPacker(Of Integer)(mp)
+            Dim cr = New CollectionPackerTemplate(Of Integer)(New GenericListAggregatorResolver(Of Integer)(mp))
+            Dim csr = New RecordPackerTemplate(Of Integer)(New BinarySerializer.FieldOrPropertyAggregatorResolver(Of Integer)(mp))
+            Dim mprs As New List(Of IObjectAggregatorResolver) From {pr, er, cr, csr}
             pr.PutAggregator(
                 Sub(Key As Byte, Value As Integer)
                     Count2 += 1
@@ -194,7 +188,7 @@ Public Module MappingTest
                     Count2 += 1
                 End Sub
             )
-            Dim mp = mprs
+            mp.Inner = mprs.Concatenated
 
             mp.Aggregate(TestObject, 1)
             Assert(Count = Count2)
