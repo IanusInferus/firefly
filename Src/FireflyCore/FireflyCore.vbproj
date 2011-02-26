@@ -64,6 +64,7 @@
     <Compile Include="Glyphing\FdGlyphDescriptionFile.vb" />
     <Compile Include="Imaging\Bmp.vb" />
     <Compile Include="Mapping\BinarySerializer.vb" />
+    <Compile Include="Mapping\MetaSchema.vb" />
     <Compile Include="Streaming\BitStream.vb" />
     <Compile Include="Core\CommandLine.vb" />
     <Compile Include="Core\Counter.vb" />
