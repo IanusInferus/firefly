@@ -17,6 +17,24 @@ Imports Firefly
 Imports Firefly.Streaming
 
 Namespace Mapping.Binary
+    Public Interface IBinaryReader(Of TReadStream As IReadableStream)
+        Function Read(Of T)(ByVal s As TReadStream) As T
+    End Interface
+    Public Interface IBinaryWriter(Of TWriteStream As IWritableStream)
+        Sub Write(Of T)(ByVal Value As T, ByVal s As TWriteStream)
+    End Interface
+    Public Interface IBinaryCounter
+        Function Count(Of T)(ByVal Value As T) As Int64
+    End Interface
+    Public Interface IBinarySerializer(Of TReadStream As IReadableStream, TWriteStream As IWritableStream)
+        Inherits IBinaryReader(Of TReadStream)
+        Inherits IBinaryWriter(Of TWriteStream)
+        Inherits IBinaryCounter
+    End Interface
+
+    Public Class BinarySerializer
+        Inherits BinarySerializer(Of IReadableStream, IWritableStream)
+    End Class
     Public Class BinaryReaderResolver
         Inherits BinaryReaderResolver(Of IReadableStream)
         Public Sub New(ByVal Root As IMapperResolver)
@@ -28,9 +46,6 @@ Namespace Mapping.Binary
         Public Sub New(ByVal Root As IMapperResolver)
             MyBase.New(Root)
         End Sub
-    End Class
-    Public Class BinarySerializer
-        Inherits BinarySerializer(Of IReadableStream, IWritableStream)
     End Class
 
     ''' <remarks>
@@ -100,47 +115,22 @@ Namespace Mapping.Binary
             CounterResolver.PutCounterTranslator(Translator)
         End Sub
 
-        Public Function GetReader(Of T)() As Func(Of TReadStream, T)
-            Return ReaderCache.ResolveProjector(Of TReadStream, T)()
-        End Function
-        Public Function GetWriter(Of T)() As Action(Of T, TWriteStream)
-            Return WriterCache.ResolveAggregator(Of T, TWriteStream)()
-        End Function
-        Public Function GetCounter(Of T)() As Func(Of T, Int64)
-            Return CounterCache.ResolveProjector(Of T, Int64)()
-        End Function
-
         Public Function Read(Of T)(ByVal s As TReadStream) As T Implements IBinaryReader(Of TReadStream).Read
-            Dim m = GetReader(Of T)()
+            Dim m = ReaderCache.ResolveProjector(Of TReadStream, T)()
             Return m(s)
         End Function
         Public Sub Write(Of T)(ByVal Value As T, ByVal s As TWriteStream) Implements IBinaryWriter(Of TWriteStream).Write
-            Dim m = GetWriter(Of T)()
+            Dim m = WriterCache.ResolveAggregator(Of T, TWriteStream)()
             m(Value, s)
         End Sub
         Public Sub Write(Of T)(ByVal s As TWriteStream, ByVal Value As T)
-            Write(Of T)(Value, s)
+            Write(Value, s)
         End Sub
         Public Function Count(Of T)(ByVal Value As T) As Int64 Implements IBinaryCounter.Count
-            Dim m = GetCounter(Of T)()
+            Dim m = CounterCache.ResolveProjector(Of T, Int64)()
             Return m(Value)
         End Function
     End Class
-
-    Public Interface IBinaryReader(Of TReadStream As IReadableStream)
-        Function Read(Of T)(ByVal s As TReadStream) As T
-    End Interface
-    Public Interface IBinaryWriter(Of TWriteStream As IWritableStream)
-        Sub Write(Of T)(ByVal Value As T, ByVal s As TWriteStream)
-    End Interface
-    Public Interface IBinaryCounter
-        Function Count(Of T)(ByVal Value As T) As Int64
-    End Interface
-    Public Interface IBinarySerializer(Of TReadStream As IReadableStream, TWriteStream As IWritableStream)
-        Inherits IBinaryReader(Of TReadStream)
-        Inherits IBinaryWriter(Of TWriteStream)
-        Inherits IBinaryCounter
-    End Interface
 
     Public Class BinaryReaderResolver(Of TReadStream As IReadableStream)
         Implements IMapperResolver
@@ -189,9 +179,6 @@ Namespace Mapping.Binary
         Public Sub PutReaderTranslator(Of R, M)(ByVal Translator As IProjectorToProjectorRangeTranslator(Of R, M))
             ProjectorResolverList.AddFirst(TranslatorResolver.Create(Root, Translator))
         End Sub
-        Public Function GetReader(Of T)() As Func(Of TReadStream, T)
-            Return Root.ResolveProjector(Of TReadStream, T)()
-        End Function
     End Class
 
     Public Class BinaryWriterResolver(Of TWriteStream As IWritableStream)
@@ -245,9 +232,6 @@ Namespace Mapping.Binary
             Dim t = New PP2AADomainTranslatorTranslator(Of D, M)(Translator)
             AggregatorResolverList.AddFirst(TranslatorResolver.Create(Root, t))
         End Sub
-        Public Function GetWriter(Of T)() As Action(Of T, TWriteStream)
-            Return Root.ResolveAggregator(Of T, TWriteStream)()
-        End Function
 
         'AA(D, M)(R): (M aggr R) -> (D aggr R) = (D proj M) @ (M aggr R)
         'PP(D, M)(M): (M proj M) -> (D proj M) = (D proj M) @ (M proj M)
@@ -319,9 +303,6 @@ Namespace Mapping.Binary
         Public Sub PutCounterTranslator(Of D, M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of D, M))
             ProjectorResolverList.AddFirst(TranslatorResolver.Create(Root, Translator))
         End Sub
-        Public Function GetCounter(Of T)() As Func(Of T, Int64)
-            Return Root.ResolveProjector(Of T, Int64)()
-        End Function
 
         Private Class CounterState
             Public Number As Int64
