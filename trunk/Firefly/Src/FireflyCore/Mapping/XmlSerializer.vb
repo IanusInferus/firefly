@@ -3,7 +3,7 @@
 '  File:        XmlSerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Xml序列化类
-'  Version:     2011.02.10.
+'  Version:     2011.02.26.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -38,8 +38,6 @@ Namespace Mapping
     ''' </remarks>
     Public Class XmlSerializer
         Private PrimitiveResolver As PrimitiveResolver
-        Private ReaderMapper As ObjectMapper
-        Private WriterMapper As ObjectMapper
         Private ReaderCache As CachedResolver
         Private WriterCache As CachedResolver
         Private ReaderResolverSet As AlternativeResolver
@@ -148,8 +146,6 @@ Namespace Mapping
             For Each r In WriterAggregatorList
                 WriterResolverSet.AggregatorResolvers.AddLast(r)
             Next
-            ReaderMapper = New ObjectMapper(ReaderCache)
-            WriterMapper = New ObjectMapper(WriterCache)
         End Sub
 
         Public Sub PutReader(Of T)(ByVal Reader As Func(Of String, T))
@@ -178,11 +174,11 @@ Namespace Mapping
         End Sub
 
         Public Function Read(Of T)(ByVal s As XElement) As T
-            Dim m = ReaderMapper.GetProjector(Of XElement, T)()
+            Dim m = ReaderCache.ResolveProjector(Of XElement, T)()
             Return m(s)
         End Function
         Public Function Write(Of T)(ByVal Value As T) As XElement
-            Dim m = WriterMapper.GetProjector(Of T, XElement)()
+            Dim m = WriterCache.ResolveProjector(Of T, XElement)()
             Return m(Value)
         End Function
 
@@ -233,7 +229,7 @@ Namespace Mapping
             Implements IGenericCollectionProjectorResolver(Of XElement)
 
             Public Function ResolveProjector(Of R, RCollection As {New, ICollection(Of R)})() As Func(Of XElement, RCollection) Implements IGenericCollectionProjectorResolver(Of XElement).ResolveProjector
-                Dim Mapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(XElement), GetType(R))), Func(Of XElement, R))
+                Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(XElement), GetType(R))), Func(Of XElement, R))
                 Dim F =
                     Function(Key As XElement) As RCollection
                         If Not Key.IsEmpty Then
@@ -249,16 +245,16 @@ Namespace Mapping
                 Return F
             End Function
 
-            Private AbsResolver As AbsoluteResolver
+            Private InnerResolver As IObjectMapperResolver
             Public Sub New(ByVal Resolver As IObjectMapperResolver)
-                Me.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver))
+                Me.InnerResolver = New NoncircularResolver(Resolver)
             End Sub
         End Class
         Private Class CollectionPacker
             Implements IGenericCollectionAggregatorResolver(Of List(Of XElement))
 
             Public Function ResolveAggregator(Of D, DCollection As ICollection(Of D))() As Action(Of DCollection, List(Of XElement)) Implements IGenericCollectionAggregatorResolver(Of List(Of XElement)).ResolveAggregator
-                Dim Mapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(D), GetType(XElement))), Func(Of D, XElement))
+                Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(XElement))), Func(Of D, XElement))
                 Dim F =
                     Sub(c As DCollection, Value As List(Of XElement))
                         For Each v In c
@@ -268,9 +264,9 @@ Namespace Mapping
                 Return F
             End Function
 
-            Private AbsResolver As AbsoluteResolver
+            Private InnerResolver As IObjectMapperResolver
             Public Sub New(ByVal Resolver As IObjectMapperResolver)
-                Me.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver))
+                Me.InnerResolver = New NoncircularResolver(Resolver)
             End Sub
         End Class
 
@@ -345,7 +341,7 @@ Namespace Mapping
             Implements IFieldOrPropertyProjectorResolver(Of Dictionary(Of String, XElement))
 
             Private Function Resolve(Of R)(ByVal Name As String) As Func(Of Dictionary(Of String, XElement), R)
-                Dim Mapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(XElement), GetType(R))), Func(Of XElement, R))
+                Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(XElement), GetType(R))), Func(Of XElement, R))
                 Dim F =
                     Function(d As Dictionary(Of String, XElement)) As R
                         If d.ContainsKey(Name) Then
@@ -371,16 +367,16 @@ Namespace Mapping
                 End If
             End Function
 
-            Private AbsResolver As AbsoluteResolver
+            Private InnerResolver As IObjectMapperResolver
             Public Sub New(ByVal Resolver As IObjectMapperResolver)
-                Me.AbsResolver = New AbsoluteResolver(New CachedResolver(New NoncircularResolver(Resolver)))
+                Me.InnerResolver = New CachedResolver(New NoncircularResolver(Resolver))
             End Sub
         End Class
         Private Class FieldOrPropertyAggregatorResolver
             Implements IFieldOrPropertyAggregatorResolver(Of List(Of XElement))
 
             Private Function Resolve(Of D)(ByVal Name As String) As Action(Of D, List(Of XElement))
-                Dim Mapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(D), GetType(XElement))), Func(Of D, XElement))
+                Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(XElement))), Func(Of D, XElement))
                 Dim F =
                     Sub(k As D, l As List(Of XElement))
                         Dim e = Mapper(k)
@@ -404,9 +400,9 @@ Namespace Mapping
                 End If
             End Function
 
-            Private AbsResolver As AbsoluteResolver
+            Private InnerResolver As IObjectMapperResolver
             Public Sub New(ByVal Resolver As IObjectMapperResolver)
-                Me.AbsResolver = New AbsoluteResolver(New CachedResolver(New NoncircularResolver(Resolver)))
+                Me.InnerResolver = New CachedResolver(New NoncircularResolver(Resolver))
             End Sub
         End Class
 
@@ -414,7 +410,7 @@ Namespace Mapping
             Implements IObjectProjectorResolver
 
             Private Function ResolveRange(Of R)() As Func(Of XElement, R)
-                Dim Mapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(XElement), GetType(R))), Func(Of XElement, R))
+                Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(XElement), GetType(R))), Func(Of XElement, R))
                 Dim Dict As New Dictionary(Of Type, Func(Of XElement, R))
                 Dim F =
                     Function(k As XElement) As R
@@ -432,7 +428,7 @@ Namespace Mapping
                         Dim TypePair = CreatePair(GetType(XElement), RealType)
                         ProjectorCache.Add(TypePair)
                         Try
-                            Dim DynamicMapper = AbsResolver.ResolveProjector(TypePair).AdaptFunction(Of XElement, R)()
+                            Dim DynamicMapper = InnerResolver.ResolveProjector(TypePair).AdaptFunction(Of XElement, R)()
                             Dict.Add(RealType, DynamicMapper)
                             Return DynamicMapper(k)
                         Finally
@@ -442,7 +438,7 @@ Namespace Mapping
                 Return F
             End Function
             Private Function ResolveDomain(Of D)() As Func(Of D, XElement)
-                Dim Mapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(D), GetType(XElement))), Func(Of D, XElement))
+                Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(XElement))), Func(Of D, XElement))
                 Dim TypeName = GetTypeFriendlyName(GetType(D))
                 Dim Dict As New Dictionary(Of Type, Func(Of D, XElement))
                 Dim F =
@@ -462,7 +458,7 @@ Namespace Mapping
                         Dim TypePair = CreatePair(RealType, GetType(XElement))
                         ProjectorCache.Add(TypePair)
                         Try
-                            Dim DynamicMapper = AbsResolver.ResolveProjector(TypePair).AdaptFunction(Of D, XElement)()
+                            Dim DynamicMapper = InnerResolver.ResolveProjector(TypePair).AdaptFunction(Of D, XElement)()
                             Dict.Add(RealType, DynamicMapper)
                             Dim e = DynamicMapper(k)
                             If e.Name = RealTypeName Then e.Name = TypeName
@@ -504,10 +500,10 @@ Namespace Mapping
                 Return Nothing
             End Function
 
-            Private AbsResolver As AbsoluteResolver
+            Private InnerResolver As IObjectMapperResolver
             Private ExternalTypeDict As Dictionary(Of String, Type)
             Public Sub New(ByVal Resolver As IObjectMapperResolver, ByVal ExternalTypes As IEnumerable(Of Type))
-                Me.AbsResolver = New AbsoluteResolver(New CachedResolver(New NoncircularResolver(Resolver)))
+                Me.InnerResolver = New CachedResolver(New NoncircularResolver(Resolver))
                 Me.ExternalTypeDict = ExternalTypes.ToDictionary(Function(type) GetTypeFriendlyName(type), StringComparer.OrdinalIgnoreCase)
             End Sub
         End Class

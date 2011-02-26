@@ -3,7 +3,7 @@
 '  File:        ObjectMapper.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Object映射器
-'  Version:     2010.11.17.
+'  Version:     2011.02.26.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -12,6 +12,7 @@ Option Strict On
 Imports System
 Imports System.Collections.Generic
 Imports System.Diagnostics
+Imports System.Runtime.CompilerServices
 Imports Firefly
 
 Namespace Mapping
@@ -31,24 +32,66 @@ Namespace Mapping
         Inherits IObjectAggregatorResolver
     End Interface
 
-    ''' <remarks>解析器适配器，用于在无法解析时抛出异常。</remarks>
     <DebuggerNonUserCode()>
-    Public Class AbsoluteResolver
-        Private InnerResolver As IObjectMapperResolver
-        Public Sub New(ByVal InnerResolver As IObjectMapperResolver)
-            Me.InnerResolver = InnerResolver
-        End Sub
-
-        Function ResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate]
-            Dim Resolved = InnerResolver.TryResolveProjector(TypePair)
+    Public Module Mapping
+        <Extension()> Public Function ResolveProjector(ByVal This As IObjectProjectorResolver, ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate]
+            Dim Resolved = This.TryResolveProjector(TypePair)
             If Resolved Is Nothing Then Throw New NotSupportedException("NotResolved: Projector({0}, {1})".Formats(TypePair.Key.FullName, TypePair.Value.FullName))
             Return Resolved
         End Function
-        Function ResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate]
-            Dim Resolved = InnerResolver.TryResolveAggregator(TypePair)
+        <Extension()> Public Function ResolveProjector(Of D, R)(ByVal This As IObjectProjectorResolver) As Func(Of D, R)
+            Return DirectCast(This.ResolveProjector(New KeyValuePair(Of Type, Type)(GetType(D), GetType(R))), Func(Of D, R))
+        End Function
+        <Extension()> Public Function Project(Of D, R)(ByVal This As IObjectProjectorResolver, ByVal Key As D) As R
+            Return This.ResolveProjector(Of D, R)()(Key)
+        End Function
+
+        <Extension()> Public Function ResolveAggregator(ByVal This As IObjectAggregatorResolver, ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate]
+            Dim Resolved = This.TryResolveAggregator(TypePair)
             If Resolved Is Nothing Then Throw New NotSupportedException("NotResolved: Aggregator({0}, {1})".Formats(TypePair.Key.FullName, TypePair.Value.FullName))
             Return Resolved
         End Function
+        <Extension()> Public Function ResolveAggregator(Of D, R)(ByVal This As IObjectAggregatorResolver) As Action(Of D, R)
+            Return DirectCast(This.ResolveAggregator(New KeyValuePair(Of Type, Type)(GetType(D), GetType(R))), Action(Of D, R))
+        End Function
+        <Extension()> Public Sub Aggregate(Of D, R)(ByVal This As IObjectAggregatorResolver, ByVal Key As D, ByVal Value As R)
+            This.ResolveAggregator(Of D, R)()(Key, Value)
+        End Sub
+    End Module
+
+    ''' <remarks>基元解析器</remarks>
+    <DebuggerNonUserCode()>
+    Public Class PrimitiveResolver
+        Implements IObjectMapperResolver
+
+        Private ProjectorCache As New Dictionary(Of KeyValuePair(Of Type, Type), [Delegate])
+        Private AggregatorCache As New Dictionary(Of KeyValuePair(Of Type, Type), [Delegate])
+
+        Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
+            If ProjectorCache.ContainsKey(TypePair) Then Return ProjectorCache(TypePair)
+            Return Nothing
+        End Function
+        Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectAggregatorResolver.TryResolveAggregator
+            If AggregatorCache.ContainsKey(TypePair) Then Return AggregatorCache(TypePair)
+            Return Nothing
+        End Function
+
+        Public Sub PutProjector(Of D, R)(ByVal Projector As Func(Of D, R))
+            Dim TypePair = CreatePair(GetType(D), GetType(R))
+            If ProjectorCache.ContainsKey(TypePair) Then
+                ProjectorCache(TypePair) = Projector
+            Else
+                ProjectorCache.Add(TypePair, Projector)
+            End If
+        End Sub
+        Public Sub PutAggregator(Of D, R)(ByVal Aggregator As Action(Of D, R))
+            Dim TypePair = CreatePair(GetType(D), GetType(R))
+            If AggregatorCache.ContainsKey(TypePair) Then
+                AggregatorCache(TypePair) = Aggregator
+            Else
+                AggregatorCache.Add(TypePair, Aggregator)
+            End If
+        End Sub
     End Class
 
     ''' <remarks>不循环解析器，用于在出现循环引用时抛出异常。</remarks>
@@ -124,41 +167,6 @@ Namespace Mapping
         End Function
     End Class
 
-    ''' <remarks>基元解析器</remarks>
-    <DebuggerNonUserCode()>
-    Public Class PrimitiveResolver
-        Implements IObjectMapperResolver
-
-        Private ProjectorCache As New Dictionary(Of KeyValuePair(Of Type, Type), [Delegate])
-        Private AggregatorCache As New Dictionary(Of KeyValuePair(Of Type, Type), [Delegate])
-
-        Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
-            If ProjectorCache.ContainsKey(TypePair) Then Return ProjectorCache(TypePair)
-            Return Nothing
-        End Function
-        Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectAggregatorResolver.TryResolveAggregator
-            If AggregatorCache.ContainsKey(TypePair) Then Return AggregatorCache(TypePair)
-            Return Nothing
-        End Function
-
-        Public Sub PutProjector(Of D, R)(ByVal Projector As Func(Of D, R))
-            Dim TypePair = CreatePair(GetType(D), GetType(R))
-            If ProjectorCache.ContainsKey(TypePair) Then
-                ProjectorCache(TypePair) = Projector
-            Else
-                ProjectorCache.Add(TypePair, Projector)
-            End If
-        End Sub
-        Public Sub PutAggregator(Of D, R)(ByVal Aggregator As Action(Of D, R))
-            Dim TypePair = CreatePair(GetType(D), GetType(R))
-            If AggregatorCache.ContainsKey(TypePair) Then
-                AggregatorCache(TypePair) = Aggregator
-            Else
-                AggregatorCache.Add(TypePair, Aggregator)
-            End If
-        End Sub
-    End Class
-
     ''' <remarks>缓存解析器</remarks>
     <DebuggerNonUserCode()>
     Public Class CachedResolver
@@ -200,28 +208,5 @@ Namespace Mapping
             End If
             Return Nothing
         End Function
-    End Class
-
-    ''' <summary>Object映射器</summary>
-    <DebuggerNonUserCode()>
-    Public Class ObjectMapper
-        Private AbsResolver As AbsoluteResolver
-        Public Sub New(ByVal Resolver As IObjectMapperResolver)
-            Me.AbsResolver = New AbsoluteResolver(Resolver)
-        End Sub
-
-        Public Function GetProjector(Of D, R)() As Func(Of D, R)
-            Return DirectCast(AbsResolver.ResolveProjector(New KeyValuePair(Of Type, Type)(GetType(D), GetType(R))), Func(Of D, R))
-        End Function
-        Public Function GetAggregator(Of D, R)() As Action(Of D, R)
-            Return DirectCast(AbsResolver.ResolveAggregator(New KeyValuePair(Of Type, Type)(GetType(D), GetType(R))), Action(Of D, R))
-        End Function
-
-        Public Function Project(Of D, R)(ByVal Key As D) As R
-            Return GetProjector(Of D, R)()(Key)
-        End Function
-        Public Sub Aggregate(Of D, R)(ByVal Key As D, ByVal Value As R)
-            GetAggregator(Of D, R)()(Key, Value)
-        End Sub
     End Class
 End Namespace

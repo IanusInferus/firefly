@@ -1,4 +1,8 @@
-﻿2011.02.23.0
+﻿2011.02.26
+Firefly.Core.Mapping:
+删除ObjectMapper类，改为使用接口和扩展方法。
+
+2011.02.23.0
 Firefly.Core.Streaming, Firefly.*, Examples.*:
 将StreamEx修改为Streams。
 将Firefly.Core改为默认Option Strict On，修正因为Stream调整导致的bug若干。
