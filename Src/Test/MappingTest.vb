@@ -69,7 +69,7 @@ Public Module MappingTest
         Implements IGenericCollectionProjectorResolver(Of D)
 
         Public Function ResolveProjector(Of R, RCollection As {New, ICollection(Of R)})() As Func(Of D, RCollection) Implements IGenericCollectionProjectorResolver(Of D).ResolveProjector
-            Dim Mapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(D), GetType(R))), Func(Of D, R))
+            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(R))), Func(Of D, R))
             Dim F =
                 Function(Key As D) As RCollection
                     Dim Size = 3
@@ -82,9 +82,9 @@ Public Module MappingTest
             Return F
         End Function
 
-        Private AbsResolver As AbsoluteResolver
+        Private InnerResolver As IObjectMapperResolver
         Public Sub New(ByVal Resolver As IObjectMapperResolver)
-            Me.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver))
+            Me.InnerResolver = New NoncircularResolver(Resolver)
         End Sub
     End Class
 
@@ -92,7 +92,7 @@ Public Module MappingTest
         Implements IGenericCollectionAggregatorResolver(Of R)
 
         Public Function ResolveAggregator(Of D, DList As ICollection(Of D))() As Action(Of DList, R) Implements IGenericCollectionAggregatorResolver(Of R).ResolveAggregator
-            Dim Mapper = DirectCast(AbsResolver.ResolveAggregator(CreatePair(GetType(D), GetType(R))), Action(Of D, R))
+            Dim Mapper = DirectCast(InnerResolver.ResolveAggregator(CreatePair(GetType(D), GetType(R))), Action(Of D, R))
             Dim F =
                 Sub(list As DList, Value As R)
                     Dim Size = 3
@@ -103,9 +103,9 @@ Public Module MappingTest
             Return F
         End Function
 
-        Private AbsResolver As AbsoluteResolver
+        Private InnerResolver As IObjectMapperResolver
         Public Sub New(ByVal Resolver As IObjectMapperResolver)
-            Me.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver))
+            Me.InnerResolver = New NoncircularResolver(Resolver)
         End Sub
     End Class
 
@@ -152,7 +152,7 @@ Public Module MappingTest
                     Return Count.ToString()
                 End Function
             )
-            Dim mp As New ObjectMapper(mprs)
+            Dim mp = mprs
 
             Dim BuiltObject = mp.Project(Of Integer, SerializerTestObject)(0)
             Assert(TestObject = BuiltObject)
@@ -194,7 +194,7 @@ Public Module MappingTest
                     Count2 += 1
                 End Sub
             )
-            Dim mp As New ObjectMapper(mprs)
+            Dim mp = mprs
 
             mp.Aggregate(TestObject, 1)
             Assert(Count = Count2)
