@@ -1,6 +1,7 @@
 ﻿2011.02.26
 Firefly.Core.Mapping:
 删除ObjectMapper类，改为使用接口和扩展方法。
+调整代码结构，强化接口。
 
 2011.02.23.0
 Firefly.Core.Streaming, Firefly.*, Examples.*:

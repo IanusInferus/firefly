@@ -60,12 +60,24 @@ Namespace Mapping
         End Sub
 
         Public Function CreateMapper(ByVal ProjectorResolver As IObjectProjectorResolver, ByVal AggregatorResolver As IObjectAggregatorResolver) As IObjectMapperResolver
-            Return New ObjectMapper(ProjectorResolver, AggregatorResolver)
+            Return New ObjectMapperResolver(ProjectorResolver, AggregatorResolver)
         End Function
+        Public ReadOnly Property EmptyProjectorResolver() As IObjectProjectorResolver
+            Get
+                Static e As New EmptyObjectProjectorResolver
+                Return e
+            End Get
+        End Property
+        Public ReadOnly Property EmptyAggregatorResolver() As IObjectAggregatorResolver
+            Get
+                Static e As New EmptyObjectAggregatorResolver
+                Return e
+            End Get
+        End Property
 
         ''' <remarks>获取不循环解析器，用于在出现循环引用时抛出异常。</remarks>
         <Extension()> Public Function AsNoncircular(ByVal This As IObjectProjectorResolver) As IObjectProjectorResolver
-            Return New NoncircularProjectResolver(This)
+            Return New NoncircularProjectorResolver(This)
         End Function
         ''' <remarks>获取不循环解析器，用于在出现循环引用时抛出异常。</remarks>
         <Extension()> Public Function AsNoncircular(ByVal This As IObjectAggregatorResolver) As IObjectAggregatorResolver
@@ -73,12 +85,12 @@ Namespace Mapping
         End Function
         ''' <remarks>获取不循环解析器，用于在出现循环引用时抛出异常。</remarks>
         <Extension()> Public Function AsNoncircular(ByVal This As IObjectMapperResolver) As IObjectMapperResolver
-            Return New ObjectMapper(New NoncircularProjectResolver(This), New NoncircularAggregatorResolver(This))
+            Return New ObjectMapperResolver(New NoncircularProjectorResolver(This), New NoncircularAggregatorResolver(This))
         End Function
 
         ''' <remarks>获取缓存解析器。</remarks>
         <Extension()> Public Function AsCached(ByVal This As IObjectProjectorResolver) As IObjectProjectorResolver
-            Return New CachedProjectResolver(This)
+            Return New CachedProjectorResolver(This)
         End Function
         ''' <remarks>获取缓存解析器。</remarks>
         <Extension()> Public Function AsCached(ByVal This As IObjectAggregatorResolver) As IObjectAggregatorResolver
@@ -86,12 +98,41 @@ Namespace Mapping
         End Function
         ''' <remarks>获取缓存解析器。</remarks>
         <Extension()> Public Function AsCached(ByVal This As IObjectMapperResolver) As IObjectMapperResolver
-            Return New ObjectMapper(New CachedProjectResolver(This), New CachedAggregatorResolver(This))
+            Return New ObjectMapperResolver(New CachedProjectorResolver(This), New CachedAggregatorResolver(This))
         End Function
 
-        ''' <summary>Object映射器</summary>
+        ''' <remarks>获取连接解析器。</remarks>
+        <Extension()> Public Function Concatenated(ByVal This As IEnumerable(Of IObjectProjectorResolver)) As IObjectProjectorResolver
+            Return New ConcatenatedProjectorResolver(This)
+        End Function
+        ''' <remarks>获取连接解析器。</remarks>
+        <Extension()> Public Function Concatenated(ByVal This As IEnumerable(Of IObjectAggregatorResolver)) As IObjectAggregatorResolver
+            Return New ConcatenatedAggregatorResolver(This)
+        End Function
+        ''' <remarks>获取连接解析器。</remarks>
+        <Extension()> Public Function Concatenated(ByVal This As IEnumerable(Of IObjectMapperResolver)) As IObjectMapperResolver
+            Return New ObjectMapperResolver(New ConcatenatedProjectorResolver(This), New ConcatenatedAggregatorResolver(This))
+        End Function
+
         <DebuggerNonUserCode()>
-        Public Class ObjectMapper
+        Private Class EmptyObjectProjectorResolver
+            Implements IObjectProjectorResolver
+
+            Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
+                Return Nothing
+            End Function
+        End Class
+        <DebuggerNonUserCode()>
+        Private Class EmptyObjectAggregatorResolver
+            Implements IObjectAggregatorResolver
+
+            Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectAggregatorResolver.TryResolveAggregator
+                Return Nothing
+            End Function
+        End Class
+
+        <DebuggerNonUserCode()>
+        Private Class ObjectMapperResolver
             Implements IObjectMapperResolver
 
             Private ProjectorResolver As IObjectProjectorResolver
@@ -110,7 +151,7 @@ Namespace Mapping
         End Class
 
         <DebuggerNonUserCode()>
-        Private Class NoncircularProjectResolver
+        Private Class NoncircularProjectorResolver
             Implements IObjectProjectorResolver
 
             Private InnerResolver As IObjectProjectorResolver
@@ -129,7 +170,6 @@ Namespace Mapping
                 End Try
             End Function
         End Class
-
         <DebuggerNonUserCode()>
         Private Class NoncircularAggregatorResolver
             Implements IObjectAggregatorResolver
@@ -153,7 +193,7 @@ Namespace Mapping
 
         ''' <remarks>缓存解析器</remarks>
         <DebuggerNonUserCode()>
-        Private Class CachedProjectResolver
+        Private Class CachedProjectorResolver
             Implements IObjectProjectorResolver
 
             Private InnerResolver As IObjectProjectorResolver
@@ -178,7 +218,6 @@ Namespace Mapping
                 Return Nothing
             End Function
         End Class
-
         ''' <remarks>缓存解析器</remarks>
         <DebuggerNonUserCode()>
         Private Class CachedAggregatorResolver
@@ -203,6 +242,47 @@ Namespace Mapping
                     End If
                     Return Resolved
                 End If
+                Return Nothing
+            End Function
+        End Class
+
+        ''' <remarks>选择解析器</remarks>
+        <DebuggerNonUserCode()>
+        Private Class ConcatenatedProjectorResolver
+            Implements IObjectProjectorResolver
+
+            Private InnerResolvers As IEnumerable(Of IObjectProjectorResolver)
+            Public Sub New(ByVal InnerResolvers As IEnumerable(Of IObjectProjectorResolver))
+                Me.InnerResolvers = InnerResolvers
+            End Sub
+
+            Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
+                For Each r In InnerResolvers
+                    Dim Resolved = r.TryResolveProjector(TypePair)
+                    If Resolved IsNot Nothing Then
+                        Return Resolved
+                    End If
+                Next
+                Return Nothing
+            End Function
+        End Class
+        ''' <remarks>选择解析器</remarks>
+        <DebuggerNonUserCode()>
+        Private Class ConcatenatedAggregatorResolver
+            Implements IObjectAggregatorResolver
+
+            Private InnerResolvers As IEnumerable(Of IObjectAggregatorResolver)
+            Public Sub New(ByVal InnerResolvers As IEnumerable(Of IObjectAggregatorResolver))
+                Me.InnerResolvers = InnerResolvers
+            End Sub
+
+            Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectAggregatorResolver.TryResolveAggregator
+                For Each r In InnerResolvers
+                    Dim Resolved = r.TryResolveAggregator(TypePair)
+                    If Resolved IsNot Nothing Then
+                        Return Resolved
+                    End If
+                Next
                 Return Nothing
             End Function
         End Class
@@ -243,45 +323,42 @@ Namespace Mapping
         End Sub
     End Class
 
-
-    ''' <remarks>选择解析器</remarks>
+    ''' <remarks>引用解析器</remarks>
     <DebuggerNonUserCode()>
-    Public Class AlternativeResolver
-        Implements IObjectMapperResolver
+    Public Class ReferenceProjectorResolver
+        Implements IObjectProjectorResolver
 
-        Public Sub New()
-        End Sub
-
-        Private ProjectorResolversValue As New LinkedList(Of IObjectProjectorResolver)
-        Private AggregatorResolversValue As New LinkedList(Of IObjectAggregatorResolver)
-        Public ReadOnly Property ProjectorResolvers As LinkedList(Of IObjectProjectorResolver)
-            Get
-                Return ProjectorResolversValue
-            End Get
-        End Property
-        Public ReadOnly Property AggregatorResolvers As LinkedList(Of IObjectAggregatorResolver)
-            Get
-                Return AggregatorResolversValue
-            End Get
-        End Property
+        Public Property Inner As IObjectProjectorResolver
 
         Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
-            For Each r In ProjectorResolversValue
-                Dim Resolved = r.TryResolveProjector(TypePair)
-                If Resolved IsNot Nothing Then
-                    Return Resolved
-                End If
-            Next
-            Return Nothing
+            Return Inner.TryResolveProjector(TypePair)
+        End Function
+    End Class
+
+    ''' <remarks>引用解析器</remarks>
+    <DebuggerNonUserCode()>
+    Public Class ReferenceAggregatorResolver
+        Implements IObjectAggregatorResolver
+
+        Public Property Inner As IObjectAggregatorResolver
+
+        Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectAggregatorResolver.TryResolveAggregator
+            Return Inner.TryResolveAggregator(TypePair)
+        End Function
+    End Class
+
+    ''' <remarks>引用解析器</remarks>
+    <DebuggerNonUserCode()>
+    Public Class ReferenceMapperResolver
+        Implements IObjectMapperResolver
+
+        Public Property Inner As IObjectMapperResolver
+
+        Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
+            Return Inner.TryResolveProjector(TypePair)
         End Function
         Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectAggregatorResolver.TryResolveAggregator
-            For Each r In AggregatorResolversValue
-                Dim Resolved = r.TryResolveAggregator(TypePair)
-                If Resolved IsNot Nothing Then
-                    Return Resolved
-                End If
-            Next
-            Return Nothing
+            Return Inner.TryResolveAggregator(TypePair)
         End Function
     End Class
 End Namespace
