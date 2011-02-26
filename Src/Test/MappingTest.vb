@@ -82,8 +82,8 @@ Public Module MappingTest
             Return F
         End Function
 
-        Private InnerResolver As IObjectProjectorResolver
-        Public Sub New(ByVal Resolver As IObjectProjectorResolver)
+        Private InnerResolver As IProjectorResolver
+        Public Sub New(ByVal Resolver As IProjectorResolver)
             Me.InnerResolver = Resolver.AsNoncircular
         End Sub
     End Class
@@ -103,8 +103,8 @@ Public Module MappingTest
             Return F
         End Function
 
-        Private InnerResolver As IObjectAggregatorResolver
-        Public Sub New(ByVal Resolver As IObjectAggregatorResolver)
+        Private InnerResolver As IAggregatorResolver
+        Public Sub New(ByVal Resolver As IAggregatorResolver)
             Me.InnerResolver = Resolver.AsNoncircular
         End Sub
     End Class
@@ -115,10 +115,10 @@ Public Module MappingTest
         With Nothing
             Dim mp As New ReferenceProjectorResolver
             Dim pr = New PrimitiveResolver
-            Dim er = New BinarySerializer.EnumUnpacker(Of Integer)(mp)
+            Dim er = New Binary.EnumUnpacker(Of Integer)(mp)
             Dim cr = New CollectionUnpackerTemplate(Of Integer)(New GenericCollectionProjectorResolver(Of Integer)(mp))
-            Dim csr = New RecordUnpackerTemplate(Of Integer)(New BinarySerializer.FieldOrPropertyProjectorResolver(Of Integer)(mp))
-            Dim mprs As New List(Of IObjectProjectorResolver) From {pr, er, cr, csr}
+            Dim csr = New RecordUnpackerTemplate(Of Integer)(New Binary.FieldOrPropertyProjectorResolver(Of Integer)(mp))
+            Dim mprs As New List(Of IProjectorResolver) From {pr, er, cr, csr}
             pr.PutProjector(
                 Function(i As Integer) As Byte
                     Count += 1
@@ -159,10 +159,10 @@ Public Module MappingTest
         With Nothing
             Dim mp As New ReferenceAggregatorResolver
             Dim pr = New PrimitiveResolver
-            Dim er = New BinarySerializer.EnumPacker(Of Integer)(mp)
+            Dim er = New Binary.EnumPacker(Of Integer)(mp)
             Dim cr = New CollectionPackerTemplate(Of Integer)(New GenericListAggregatorResolver(Of Integer)(mp))
-            Dim csr = New RecordPackerTemplate(Of Integer)(New BinarySerializer.FieldOrPropertyAggregatorResolver(Of Integer)(mp))
-            Dim mprs As New List(Of IObjectAggregatorResolver) From {pr, er, cr, csr}
+            Dim csr = New RecordPackerTemplate(Of Integer)(New Binary.FieldOrPropertyAggregatorResolver(Of Integer)(mp))
+            Dim mprs As New List(Of IAggregatorResolver) From {pr, er, cr, csr}
             pr.PutAggregator(
                 Sub(Key As Byte, Value As Integer)
                     Count2 += 1
@@ -211,7 +211,7 @@ Public Module MappingTest
         Dim BinaryRoundTripped As SerializerTestObject
 
         Using s = Streams.CreateMemoryStream
-            Dim bs As New BinarySerializer
+            Dim bs As New Binary.BinarySerializer
 
             Dim sbr As New StringAndBytesTranslator
 

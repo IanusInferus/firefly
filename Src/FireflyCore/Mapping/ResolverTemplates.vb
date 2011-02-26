@@ -38,9 +38,9 @@ Namespace Mapping
 
     <DebuggerNonUserCode()>
     Public Class CollectionUnpackerTemplate(Of D)
-        Implements IObjectProjectorResolver
+        Implements IProjectorResolver
 
-        Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
+        Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IProjectorResolver.TryResolveProjector
             Dim DomainType = TypePair.Key
             Dim RangeType = TypePair.Value
             If DomainType IsNot GetType(D) Then Return Nothing
@@ -162,9 +162,9 @@ Namespace Mapping
 
     <DebuggerNonUserCode()>
     Public Class CollectionPackerTemplate(Of R)
-        Implements IObjectAggregatorResolver
+        Implements IAggregatorResolver
 
-        Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectAggregatorResolver.TryResolveAggregator
+        Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IAggregatorResolver.TryResolveAggregator
             Dim DomainType = TypePair.Key
             Dim RangeType = TypePair.Value
             If RangeType IsNot GetType(R) Then Return Nothing
@@ -286,9 +286,9 @@ Namespace Mapping
 
     <DebuggerNonUserCode()>
     Public Class RecordUnpackerTemplate(Of D)
-        Implements IObjectProjectorResolver
+        Implements IProjectorResolver
 
-        Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
+        Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IProjectorResolver.TryResolveProjector
             Dim DomainType = TypePair.Key
             Dim RangeType = TypePair.Value
             If DomainType IsNot GetType(D) Then Return Nothing
@@ -342,9 +342,9 @@ Namespace Mapping
 
     <DebuggerNonUserCode()>
     Public Class RecordPackerTemplate(Of R)
-        Implements IObjectAggregatorResolver
+        Implements IAggregatorResolver
 
-        Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectAggregatorResolver.TryResolveAggregator
+        Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IAggregatorResolver.TryResolveAggregator
             Dim DomainType = TypePair.Key
             Dim RangeType = TypePair.Value
             If RangeType IsNot GetType(R) Then Return Nothing
