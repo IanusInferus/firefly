@@ -71,7 +71,7 @@
     <Compile Include="Core\ListPart.vb" />
     <Compile Include="Core\Enumerators.vb" />
     <Compile Include="Core\N32.vb" />
-    <Compile Include="Mapping\ObjectMapper.vb" />
+    <Compile Include="Mapping\Mapping.vb" />
     <Compile Include="Streaming\StreamAdapters.vb" />
     <Compile Include="Streaming\StreamComplex.vb" />
     <Compile Include="Streaming\StreamFloats.vb" />

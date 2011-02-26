@@ -16,7 +16,19 @@ Imports System.Linq.Expressions
 Imports Firefly
 Imports Firefly.Streaming
 
-Namespace Mapping
+Namespace Mapping.Binary
+    Public Class BinaryReaderResolver
+        Inherits BinaryReaderResolver(Of IReadableStream)
+        Public Sub New(ByVal Root As IMapperResolver)
+            MyBase.New(Root)
+        End Sub
+    End Class
+    Public Class BinaryWriterResolver
+        Inherits BinaryWriterResolver(Of IWritableStream)
+        Public Sub New(ByVal Root As IMapperResolver)
+            MyBase.New(Root)
+        End Sub
+    End Class
     Public Class BinarySerializer
         Inherits BinarySerializer(Of IReadableStream, IWritableStream)
     End Class
@@ -39,32 +51,115 @@ Namespace Mapping
     ''' 此外，对象树中不应有空引用，否则应提供自定义序列化器
     ''' </remarks>
     Public Class BinarySerializer(Of TReadStream As IReadableStream, TWriteStream As IWritableStream)
-        Private PrimitiveResolver As PrimitiveResolver
-        Private ReaderCache As IObjectMapperResolver
-        Private WriterCache As IObjectMapperResolver
-        Private CounterCache As IObjectMapperResolver
-        Private ReaderProjectorResolverList As LinkedList(Of IObjectProjectorResolver)
-        Private WriterAggregatorResolverList As LinkedList(Of IObjectAggregatorResolver)
-        Private CounterProjectorResolverList As LinkedList(Of IObjectProjectorResolver)
-        Private CounterAggregatorResolverList As LinkedList(Of IObjectAggregatorResolver)
+        Implements IBinarySerializer(Of TReadStream, TWriteStream)
 
-        Public ReadOnly Property ReaderResolver As IObjectMapperResolver
-            Get
-                Return ReaderCache
-            End Get
-        End Property
-        Public ReadOnly Property WriterResolver As IObjectMapperResolver
-            Get
-                Return WriterCache
-            End Get
-        End Property
-        Public ReadOnly Property CounterResolver As IObjectMapperResolver
-            Get
-                Return CounterCache
-            End Get
-        End Property
+        Private ReaderResolver As BinaryReaderResolver(Of TReadStream)
+        Private WriterResolver As BinaryWriterResolver(Of TWriteStream)
+        Private CounterResolver As BinaryCounterResolver
+
+        Private ReaderCache As IMapperResolver
+        Private WriterCache As IMapperResolver
+        Private CounterCache As IMapperResolver
 
         Public Sub New()
+            Dim ReaderReference As New ReferenceMapperResolver
+            ReaderCache = ReaderReference
+            ReaderResolver = New BinaryReaderResolver(Of TReadStream)(ReaderReference)
+            ReaderReference.Inner = ReaderResolver.AsCached
+
+            Dim WriterReference As New ReferenceMapperResolver
+            WriterCache = WriterReference
+            WriterResolver = New BinaryWriterResolver(Of TWriteStream)(WriterReference)
+            WriterReference.Inner = WriterResolver.AsCached
+
+            Dim CounterReference As New ReferenceMapperResolver
+            CounterCache = CounterReference
+            CounterResolver = New BinaryCounterResolver(CounterReference)
+            CounterReference.Inner = CounterResolver.AsCached
+        End Sub
+
+        Public Sub PutReader(Of T)(ByVal Reader As Func(Of TReadStream, T))
+            ReaderResolver.PutReader(Reader)
+        End Sub
+        Public Sub PutWriter(Of T)(ByVal Writer As Action(Of T, TWriteStream))
+            WriterResolver.PutWriter(Writer)
+        End Sub
+        Public Sub PutCounter(Of T)(ByVal Counter As Func(Of T, Int64))
+            CounterResolver.PutCounter(Counter)
+        End Sub
+        Public Sub PutReaderTranslator(Of R, M)(ByVal Translator As IProjectorToProjectorRangeTranslator(Of R, M))
+            ReaderResolver.PutReaderTranslator(Translator)
+        End Sub
+        Public Sub PutWriterTranslator(Of D, M)(ByVal Translator As IAggregatorToAggregatorDomainTranslator(Of D, M))
+            WriterResolver.PutWriterTranslator(Translator)
+        End Sub
+        Public Sub PutWriterTranslator(Of D, M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of D, M))
+            WriterResolver.PutWriterTranslator(Translator)
+        End Sub
+        Public Sub PutCounterTranslator(Of D, M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of D, M))
+            CounterResolver.PutCounterTranslator(Translator)
+        End Sub
+
+        Public Function GetReader(Of T)() As Func(Of TReadStream, T)
+            Return ReaderCache.ResolveProjector(Of TReadStream, T)()
+        End Function
+        Public Function GetWriter(Of T)() As Action(Of T, TWriteStream)
+            Return WriterCache.ResolveAggregator(Of T, TWriteStream)()
+        End Function
+        Public Function GetCounter(Of T)() As Func(Of T, Int64)
+            Return CounterCache.ResolveProjector(Of T, Int64)()
+        End Function
+
+        Public Function Read(Of T)(ByVal s As TReadStream) As T Implements IBinaryReader(Of TReadStream).Read
+            Dim m = GetReader(Of T)()
+            Return m(s)
+        End Function
+        Public Sub Write(Of T)(ByVal Value As T, ByVal s As TWriteStream) Implements IBinaryWriter(Of TWriteStream).Write
+            Dim m = GetWriter(Of T)()
+            m(Value, s)
+        End Sub
+        Public Sub Write(Of T)(ByVal s As TWriteStream, ByVal Value As T)
+            Write(Of T)(Value, s)
+        End Sub
+        Public Function Count(Of T)(ByVal Value As T) As Int64 Implements IBinaryCounter.Count
+            Dim m = GetCounter(Of T)()
+            Return m(Value)
+        End Function
+    End Class
+
+    Public Interface IBinaryReader(Of TReadStream As IReadableStream)
+        Function Read(Of T)(ByVal s As TReadStream) As T
+    End Interface
+    Public Interface IBinaryWriter(Of TWriteStream As IWritableStream)
+        Sub Write(Of T)(ByVal Value As T, ByVal s As TWriteStream)
+    End Interface
+    Public Interface IBinaryCounter
+        Function Count(Of T)(ByVal Value As T) As Int64
+    End Interface
+    Public Interface IBinarySerializer(Of TReadStream As IReadableStream, TWriteStream As IWritableStream)
+        Inherits IBinaryReader(Of TReadStream)
+        Inherits IBinaryWriter(Of TWriteStream)
+        Inherits IBinaryCounter
+    End Interface
+
+    Public Class BinaryReaderResolver(Of TReadStream As IReadableStream)
+        Implements IMapperResolver
+
+        Private Root As IMapperResolver
+        Private PrimitiveResolver As PrimitiveResolver
+        Private Resolver As IMapperResolver
+        Private ProjectorResolverList As LinkedList(Of IProjectorResolver)
+
+        Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IProjectorResolver.TryResolveProjector
+            Return Resolver.TryResolveProjector(TypePair)
+        End Function
+        Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IAggregatorResolver.TryResolveAggregator
+            Return Resolver.TryResolveAggregator(TypePair)
+        End Function
+
+        Public Sub New(ByVal Root As IMapperResolver)
+            Me.Root = Root
+
             PrimitiveResolver = New PrimitiveResolver
 
             PutReader(Function(s As TReadStream) s.ReadByte)
@@ -79,6 +174,46 @@ Namespace Mapping
             PutReader(Function(s As TReadStream) s.ReadFloat64)
             PutReader(Function(s As TReadStream) s.ReadByte <> 0)
 
+            ProjectorResolverList = New LinkedList(Of IProjectorResolver)({
+                PrimitiveResolver,
+                New EnumUnpacker(Of TReadStream)(Root),
+                New CollectionUnpackerTemplate(Of TReadStream)(New GenericCollectionProjectorResolver(Of TReadStream)(Root)),
+                New RecordUnpackerTemplate(Of TReadStream)(New FieldOrPropertyProjectorResolver(Of TReadStream)(Root))
+            })
+            Resolver = CreateMapper(ProjectorResolverList.Concatenated, EmptyAggregatorResolver)
+        End Sub
+
+        Public Sub PutReader(Of T)(ByVal Reader As Func(Of TReadStream, T))
+            PrimitiveResolver.PutProjector(Reader)
+        End Sub
+        Public Sub PutReaderTranslator(Of R, M)(ByVal Translator As IProjectorToProjectorRangeTranslator(Of R, M))
+            ProjectorResolverList.AddFirst(TranslatorResolver.Create(Root, Translator))
+        End Sub
+        Public Function GetReader(Of T)() As Func(Of TReadStream, T)
+            Return Root.ResolveProjector(Of TReadStream, T)()
+        End Function
+    End Class
+
+    Public Class BinaryWriterResolver(Of TWriteStream As IWritableStream)
+        Implements IMapperResolver
+
+        Private Root As IMapperResolver
+        Private PrimitiveResolver As PrimitiveResolver
+        Private Resolver As IMapperResolver
+        Private AggregatorResolverList As LinkedList(Of IAggregatorResolver)
+
+        Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IProjectorResolver.TryResolveProjector
+            Return Resolver.TryResolveProjector(TypePair)
+        End Function
+        Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IAggregatorResolver.TryResolveAggregator
+            Return Resolver.TryResolveAggregator(TypePair)
+        End Function
+
+        Public Sub New(ByVal Root As IMapperResolver)
+            Me.Root = Root
+
+            PrimitiveResolver = New PrimitiveResolver
+
             PutWriter(Sub(b As Byte, s As TWriteStream) s.WriteByte(b))
             PutWriter(Sub(i As UInt16, s As TWriteStream) s.WriteUInt16(i))
             PutWriter(Sub(i As UInt32, s As TWriteStream) s.WriteUInt32(i))
@@ -91,256 +226,28 @@ Namespace Mapping
             PutWriter(Sub(f As Double, s As TWriteStream) s.WriteFloat64(f))
             PutWriter(Sub(b As Boolean, s As TWriteStream) s.WriteByte(CByte(b)))
 
-            PutCounter(Function(b As Byte) 1)
-            PutCounter(Function(i As UInt16) 2)
-            PutCounter(Function(i As UInt32) 4)
-            PutCounter(Function(i As UInt64) 8)
-            PutCounter(Function(i As SByte) 1)
-            PutCounter(Function(i As Int16) 2)
-            PutCounter(Function(i As Int32) 4)
-            PutCounter(Function(i As Int64) 8)
-            PutCounter(Function(f As Single) 4)
-            PutCounter(Function(f As Double) 8)
-            PutCounter(Function(b As Boolean) 1)
-
-            Dim ReaderReference As New ReferenceMapperResolver
-            ReaderCache = ReaderReference
-            ReaderProjectorResolverList = New LinkedList(Of IObjectProjectorResolver)({
+            AggregatorResolverList = New LinkedList(Of IAggregatorResolver)({
                 PrimitiveResolver,
-                New EnumUnpacker(Of TReadStream)(ReaderCache),
-                New CollectionUnpackerTemplate(Of TReadStream)(New GenericCollectionProjectorResolver(Of TReadStream)(ReaderCache)),
-                New RecordUnpackerTemplate(Of TReadStream)(New FieldOrPropertyProjectorResolver(Of TReadStream)(ReaderCache))
+                New EnumPacker(Of TWriteStream)(Root),
+                New CollectionPackerTemplate(Of TWriteStream)(New GenericCollectionAggregatorResolver(Of TWriteStream)(Root)),
+                New RecordPackerTemplate(Of TWriteStream)(New FieldOrPropertyAggregatorResolver(Of TWriteStream)(Root))
             })
-            ReaderReference.Inner = CreateMapper(ReaderProjectorResolverList.Concatenated.AsCached, EmptyAggregatorResolver)
-
-            Dim WriterReference As New ReferenceMapperResolver
-            WriterCache = WriterReference
-            WriterAggregatorResolverList = New LinkedList(Of IObjectAggregatorResolver)({
-                PrimitiveResolver,
-                New EnumPacker(Of TWriteStream)(WriterCache),
-                New CollectionPackerTemplate(Of TWriteStream)(New GenericCollectionAggregatorResolver(Of TWriteStream)(WriterCache)),
-                New RecordPackerTemplate(Of TWriteStream)(New FieldOrPropertyAggregatorResolver(Of TWriteStream)(WriterCache))
-            })
-            WriterReference.Inner = CreateMapper(EmptyProjectorResolver, WriterAggregatorResolverList.Concatenated.AsCached)
-
-            Dim CounterReference As New ReferenceMapperResolver
-            CounterCache = CounterReference
-            CounterProjectorResolverList = New LinkedList(Of IObjectProjectorResolver)({
-                PrimitiveResolver,
-                TranslatorResolver.Create(CounterCache, New CounterStateToIntRangeTranslator)
-            })
-            CounterAggregatorResolverList = New LinkedList(Of IObjectAggregatorResolver)({
-                New EnumPacker(Of CounterState)(CounterCache),
-                New CollectionPackerTemplate(Of CounterState)(New GenericCollectionAggregatorResolver(Of CounterState)(CounterCache)),
-                New RecordPackerTemplate(Of CounterState)(New FieldOrPropertyAggregatorResolver(Of CounterState)(CounterCache)),
-                TranslatorResolver.Create(CounterCache, New IntToCounterStateRangeTranslator)
-            })
-            CounterReference.Inner = CreateMapper(CounterProjectorResolverList.Concatenated.AsCached, CounterAggregatorResolverList.Concatenated.AsCached)
+            Resolver = CreateMapper(EmptyProjectorResolver, AggregatorResolverList.Concatenated)
         End Sub
 
-        Public Sub PutReader(Of T)(ByVal Reader As Func(Of TReadStream, T))
-            PrimitiveResolver.PutProjector(Reader)
-        End Sub
         Public Sub PutWriter(Of T)(ByVal Writer As Action(Of T, TWriteStream))
             PrimitiveResolver.PutAggregator(Writer)
         End Sub
-        Public Sub PutCounter(Of T)(ByVal Counter As Func(Of T, Integer))
-            PrimitiveResolver.PutProjector(Counter)
-        End Sub
-        Public Sub PutReaderTranslator(Of R, M)(ByVal Translator As IProjectorToProjectorRangeTranslator(Of R, M))
-            ReaderProjectorResolverList.AddFirst(TranslatorResolver.Create(ReaderCache, Translator))
-        End Sub
         Public Sub PutWriterTranslator(Of D, M)(ByVal Translator As IAggregatorToAggregatorDomainTranslator(Of D, M))
-            WriterAggregatorResolverList.AddFirst(TranslatorResolver.Create(WriterCache, Translator))
+            AggregatorResolverList.AddFirst(TranslatorResolver.Create(Root, Translator))
         End Sub
         Public Sub PutWriterTranslator(Of D, M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of D, M))
             Dim t = New PP2AADomainTranslatorTranslator(Of D, M)(Translator)
-            WriterAggregatorResolverList.AddFirst(TranslatorResolver.Create(WriterCache, t))
+            AggregatorResolverList.AddFirst(TranslatorResolver.Create(Root, t))
         End Sub
-        Public Sub PutCounterTranslator(Of D, M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of D, M))
-            CounterProjectorResolverList.AddFirst(TranslatorResolver.Create(CounterCache, Translator))
-        End Sub
-
-        Public Function GetReader(Of T)() As Func(Of TReadStream, T)
-            Return ReaderCache.ResolveProjector(Of TReadStream, T)()
-        End Function
         Public Function GetWriter(Of T)() As Action(Of T, TWriteStream)
-            Return WriterCache.ResolveAggregator(Of T, TWriteStream)()
+            Return Root.ResolveAggregator(Of T, TWriteStream)()
         End Function
-        Public Function GetCounter(Of T)() As Func(Of T, Integer)
-            Return CounterCache.ResolveProjector(Of T, Integer)()
-        End Function
-
-        Public Function Read(Of T)(ByVal s As TReadStream) As T
-            Dim m = GetReader(Of T)()
-            Return m(s)
-        End Function
-        Public Sub Write(Of T)(ByVal Value As T, ByVal s As TWriteStream)
-            Dim m = GetWriter(Of T)()
-            m(Value, s)
-        End Sub
-        Public Sub Write(Of T)(ByVal s As TWriteStream, ByVal Value As T)
-            Write(Of T)(Value, s)
-        End Sub
-        Public Function Count(Of T)(ByVal Value As T) As Integer
-            Dim m = GetCounter(Of T)()
-            Return m(Value)
-        End Function
-
-        Private Class CounterState
-            Public Number As Integer
-        End Class
-
-        Public Class EnumUnpacker(Of D)
-            Implements IObjectProjectorResolver
-
-            Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
-                Dim DomainType = TypePair.Key
-                Dim RangeType = TypePair.Value
-                If DomainType IsNot GetType(D) Then Return Nothing
-                If RangeType.IsEnum Then
-                    Dim UnderlyingType = RangeType.GetEnumUnderlyingType
-                    Dim Mapper = InnerResolver.ResolveProjector(CreatePair(DomainType, UnderlyingType))
-                    Dim dParam = Expression.Parameter(GetType(D), "Key")
-
-                    Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
-                    DelegateCalls.Add(New KeyValuePair(Of [Delegate], Expression())(Mapper, New Expression() {dParam}))
-                    Dim Context = CreateDelegateExpressionContext(DelegateCalls)
-
-                    Dim FunctionBody = Expression.ConvertChecked(Context.DelegateExpressions.Single, RangeType)
-                    Dim FunctionLambda = Expression.Lambda(FunctionBody, New ParameterExpression() {dParam})
-
-                    Return CreateDelegate(Context.ClosureParam, Context.Closure, FunctionLambda)
-                End If
-                Return Nothing
-            End Function
-
-            Private InnerResolver As IObjectProjectorResolver
-            Public Sub New(ByVal Resolver As IObjectProjectorResolver)
-                Me.InnerResolver = Resolver.AsNoncircular
-            End Sub
-        End Class
-
-        Public Class EnumPacker(Of R)
-            Implements IObjectAggregatorResolver
-
-            Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectAggregatorResolver.TryResolveAggregator
-                Dim DomainType = TypePair.Key
-                Dim RangeType = TypePair.Value
-                If RangeType IsNot GetType(R) Then Return Nothing
-                If DomainType.IsEnum Then
-                    Dim UnderlyingType = DomainType.GetEnumUnderlyingType
-                    Dim Mapper = InnerResolver.ResolveAggregator(CreatePair(UnderlyingType, RangeType))
-                    Dim dParam = Expression.Parameter(DomainType, "Key")
-                    Dim rParam = Expression.Parameter(GetType(R), "Value")
-
-                    Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
-                    DelegateCalls.Add(New KeyValuePair(Of [Delegate], Expression())(Mapper, New Expression() {Expression.ConvertChecked(dParam, UnderlyingType), rParam}))
-                    Dim Context = CreateDelegateExpressionContext(DelegateCalls)
-
-                    Dim FunctionLambda = Expression.Lambda(Context.DelegateExpressions.Single, New ParameterExpression() {dParam, rParam})
-
-                    Return CreateDelegate(Context.ClosureParam, Context.Closure, FunctionLambda)
-                End If
-                Return Nothing
-            End Function
-
-            Private InnerResolver As IObjectAggregatorResolver
-            Public Sub New(ByVal Resolver As IObjectAggregatorResolver)
-                Me.InnerResolver = Resolver.AsNoncircular
-            End Sub
-        End Class
-
-        Public Class GenericCollectionProjectorResolver(Of D)
-            Implements IGenericCollectionProjectorResolver(Of D)
-
-            Public Function ResolveProjector(Of R, RCollection As {New, ICollection(Of R)})() As Func(Of D, RCollection) Implements IGenericCollectionProjectorResolver(Of D).ResolveProjector
-                Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(R))), Func(Of D, R))
-                Dim IntMapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(Integer))), Func(Of D, Integer))
-                Dim F =
-                    Function(Key As D) As RCollection
-                        Dim NumElement = IntMapper(Key)
-                        Dim c = New RCollection()
-                        For n = 0 To NumElement - 1
-                            c.Add(Mapper(Key))
-                        Next
-                        Return c
-                    End Function
-                Return F
-            End Function
-
-            Private InnerResolver As IObjectProjectorResolver
-            Public Sub New(ByVal Resolver As IObjectProjectorResolver)
-                Me.InnerResolver = Resolver.AsNoncircular
-            End Sub
-        End Class
-
-        Public Class GenericCollectionAggregatorResolver(Of R)
-            Implements IGenericCollectionAggregatorResolver(Of R)
-
-            Public Function ResolveAggregator(Of D, DCollection As ICollection(Of D))() As Action(Of DCollection, R) Implements IGenericCollectionAggregatorResolver(Of R).ResolveAggregator
-                Dim Mapper = DirectCast(InnerResolver.ResolveAggregator(CreatePair(GetType(D), GetType(R))), Action(Of D, R))
-                Dim IntMapper = DirectCast(InnerResolver.ResolveAggregator(CreatePair(GetType(Integer), GetType(R))), Action(Of Integer, R))
-                Dim F =
-                    Sub(c As DCollection, Value As R)
-                        Dim NumElement = c.Count
-                        IntMapper(NumElement, Value)
-                        For Each v In c
-                            Mapper(v, Value)
-                        Next
-                    End Sub
-                Return F
-            End Function
-
-            Private InnerResolver As IObjectAggregatorResolver
-            Public Sub New(ByVal Resolver As IObjectAggregatorResolver)
-                Me.InnerResolver = Resolver.AsNoncircular
-            End Sub
-        End Class
-
-        Public Class FieldOrPropertyProjectorResolver(Of D)
-            Implements IFieldOrPropertyProjectorResolver(Of D)
-
-            Public Function ResolveProjector(ByVal Info As FieldOrPropertyInfo) As [Delegate] Implements IFieldOrPropertyProjectorResolver(Of D).ResolveProjector
-                Return InnerResolver.ResolveProjector(CreatePair(GetType(D), Info.Type))
-            End Function
-
-            Private InnerResolver As IObjectProjectorResolver
-            Public Sub New(ByVal Resolver As IObjectProjectorResolver)
-                Me.InnerResolver = Resolver.AsNoncircular.AsCached
-            End Sub
-        End Class
-        Public Class FieldOrPropertyAggregatorResolver(Of R)
-            Implements IFieldOrPropertyAggregatorResolver(Of R)
-
-            Public Function ResolveAggregator(ByVal Info As FieldOrPropertyInfo) As [Delegate] Implements IFieldOrPropertyAggregatorResolver(Of R).ResolveAggregator
-                Return InnerResolver.ResolveAggregator(CreatePair(Info.Type, GetType(R)))
-            End Function
-
-            Private InnerResolver As IObjectAggregatorResolver
-            Public Sub New(ByVal Resolver As IObjectAggregatorResolver)
-                Me.InnerResolver = Resolver.AsNoncircular.AsCached
-            End Sub
-        End Class
-
-        Private Class CounterStateToIntRangeTranslator
-            Implements IAggregatorToProjectorRangeTranslator(Of Integer, CounterState)
-            Public Function TranslateAggregatorToProjector(Of D)(ByVal Aggregator As Action(Of D, CounterState)) As Func(Of D, Integer) Implements IAggregatorToProjectorRangeTranslator(Of Integer, CounterState).TranslateAggregatorToProjectorRange
-                Return Function(Key)
-                           Dim c As New CounterState
-                           Aggregator(Key, c)
-                           Return c.Number
-                       End Function
-            End Function
-        End Class
-        Private Class IntToCounterStateRangeTranslator
-            Implements IProjectorToAggregatorRangeTranslator(Of CounterState, Integer)
-            Public Function TranslateProjectorToAggregator(Of D)(ByVal Projector As Func(Of D, Integer)) As Action(Of D, CounterState) Implements IProjectorToAggregatorRangeTranslator(Of CounterState, Integer).TranslateProjectorToAggregatorRange
-                Return Sub(Key, c)
-                           c.Number += Projector(Key)
-                       End Sub
-            End Function
-        End Class
 
         'AA(D, M)(R): (M aggr R) -> (D aggr R) = (D proj M) @ (M aggr R)
         'PP(D, M)(M): (M proj M) -> (D proj M) = (D proj M) @ (M proj M)
@@ -358,5 +265,216 @@ Namespace Mapping
                 Me.Inner = Inner
             End Sub
         End Class
+    End Class
+
+    Public Class BinaryCounterResolver
+        Implements IMapperResolver
+
+        Private Root As IMapperResolver
+        Private PrimitiveResolver As PrimitiveResolver
+        Private Resolver As IMapperResolver
+        Private ProjectorResolverList As LinkedList(Of IProjectorResolver)
+        Private AggregatorResolverList As LinkedList(Of IAggregatorResolver)
+
+        Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IProjectorResolver.TryResolveProjector
+            Return Resolver.TryResolveProjector(TypePair)
+        End Function
+        Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IAggregatorResolver.TryResolveAggregator
+            Return Resolver.TryResolveAggregator(TypePair)
+        End Function
+
+        Public Sub New(ByVal Root As IMapperResolver)
+            Me.Root = Root
+
+            PrimitiveResolver = New PrimitiveResolver
+
+            PutCounter(Function(b As Byte) 1)
+            PutCounter(Function(i As UInt16) 2)
+            PutCounter(Function(i As UInt32) 4)
+            PutCounter(Function(i As UInt64) 8)
+            PutCounter(Function(i As SByte) 1)
+            PutCounter(Function(i As Int16) 2)
+            PutCounter(Function(i As Int32) 4)
+            PutCounter(Function(i As Int64) 8)
+            PutCounter(Function(f As Single) 4)
+            PutCounter(Function(f As Double) 8)
+            PutCounter(Function(b As Boolean) 1)
+
+            ProjectorResolverList = New LinkedList(Of IProjectorResolver)({
+                PrimitiveResolver,
+                TranslatorResolver.Create(Root, New CounterStateToIntRangeTranslator)
+            })
+            AggregatorResolverList = New LinkedList(Of IAggregatorResolver)({
+                New EnumPacker(Of CounterState)(Root),
+                New CollectionPackerTemplate(Of CounterState)(New GenericCollectionAggregatorResolver(Of CounterState)(Root)),
+                New RecordPackerTemplate(Of CounterState)(New FieldOrPropertyAggregatorResolver(Of CounterState)(Root)),
+                TranslatorResolver.Create(Root, New IntToCounterStateRangeTranslator)
+            })
+            Resolver = CreateMapper(ProjectorResolverList.Concatenated, AggregatorResolverList.Concatenated)
+        End Sub
+
+        Public Sub PutCounter(Of T)(ByVal Counter As Func(Of T, Int64))
+            PrimitiveResolver.PutProjector(Counter)
+        End Sub
+        Public Sub PutCounterTranslator(Of D, M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of D, M))
+            ProjectorResolverList.AddFirst(TranslatorResolver.Create(Root, Translator))
+        End Sub
+        Public Function GetCounter(Of T)() As Func(Of T, Int64)
+            Return Root.ResolveProjector(Of T, Int64)()
+        End Function
+
+        Private Class CounterState
+            Public Number As Int64
+        End Class
+        Private Class CounterStateToIntRangeTranslator
+            Implements IAggregatorToProjectorRangeTranslator(Of Int64, CounterState)
+            Public Function TranslateAggregatorToProjector(Of D)(ByVal Aggregator As Action(Of D, CounterState)) As Func(Of D, Int64) Implements IAggregatorToProjectorRangeTranslator(Of Int64, CounterState).TranslateAggregatorToProjectorRange
+                Return Function(Key)
+                           Dim c As New CounterState
+                           Aggregator(Key, c)
+                           Return c.Number
+                       End Function
+            End Function
+        End Class
+        Private Class IntToCounterStateRangeTranslator
+            Implements IProjectorToAggregatorRangeTranslator(Of CounterState, Int64)
+            Public Function TranslateProjectorToAggregator(Of D)(ByVal Projector As Func(Of D, Int64)) As Action(Of D, CounterState) Implements IProjectorToAggregatorRangeTranslator(Of CounterState, Int64).TranslateProjectorToAggregatorRange
+                Return Sub(Key, c)
+                           c.Number += Projector(Key)
+                       End Sub
+            End Function
+        End Class
+    End Class
+
+    Public Class EnumUnpacker(Of D)
+        Implements IProjectorResolver
+
+        Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IProjectorResolver.TryResolveProjector
+            Dim DomainType = TypePair.Key
+            Dim RangeType = TypePair.Value
+            If DomainType IsNot GetType(D) Then Return Nothing
+            If RangeType.IsEnum Then
+                Dim UnderlyingType = RangeType.GetEnumUnderlyingType
+                Dim Mapper = InnerResolver.ResolveProjector(CreatePair(DomainType, UnderlyingType))
+                Dim dParam = Expression.Parameter(GetType(D), "Key")
+
+                Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
+                DelegateCalls.Add(New KeyValuePair(Of [Delegate], Expression())(Mapper, New Expression() {dParam}))
+                Dim Context = CreateDelegateExpressionContext(DelegateCalls)
+
+                Dim FunctionBody = Expression.ConvertChecked(Context.DelegateExpressions.Single, RangeType)
+                Dim FunctionLambda = Expression.Lambda(FunctionBody, New ParameterExpression() {dParam})
+
+                Return CreateDelegate(Context.ClosureParam, Context.Closure, FunctionLambda)
+            End If
+            Return Nothing
+        End Function
+
+        Private InnerResolver As IProjectorResolver
+        Public Sub New(ByVal Resolver As IProjectorResolver)
+            Me.InnerResolver = Resolver.AsNoncircular
+        End Sub
+    End Class
+
+    Public Class EnumPacker(Of R)
+        Implements IAggregatorResolver
+
+        Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IAggregatorResolver.TryResolveAggregator
+            Dim DomainType = TypePair.Key
+            Dim RangeType = TypePair.Value
+            If RangeType IsNot GetType(R) Then Return Nothing
+            If DomainType.IsEnum Then
+                Dim UnderlyingType = DomainType.GetEnumUnderlyingType
+                Dim Mapper = InnerResolver.ResolveAggregator(CreatePair(UnderlyingType, RangeType))
+                Dim dParam = Expression.Parameter(DomainType, "Key")
+                Dim rParam = Expression.Parameter(GetType(R), "Value")
+
+                Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
+                DelegateCalls.Add(New KeyValuePair(Of [Delegate], Expression())(Mapper, New Expression() {Expression.ConvertChecked(dParam, UnderlyingType), rParam}))
+                Dim Context = CreateDelegateExpressionContext(DelegateCalls)
+
+                Dim FunctionLambda = Expression.Lambda(Context.DelegateExpressions.Single, New ParameterExpression() {dParam, rParam})
+
+                Return CreateDelegate(Context.ClosureParam, Context.Closure, FunctionLambda)
+            End If
+            Return Nothing
+        End Function
+
+        Private InnerResolver As IAggregatorResolver
+        Public Sub New(ByVal Resolver As IAggregatorResolver)
+            Me.InnerResolver = Resolver.AsNoncircular
+        End Sub
+    End Class
+
+    Public Class GenericCollectionProjectorResolver(Of D)
+        Implements IGenericCollectionProjectorResolver(Of D)
+
+        Public Function ResolveProjector(Of R, RCollection As {New, ICollection(Of R)})() As Func(Of D, RCollection) Implements IGenericCollectionProjectorResolver(Of D).ResolveProjector
+            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(R))), Func(Of D, R))
+            Dim IntMapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(Integer))), Func(Of D, Integer))
+            Dim F =
+                Function(Key As D) As RCollection
+                    Dim NumElement = IntMapper(Key)
+                    Dim c = New RCollection()
+                    For n = 0 To NumElement - 1
+                        c.Add(Mapper(Key))
+                    Next
+                    Return c
+                End Function
+            Return F
+        End Function
+
+        Private InnerResolver As IProjectorResolver
+        Public Sub New(ByVal Resolver As IProjectorResolver)
+            Me.InnerResolver = Resolver.AsNoncircular
+        End Sub
+    End Class
+
+    Public Class GenericCollectionAggregatorResolver(Of R)
+        Implements IGenericCollectionAggregatorResolver(Of R)
+
+        Public Function ResolveAggregator(Of D, DCollection As ICollection(Of D))() As Action(Of DCollection, R) Implements IGenericCollectionAggregatorResolver(Of R).ResolveAggregator
+            Dim Mapper = DirectCast(InnerResolver.ResolveAggregator(CreatePair(GetType(D), GetType(R))), Action(Of D, R))
+            Dim IntMapper = DirectCast(InnerResolver.ResolveAggregator(CreatePair(GetType(Integer), GetType(R))), Action(Of Integer, R))
+            Dim F =
+                Sub(c As DCollection, Value As R)
+                    Dim NumElement = c.Count
+                    IntMapper(NumElement, Value)
+                    For Each v In c
+                        Mapper(v, Value)
+                    Next
+                End Sub
+            Return F
+        End Function
+
+        Private InnerResolver As IAggregatorResolver
+        Public Sub New(ByVal Resolver As IAggregatorResolver)
+            Me.InnerResolver = Resolver.AsNoncircular
+        End Sub
+    End Class
+
+    Public Class FieldOrPropertyProjectorResolver(Of D)
+        Implements IFieldOrPropertyProjectorResolver(Of D)
+
+        Public Function ResolveProjector(ByVal Info As FieldOrPropertyInfo) As [Delegate] Implements IFieldOrPropertyProjectorResolver(Of D).ResolveProjector
+            Return InnerResolver.ResolveProjector(CreatePair(GetType(D), Info.Type))
+        End Function
+
+        Private InnerResolver As IProjectorResolver
+        Public Sub New(ByVal Resolver As IProjectorResolver)
+            Me.InnerResolver = Resolver.AsNoncircular.AsCached
+        End Sub
+    End Class
+    Public Class FieldOrPropertyAggregatorResolver(Of R)
+        Implements IFieldOrPropertyAggregatorResolver(Of R)
+
+        Public Function ResolveAggregator(ByVal Info As FieldOrPropertyInfo) As [Delegate] Implements IFieldOrPropertyAggregatorResolver(Of R).ResolveAggregator
+            Return InnerResolver.ResolveAggregator(CreatePair(Info.Type, GetType(R)))
+        End Function
+
+        Private InnerResolver As IAggregatorResolver
+        Public Sub New(ByVal Resolver As IAggregatorResolver)
+            Me.InnerResolver = Resolver.AsNoncircular.AsCached
+        End Sub
     End Class
 End Namespace
