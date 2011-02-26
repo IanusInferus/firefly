@@ -1,9 +1,9 @@
 ﻿'==========================================================================
 '
-'  File:        ObjectMapperResolvers.vb
+'  File:        ResolverTemplates.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Object映射器解析器
-'  Version:     2011.02.10.
+'  Version:     2011.02.27.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
