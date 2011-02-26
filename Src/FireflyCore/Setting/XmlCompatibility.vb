@@ -3,7 +3,7 @@
 '  File:        XmlCompatibility.vb
 '  Location:    Firefly.Setting <Visual Basic .Net>
 '  Description: Xml读写兼容支持，用于兼容System.Xml.Serialization.XmlSerializer
-'  Version:     2010.11.16.
+'  Version:     2011.02.27.
 '  Copyright:   F.R.C.
 '
 '==========================================================================
@@ -15,10 +15,11 @@ Imports System.Collections.Generic
 Imports System.Xml
 Imports System.Xml.Linq
 Imports System.Text
+Imports System.Globalization
 Imports Firefly
 Imports Firefly.Texting
 Imports Firefly.Mapping
-Imports System.Globalization
+Imports Firefly.Mapping.XmlText
 
 Namespace Setting
     ''' <summary>Xml读写兼容支持，用于兼容System.Xml.Serialization.XmlSerializer</summary>
@@ -182,7 +183,7 @@ Namespace Setting
                 If PrimitiveToXmlDataType.ContainsKey(GetType(D)) Then
                     TypeName = PrimitiveToXmlDataType(GetType(D))
                 Else
-                    TypeName = XmlSerializer.GetTypeFriendlyName(GetType(D))
+                    TypeName = GetTypeFriendlyName(GetType(D))
                 End If
                 Return Function(v)
                            Dim s = Projector(v)

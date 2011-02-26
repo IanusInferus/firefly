@@ -3,7 +3,7 @@
 '  File:        XmlSerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Xml序列化类
-'  Version:     2011.02.26.
+'  Version:     2011.02.27.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -17,7 +17,18 @@ Imports System.Text.RegularExpressions
 Imports System.Xml.Linq
 Imports Firefly
 
-Namespace Mapping
+Namespace Mapping.XmlText
+    Public Interface IXmlReader
+        Function Read(Of T)(ByVal s As XElement) As T
+    End Interface
+    Public Interface IXmlWriter
+        Function Write(Of T)(ByVal Value As T) As XElement
+    End Interface
+    Public Interface IXmlSerializer
+        Inherits IXmlReader
+        Inherits IXmlWriter
+    End Interface
+
     ''' <remarks>
     ''' 对于非简单类型，应提供自定义序列化器
     ''' 简单类型 ::= 简单类型
@@ -37,51 +48,81 @@ Namespace Mapping
     ''' 对于类对象，允许出现null。
     ''' </remarks>
     Public Class XmlSerializer
-        Private PrimitiveResolver As PrimitiveResolver
+        Implements IXmlSerializer
+
+        Private ReaderResolver As XmlReaderResolver
+        Private WriterResolver As XmlWriterResolver
+
         Private ReaderCache As IMapperResolver
         Private WriterCache As IMapperResolver
-        Private ReaderProjectorResolverList As LinkedList(Of IProjectorResolver)
-        Private WriterProjectorResolverList As LinkedList(Of IProjectorResolver)
-        Private WriterAggregatorResolverList As LinkedList(Of IAggregatorResolver)
-
-        Public ReadOnly Property ReaderResolver As IMapperResolver
-            Get
-                Return ReaderCache
-            End Get
-        End Property
-        Public ReadOnly Property WriterResolver As IMapperResolver
-            Get
-                Return WriterCache
-            End Get
-        End Property
 
         Public Sub New()
             MyClass.New(New Type() {})
         End Sub
         Public Sub New(ByVal ExternalTypes As IEnumerable(Of Type))
-            'Reader
-            'proj <- proj
-            'PrimitiveResolver: (String|XElement proj Primitive) <- null
-            'EnumResolver: (String proj Enum) <- null
-            'XElementToStringDomainTranslator: (XElement proj R) <- (String proj R)
-            'CollectionUnpacker: (XElement proj {R}) <- (XElement.SubElement proj R)
-            'FieldOrPropertyProjectorResolver: (Dictionary(String, XElement) proj R) <- (XElement.SubElement proj R.Field)
-            'InheritanceResolver: (XElement proj R) <- (XElement proj R.Derived)
-            'XElementProjectorToProjectorDomainTranslator: (XElement proj R) <- (Dictionary(String, XElement) proj R)
-            '
-            'Writer
-            'proj <- proj/aggr
-            'PrimitiveResolver: (Primitive proj String|XElement) <- null
-            'EnumResolver: (Enum proj String) <- null
-            'XElementToStringRangeTranslator: (D proj XElement) <- (D proj String)
-            'InheritanceResolver: (D proj XElement) <- (D.Derived proj XElement)
-            'XElementAggregatorToProjectorRangeTranslator: (D proj XElement) <- (D aggr List(XElement))
-            '
-            'Writer
-            'aggr <- proj/aggr
-            'CollectionPacker: ({D} aggr Collection(XElement)) <- (D proj XElement)
-            'FieldOrPropertyAggregatorResolver: (D aggr List(XElement)) <- (D.Field proj XElement)
-            'XElementProjectorToAggregatorRangeTranslator: (D aggr List(XElement)) <- (D proj XElement)
+            Dim ReaderReference As New ReferenceMapperResolver
+            ReaderCache = ReaderReference
+            ReaderResolver = New XmlReaderResolver(ReaderReference, ExternalTypes)
+            ReaderReference.Inner = ReaderResolver.AsCached
+
+            Dim WriterReference As New ReferenceMapperResolver
+            WriterCache = WriterReference
+            WriterResolver = New XmlWriterResolver(WriterReference, ExternalTypes)
+            WriterReference.Inner = WriterResolver.AsCached
+        End Sub
+
+        Public Sub PutReader(Of T)(ByVal Reader As Func(Of String, T))
+            ReaderResolver.PutReader(Reader)
+        End Sub
+        Public Sub PutWriter(Of T)(ByVal Writer As Func(Of T, String))
+            WriterResolver.PutWriter(Writer)
+        End Sub
+        Public Sub PutReader(Of T)(ByVal Reader As Func(Of XElement, T))
+            ReaderResolver.PutReader(Reader)
+        End Sub
+        Public Sub PutWriter(Of T)(ByVal Writer As Func(Of T, XElement))
+            WriterResolver.PutWriter(Writer)
+        End Sub
+        Public Sub PutReaderTranslator(Of R, M)(ByVal Translator As IProjectorToProjectorRangeTranslator(Of R, M))
+            ReaderResolver.PutReaderTranslator(Translator)
+        End Sub
+        Public Sub PutWriterTranslator(Of D, M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of D, M))
+            WriterResolver.PutWriterTranslator(Translator)
+        End Sub
+        Public Sub PutReaderTranslator(Of M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of XElement, M))
+            ReaderResolver.PutReaderTranslator(Translator)
+        End Sub
+        Public Sub PutWriterTranslator(Of M)(ByVal Translator As IProjectorToProjectorRangeTranslator(Of XElement, M))
+            WriterResolver.PutWriterTranslator(Translator)
+        End Sub
+
+        Public Function Read(Of T)(ByVal s As XElement) As T Implements IXmlReader.Read
+            Dim m = ReaderCache.ResolveProjector(Of XElement, T)()
+            Return m(s)
+        End Function
+        Public Function Write(Of T)(ByVal Value As T) As XElement Implements IXmlWriter.Write
+            Dim m = WriterCache.ResolveProjector(Of T, XElement)()
+            Return m(Value)
+        End Function
+    End Class
+
+    Public Class XmlReaderResolver
+        Implements IMapperResolver
+
+        Private Root As IMapperResolver
+        Private PrimitiveResolver As PrimitiveResolver
+        Private Resolver As IMapperResolver
+        Private ProjectorResolverList As LinkedList(Of IProjectorResolver)
+
+        Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IProjectorResolver.TryResolveProjector
+            Return Resolver.TryResolveProjector(TypePair)
+        End Function
+        Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IAggregatorResolver.TryResolveAggregator
+            Return Resolver.TryResolveAggregator(TypePair)
+        End Function
+
+        Public Sub New(ByVal Root As IMapperResolver, ByVal ExternalTypes As IEnumerable(Of Type))
+            Me.Root = Root
 
             PrimitiveResolver = New PrimitiveResolver
 
@@ -99,6 +140,63 @@ Namespace Mapping
             PutReader(Function(s As String) s)
             PutReader(Function(s As String) Decimal.Parse(s, Globalization.CultureInfo.InvariantCulture))
 
+            'Reader
+            'proj <- proj
+            'PrimitiveResolver: (String|XElement proj Primitive) <- null
+            'EnumResolver: (String proj Enum) <- null
+            'XElementToStringDomainTranslator: (XElement proj R) <- (String proj R)
+            'CollectionUnpacker: (XElement proj {R}) <- (XElement.SubElement proj R)
+            'FieldOrPropertyProjectorResolver: (Dictionary(String, XElement) proj R) <- (XElement.SubElement proj R.Field)
+            'InheritanceResolver: (XElement proj R) <- (XElement proj R.Derived)
+            'XElementProjectorToProjectorDomainTranslator: (XElement proj R) <- (Dictionary(String, XElement) proj R)
+
+            ProjectorResolverList = New LinkedList(Of IProjectorResolver)({
+                PrimitiveResolver,
+                New EnumResolver,
+                TranslatorResolver.Create(Root, New XElementToStringDomainTranslator),
+                New CollectionUnpackerTemplate(Of XElement)(New CollectionUnpacker(Root)),
+                New RecordUnpackerTemplate(Of Dictionary(Of String, XElement))(New FieldOrPropertyProjectorResolver(Root)),
+                New InheritanceResolver(Root, ExternalTypes),
+                TranslatorResolver.Create(Root, New XElementProjectorToProjectorDomainTranslator)
+            })
+            Resolver = CreateMapper(ProjectorResolverList.Concatenated, EmptyAggregatorResolver)
+        End Sub
+
+        Public Sub PutReader(Of T)(ByVal Reader As Func(Of String, T))
+            PrimitiveResolver.PutProjector(Reader)
+        End Sub
+        Public Sub PutReader(Of T)(ByVal Reader As Func(Of XElement, T))
+            PrimitiveResolver.PutProjector(Reader)
+        End Sub
+        Public Sub PutReaderTranslator(Of R, M)(ByVal Translator As IProjectorToProjectorRangeTranslator(Of R, M))
+            ProjectorResolverList.AddFirst(TranslatorResolver.Create(Root, Translator))
+        End Sub
+        Public Sub PutReaderTranslator(Of M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of XElement, M))
+            ProjectorResolverList.AddFirst(TranslatorResolver.Create(Root, Translator))
+        End Sub
+    End Class
+
+    Public Class XmlWriterResolver
+        Implements IMapperResolver
+
+        Private Root As IMapperResolver
+        Private PrimitiveResolver As PrimitiveResolver
+        Private Resolver As IMapperResolver
+        Private ProjectorResolverList As LinkedList(Of IProjectorResolver)
+        Private AggregatorResolverList As LinkedList(Of IAggregatorResolver)
+
+        Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IProjectorResolver.TryResolveProjector
+            Return Resolver.TryResolveProjector(TypePair)
+        End Function
+        Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IAggregatorResolver.TryResolveAggregator
+            Return Resolver.TryResolveAggregator(TypePair)
+        End Function
+
+        Public Sub New(ByVal Root As IMapperResolver, ByVal ExternalTypes As IEnumerable(Of Type))
+            Me.Root = Root
+
+            PrimitiveResolver = New PrimitiveResolver
+
             PutWriter(Function(b As Byte) b.ToString(Globalization.CultureInfo.InvariantCulture))
             PutWriter(Function(i As UInt16) i.ToString(Globalization.CultureInfo.InvariantCulture))
             PutWriter(Function(i As UInt32) i.ToString(Globalization.CultureInfo.InvariantCulture))
@@ -113,71 +211,51 @@ Namespace Mapping
             PutWriter(Function(s As String) s)
             PutWriter(Function(d As Decimal) d.ToString(Globalization.CultureInfo.InvariantCulture))
 
-            Dim ReaderReference As New ReferenceMapperResolver
-            ReaderCache = ReaderReference
-            ReaderProjectorResolverList = New LinkedList(Of IProjectorResolver)({
+            'Writer
+            'proj <- proj/aggr
+            'PrimitiveResolver: (Primitive proj String|XElement) <- null
+            'EnumResolver: (Enum proj String) <- null
+            'XElementToStringRangeTranslator: (D proj XElement) <- (D proj String)
+            'InheritanceResolver: (D proj XElement) <- (D.Derived proj XElement)
+            'XElementAggregatorToProjectorRangeTranslator: (D proj XElement) <- (D aggr List(XElement))
+            '
+            'Writer
+            'aggr <- proj/aggr
+            'CollectionPacker: ({D} aggr Collection(XElement)) <- (D proj XElement)
+            'FieldOrPropertyAggregatorResolver: (D aggr List(XElement)) <- (D.Field proj XElement)
+            'XElementProjectorToAggregatorRangeTranslator: (D aggr List(XElement)) <- (D proj XElement)
+
+            ProjectorResolverList = New LinkedList(Of IProjectorResolver)({
                 PrimitiveResolver,
                 New EnumResolver,
-                TranslatorResolver.Create(ReaderCache, New XElementToStringDomainTranslator),
-                New CollectionUnpackerTemplate(Of XElement)(New CollectionUnpacker(ReaderCache)),
-                New RecordUnpackerTemplate(Of Dictionary(Of String, XElement))(New FieldOrPropertyProjectorResolver(ReaderCache)),
-                New InheritanceResolver(ReaderCache, ExternalTypes),
-                TranslatorResolver.Create(ReaderCache, New XElementProjectorToProjectorDomainTranslator)
+                TranslatorResolver.Create(Root, New XElementToStringRangeTranslator),
+                New InheritanceResolver(Root, ExternalTypes),
+                TranslatorResolver.Create(Root, New XElementAggregatorToProjectorRangeTranslator)
             })
-            ReaderReference.Inner = CreateMapper(ReaderProjectorResolverList.Concatenated.AsCached, EmptyAggregatorResolver)
-
-            Dim WriterReference As New ReferenceMapperResolver
-            WriterCache = WriterReference
-            WriterProjectorResolverList = New LinkedList(Of IProjectorResolver)({
-                PrimitiveResolver,
-                New EnumResolver,
-                TranslatorResolver.Create(WriterCache, New XElementToStringRangeTranslator),
-                New InheritanceResolver(WriterCache, ExternalTypes),
-                TranslatorResolver.Create(WriterCache, New XElementAggregatorToProjectorRangeTranslator)
+            AggregatorResolverList = New LinkedList(Of IAggregatorResolver)({
+                New CollectionPackerTemplate(Of List(Of XElement))(New CollectionPacker(Root)),
+                New RecordPackerTemplate(Of List(Of XElement))(New FieldOrPropertyAggregatorResolver(Root)),
+                TranslatorResolver.Create(Root, New XElementProjectorToAggregatorRangeTranslator)
             })
-            WriterAggregatorResolverList = New LinkedList(Of IAggregatorResolver)({
-                New CollectionPackerTemplate(Of List(Of XElement))(New CollectionPacker(WriterCache)),
-                New RecordPackerTemplate(Of List(Of XElement))(New FieldOrPropertyAggregatorResolver(WriterCache)),
-                TranslatorResolver.Create(WriterCache, New XElementProjectorToAggregatorRangeTranslator)
-            })
-            WriterReference.Inner = CreateMapper(WriterProjectorResolverList.Concatenated.AsCached, WriterAggregatorResolverList.Concatenated.AsCached)
+            Resolver = CreateMapper(ProjectorResolverList.Concatenated, AggregatorResolverList.Concatenated)
         End Sub
 
-        Public Sub PutReader(Of T)(ByVal Reader As Func(Of String, T))
-            PrimitiveResolver.PutProjector(Reader)
-        End Sub
         Public Sub PutWriter(Of T)(ByVal Writer As Func(Of T, String))
             PrimitiveResolver.PutProjector(Writer)
-        End Sub
-        Public Sub PutReader(Of T)(ByVal Reader As Func(Of XElement, T))
-            PrimitiveResolver.PutProjector(Reader)
         End Sub
         Public Sub PutWriter(Of T)(ByVal Writer As Func(Of T, XElement))
             PrimitiveResolver.PutProjector(Writer)
         End Sub
-        Public Sub PutReaderTranslator(Of R, M)(ByVal Translator As IProjectorToProjectorRangeTranslator(Of R, M))
-            ReaderProjectorResolverList.AddFirst(TranslatorResolver.Create(ReaderCache, Translator))
-        End Sub
         Public Sub PutWriterTranslator(Of D, M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of D, M))
-            WriterProjectorResolverList.AddFirst(TranslatorResolver.Create(WriterCache, Translator))
-        End Sub
-        Public Sub PutReaderTranslator(Of M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of XElement, M))
-            ReaderProjectorResolverList.AddFirst(TranslatorResolver.Create(ReaderCache, Translator))
+            ProjectorResolverList.AddFirst(TranslatorResolver.Create(Root, Translator))
         End Sub
         Public Sub PutWriterTranslator(Of M)(ByVal Translator As IProjectorToProjectorRangeTranslator(Of XElement, M))
-            WriterProjectorResolverList.AddFirst(TranslatorResolver.Create(WriterCache, Translator))
+            ProjectorResolverList.AddFirst(TranslatorResolver.Create(Root, Translator))
         End Sub
+    End Class
 
-        Public Function Read(Of T)(ByVal s As XElement) As T
-            Dim m = ReaderCache.ResolveProjector(Of XElement, T)()
-            Return m(s)
-        End Function
-        Public Function Write(Of T)(ByVal Value As T) As XElement
-            Dim m = WriterCache.ResolveProjector(Of T, XElement)()
-            Return m(Value)
-        End Function
-
-        Public Shared Function GetTypeFriendlyName(ByVal Type As Type) As String
+    Public Module MappingXml
+        Public Function GetTypeFriendlyName(ByVal Type As Type) As String
             If Type.IsArray Then
                 Dim n = Type.GetArrayRank
                 Dim ElementTypeName = GetTypeFriendlyName(Type.GetElementType)
@@ -192,315 +270,315 @@ Namespace Mapping
             End If
             Return Type.Name
         End Function
+    End Module
 
-        Private Class EnumResolver
-            Implements IProjectorResolver
+    Public Class EnumResolver
+        Implements IProjectorResolver
 
-            Public Shared Function StringToEnum(Of R)(ByVal s As String) As R
-                Return DirectCast([Enum].Parse(GetType(R), s), R)
-            End Function
-            Public Shared Function EnumToString(Of D)(ByVal v As D) As String
-                Return v.ToString()
-            End Function
+        Public Shared Function StringToEnum(Of R)(ByVal s As String) As R
+            Return DirectCast([Enum].Parse(GetType(R), s), R)
+        End Function
+        Public Shared Function EnumToString(Of D)(ByVal v As D) As String
+            Return v.ToString()
+        End Function
 
-            Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IProjectorResolver.TryResolveProjector
-                Dim DomainType = TypePair.Key
-                Dim RangeType = TypePair.Value
-                If DomainType Is GetType(String) AndAlso RangeType.IsEnum Then
-                    Dim DummyMethod = DirectCast(AddressOf StringToEnum(Of DummyType), Func(Of String, DummyType))
-                    Dim m = DummyMethod.MakeDelegateMethodFromDummy(RangeType)
-                    Return m
-                End If
-                If RangeType Is GetType(String) AndAlso DomainType.IsEnum Then
-                    Dim DummyMethod = DirectCast(AddressOf EnumToString(Of DummyType), Func(Of DummyType, String))
-                    Dim m = DummyMethod.MakeDelegateMethodFromDummy(DomainType)
-                    Return m
-                End If
-                Return Nothing
-            End Function
-        End Class
+        Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IProjectorResolver.TryResolveProjector
+            Dim DomainType = TypePair.Key
+            Dim RangeType = TypePair.Value
+            If DomainType Is GetType(String) AndAlso RangeType.IsEnum Then
+                Dim DummyMethod = DirectCast(AddressOf StringToEnum(Of DummyType), Func(Of String, DummyType))
+                Dim m = DummyMethod.MakeDelegateMethodFromDummy(RangeType)
+                Return m
+            End If
+            If RangeType Is GetType(String) AndAlso DomainType.IsEnum Then
+                Dim DummyMethod = DirectCast(AddressOf EnumToString(Of DummyType), Func(Of DummyType, String))
+                Dim m = DummyMethod.MakeDelegateMethodFromDummy(DomainType)
+                Return m
+            End If
+            Return Nothing
+        End Function
+    End Class
 
-        Private Class CollectionUnpacker
-            Implements IGenericCollectionProjectorResolver(Of XElement)
+    Public Class CollectionUnpacker
+        Implements IGenericCollectionProjectorResolver(Of XElement)
 
-            Public Function ResolveProjector(Of R, RCollection As {New, ICollection(Of R)})() As Func(Of XElement, RCollection) Implements IGenericCollectionProjectorResolver(Of XElement).ResolveProjector
-                Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(XElement), GetType(R))), Func(Of XElement, R))
-                Dim F =
-                    Function(Key As XElement) As RCollection
-                        If Not Key.IsEmpty Then
-                            Dim List = New RCollection()
-                            For Each k In Key.Elements
-                                List.Add(Mapper(k))
-                            Next
-                            Return List
-                        Else
-                            Return Nothing
-                        End If
-                    End Function
-                Return F
-            End Function
-
-            Private InnerResolver As IProjectorResolver
-            Public Sub New(ByVal Resolver As IProjectorResolver)
-                Me.InnerResolver = Resolver.AsNoncircular
-            End Sub
-        End Class
-        Private Class CollectionPacker
-            Implements IGenericCollectionAggregatorResolver(Of List(Of XElement))
-
-            Public Function ResolveAggregator(Of D, DCollection As ICollection(Of D))() As Action(Of DCollection, List(Of XElement)) Implements IGenericCollectionAggregatorResolver(Of List(Of XElement)).ResolveAggregator
-                Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(XElement))), Func(Of D, XElement))
-                Dim F =
-                    Sub(c As DCollection, Value As List(Of XElement))
-                        For Each v In c
-                            Value.Add(Mapper(v))
+        Public Function ResolveProjector(Of R, RCollection As {New, ICollection(Of R)})() As Func(Of XElement, RCollection) Implements IGenericCollectionProjectorResolver(Of XElement).ResolveProjector
+            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(XElement), GetType(R))), Func(Of XElement, R))
+            Dim F =
+                Function(Key As XElement) As RCollection
+                    If Not Key.IsEmpty Then
+                        Dim List = New RCollection()
+                        For Each k In Key.Elements
+                            List.Add(Mapper(k))
                         Next
-                    End Sub
-                Return F
-            End Function
+                        Return List
+                    Else
+                        Return Nothing
+                    End If
+                End Function
+            Return F
+        End Function
 
-            Private InnerResolver As IProjectorResolver
-            Public Sub New(ByVal Resolver As IProjectorResolver)
-                Me.InnerResolver = Resolver.AsNoncircular
-            End Sub
-        End Class
+        Private InnerResolver As IProjectorResolver
+        Public Sub New(ByVal Resolver As IProjectorResolver)
+            Me.InnerResolver = Resolver.AsNoncircular
+        End Sub
+    End Class
+    Public Class CollectionPacker
+        Implements IGenericCollectionAggregatorResolver(Of List(Of XElement))
 
-        Private Class XElementToStringRangeTranslator
-            Implements IProjectorToProjectorRangeTranslator(Of XElement, String)
+        Public Function ResolveAggregator(Of D, DCollection As ICollection(Of D))() As Action(Of DCollection, List(Of XElement)) Implements IGenericCollectionAggregatorResolver(Of List(Of XElement)).ResolveAggregator
+            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(XElement))), Func(Of D, XElement))
+            Dim F =
+                Sub(c As DCollection, Value As List(Of XElement))
+                    For Each v In c
+                        Value.Add(Mapper(v))
+                    Next
+                End Sub
+            Return F
+        End Function
 
-            Public Function TranslateProjectorToProjectorRange(Of D)(ByVal Projector As Func(Of D, String)) As Func(Of D, XElement) Implements IProjectorToProjectorRangeTranslator(Of XElement, String).TranslateProjectorToProjectorRange
-                Dim FriendlyName = GetTypeFriendlyName(GetType(D))
-                Return Function(v)
-                           Dim s = Projector(v)
-                           Return New XElement(FriendlyName, s)
-                       End Function
-            End Function
-        End Class
+        Private InnerResolver As IProjectorResolver
+        Public Sub New(ByVal Resolver As IProjectorResolver)
+            Me.InnerResolver = Resolver.AsNoncircular
+        End Sub
+    End Class
 
-        Private Class XElementToStringDomainTranslator
-            Implements IProjectorToProjectorDomainTranslator(Of XElement, String)
+    Public Class XElementToStringRangeTranslator
+        Implements IProjectorToProjectorRangeTranslator(Of XElement, String)
 
-            Public Function TranslateProjectorToProjectorDomain(Of R)(ByVal Projector As Func(Of String, R)) As Func(Of XElement, R) Implements IProjectorToProjectorDomainTranslator(Of XElement, String).TranslateProjectorToProjectorDomain
-                Return Function(v)
-                           If v.IsEmpty Then Return Nothing
-                           Return Projector(v.Value)
-                       End Function
-            End Function
-        End Class
+        Public Function TranslateProjectorToProjectorRange(Of D)(ByVal Projector As Func(Of D, String)) As Func(Of D, XElement) Implements IProjectorToProjectorRangeTranslator(Of XElement, String).TranslateProjectorToProjectorRange
+            Dim FriendlyName = GetTypeFriendlyName(GetType(D))
+            Return Function(v)
+                       Dim s = Projector(v)
+                       Return New XElement(FriendlyName, s)
+                   End Function
+        End Function
+    End Class
 
-        Private Class XElementProjectorToProjectorDomainTranslator
-            Implements IProjectorToProjectorDomainTranslator(Of XElement, Dictionary(Of String, XElement))
+    Public Class XElementToStringDomainTranslator
+        Implements IProjectorToProjectorDomainTranslator(Of XElement, String)
 
-            Public Function TranslateProjectorToProjectorDomain(Of R)(ByVal Projector As Func(Of Dictionary(Of String, XElement), R)) As Func(Of XElement, R) Implements IProjectorToProjectorDomainTranslator(Of XElement, Dictionary(Of String, XElement)).TranslateProjectorToProjectorDomain
-                Return Function(Element) As R
-                           If Not Element.IsEmpty Then
-                               Return Projector(Element.Elements.ToDictionary(Function(e) e.Name.LocalName, StringComparer.OrdinalIgnoreCase))
+        Public Function TranslateProjectorToProjectorDomain(Of R)(ByVal Projector As Func(Of String, R)) As Func(Of XElement, R) Implements IProjectorToProjectorDomainTranslator(Of XElement, String).TranslateProjectorToProjectorDomain
+            Return Function(v)
+                       If v.IsEmpty Then Return Nothing
+                       Return Projector(v.Value)
+                   End Function
+        End Function
+    End Class
+
+    Public Class XElementProjectorToProjectorDomainTranslator
+        Implements IProjectorToProjectorDomainTranslator(Of XElement, Dictionary(Of String, XElement))
+
+        Public Function TranslateProjectorToProjectorDomain(Of R)(ByVal Projector As Func(Of Dictionary(Of String, XElement), R)) As Func(Of XElement, R) Implements IProjectorToProjectorDomainTranslator(Of XElement, Dictionary(Of String, XElement)).TranslateProjectorToProjectorDomain
+            Return Function(Element) As R
+                       If Not Element.IsEmpty Then
+                           Return Projector(Element.Elements.ToDictionary(Function(e) e.Name.LocalName, StringComparer.OrdinalIgnoreCase))
+                       Else
+                           Return Nothing
+                       End If
+                   End Function
+        End Function
+    End Class
+
+    Public Class XElementAggregatorToProjectorRangeTranslator
+        Implements IAggregatorToProjectorRangeTranslator(Of XElement, List(Of XElement))
+
+        Public Function TranslateAggregatorToProjectorRange(Of D)(ByVal Aggregator As Action(Of D, List(Of XElement))) As Func(Of D, XElement) Implements IAggregatorToProjectorRangeTranslator(Of XElement, List(Of XElement)).TranslateAggregatorToProjectorRange
+            Dim FriendlyName = GetTypeFriendlyName(GetType(D))
+            Return Function(v)
+                       If v IsNot Nothing Then
+                           Dim l As New List(Of XElement)
+                           Aggregator(v, l)
+                           If l.Count = 0 Then
+                               Return New XElement(FriendlyName, "")
                            Else
-                               Return Nothing
+                               Return New XElement(FriendlyName, l.ToArray())
                            End If
-                       End Function
-            End Function
-        End Class
+                       Else
+                           Return New XElement(FriendlyName, Nothing)
+                       End If
+                   End Function
+        End Function
+    End Class
 
-        Private Class XElementAggregatorToProjectorRangeTranslator
-            Implements IAggregatorToProjectorRangeTranslator(Of XElement, List(Of XElement))
+    Public Class XElementProjectorToAggregatorRangeTranslator
+        Implements IProjectorToAggregatorRangeTranslator(Of List(Of XElement), XElement)
 
-            Public Function TranslateAggregatorToProjectorRange(Of D)(ByVal Aggregator As Action(Of D, List(Of XElement))) As Func(Of D, XElement) Implements IAggregatorToProjectorRangeTranslator(Of XElement, List(Of XElement)).TranslateAggregatorToProjectorRange
-                Dim FriendlyName = GetTypeFriendlyName(GetType(D))
-                Return Function(v)
-                           If v IsNot Nothing Then
-                               Dim l As New List(Of XElement)
-                               Aggregator(v, l)
-                               If l.Count = 0 Then
-                                   Return New XElement(FriendlyName, "")
-                               Else
-                                   Return New XElement(FriendlyName, l.ToArray())
-                               End If
-                           Else
-                               Return New XElement(FriendlyName, Nothing)
-                           End If
-                       End Function
-            End Function
-        End Class
+        Public Function TranslateProjectorToAggregatorRange(Of D)(ByVal Projector As Func(Of D, XElement)) As Action(Of D, List(Of XElement)) Implements IProjectorToAggregatorRangeTranslator(Of List(Of XElement), XElement).TranslateProjectorToAggregatorRange
+            Dim FriendlyName = GetTypeFriendlyName(GetType(D))
+            Return Sub(v, l) l.Add(Projector(v))
+        End Function
+    End Class
 
-        Private Class XElementProjectorToAggregatorRangeTranslator
-            Implements IProjectorToAggregatorRangeTranslator(Of List(Of XElement), XElement)
+    Public Class FieldOrPropertyProjectorResolver
+        Implements IFieldOrPropertyProjectorResolver(Of Dictionary(Of String, XElement))
 
-            Public Function TranslateProjectorToAggregatorRange(Of D)(ByVal Projector As Func(Of D, XElement)) As Action(Of D, List(Of XElement)) Implements IProjectorToAggregatorRangeTranslator(Of List(Of XElement), XElement).TranslateProjectorToAggregatorRange
-                Dim FriendlyName = GetTypeFriendlyName(GetType(D))
-                Return Sub(v, l) l.Add(Projector(v))
-            End Function
-        End Class
+        Private Function Resolve(Of R)(ByVal Name As String) As Func(Of Dictionary(Of String, XElement), R)
+            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(XElement), GetType(R))), Func(Of XElement, R))
+            Dim F =
+                Function(d As Dictionary(Of String, XElement)) As R
+                    If d.ContainsKey(Name) Then
+                        Return Mapper(d(Name))
+                    Else
+                        Return Nothing
+                    End If
+                End Function
+            Return F
+        End Function
 
-        Private Class FieldOrPropertyProjectorResolver
-            Implements IFieldOrPropertyProjectorResolver(Of Dictionary(Of String, XElement))
+        Private Dict As New Dictionary(Of Type, Func(Of String, [Delegate]))
+        Public Function ResolveProjector(ByVal Info As FieldOrPropertyInfo) As [Delegate] Implements IFieldOrPropertyProjectorResolver(Of Dictionary(Of String, XElement)).ResolveProjector
+            Dim Name = Info.Member.Name
+            If Dict.ContainsKey(Info.Type) Then
+                Dim m = Dict(Info.Type)
+                Return m(Name)
+            Else
+                Dim GenericMapper = DirectCast(AddressOf Resolve(Of DummyType), Func(Of String, Func(Of Dictionary(Of String, XElement), DummyType)))
+                Dim m = GenericMapper.MakeDelegateMethodFromDummy(Info.Type).AdaptFunction(Of String, [Delegate])()
+                Dict.Add(Info.Type, m)
+                Return m(Name)
+            End If
+        End Function
 
-            Private Function Resolve(Of R)(ByVal Name As String) As Func(Of Dictionary(Of String, XElement), R)
-                Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(XElement), GetType(R))), Func(Of XElement, R))
-                Dim F =
-                    Function(d As Dictionary(Of String, XElement)) As R
-                        If d.ContainsKey(Name) Then
-                            Return Mapper(d(Name))
-                        Else
-                            Return Nothing
-                        End If
-                    End Function
-                Return F
-            End Function
+        Private InnerResolver As IProjectorResolver
+        Public Sub New(ByVal Resolver As IProjectorResolver)
+            Me.InnerResolver = Resolver.AsNoncircular.AsCached
+        End Sub
+    End Class
+    Public Class FieldOrPropertyAggregatorResolver
+        Implements IFieldOrPropertyAggregatorResolver(Of List(Of XElement))
 
-            Private Dict As New Dictionary(Of Type, Func(Of String, [Delegate]))
-            Public Function ResolveProjector(ByVal Info As FieldOrPropertyInfo) As [Delegate] Implements IFieldOrPropertyProjectorResolver(Of Dictionary(Of String, XElement)).ResolveProjector
-                Dim Name = Info.Member.Name
-                If Dict.ContainsKey(Info.Type) Then
-                    Dim m = Dict(Info.Type)
-                    Return m(Name)
-                Else
-                    Dim GenericMapper = DirectCast(AddressOf Resolve(Of DummyType), Func(Of String, Func(Of Dictionary(Of String, XElement), DummyType)))
-                    Dim m = GenericMapper.MakeDelegateMethodFromDummy(Info.Type).AdaptFunction(Of String, [Delegate])()
-                    Dict.Add(Info.Type, m)
-                    Return m(Name)
-                End If
-            End Function
+        Private Function Resolve(Of D)(ByVal Name As String) As Action(Of D, List(Of XElement))
+            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(XElement))), Func(Of D, XElement))
+            Dim F =
+                Sub(k As D, l As List(Of XElement))
+                    Dim e = Mapper(k)
+                    e.Name = Name
+                    l.Add(e)
+                End Sub
+            Return F
+        End Function
 
-            Private InnerResolver As IProjectorResolver
-            Public Sub New(ByVal Resolver As IProjectorResolver)
-                Me.InnerResolver = Resolver.AsNoncircular.AsCached
-            End Sub
-        End Class
-        Private Class FieldOrPropertyAggregatorResolver
-            Implements IFieldOrPropertyAggregatorResolver(Of List(Of XElement))
+        Private Dict As New Dictionary(Of Type, Func(Of String, [Delegate]))
+        Public Function ResolveAggregator(ByVal Info As FieldOrPropertyInfo) As [Delegate] Implements IFieldOrPropertyAggregatorResolver(Of List(Of XElement)).ResolveAggregator
+            Dim Name = Info.Member.Name
+            If Dict.ContainsKey(Info.Type) Then
+                Dim m = Dict(Info.Type)
+                Return m(Name)
+            Else
+                Dim GenericMapper = DirectCast(AddressOf Resolve(Of DummyType), Func(Of String, Action(Of DummyType, List(Of XElement))))
+                Dim m = GenericMapper.MakeDelegateMethodFromDummy(Info.Type).AdaptFunction(Of String, [Delegate])()
+                Dict.Add(Info.Type, m)
+                Return m(Name)
+            End If
+        End Function
 
-            Private Function Resolve(Of D)(ByVal Name As String) As Action(Of D, List(Of XElement))
-                Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(XElement))), Func(Of D, XElement))
-                Dim F =
-                    Sub(k As D, l As List(Of XElement))
-                        Dim e = Mapper(k)
-                        e.Name = Name
-                        l.Add(e)
-                    End Sub
-                Return F
-            End Function
+        Private InnerResolver As IProjectorResolver
+        Public Sub New(ByVal Resolver As IProjectorResolver)
+            Me.InnerResolver = Resolver.AsNoncircular.AsCached
+        End Sub
+    End Class
 
-            Private Dict As New Dictionary(Of Type, Func(Of String, [Delegate]))
-            Public Function ResolveAggregator(ByVal Info As FieldOrPropertyInfo) As [Delegate] Implements IFieldOrPropertyAggregatorResolver(Of List(Of XElement)).ResolveAggregator
-                Dim Name = Info.Member.Name
-                If Dict.ContainsKey(Info.Type) Then
-                    Dim m = Dict(Info.Type)
-                    Return m(Name)
-                Else
-                    Dim GenericMapper = DirectCast(AddressOf Resolve(Of DummyType), Func(Of String, Action(Of DummyType, List(Of XElement))))
-                    Dim m = GenericMapper.MakeDelegateMethodFromDummy(Info.Type).AdaptFunction(Of String, [Delegate])()
-                    Dict.Add(Info.Type, m)
-                    Return m(Name)
-                End If
-            End Function
+    Public Class InheritanceResolver
+        Implements IProjectorResolver
 
-            Private InnerResolver As IProjectorResolver
-            Public Sub New(ByVal Resolver As IProjectorResolver)
-                Me.InnerResolver = Resolver.AsNoncircular.AsCached
-            End Sub
-        End Class
+        Private Function ResolveRange(Of R)() As Func(Of XElement, R)
+            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(XElement), GetType(R))), Func(Of XElement, R))
+            Dim Dict As New Dictionary(Of Type, Func(Of XElement, R))
+            Dim F =
+                Function(k As XElement) As R
+                    If k.IsEmpty Then Return Mapper(k)
+                    If k.Attribute("Type") Is Nothing Then Return Mapper(k)
+                    Dim RealTypeName = k.Attribute("Type").Value
+                    If Not ExternalTypeDict.ContainsKey(RealTypeName) Then Throw New InvalidOperationException("ExternalTypeNotFound: {0}".Formats(RealTypeName))
+                    Dim RealType = ExternalTypeDict(RealTypeName)
 
-        Private Class InheritanceResolver
-            Implements IProjectorResolver
+                    If Dict.ContainsKey(RealType) Then
+                        Dim DynamicMapper = Dict(RealType)
+                        Return DynamicMapper(k)
+                    End If
 
-            Private Function ResolveRange(Of R)() As Func(Of XElement, R)
-                Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(XElement), GetType(R))), Func(Of XElement, R))
-                Dim Dict As New Dictionary(Of Type, Func(Of XElement, R))
-                Dim F =
-                    Function(k As XElement) As R
-                        If k.IsEmpty Then Return Mapper(k)
-                        If k.Attribute("Type") Is Nothing Then Return Mapper(k)
-                        Dim RealTypeName = k.Attribute("Type").Value
-                        If Not ExternalTypeDict.ContainsKey(RealTypeName) Then Throw New InvalidOperationException("ExternalTypeNotFound: {0}".Formats(RealTypeName))
-                        Dim RealType = ExternalTypeDict(RealTypeName)
-
-                        If Dict.ContainsKey(RealType) Then
-                            Dim DynamicMapper = Dict(RealType)
-                            Return DynamicMapper(k)
-                        End If
-
-                        Dim TypePair = CreatePair(GetType(XElement), RealType)
-                        ProjectorCache.Add(TypePair)
-                        Try
-                            Dim DynamicMapper = InnerResolver.ResolveProjector(TypePair).AdaptFunction(Of XElement, R)()
-                            Dict.Add(RealType, DynamicMapper)
-                            Return DynamicMapper(k)
-                        Finally
-                            ProjectorCache.Remove(TypePair)
-                        End Try
-                    End Function
-                Return F
-            End Function
-            Private Function ResolveDomain(Of D)() As Func(Of D, XElement)
-                Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(XElement))), Func(Of D, XElement))
-                Dim TypeName = GetTypeFriendlyName(GetType(D))
-                Dim Dict As New Dictionary(Of Type, Func(Of D, XElement))
-                Dim F =
-                    Function(k As D) As XElement
-                        If k Is Nothing Then Return Mapper(k)
-                        Dim RealType = k.GetType()
-                        If RealType Is GetType(D) Then Return Mapper(k)
-                        Dim RealTypeName = GetTypeFriendlyName(RealType)
-                        If Not ExternalTypeDict.ContainsKey(RealTypeName) Then Throw New InvalidOperationException("ExternalTypeNotFound: {0}".Formats(RealTypeName))
-                        If ExternalTypeDict(RealTypeName) IsNot RealType Then Throw New InvalidOperationException("ExternalTypeMismatched: {0}".Formats(RealTypeName))
-
-                        If Dict.ContainsKey(RealType) Then
-                            Dim DynamicMapper = Dict(RealType)
-                            Return DynamicMapper(k)
-                        End If
-
-                        Dim TypePair = CreatePair(RealType, GetType(XElement))
-                        ProjectorCache.Add(TypePair)
-                        Try
-                            Dim DynamicMapper = InnerResolver.ResolveProjector(TypePair).AdaptFunction(Of D, XElement)()
-                            Dict.Add(RealType, DynamicMapper)
-                            Dim e = DynamicMapper(k)
-                            If e.Name = RealTypeName Then e.Name = TypeName
-                            e.SetAttributeValue("Type", RealTypeName)
-                            Return e
-                        Finally
-                            ProjectorCache.Remove(TypePair)
-                        End Try
-                    End Function
-                Return F
-            End Function
-
-            Private ProjectorCache As New HashSet(Of KeyValuePair(Of Type, Type))
-            Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IProjectorResolver.TryResolveProjector
-                Dim DomainType = TypePair.Key
-                Dim RangeType = TypePair.Value
-                If DomainType Is GetType(XElement) AndAlso RangeType.IsClass Then
-                    If ProjectorCache.Contains(TypePair) Then Return Nothing
+                    Dim TypePair = CreatePair(GetType(XElement), RealType)
                     ProjectorCache.Add(TypePair)
                     Try
-                        Dim DummyMethod = DirectCast(AddressOf ResolveRange(Of DummyType), Func(Of Func(Of XElement, DummyType)))
-                        Dim m = DummyMethod.MakeDelegateMethodFromDummy(RangeType)
-                        Return m.StaticDynamicInvoke(Of [Delegate])()
+                        Dim DynamicMapper = InnerResolver.ResolveProjector(TypePair).AdaptFunction(Of XElement, R)()
+                        Dict.Add(RealType, DynamicMapper)
+                        Return DynamicMapper(k)
                     Finally
                         ProjectorCache.Remove(TypePair)
                     End Try
-                End If
-                If RangeType Is GetType(XElement) AndAlso DomainType.IsClass Then
-                    If ProjectorCache.Contains(TypePair) Then Return Nothing
+                End Function
+            Return F
+        End Function
+        Private Function ResolveDomain(Of D)() As Func(Of D, XElement)
+            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(XElement))), Func(Of D, XElement))
+            Dim TypeName = GetTypeFriendlyName(GetType(D))
+            Dim Dict As New Dictionary(Of Type, Func(Of D, XElement))
+            Dim F =
+                Function(k As D) As XElement
+                    If k Is Nothing Then Return Mapper(k)
+                    Dim RealType = k.GetType()
+                    If RealType Is GetType(D) Then Return Mapper(k)
+                    Dim RealTypeName = GetTypeFriendlyName(RealType)
+                    If Not ExternalTypeDict.ContainsKey(RealTypeName) Then Throw New InvalidOperationException("ExternalTypeNotFound: {0}".Formats(RealTypeName))
+                    If ExternalTypeDict(RealTypeName) IsNot RealType Then Throw New InvalidOperationException("ExternalTypeMismatched: {0}".Formats(RealTypeName))
+
+                    If Dict.ContainsKey(RealType) Then
+                        Dim DynamicMapper = Dict(RealType)
+                        Return DynamicMapper(k)
+                    End If
+
+                    Dim TypePair = CreatePair(RealType, GetType(XElement))
                     ProjectorCache.Add(TypePair)
                     Try
-                        Dim DummyMethod = DirectCast(AddressOf ResolveDomain(Of DummyType), Func(Of Func(Of DummyType, XElement)))
-                        Dim m = DummyMethod.MakeDelegateMethodFromDummy(DomainType)
-                        Return m.StaticDynamicInvoke(Of [Delegate])()
+                        Dim DynamicMapper = InnerResolver.ResolveProjector(TypePair).AdaptFunction(Of D, XElement)()
+                        Dict.Add(RealType, DynamicMapper)
+                        Dim e = DynamicMapper(k)
+                        If e.Name = RealTypeName Then e.Name = TypeName
+                        e.SetAttributeValue("Type", RealTypeName)
+                        Return e
                     Finally
                         ProjectorCache.Remove(TypePair)
                     End Try
-                End If
-                Return Nothing
-            End Function
+                End Function
+            Return F
+        End Function
 
-            Private InnerResolver As IProjectorResolver
-            Private ExternalTypeDict As Dictionary(Of String, Type)
-            Public Sub New(ByVal Resolver As IProjectorResolver, ByVal ExternalTypes As IEnumerable(Of Type))
-                Me.InnerResolver = Resolver.AsNoncircular.AsCached
-                Me.ExternalTypeDict = ExternalTypes.ToDictionary(Function(type) GetTypeFriendlyName(type), StringComparer.OrdinalIgnoreCase)
-            End Sub
-        End Class
+        Private ProjectorCache As New HashSet(Of KeyValuePair(Of Type, Type))
+        Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IProjectorResolver.TryResolveProjector
+            Dim DomainType = TypePair.Key
+            Dim RangeType = TypePair.Value
+            If DomainType Is GetType(XElement) AndAlso RangeType.IsClass Then
+                If ProjectorCache.Contains(TypePair) Then Return Nothing
+                ProjectorCache.Add(TypePair)
+                Try
+                    Dim DummyMethod = DirectCast(AddressOf ResolveRange(Of DummyType), Func(Of Func(Of XElement, DummyType)))
+                    Dim m = DummyMethod.MakeDelegateMethodFromDummy(RangeType)
+                    Return m.StaticDynamicInvoke(Of [Delegate])()
+                Finally
+                    ProjectorCache.Remove(TypePair)
+                End Try
+            End If
+            If RangeType Is GetType(XElement) AndAlso DomainType.IsClass Then
+                If ProjectorCache.Contains(TypePair) Then Return Nothing
+                ProjectorCache.Add(TypePair)
+                Try
+                    Dim DummyMethod = DirectCast(AddressOf ResolveDomain(Of DummyType), Func(Of Func(Of DummyType, XElement)))
+                    Dim m = DummyMethod.MakeDelegateMethodFromDummy(DomainType)
+                    Return m.StaticDynamicInvoke(Of [Delegate])()
+                Finally
+                    ProjectorCache.Remove(TypePair)
+                End Try
+            End If
+            Return Nothing
+        End Function
+
+        Private InnerResolver As IProjectorResolver
+        Private ExternalTypeDict As Dictionary(Of String, Type)
+        Public Sub New(ByVal Resolver As IProjectorResolver, ByVal ExternalTypes As IEnumerable(Of Type))
+            Me.InnerResolver = Resolver.AsNoncircular.AsCached
+            Me.ExternalTypeDict = ExternalTypes.ToDictionary(Function(type) GetTypeFriendlyName(type), StringComparer.OrdinalIgnoreCase)
+        End Sub
     End Class
 End Namespace
