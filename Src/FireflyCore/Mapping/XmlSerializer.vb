@@ -38,18 +38,18 @@ Namespace Mapping
     ''' </remarks>
     Public Class XmlSerializer
         Private PrimitiveResolver As PrimitiveResolver
-        Private ReaderCache As IObjectMapperResolver
-        Private WriterCache As IObjectMapperResolver
-        Private ReaderProjectorResolverList As LinkedList(Of IObjectProjectorResolver)
-        Private WriterProjectorResolverList As LinkedList(Of IObjectProjectorResolver)
-        Private WriterAggregatorResolverList As LinkedList(Of IObjectAggregatorResolver)
+        Private ReaderCache As IMapperResolver
+        Private WriterCache As IMapperResolver
+        Private ReaderProjectorResolverList As LinkedList(Of IProjectorResolver)
+        Private WriterProjectorResolverList As LinkedList(Of IProjectorResolver)
+        Private WriterAggregatorResolverList As LinkedList(Of IAggregatorResolver)
 
-        Public ReadOnly Property ReaderResolver As IObjectMapperResolver
+        Public ReadOnly Property ReaderResolver As IMapperResolver
             Get
                 Return ReaderCache
             End Get
         End Property
-        Public ReadOnly Property WriterResolver As IObjectMapperResolver
+        Public ReadOnly Property WriterResolver As IMapperResolver
             Get
                 Return WriterCache
             End Get
@@ -115,7 +115,7 @@ Namespace Mapping
 
             Dim ReaderReference As New ReferenceMapperResolver
             ReaderCache = ReaderReference
-            ReaderProjectorResolverList = New LinkedList(Of IObjectProjectorResolver)({
+            ReaderProjectorResolverList = New LinkedList(Of IProjectorResolver)({
                 PrimitiveResolver,
                 New EnumResolver,
                 TranslatorResolver.Create(ReaderCache, New XElementToStringDomainTranslator),
@@ -128,14 +128,14 @@ Namespace Mapping
 
             Dim WriterReference As New ReferenceMapperResolver
             WriterCache = WriterReference
-            WriterProjectorResolverList = New LinkedList(Of IObjectProjectorResolver)({
+            WriterProjectorResolverList = New LinkedList(Of IProjectorResolver)({
                 PrimitiveResolver,
                 New EnumResolver,
                 TranslatorResolver.Create(WriterCache, New XElementToStringRangeTranslator),
                 New InheritanceResolver(WriterCache, ExternalTypes),
                 TranslatorResolver.Create(WriterCache, New XElementAggregatorToProjectorRangeTranslator)
             })
-            WriterAggregatorResolverList = New LinkedList(Of IObjectAggregatorResolver)({
+            WriterAggregatorResolverList = New LinkedList(Of IAggregatorResolver)({
                 New CollectionPackerTemplate(Of List(Of XElement))(New CollectionPacker(WriterCache)),
                 New RecordPackerTemplate(Of List(Of XElement))(New FieldOrPropertyAggregatorResolver(WriterCache)),
                 TranslatorResolver.Create(WriterCache, New XElementProjectorToAggregatorRangeTranslator)
@@ -194,7 +194,7 @@ Namespace Mapping
         End Function
 
         Private Class EnumResolver
-            Implements IObjectProjectorResolver
+            Implements IProjectorResolver
 
             Public Shared Function StringToEnum(Of R)(ByVal s As String) As R
                 Return DirectCast([Enum].Parse(GetType(R), s), R)
@@ -203,7 +203,7 @@ Namespace Mapping
                 Return v.ToString()
             End Function
 
-            Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
+            Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IProjectorResolver.TryResolveProjector
                 Dim DomainType = TypePair.Key
                 Dim RangeType = TypePair.Value
                 If DomainType Is GetType(String) AndAlso RangeType.IsEnum Then
@@ -240,8 +240,8 @@ Namespace Mapping
                 Return F
             End Function
 
-            Private InnerResolver As IObjectProjectorResolver
-            Public Sub New(ByVal Resolver As IObjectProjectorResolver)
+            Private InnerResolver As IProjectorResolver
+            Public Sub New(ByVal Resolver As IProjectorResolver)
                 Me.InnerResolver = Resolver.AsNoncircular
             End Sub
         End Class
@@ -259,8 +259,8 @@ Namespace Mapping
                 Return F
             End Function
 
-            Private InnerResolver As IObjectProjectorResolver
-            Public Sub New(ByVal Resolver As IObjectProjectorResolver)
+            Private InnerResolver As IProjectorResolver
+            Public Sub New(ByVal Resolver As IProjectorResolver)
                 Me.InnerResolver = Resolver.AsNoncircular
             End Sub
         End Class
@@ -362,8 +362,8 @@ Namespace Mapping
                 End If
             End Function
 
-            Private InnerResolver As IObjectProjectorResolver
-            Public Sub New(ByVal Resolver As IObjectProjectorResolver)
+            Private InnerResolver As IProjectorResolver
+            Public Sub New(ByVal Resolver As IProjectorResolver)
                 Me.InnerResolver = Resolver.AsNoncircular.AsCached
             End Sub
         End Class
@@ -395,14 +395,14 @@ Namespace Mapping
                 End If
             End Function
 
-            Private InnerResolver As IObjectProjectorResolver
-            Public Sub New(ByVal Resolver As IObjectProjectorResolver)
+            Private InnerResolver As IProjectorResolver
+            Public Sub New(ByVal Resolver As IProjectorResolver)
                 Me.InnerResolver = Resolver.AsNoncircular.AsCached
             End Sub
         End Class
 
         Private Class InheritanceResolver
-            Implements IObjectProjectorResolver
+            Implements IProjectorResolver
 
             Private Function ResolveRange(Of R)() As Func(Of XElement, R)
                 Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(XElement), GetType(R))), Func(Of XElement, R))
@@ -467,7 +467,7 @@ Namespace Mapping
             End Function
 
             Private ProjectorCache As New HashSet(Of KeyValuePair(Of Type, Type))
-            Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IObjectProjectorResolver.TryResolveProjector
+            Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IProjectorResolver.TryResolveProjector
                 Dim DomainType = TypePair.Key
                 Dim RangeType = TypePair.Value
                 If DomainType Is GetType(XElement) AndAlso RangeType.IsClass Then
@@ -495,9 +495,9 @@ Namespace Mapping
                 Return Nothing
             End Function
 
-            Private InnerResolver As IObjectProjectorResolver
+            Private InnerResolver As IProjectorResolver
             Private ExternalTypeDict As Dictionary(Of String, Type)
-            Public Sub New(ByVal Resolver As IObjectProjectorResolver, ByVal ExternalTypes As IEnumerable(Of Type))
+            Public Sub New(ByVal Resolver As IProjectorResolver, ByVal ExternalTypes As IEnumerable(Of Type))
                 Me.InnerResolver = Resolver.AsNoncircular.AsCached
                 Me.ExternalTypeDict = ExternalTypes.ToDictionary(Function(type) GetTypeFriendlyName(type), StringComparer.OrdinalIgnoreCase)
             End Sub
