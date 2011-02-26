@@ -3,7 +3,7 @@
 '  File:        BinarySerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 二进制序列化类
-'  Version:     2010.12.01.
+'  Version:     2011.02.26.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -40,9 +40,6 @@ Namespace Mapping
     ''' </remarks>
     Public Class BinarySerializer(Of TReadStream As IReadableStream, TWriteStream As IWritableStream)
         Private PrimitiveResolver As PrimitiveResolver
-        Private ReaderMapper As ObjectMapper
-        Private WriterMapper As ObjectMapper
-        Private CounterMapper As ObjectMapper
         Private ReaderCache As CachedResolver
         Private WriterCache As CachedResolver
         Private CounterCache As CachedResolver
@@ -145,9 +142,6 @@ Namespace Mapping
             For Each r In CounterAggregatorList
                 CounterResolverSet.AggregatorResolvers.AddLast(r)
             Next
-            ReaderMapper = New ObjectMapper(ReaderCache)
-            WriterMapper = New ObjectMapper(WriterCache)
-            CounterMapper = New ObjectMapper(CounterCache)
         End Sub
 
         Public Sub PutReader(Of T)(ByVal Reader As Func(Of TReadStream, T))
@@ -174,13 +168,13 @@ Namespace Mapping
         End Sub
 
         Public Function GetReader(Of T)() As Func(Of TReadStream, T)
-            Return ReaderMapper.GetProjector(Of TReadStream, T)()
+            Return ReaderCache.ResolveProjector(Of TReadStream, T)()
         End Function
         Public Function GetWriter(Of T)() As Action(Of T, TWriteStream)
-            Return WriterMapper.GetAggregator(Of T, TWriteStream)()
+            Return WriterCache.ResolveAggregator(Of T, TWriteStream)()
         End Function
         Public Function GetCounter(Of T)() As Func(Of T, Integer)
-            Return CounterMapper.GetProjector(Of T, Integer)()
+            Return CounterCache.ResolveProjector(Of T, Integer)()
         End Function
 
         Public Function Read(Of T)(ByVal s As TReadStream) As T
@@ -212,7 +206,7 @@ Namespace Mapping
                 If DomainType IsNot GetType(D) Then Return Nothing
                 If RangeType.IsEnum Then
                     Dim UnderlyingType = RangeType.GetEnumUnderlyingType
-                    Dim Mapper = AbsResolver.ResolveProjector(CreatePair(DomainType, UnderlyingType))
+                    Dim Mapper = InnerResolver.ResolveProjector(CreatePair(DomainType, UnderlyingType))
                     Dim dParam = Expression.Parameter(GetType(D), "Key")
 
                     Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
@@ -227,9 +221,9 @@ Namespace Mapping
                 Return Nothing
             End Function
 
-            Private AbsResolver As AbsoluteResolver
+            Private InnerResolver As IObjectMapperResolver
             Public Sub New(ByVal Resolver As IObjectMapperResolver)
-                Me.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver))
+                Me.InnerResolver = New NoncircularResolver(Resolver)
             End Sub
         End Class
 
@@ -242,7 +236,7 @@ Namespace Mapping
                 If RangeType IsNot GetType(R) Then Return Nothing
                 If DomainType.IsEnum Then
                     Dim UnderlyingType = DomainType.GetEnumUnderlyingType
-                    Dim Mapper = AbsResolver.ResolveAggregator(CreatePair(UnderlyingType, RangeType))
+                    Dim Mapper = InnerResolver.ResolveAggregator(CreatePair(UnderlyingType, RangeType))
                     Dim dParam = Expression.Parameter(DomainType, "Key")
                     Dim rParam = Expression.Parameter(GetType(R), "Value")
 
@@ -257,9 +251,9 @@ Namespace Mapping
                 Return Nothing
             End Function
 
-            Private AbsResolver As AbsoluteResolver
+            Private InnerResolver As IObjectMapperResolver
             Public Sub New(ByVal Resolver As IObjectMapperResolver)
-                Me.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver))
+                Me.InnerResolver = New NoncircularResolver(Resolver)
             End Sub
         End Class
 
@@ -267,8 +261,8 @@ Namespace Mapping
             Implements IGenericCollectionProjectorResolver(Of D)
 
             Public Function ResolveProjector(Of R, RCollection As {New, ICollection(Of R)})() As Func(Of D, RCollection) Implements IGenericCollectionProjectorResolver(Of D).ResolveProjector
-                Dim Mapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(D), GetType(R))), Func(Of D, R))
-                Dim IntMapper = DirectCast(AbsResolver.ResolveProjector(CreatePair(GetType(D), GetType(Integer))), Func(Of D, Integer))
+                Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(R))), Func(Of D, R))
+                Dim IntMapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(Integer))), Func(Of D, Integer))
                 Dim F =
                     Function(Key As D) As RCollection
                         Dim NumElement = IntMapper(Key)
@@ -281,9 +275,9 @@ Namespace Mapping
                 Return F
             End Function
 
-            Private AbsResolver As AbsoluteResolver
+            Private InnerResolver As IObjectMapperResolver
             Public Sub New(ByVal Resolver As IObjectMapperResolver)
-                Me.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver))
+                Me.InnerResolver = New NoncircularResolver(Resolver)
             End Sub
         End Class
 
@@ -291,8 +285,8 @@ Namespace Mapping
             Implements IGenericCollectionAggregatorResolver(Of R)
 
             Public Function ResolveAggregator(Of D, DCollection As ICollection(Of D))() As Action(Of DCollection, R) Implements IGenericCollectionAggregatorResolver(Of R).ResolveAggregator
-                Dim Mapper = DirectCast(AbsResolver.ResolveAggregator(CreatePair(GetType(D), GetType(R))), Action(Of D, R))
-                Dim IntMapper = DirectCast(AbsResolver.ResolveAggregator(CreatePair(GetType(Integer), GetType(R))), Action(Of Integer, R))
+                Dim Mapper = DirectCast(InnerResolver.ResolveAggregator(CreatePair(GetType(D), GetType(R))), Action(Of D, R))
+                Dim IntMapper = DirectCast(InnerResolver.ResolveAggregator(CreatePair(GetType(Integer), GetType(R))), Action(Of Integer, R))
                 Dim F =
                     Sub(c As DCollection, Value As R)
                         Dim NumElement = c.Count
@@ -304,9 +298,9 @@ Namespace Mapping
                 Return F
             End Function
 
-            Private AbsResolver As AbsoluteResolver
+            Private InnerResolver As IObjectMapperResolver
             Public Sub New(ByVal Resolver As IObjectMapperResolver)
-                Me.AbsResolver = New AbsoluteResolver(New NoncircularResolver(Resolver))
+                Me.InnerResolver = New NoncircularResolver(Resolver)
             End Sub
         End Class
 
@@ -314,24 +308,24 @@ Namespace Mapping
             Implements IFieldOrPropertyProjectorResolver(Of D)
 
             Public Function ResolveProjector(ByVal Info As FieldOrPropertyInfo) As [Delegate] Implements IFieldOrPropertyProjectorResolver(Of D).ResolveProjector
-                Return AbsResolver.ResolveProjector(CreatePair(GetType(D), Info.Type))
+                Return InnerResolver.ResolveProjector(CreatePair(GetType(D), Info.Type))
             End Function
 
-            Private AbsResolver As AbsoluteResolver
+            Private InnerResolver As IObjectMapperResolver
             Public Sub New(ByVal Resolver As IObjectMapperResolver)
-                Me.AbsResolver = New AbsoluteResolver(New CachedResolver(New NoncircularResolver(Resolver)))
+                Me.InnerResolver = New CachedResolver(New NoncircularResolver(Resolver))
             End Sub
         End Class
         Public Class FieldOrPropertyAggregatorResolver(Of R)
             Implements IFieldOrPropertyAggregatorResolver(Of R)
 
             Public Function ResolveAggregator(ByVal Info As FieldOrPropertyInfo) As [Delegate] Implements IFieldOrPropertyAggregatorResolver(Of R).ResolveAggregator
-                Return AbsResolver.ResolveAggregator(CreatePair(Info.Type, GetType(R)))
+                Return InnerResolver.ResolveAggregator(CreatePair(Info.Type, GetType(R)))
             End Function
 
-            Private AbsResolver As AbsoluteResolver
+            Private InnerResolver As IObjectMapperResolver
             Public Sub New(ByVal Resolver As IObjectMapperResolver)
-                Me.AbsResolver = New AbsoluteResolver(New CachedResolver(New NoncircularResolver(Resolver)))
+                Me.InnerResolver = New CachedResolver(New NoncircularResolver(Resolver))
             End Sub
         End Class
 
