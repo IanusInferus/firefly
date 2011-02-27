@@ -118,7 +118,7 @@ Public Module MappingTest
             Dim pr = New PrimitiveResolver
             Dim er = New Binary.EnumUnpacker(Of Integer)(mp)
             Dim cr = New CollectionUnpackerTemplate(Of Integer)(New GenericCollectionProjectorResolver(Of Integer)(mp))
-            Dim csr = New RecordUnpackerTemplate(Of Integer)(New Binary.FieldOrPropertyProjectorResolver(Of Integer)(mp))
+            Dim csr = New RecordUnpackerTemplate(Of Integer)(New FieldProjectorResolver(Of Integer)(mp), New TagProjectorResolver(Of Integer)(mp), New TupleElementProjectorResolver(Of Integer)(mp))
             Dim mprs As New List(Of IProjectorResolver) From {pr, er, cr, csr}
             pr.PutProjector(
                 Function(i As Integer) As Byte
@@ -162,7 +162,7 @@ Public Module MappingTest
             Dim pr = New PrimitiveResolver
             Dim er = New Binary.EnumPacker(Of Integer)(mp)
             Dim cr = New CollectionPackerTemplate(Of Integer)(New GenericListAggregatorResolver(Of Integer)(mp))
-            Dim csr = New RecordPackerTemplate(Of Integer)(New Binary.FieldOrPropertyAggregatorResolver(Of Integer)(mp))
+            Dim csr = New RecordPackerTemplate(Of Integer)(New FieldAggregatorResolver(Of Integer)(mp), New TagAggregatorResolver(Of Integer)(mp), New TupleElementAggregatorResolver(Of Integer)(mp))
             Dim mprs As New List(Of IAggregatorResolver) From {pr, er, cr, csr}
             pr.PutAggregator(
                 Sub(Key As Byte, Value As Integer)

@@ -3,7 +3,7 @@
 '  File:        BinarySerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 二进制序列化类
-'  Version:     2011.02.27.
+'  Version:     2011.02.28.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -168,7 +168,11 @@ Namespace Mapping.Binary
                 PrimitiveResolver,
                 New EnumUnpacker(Of TReadStream)(Root),
                 New CollectionUnpackerTemplate(Of TReadStream)(New GenericCollectionProjectorResolver(Of TReadStream)(Root)),
-                New RecordUnpackerTemplate(Of TReadStream)(New FieldOrPropertyProjectorResolver(Of TReadStream)(Root))
+                New RecordUnpackerTemplate(Of TReadStream)(
+                    New FieldProjectorResolver(Of TReadStream)(Root),
+                    New TagProjectorResolver(Of TReadStream)(Root),
+                    New TupleElementProjectorResolver(Of TReadStream)(Root)
+                )
             })
             Resolver = CreateMapper(ProjectorResolverList.Concatenated, EmptyAggregatorResolver)
         End Sub
@@ -217,7 +221,11 @@ Namespace Mapping.Binary
                 PrimitiveResolver,
                 New EnumPacker(Of TWriteStream)(Root),
                 New CollectionPackerTemplate(Of TWriteStream)(New GenericCollectionAggregatorResolver(Of TWriteStream)(Root)),
-                New RecordPackerTemplate(Of TWriteStream)(New FieldOrPropertyAggregatorResolver(Of TWriteStream)(Root))
+                New RecordPackerTemplate(Of TWriteStream)(
+                    New FieldAggregatorResolver(Of TWriteStream)(Root),
+                    New TagAggregatorResolver(Of TWriteStream)(Root),
+                    New TupleElementAggregatorResolver(Of TWriteStream)(Root)
+                )
             })
             Resolver = CreateMapper(EmptyProjectorResolver, AggregatorResolverList.Concatenated)
         End Sub
@@ -291,8 +299,12 @@ Namespace Mapping.Binary
             AggregatorResolverList = New LinkedList(Of IAggregatorResolver)({
                 New EnumPacker(Of CounterState)(Root),
                 New CollectionPackerTemplate(Of CounterState)(New GenericCollectionAggregatorResolver(Of CounterState)(Root)),
-                New RecordPackerTemplate(Of CounterState)(New FieldOrPropertyAggregatorResolver(Of CounterState)(Root)),
-                TranslatorResolver.Create(Root, New IntToCounterStateRangeTranslator)
+                New RecordPackerTemplate(Of CounterState)(
+                    New FieldAggregatorResolver(Of CounterState)(Root),
+                    New TagAggregatorResolver(Of CounterState)(Root),
+                    New TupleElementAggregatorResolver(Of CounterState)(Root)
+                ),
+            TranslatorResolver.Create(Root, New IntToCounterStateRangeTranslator)
             })
             Resolver = CreateMapper(ProjectorResolverList.Concatenated, AggregatorResolverList.Concatenated)
         End Sub
@@ -431,31 +443,6 @@ Namespace Mapping.Binary
         Private InnerResolver As IAggregatorResolver
         Public Sub New(ByVal Resolver As IAggregatorResolver)
             Me.InnerResolver = Resolver.AsNoncircular
-        End Sub
-    End Class
-
-    Public Class FieldOrPropertyProjectorResolver(Of D)
-        Implements IFieldOrPropertyProjectorResolver(Of D)
-
-        Public Function ResolveProjector(ByVal Info As FieldOrPropertyInfo) As [Delegate] Implements IFieldOrPropertyProjectorResolver(Of D).ResolveProjector
-            Return InnerResolver.ResolveProjector(CreatePair(GetType(D), Info.Type))
-        End Function
-
-        Private InnerResolver As IProjectorResolver
-        Public Sub New(ByVal Resolver As IProjectorResolver)
-            Me.InnerResolver = Resolver.AsNoncircular.AsCached
-        End Sub
-    End Class
-    Public Class FieldOrPropertyAggregatorResolver(Of R)
-        Implements IFieldOrPropertyAggregatorResolver(Of R)
-
-        Public Function ResolveAggregator(ByVal Info As FieldOrPropertyInfo) As [Delegate] Implements IFieldOrPropertyAggregatorResolver(Of R).ResolveAggregator
-            Return InnerResolver.ResolveAggregator(CreatePair(Info.Type, GetType(R)))
-        End Function
-
-        Private InnerResolver As IAggregatorResolver
-        Public Sub New(ByVal Resolver As IAggregatorResolver)
-            Me.InnerResolver = Resolver.AsNoncircular.AsCached
         End Sub
     End Class
 End Namespace
