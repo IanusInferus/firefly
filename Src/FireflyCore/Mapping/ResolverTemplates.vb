@@ -3,7 +3,7 @@
 '  File:        ResolverTemplates.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Object映射器解析器
-'  Version:     2011.02.27.
+'  Version:     2011.02.28.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -26,14 +26,34 @@ Namespace Mapping
         Function ResolveAggregator(Of D, DCollection As ICollection(Of D))() As Action(Of DCollection, R)
     End Interface
     ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
-    Public Interface IFieldOrPropertyProjectorResolver(Of D)
+    Public Interface IFieldProjectorResolver(Of D)
         ''' <returns>返回Func(Of ${DomainType}, ${FieldOrPropertyType})</returns>
-        Function ResolveProjector(ByVal Info As FieldOrPropertyInfo) As [Delegate]
+        Function ResolveProjector(ByVal Member As MemberInfo, ByVal Type As Type) As [Delegate]
     End Interface
     ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
-    Public Interface IFieldOrPropertyAggregatorResolver(Of R)
+    Public Interface IFieldAggregatorResolver(Of R)
         ''' <returns>返回Action(Of ${FieldOrPropertyType}, ${RangeType})</returns>
-        Function ResolveAggregator(ByVal Info As FieldOrPropertyInfo) As [Delegate]
+        Function ResolveAggregator(ByVal Member As MemberInfo, ByVal Type As Type) As [Delegate]
+    End Interface
+    ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
+    Public Interface ITagProjectorResolver(Of D)
+        ''' <returns>返回Func(Of ${DomainType}, ${TagType})</returns>
+        Function ResolveProjector(ByVal TagType As Type) As [Delegate]
+    End Interface
+    ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
+    Public Interface ITagAggregatorResolver(Of R)
+        ''' <returns>返回Action(Of ${TagType}, ${RangeType})</returns>
+        Function ResolveAggregator(ByVal TagType As Type) As [Delegate]
+    End Interface
+    ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
+    Public Interface ITupleElementProjectorResolver(Of D)
+        ''' <returns>返回Func(Of ${DomainType}, ${Type})</returns>
+        Function ResolveProjector(ByVal Index As Integer, ByVal Type As Type) As [Delegate]
+    End Interface
+    ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
+    Public Interface ITupleElementAggregatorResolver(Of R)
+        ''' <returns>返回Action(Of ${Type}, ${RangeType})</returns>
+        Function ResolveAggregator(ByVal Index As Integer, ByVal Type As Type) As [Delegate]
     End Interface
 
     <DebuggerNonUserCode()>
@@ -159,7 +179,6 @@ Namespace Mapping
             Me.Inner = Inner
         End Sub
     End Class
-
     <DebuggerNonUserCode()>
     Public Class CollectionPackerTemplate(Of R)
         Implements IAggregatorResolver
@@ -311,7 +330,7 @@ Namespace Mapping
                 Dim dParam = Expression.Parameter(DomainType, "Key")
                 Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
                 For Each Pair In FieldsAndProperties
-                    DelegateCalls.Add(CreatePair(Inner.ResolveProjector(Pair), New Expression() {dParam}))
+                    DelegateCalls.Add(CreatePair(FieldResolver.ResolveProjector(Pair.Member, Pair.Type), New Expression() {dParam}))
                 Next
                 Dim Context = CreateDelegateExpressionContext(DelegateCalls)
 
@@ -334,12 +353,15 @@ Namespace Mapping
             Return Nothing
         End Function
 
-        Private Inner As IFieldOrPropertyProjectorResolver(Of D)
-        Public Sub New(ByVal Inner As IFieldOrPropertyProjectorResolver(Of D))
-            Me.Inner = Inner
+        Private FieldResolver As IFieldProjectorResolver(Of D)
+        Private TagResolver As ITagProjectorResolver(Of D)
+        Private TupleElementResolver As ITupleElementProjectorResolver(Of D)
+        Public Sub New(ByVal FieldResolver As IFieldProjectorResolver(Of D), ByVal TagResolver As ITagProjectorResolver(Of D), ByVal TupleElementResolver As ITupleElementProjectorResolver(Of D))
+            Me.FieldResolver = FieldResolver
+            Me.TagResolver = TagResolver
+            Me.TupleElementResolver = TupleElementResolver
         End Sub
     End Class
-
     <DebuggerNonUserCode()>
     Public Class RecordPackerTemplate(Of R)
         Implements IAggregatorResolver
@@ -367,7 +389,7 @@ Namespace Mapping
                 Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
                 For Each Pair In FieldsAndProperties
                     Dim FieldOrPropertyExpr = CreateFieldOrPropertyExpression(dParam, Pair.Member)
-                    DelegateCalls.Add(CreatePair(Inner.ResolveAggregator(Pair), New Expression() {FieldOrPropertyExpr, rParam}))
+                    DelegateCalls.Add(CreatePair(FieldResolver.ResolveAggregator(Pair.Member, Pair.Type), New Expression() {FieldOrPropertyExpr, rParam}))
                 Next
                 Dim Context = CreateDelegateExpressionContext(DelegateCalls)
                 Dim Body As Expression
@@ -383,9 +405,94 @@ Namespace Mapping
             Return Nothing
         End Function
 
-        Private Inner As IFieldOrPropertyAggregatorResolver(Of R)
-        Public Sub New(ByVal Inner As IFieldOrPropertyAggregatorResolver(Of R))
-            Me.Inner = Inner
+        Private FieldResolver As IFieldAggregatorResolver(Of R)
+        Private TagResolver As ITagAggregatorResolver(Of R)
+        Private TupleElementResolver As ITupleElementAggregatorResolver(Of R)
+        Public Sub New(ByVal FieldResolver As IFieldAggregatorResolver(Of R), ByVal TagResolver As ITagAggregatorResolver(Of R), ByVal TupleElementResolver As ITupleElementAggregatorResolver(Of R))
+            Me.FieldResolver = FieldResolver
+            Me.TagResolver = TagResolver
+            Me.TupleElementResolver = TupleElementResolver
+        End Sub
+    End Class
+
+    <DebuggerNonUserCode()>
+    Public Class FieldProjectorResolver(Of D)
+        Implements IFieldProjectorResolver(Of D)
+
+        Public Function ResolveProjector(ByVal Member As MemberInfo, ByVal Type As Type) As [Delegate] Implements IFieldProjectorResolver(Of D).ResolveProjector
+            Return InnerResolver.ResolveProjector(CreatePair(GetType(D), Type))
+        End Function
+
+        Private InnerResolver As IProjectorResolver
+        Public Sub New(ByVal Resolver As IProjectorResolver)
+            Me.InnerResolver = Resolver.AsNoncircular
+        End Sub
+    End Class
+    <DebuggerNonUserCode()>
+    Public Class FieldAggregatorResolver(Of R)
+        Implements IFieldAggregatorResolver(Of R)
+
+        Public Function ResolveAggregator(ByVal Member As MemberInfo, ByVal Type As Type) As [Delegate] Implements IFieldAggregatorResolver(Of R).ResolveAggregator
+            Return InnerResolver.ResolveAggregator(CreatePair(Type, GetType(R)))
+        End Function
+
+        Private InnerResolver As IAggregatorResolver
+        Public Sub New(ByVal Resolver As IAggregatorResolver)
+            Me.InnerResolver = Resolver.AsNoncircular
+        End Sub
+    End Class
+
+    <DebuggerNonUserCode()>
+    Public Class TagProjectorResolver(Of D)
+        Implements ITagProjectorResolver(Of D)
+
+        Public Function ResolveProjector(ByVal TagType As Type) As [Delegate] Implements ITagProjectorResolver(Of D).ResolveProjector
+            Return InnerResolver.ResolveProjector(CreatePair(GetType(D), TagType))
+        End Function
+
+        Private InnerResolver As IProjectorResolver
+        Public Sub New(ByVal Resolver As IProjectorResolver)
+            Me.InnerResolver = Resolver.AsNoncircular
+        End Sub
+    End Class
+    <DebuggerNonUserCode()>
+    Public Class TagAggregatorResolver(Of R)
+        Implements ITagAggregatorResolver(Of R)
+
+        Public Function ResolveAggregator(ByVal TagType As Type) As [Delegate] Implements ITagAggregatorResolver(Of R).ResolveAggregator
+            Return InnerResolver.ResolveAggregator(CreatePair(TagType, GetType(R)))
+        End Function
+
+        Private InnerResolver As IAggregatorResolver
+        Public Sub New(ByVal Resolver As IAggregatorResolver)
+            Me.InnerResolver = Resolver.AsNoncircular
+        End Sub
+    End Class
+
+    <DebuggerNonUserCode()>
+    Public Class TupleElementProjectorResolver(Of D)
+        Implements ITupleElementProjectorResolver(Of D)
+
+        Public Function ResolveProjector(ByVal Index As Integer, ByVal Type As Type) As [Delegate] Implements ITupleElementProjectorResolver(Of D).ResolveProjector
+            Return InnerResolver.ResolveProjector(CreatePair(GetType(D), Type))
+        End Function
+
+        Private InnerResolver As IProjectorResolver
+        Public Sub New(ByVal Resolver As IProjectorResolver)
+            Me.InnerResolver = Resolver.AsNoncircular
+        End Sub
+    End Class
+    <DebuggerNonUserCode()>
+    Public Class TupleElementAggregatorResolver(Of R)
+        Implements ITupleElementAggregatorResolver(Of R)
+
+        Public Function ResolveAggregator(ByVal Index As Integer, ByVal Type As Type) As [Delegate] Implements ITupleElementAggregatorResolver(Of R).ResolveAggregator
+            Return InnerResolver.ResolveAggregator(CreatePair(Type, GetType(R)))
+        End Function
+
+        Private InnerResolver As IAggregatorResolver
+        Public Sub New(ByVal Resolver As IAggregatorResolver)
+            Me.InnerResolver = Resolver.AsNoncircular
         End Sub
     End Class
 End Namespace
