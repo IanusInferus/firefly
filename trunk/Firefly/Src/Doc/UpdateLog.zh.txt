@@ -1,4 +1,8 @@
-﻿2011.02.27
+﻿2011.02.28
+Firefly.Core.Mapping:
+按照新增元类型调整BinarySerializer和XmlSerializer的代码。
+
+2011.02.27
 Firefly.Core.Mapping:
 删除ObjectMapper类，改为使用接口和扩展方法。
 调整代码结构，强化接口。
