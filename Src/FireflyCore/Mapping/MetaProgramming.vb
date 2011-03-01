@@ -3,7 +3,7 @@
 '  File:        MetaProgramming.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 元编程
-'  Version:     2011.02.10.
+'  Version:     2011.03.01.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -16,6 +16,7 @@ Imports System.Linq.Expressions
 Imports System.Reflection
 Imports System.Runtime.CompilerServices
 Imports System.Diagnostics
+Imports Firefly.Mapping.MetaSchema
 
 Namespace Mapping
     Public Class DummyType
@@ -39,6 +40,16 @@ Namespace Mapping
             Public Constructor As ConstructorInfo
         End Class
         Public Class MutableRecordInfo
+            Public Members As FieldOrPropertyInfo()
+        End Class
+        Public Class MutableAliasInfo
+            Public Member As FieldOrPropertyInfo
+        End Class
+        Public Class MutableTaggedUnionInfo
+            Public TagMember As FieldOrPropertyInfo
+            Public Members As FieldOrPropertyInfo()
+        End Class
+        Public Class MutableTupleInfo
             Public Members As FieldOrPropertyInfo()
         End Class
         ''' <remarks>
@@ -101,6 +112,36 @@ Namespace Mapping
             End If
 
             Return New MutableRecordInfo With {.Members = FieldsAndProperties}
+        End Function
+
+        <Extension()> Public Function TryGetMutableAliasInfo(ByVal Type As Type) As MutableAliasInfo
+            If Type.GetCustomAttributes(GetType(AliasAttribute), False).Length = 0 Then Return Nothing
+
+            Dim Info = Type.TryGetMutableRecordInfo()
+            If Info.Members.Length <> 1 Then Return Nothing
+            Return New MutableAliasInfo With {.Member = Info.Members.Single}
+        End Function
+
+        <Extension()> Public Function TryGetMutableTaggedUnionInfo(ByVal Type As Type) As MutableTaggedUnionInfo
+            If Type.GetCustomAttributes(GetType(TaggedUnionAttribute), False).Length = 0 Then Return Nothing
+
+            Dim Info = Type.TryGetMutableRecordInfo()
+            Dim TagMembers = Info.Members.Where(Function(m) m.Member.GetCustomAttributes(GetType(TagAttribute), False).Length > 0).ToArray()
+            If TagMembers.Length <> 1 Then Return Nothing
+            Dim TagMember = TagMembers.Single
+            If Not TagMember.Type.IsEnum Then Return Nothing
+            Dim NumTag = TagMember.Type.GetEnumNames.Length
+            Dim Members = Info.Members.Except({TagMember}).ToArray()
+            If NumTag <> Members.Length Then Return Nothing
+
+            Return New MutableTaggedUnionInfo With {.TagMember = TagMember, .Members = Members}
+        End Function
+
+        <Extension()> Public Function TryGetMutableTupleInfo(ByVal Type As Type) As MutableTupleInfo
+            If Type.GetCustomAttributes(GetType(TupleAttribute), False).Length = 0 Then Return Nothing
+
+            Dim Info = Type.TryGetMutableRecordInfo()
+            Return New MutableTupleInfo With {.Members = Info.Members}
         End Function
 
         <Extension()> Public Function MakeArrayTypeFromRank(ByVal ElementType As Type, ByVal n As Integer) As Type

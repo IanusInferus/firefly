@@ -118,7 +118,7 @@ Public Module MappingTest
             Dim pr = New PrimitiveResolver
             Dim er = New Binary.EnumUnpacker(Of Integer)(mp)
             Dim cr = New CollectionUnpackerTemplate(Of Integer)(New GenericCollectionProjectorResolver(Of Integer)(mp))
-            Dim csr = New RecordUnpackerTemplate(Of Integer)(New FieldProjectorResolver(Of Integer)(mp), New TagProjectorResolver(Of Integer)(mp), New TupleElementProjectorResolver(Of Integer)(mp))
+            Dim csr = New RecordUnpackerTemplate(Of Integer)(New FieldProjectorResolver(Of Integer)(mp), New AliasFieldProjectorResolver(Of Integer)(mp), New TagProjectorResolver(Of Integer)(mp), New TupleElementProjectorResolver(Of Integer)(mp))
             Dim mprs As New List(Of IProjectorResolver) From {pr, er, cr, csr}
             pr.PutProjector(
                 Function(i As Integer) As Byte
@@ -162,7 +162,7 @@ Public Module MappingTest
             Dim pr = New PrimitiveResolver
             Dim er = New Binary.EnumPacker(Of Integer)(mp)
             Dim cr = New CollectionPackerTemplate(Of Integer)(New GenericListAggregatorResolver(Of Integer)(mp))
-            Dim csr = New RecordPackerTemplate(Of Integer)(New FieldAggregatorResolver(Of Integer)(mp), New TagAggregatorResolver(Of Integer)(mp), New TupleElementAggregatorResolver(Of Integer)(mp))
+            Dim csr = New RecordPackerTemplate(Of Integer)(New FieldAggregatorResolver(Of Integer)(mp), New AliasFieldAggregatorResolver(Of Integer)(mp), New TagAggregatorResolver(Of Integer)(mp), New TupleElementAggregatorResolver(Of Integer)(mp))
             Dim mprs As New List(Of IAggregatorResolver) From {pr, er, cr, csr}
             pr.PutAggregator(
                 Sub(Key As Byte, Value As Integer)
@@ -519,6 +519,105 @@ Public Module MappingTest
         End With
     End Sub
 
+    <MetaSchema.Alias()> Public Class AliasObject
+        Public i As Integer = 3
+        Public Shared Operator =(ByVal Left As AliasObject, ByVal Right As AliasObject) As Boolean
+            Return Left.i = Right.i
+        End Operator
+        Public Shared Operator <>(ByVal Left As AliasObject, ByVal Right As AliasObject) As Boolean
+            Return Not (Left = Right)
+        End Operator
+    End Class
+
+    Public Enum TaggedUnionTag
+        Item1
+        Item2
+        Item3
+    End Enum
+    <MetaSchema.TaggedUnion()> Public Class TaggedUnionObject
+        <MetaSchema.Tag()> Public _Tag As TaggedUnionTag = TaggedUnionTag.Item3
+        Public Item1 As Integer = 1
+        Public Item2 As Integer = 2
+        Public Item3 As Byte = 3
+        Public Shared Operator =(ByVal Left As TaggedUnionObject, ByVal Right As TaggedUnionObject) As Boolean
+            Return Left._Tag = Right._Tag AndAlso Left.Item1 = Right.Item1 AndAlso Left.Item2 = Right.Item2 AndAlso Left.Item3 = Right.Item3
+        End Operator
+        Public Shared Operator <>(ByVal Left As TaggedUnionObject, ByVal Right As TaggedUnionObject) As Boolean
+            Return Not (Left = Right)
+        End Operator
+    End Class
+
+    <MetaSchema.Tuple()> Public Class TupleObject
+        Public Item1 As Integer = 1
+        Public Item2 As Integer = 2
+        Public Item3 As Byte = 3
+        Public Shared Operator =(ByVal Left As TupleObject, ByVal Right As TupleObject) As Boolean
+            Return Left.Item1 = Right.Item1 AndAlso Left.Item2 = Right.Item2 AndAlso Left.Item3 = Right.Item3
+        End Operator
+        Public Shared Operator <>(ByVal Left As TupleObject, ByVal Right As TupleObject) As Boolean
+            Return Not (Left = Right)
+        End Operator
+    End Class
+
+    Public Sub TestAlias()
+        Using s = Streams.CreateMemoryStream
+            Dim bs As New Binary.BinarySerializer
+            Dim xs As New XmlSerializer
+
+            Dim a1 As New AliasObject
+            Dim a2 As AliasObject
+
+            bs.Write(s, a1)
+            s.Position = 0
+            a2 = bs.Read(Of AliasObject)(s)
+            Assert(a1 = a2)
+
+            Dim x = xs.Write(a1)
+            Dim a3 = xs.Read(Of AliasObject)(x)
+            Assert(a1 = a3)
+        End Using
+    End Sub
+
+    Public Sub TestTaggedUnion()
+        Using s = Streams.CreateMemoryStream
+            Dim bs As New Binary.BinarySerializer
+            Dim xs As New XmlSerializer
+
+            Dim a1 As New TaggedUnionObject
+            Dim a2 As TaggedUnionObject
+
+            bs.Write(s, a1)
+            Assert(s.Length = 5)
+
+            s.Position = 0
+            a2 = bs.Read(Of TaggedUnionObject)(s)
+            Assert(a1 = a2)
+
+            Dim x = xs.Write(a1)
+            Dim a3 = xs.Read(Of TaggedUnionObject)(x)
+            Assert(a1 = a3)
+        End Using
+    End Sub
+
+    Public Sub TestTuple()
+        Using s = Streams.CreateMemoryStream
+            Dim bs As New Binary.BinarySerializer
+            Dim xs As New XmlSerializer
+
+            Dim a1 As New TupleObject
+            Dim a2 As TupleObject
+
+            bs.Write(s, a1)
+            s.Position = 0
+            a2 = bs.Read(Of TupleObject)(s)
+            Assert(a1 = a2)
+
+            Dim x = xs.Write(a1)
+            Dim a3 = xs.Read(Of TupleObject)(x)
+            Assert(a1 = a3)
+        End Using
+    End Sub
+
     Public Sub TestMapping()
         TestMetaProgramming()
         TestObjectTreeMapper()
@@ -526,5 +625,8 @@ Public Module MappingTest
         TestXmlSerializer()
         TestXmlSerializerForDict()
         TestXmlSerializerCompatibility()
+        TestAlias()
+        TestTaggedUnion()
+        TestTuple()
     End Sub
 End Module
