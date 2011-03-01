@@ -3,7 +3,7 @@
 '  File:        ResolverTemplates.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Object映射器解析器
-'  Version:     2011.02.28.
+'  Version:     2011.03.02.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -36,24 +36,34 @@ Namespace Mapping
         Function ResolveAggregator(ByVal Member As MemberInfo, ByVal Type As Type) As [Delegate]
     End Interface
     ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
+    Public Interface IAliasFieldProjectorResolver(Of D)
+        ''' <returns>返回Func(Of ${DomainType}, ${FieldOrPropertyType})</returns>
+        Function ResolveProjector(ByVal Member As MemberInfo, ByVal Type As Type) As [Delegate]
+    End Interface
+    ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
+    Public Interface IAliasFieldAggregatorResolver(Of R)
+        ''' <returns>返回Action(Of ${FieldOrPropertyType}, ${RangeType})</returns>
+        Function ResolveAggregator(ByVal Member As MemberInfo, ByVal Type As Type) As [Delegate]
+    End Interface
+    ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
     Public Interface ITagProjectorResolver(Of D)
         ''' <returns>返回Func(Of ${DomainType}, ${TagType})</returns>
-        Function ResolveProjector(ByVal TagType As Type) As [Delegate]
+        Function ResolveProjector(ByVal Member As MemberInfo, ByVal TagType As Type) As [Delegate]
     End Interface
     ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
     Public Interface ITagAggregatorResolver(Of R)
         ''' <returns>返回Action(Of ${TagType}, ${RangeType})</returns>
-        Function ResolveAggregator(ByVal TagType As Type) As [Delegate]
+        Function ResolveAggregator(ByVal Member As MemberInfo, ByVal TagType As Type) As [Delegate]
     End Interface
     ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
     Public Interface ITupleElementProjectorResolver(Of D)
         ''' <returns>返回Func(Of ${DomainType}, ${Type})</returns>
-        Function ResolveProjector(ByVal Index As Integer, ByVal Type As Type) As [Delegate]
+        Function ResolveProjector(ByVal Member As MemberInfo, ByVal Index As Integer, ByVal Type As Type) As [Delegate]
     End Interface
     ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
     Public Interface ITupleElementAggregatorResolver(Of R)
         ''' <returns>返回Action(Of ${Type}, ${RangeType})</returns>
-        Function ResolveAggregator(ByVal Index As Integer, ByVal Type As Type) As [Delegate]
+        Function ResolveAggregator(ByVal Member As MemberInfo, ByVal Index As Integer, ByVal Type As Type) As [Delegate]
     End Interface
 
     <DebuggerNonUserCode()>
@@ -253,7 +263,7 @@ Namespace Mapping
             PutGenericCollectionMapper(DirectCast(GenericMapper, [Delegate]))
         End Sub
 
-        Public Overridable Function TryGetArrayMapperGenerator(ByVal Dimension As Integer) As Func(Of Type, [Delegate])
+        Public Function TryGetArrayMapperGenerator(ByVal Dimension As Integer) As Func(Of Type, [Delegate])
             If Not ArrayMapperGeneratorCache.ContainsKey(Dimension) Then
                 If Dimension <> 1 Then Return Nothing
                 Dim m = DirectCast(AddressOf ArrayToList(Of DummyType), Func(Of Action(Of DummyType(), R)))
@@ -262,7 +272,7 @@ Namespace Mapping
             End If
             Return ArrayMapperGeneratorCache(Dimension)
         End Function
-        Public Overridable Function TryGetCollectionMapperGenerator(ByVal CollectionType As Type) As Func(Of Type(), [Delegate])
+        Public Function TryGetCollectionMapperGenerator(ByVal CollectionType As Type) As Func(Of Type(), [Delegate])
             If Not CollectionMapperGeneratorCache.ContainsKey(CollectionType) Then
                 If Not CollectionType.IsProperCollectionType() Then Throw New ArgumentException
                 If Not CollectionType.IsGenericTypeDefinition Then Throw New ArgumentException
@@ -311,6 +321,132 @@ Namespace Mapping
             Dim DomainType = TypePair.Key
             Dim RangeType = TypePair.Value
             If DomainType IsNot GetType(D) Then Return Nothing
+            With Nothing
+                Dim d = TryResolveAlias(TypePair)
+                If d IsNot Nothing Then Return d
+            End With
+            With Nothing
+                Dim d = TryResolveTaggedUnion(TypePair)
+                If d IsNot Nothing Then Return d
+            End With
+            With Nothing
+                Dim d = TryResolveTuple(TypePair)
+                If d IsNot Nothing Then Return d
+            End With
+            With Nothing
+                Dim d = TryResolveRecord(TypePair)
+                If d IsNot Nothing Then Return d
+            End With
+            Return Nothing
+        End Function
+
+        Private Function TryResolveAlias(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate]
+            Dim DomainType = TypePair.Key
+            Dim RangeType = TypePair.Value
+            If RangeType.IsValueType OrElse RangeType.IsClass Then
+                Dim FieldsAndProperties As FieldOrPropertyInfo() = Nothing
+                If FieldsAndProperties Is Nothing Then
+                    Dim mri = RangeType.TryGetMutableAliasInfo()
+                    If mri IsNot Nothing Then FieldsAndProperties = {mri.Member}
+                End If
+                If FieldsAndProperties Is Nothing Then Return Nothing
+
+                Dim dParam = Expression.Parameter(DomainType, "Key")
+                Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
+                For Each Pair In FieldsAndProperties
+                    DelegateCalls.Add(CreatePair(AliasFieldResolver.ResolveProjector(Pair.Member, Pair.Type), New Expression() {dParam}))
+                Next
+                Dim Context = CreateDelegateExpressionContext(DelegateCalls)
+
+                Dim CreateThis = Expression.[New](RangeType)
+                Dim MemberBindings As New List(Of MemberBinding)
+                For Each Pair In FieldsAndProperties.ZipStrict(Context.DelegateExpressions, Function(m, e) New With {.Member = m.Member, .MapperCall = e})
+                    MemberBindings.Add(Expression.Bind(Pair.Member, Pair.MapperCall))
+                Next
+                Dim FunctionLambda = Expression.Lambda(Expression.MemberInit(CreateThis, MemberBindings.ToArray()), New ParameterExpression() {dParam})
+
+                Return CreateDelegate(Context.ClosureParam, Context.Closure, FunctionLambda)
+            End If
+            Return Nothing
+        End Function
+
+        Private Function TryResolveTaggedUnion(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate]
+            Dim DomainType = TypePair.Key
+            Dim RangeType = TypePair.Value
+            If RangeType.IsValueType OrElse RangeType.IsClass Then
+                Dim FieldsAndProperties As FieldOrPropertyInfo() = Nothing
+                Dim TagMember As FieldOrPropertyInfo = Nothing
+                If FieldsAndProperties Is Nothing Then
+                    Dim mri = RangeType.TryGetMutableTaggedUnionInfo()
+                    If mri IsNot Nothing Then
+                        FieldsAndProperties = mri.Members
+                        TagMember = mri.TagMember
+                    End If
+                End If
+                If FieldsAndProperties Is Nothing Then Return Nothing
+
+                Dim dParam = Expression.Parameter(DomainType, "Key")
+                Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
+                DelegateCalls.Add(CreatePair(TagResolver.ResolveProjector(TagMember.Member, TagMember.Type), New Expression() {dParam}))
+                For Each Pair In FieldsAndProperties
+                    DelegateCalls.Add(CreatePair(FieldResolver.ResolveProjector(Pair.Member, Pair.Type), New Expression() {dParam}))
+                Next
+                Dim Context = CreateDelegateExpressionContext(DelegateCalls)
+
+                Dim CreateThis = Expression.[New](RangeType)
+                Dim Cases As New List(Of SwitchCase)
+                Dim n = 0
+                Dim EnumValues = TagMember.Type.GetEnumValues
+                For Each Pair In FieldsAndProperties.ZipStrict(Context.DelegateExpressions.Skip(1), Function(m, e) New With {.Member = m.Member, .MapperCall = e})
+                    Dim EnumValue = Expression.Constant(EnumValues.GetValue(n), TagMember.Type)
+                    Dim Init = Expression.MemberInit(CreateThis, {Expression.Bind(TagMember.Member, EnumValue), Expression.Bind(Pair.Member, Pair.MapperCall)})
+                    Cases.Add(Expression.SwitchCase(Init, EnumValue))
+                    n += 1
+                Next
+                Dim DefaultCase = Expression.Block(Expression.Throw(Expression.[New](GetType(InvalidOperationException))), CreateThis)
+                Dim SelectCase = Expression.Switch(Context.DelegateExpressions(0), DefaultCase, Cases.ToArray())
+                Dim FunctionLambda = Expression.Lambda(SelectCase, New ParameterExpression() {dParam})
+
+                Return CreateDelegate(Context.ClosureParam, Context.Closure, FunctionLambda)
+            End If
+            Return Nothing
+        End Function
+
+        Private Function TryResolveTuple(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate]
+            Dim DomainType = TypePair.Key
+            Dim RangeType = TypePair.Value
+            If RangeType.IsValueType OrElse RangeType.IsClass Then
+                Dim FieldsAndProperties As FieldOrPropertyInfo() = Nothing
+                If FieldsAndProperties Is Nothing Then
+                    Dim mri = RangeType.TryGetMutableTupleInfo()
+                    If mri IsNot Nothing Then FieldsAndProperties = mri.Members
+                End If
+                If FieldsAndProperties Is Nothing Then Return Nothing
+
+                Dim dParam = Expression.Parameter(DomainType, "Key")
+                Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
+                Dim n = 0
+                For Each Pair In FieldsAndProperties
+                    DelegateCalls.Add(CreatePair(TupleElementResolver.ResolveProjector(Pair.Member, n, Pair.Type), New Expression() {dParam}))
+                    n += 1
+                Next
+                Dim Context = CreateDelegateExpressionContext(DelegateCalls)
+
+                Dim CreateThis = Expression.[New](RangeType)
+                Dim MemberBindings As New List(Of MemberBinding)
+                For Each Pair In FieldsAndProperties.ZipStrict(Context.DelegateExpressions, Function(m, e) New With {.Member = m.Member, .MapperCall = e})
+                    MemberBindings.Add(Expression.Bind(Pair.Member, Pair.MapperCall))
+                Next
+                Dim FunctionLambda = Expression.Lambda(Expression.MemberInit(CreateThis, MemberBindings.ToArray()), New ParameterExpression() {dParam})
+
+                Return CreateDelegate(Context.ClosureParam, Context.Closure, FunctionLambda)
+            End If
+            Return Nothing
+        End Function
+
+        Private Function TryResolveRecord(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate]
+            Dim DomainType = TypePair.Key
+            Dim RangeType = TypePair.Value
             If RangeType.IsValueType OrElse RangeType.IsClass Then
                 Dim FieldsAndProperties As FieldOrPropertyInfo() = Nothing
                 Dim Constructor As ConstructorInfo = Nothing
@@ -354,10 +490,12 @@ Namespace Mapping
         End Function
 
         Private FieldResolver As IFieldProjectorResolver(Of D)
+        Private AliasFieldResolver As IAliasFieldProjectorResolver(Of D)
         Private TagResolver As ITagProjectorResolver(Of D)
         Private TupleElementResolver As ITupleElementProjectorResolver(Of D)
-        Public Sub New(ByVal FieldResolver As IFieldProjectorResolver(Of D), ByVal TagResolver As ITagProjectorResolver(Of D), ByVal TupleElementResolver As ITupleElementProjectorResolver(Of D))
+        Public Sub New(ByVal FieldResolver As IFieldProjectorResolver(Of D), ByVal AliasFieldResolver As IAliasFieldProjectorResolver(Of D), ByVal TagResolver As ITagProjectorResolver(Of D), ByVal TupleElementResolver As ITupleElementProjectorResolver(Of D))
             Me.FieldResolver = FieldResolver
+            Me.AliasFieldResolver = AliasFieldResolver
             Me.TagResolver = TagResolver
             Me.TupleElementResolver = TupleElementResolver
         End Sub
@@ -370,6 +508,141 @@ Namespace Mapping
             Dim DomainType = TypePair.Key
             Dim RangeType = TypePair.Value
             If RangeType IsNot GetType(R) Then Return Nothing
+            With Nothing
+                Dim d = TryResolveAlias(TypePair)
+                If d IsNot Nothing Then Return d
+            End With
+            With Nothing
+                Dim d = TryResolveTaggedUnion(TypePair)
+                If d IsNot Nothing Then Return d
+            End With
+            With Nothing
+                Dim d = TryResolveTuple(TypePair)
+                If d IsNot Nothing Then Return d
+            End With
+            With Nothing
+                Dim d = TryResolveRecord(TypePair)
+                If d IsNot Nothing Then Return d
+            End With
+            Return Nothing
+        End Function
+
+        Private Function TryResolveAlias(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate]
+            Dim DomainType = TypePair.Key
+            Dim RangeType = TypePair.Value
+            If DomainType.IsValueType OrElse DomainType.IsClass Then
+                If Not (DomainType.IsValueType OrElse DomainType.IsClass) Then Return Nothing
+
+                Dim FieldsAndProperties As FieldOrPropertyInfo() = Nothing
+                If FieldsAndProperties Is Nothing Then
+                    Dim mri = DomainType.TryGetMutableAliasInfo()
+                    If mri IsNot Nothing Then FieldsAndProperties = {mri.Member}
+                End If
+                If FieldsAndProperties Is Nothing Then Return Nothing
+
+                Dim dParam = Expression.Parameter(DomainType, "Key")
+                Dim rParam = Expression.Parameter(RangeType, "Value")
+                Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
+                For Each Pair In FieldsAndProperties
+                    Dim FieldOrPropertyExpr = CreateFieldOrPropertyExpression(dParam, Pair.Member)
+                    DelegateCalls.Add(CreatePair(AliasFieldResolver.ResolveAggregator(Pair.Member, Pair.Type), New Expression() {FieldOrPropertyExpr, rParam}))
+                Next
+                Dim Context = CreateDelegateExpressionContext(DelegateCalls)
+                Dim Body As Expression
+                If DelegateCalls.Count > 0 Then
+                    Body = Expression.Block(Context.DelegateExpressions)
+                Else
+                    Body = Expression.Empty
+                End If
+                Dim FunctionLambda = Expression.Lambda(GetType(Action(Of ,)).MakeGenericType(DomainType, RangeType), Body, New ParameterExpression() {dParam, rParam})
+
+                Return CreateDelegate(Context.ClosureParam, Context.Closure, FunctionLambda)
+            End If
+            Return Nothing
+        End Function
+
+        Private Function TryResolveTaggedUnion(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate]
+            Dim DomainType = TypePair.Key
+            Dim RangeType = TypePair.Value
+            If DomainType.IsValueType OrElse DomainType.IsClass Then
+                If Not (DomainType.IsValueType OrElse DomainType.IsClass) Then Return Nothing
+
+                Dim FieldsAndProperties As FieldOrPropertyInfo() = Nothing
+                Dim TagMember As FieldOrPropertyInfo = Nothing
+                If FieldsAndProperties Is Nothing Then
+                    Dim mri = DomainType.TryGetMutableTaggedUnionInfo()
+                    If mri IsNot Nothing Then
+                        FieldsAndProperties = mri.Members
+                        TagMember = mri.TagMember
+                    End If
+                End If
+                If FieldsAndProperties Is Nothing Then Return Nothing
+
+                Dim dParam = Expression.Parameter(DomainType, "Key")
+                Dim rParam = Expression.Parameter(RangeType, "Value")
+                Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
+                Dim TagMemberExpr = CreateFieldOrPropertyExpression(dParam, TagMember.Member)
+                DelegateCalls.Add(CreatePair(TagResolver.ResolveAggregator(TagMember.Member, TagMember.Type), New Expression() {TagMemberExpr, rParam}))
+                For Each Pair In FieldsAndProperties
+                    Dim FieldOrPropertyExpr = CreateFieldOrPropertyExpression(dParam, Pair.Member)
+                    DelegateCalls.Add(CreatePair(FieldResolver.ResolveAggregator(Pair.Member, Pair.Type), New Expression() {FieldOrPropertyExpr, rParam}))
+                Next
+                Dim Context = CreateDelegateExpressionContext(DelegateCalls)
+                Dim Cases As New List(Of SwitchCase)
+                Dim n = 0
+                Dim EnumValues = TagMember.Type.GetEnumValues
+                For Each Pair In FieldsAndProperties.ZipStrict(Context.DelegateExpressions.Skip(1), Function(m, e) New With {.Member = m.Member, .MapperCall = e})
+                    Dim EnumValue = Expression.Constant(EnumValues.GetValue(n), TagMember.Type)
+                    Cases.Add(Expression.SwitchCase(Pair.MapperCall, EnumValue))
+                    n += 1
+                Next
+                Dim Body = Expression.Block(Context.DelegateExpressions(0), Expression.Switch(CreateFieldOrPropertyExpression(dParam, TagMember.Member), Cases.ToArray()))
+                Dim FunctionLambda = Expression.Lambda(GetType(Action(Of ,)).MakeGenericType(DomainType, RangeType), Body, New ParameterExpression() {dParam, rParam})
+
+                Return CreateDelegate(Context.ClosureParam, Context.Closure, FunctionLambda)
+            End If
+            Return Nothing
+        End Function
+
+        Private Function TryResolveTuple(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate]
+            Dim DomainType = TypePair.Key
+            Dim RangeType = TypePair.Value
+            If DomainType.IsValueType OrElse DomainType.IsClass Then
+                If Not (DomainType.IsValueType OrElse DomainType.IsClass) Then Return Nothing
+
+                Dim FieldsAndProperties As FieldOrPropertyInfo() = Nothing
+                If FieldsAndProperties Is Nothing Then
+                    Dim mri = DomainType.TryGetMutableTupleInfo()
+                    If mri IsNot Nothing Then FieldsAndProperties = mri.Members
+                End If
+                If FieldsAndProperties Is Nothing Then Return Nothing
+
+                Dim dParam = Expression.Parameter(DomainType, "Key")
+                Dim rParam = Expression.Parameter(RangeType, "Value")
+                Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
+                Dim n = 0
+                For Each Pair In FieldsAndProperties
+                    Dim FieldOrPropertyExpr = CreateFieldOrPropertyExpression(dParam, Pair.Member)
+                    DelegateCalls.Add(CreatePair(TupleElementResolver.ResolveAggregator(Pair.Member, n, Pair.Type), New Expression() {FieldOrPropertyExpr, rParam}))
+                    n += 1
+                Next
+                Dim Context = CreateDelegateExpressionContext(DelegateCalls)
+                Dim Body As Expression
+                If DelegateCalls.Count > 0 Then
+                    Body = Expression.Block(Context.DelegateExpressions)
+                Else
+                    Body = Expression.Empty
+                End If
+                Dim FunctionLambda = Expression.Lambda(GetType(Action(Of ,)).MakeGenericType(DomainType, RangeType), Body, New ParameterExpression() {dParam, rParam})
+
+                Return CreateDelegate(Context.ClosureParam, Context.Closure, FunctionLambda)
+            End If
+            Return Nothing
+        End Function
+
+        Private Function TryResolveRecord(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate]
+            Dim DomainType = TypePair.Key
+            Dim RangeType = TypePair.Value
             If DomainType.IsValueType OrElse DomainType.IsClass Then
                 If Not (DomainType.IsValueType OrElse DomainType.IsClass) Then Return Nothing
 
@@ -406,10 +679,12 @@ Namespace Mapping
         End Function
 
         Private FieldResolver As IFieldAggregatorResolver(Of R)
+        Private AliasFieldResolver As IAliasFieldAggregatorResolver(Of R)
         Private TagResolver As ITagAggregatorResolver(Of R)
         Private TupleElementResolver As ITupleElementAggregatorResolver(Of R)
-        Public Sub New(ByVal FieldResolver As IFieldAggregatorResolver(Of R), ByVal TagResolver As ITagAggregatorResolver(Of R), ByVal TupleElementResolver As ITupleElementAggregatorResolver(Of R))
+        Public Sub New(ByVal FieldResolver As IFieldAggregatorResolver(Of R), ByVal AliasFieldResolver As IAliasFieldAggregatorResolver(Of R), ByVal TagResolver As ITagAggregatorResolver(Of R), ByVal TupleElementResolver As ITupleElementAggregatorResolver(Of R))
             Me.FieldResolver = FieldResolver
+            Me.AliasFieldResolver = AliasFieldResolver
             Me.TagResolver = TagResolver
             Me.TupleElementResolver = TupleElementResolver
         End Sub
@@ -443,10 +718,37 @@ Namespace Mapping
     End Class
 
     <DebuggerNonUserCode()>
+    Public Class AliasFieldProjectorResolver(Of D)
+        Implements IAliasFieldProjectorResolver(Of D)
+
+        Public Function ResolveProjector(ByVal Member As MemberInfo, ByVal Type As Type) As [Delegate] Implements IAliasFieldProjectorResolver(Of D).ResolveProjector
+            Return InnerResolver.ResolveProjector(CreatePair(GetType(D), Type))
+        End Function
+
+        Private InnerResolver As IProjectorResolver
+        Public Sub New(ByVal Resolver As IProjectorResolver)
+            Me.InnerResolver = Resolver.AsNoncircular
+        End Sub
+    End Class
+    <DebuggerNonUserCode()>
+    Public Class AliasFieldAggregatorResolver(Of R)
+        Implements IAliasFieldAggregatorResolver(Of R)
+
+        Public Function ResolveAggregator(ByVal Member As MemberInfo, ByVal Type As Type) As [Delegate] Implements IAliasFieldAggregatorResolver(Of R).ResolveAggregator
+            Return InnerResolver.ResolveAggregator(CreatePair(Type, GetType(R)))
+        End Function
+
+        Private InnerResolver As IAggregatorResolver
+        Public Sub New(ByVal Resolver As IAggregatorResolver)
+            Me.InnerResolver = Resolver.AsNoncircular
+        End Sub
+    End Class
+
+    <DebuggerNonUserCode()>
     Public Class TagProjectorResolver(Of D)
         Implements ITagProjectorResolver(Of D)
 
-        Public Function ResolveProjector(ByVal TagType As Type) As [Delegate] Implements ITagProjectorResolver(Of D).ResolveProjector
+        Public Function ResolveProjector(ByVal Member As MemberInfo, ByVal TagType As Type) As [Delegate] Implements ITagProjectorResolver(Of D).ResolveProjector
             Return InnerResolver.ResolveProjector(CreatePair(GetType(D), TagType))
         End Function
 
@@ -459,7 +761,7 @@ Namespace Mapping
     Public Class TagAggregatorResolver(Of R)
         Implements ITagAggregatorResolver(Of R)
 
-        Public Function ResolveAggregator(ByVal TagType As Type) As [Delegate] Implements ITagAggregatorResolver(Of R).ResolveAggregator
+        Public Function ResolveAggregator(ByVal Member As MemberInfo, ByVal TagType As Type) As [Delegate] Implements ITagAggregatorResolver(Of R).ResolveAggregator
             Return InnerResolver.ResolveAggregator(CreatePair(TagType, GetType(R)))
         End Function
 
@@ -473,7 +775,7 @@ Namespace Mapping
     Public Class TupleElementProjectorResolver(Of D)
         Implements ITupleElementProjectorResolver(Of D)
 
-        Public Function ResolveProjector(ByVal Index As Integer, ByVal Type As Type) As [Delegate] Implements ITupleElementProjectorResolver(Of D).ResolveProjector
+        Public Function ResolveProjector(ByVal Member As MemberInfo, ByVal Index As Integer, ByVal Type As Type) As [Delegate] Implements ITupleElementProjectorResolver(Of D).ResolveProjector
             Return InnerResolver.ResolveProjector(CreatePair(GetType(D), Type))
         End Function
 
@@ -486,7 +788,7 @@ Namespace Mapping
     Public Class TupleElementAggregatorResolver(Of R)
         Implements ITupleElementAggregatorResolver(Of R)
 
-        Public Function ResolveAggregator(ByVal Index As Integer, ByVal Type As Type) As [Delegate] Implements ITupleElementAggregatorResolver(Of R).ResolveAggregator
+        Public Function ResolveAggregator(ByVal Member As MemberInfo, ByVal Index As Integer, ByVal Type As Type) As [Delegate] Implements ITupleElementAggregatorResolver(Of R).ResolveAggregator
             Return InnerResolver.ResolveAggregator(CreatePair(Type, GetType(R)))
         End Function
 
