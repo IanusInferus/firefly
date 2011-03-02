@@ -1,4 +1,9 @@
-﻿2011.03.02
+﻿2011.03.03
+Firefly.Core.Packaging:
+修正ISO文件因为数据开始位置决定不当导致的文件打开抛出异常的问题。
+修正ISO文件的Files属性包含文件夹的问题。
+
+2011.03.02
 Firefly.Core.Mapping:
 完全支持新增元类型：别名、标签联合、元组。
 Examples.Mapping:
