@@ -3,7 +3,7 @@
 //  File:        MyBinarySerializer.cs
 //  Location:    Firefly.Examples <Visual Basic .Net>
 //  Description: 自定义二进制序列化器
-//  Version:     2011.02.23.
+//  Version:     2011.03.02.
 //  Author:      F.R.C.
 //  Copyright(C) public Domain
 //
@@ -16,6 +16,7 @@ using Firefly;
 using Firefly.Streaming;
 using Firefly.TextEncoding;
 using Firefly.Mapping;
+using Firefly.Mapping.Binary;
 
 /// <summary>自定义二进制序列化器，简便起见，这里直接序列化到字节数组，而不是流</summary>
 public class MyBinarySerializer
