@@ -3,7 +3,7 @@
 '  File:        ISO.vb
 '  Location:    Firefly.Packaging <Visual Basic .Net>
 '  Description: ISO类
-'  Version:     2011.02.23.
+'  Version:     2011.03.03.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -135,16 +135,17 @@ Namespace Packaging
                 Dim ParentDirectoryLength As Byte = s.ReadByte
                 s.Position += ParentDirectoryLength - 1
 
-                Dim Length As Byte = s.ReadByte
-                s.Position -= 1
+                Dim Length As Byte = s.PeekByte
                 While Length <> 0
                     Dim r As New IsoDirectoryRecord(s)
                     Dim f As FileDB = ToFileDB(r, LogicalBlockSize)
-                    PushFile(f, ret)
-                    Length = s.ReadByte
-                    s.Position -= 1
+                    If f.Type <> FileDB.FileType.Directory Then
+                        PushFile(f, ret)
+                    End If
+                    Length = s.PeekByte
                 End While
                 DataScanStart = Max(s.Position, DataScanStart)
+                DataScanStart = Max(ret.Address + ret.Length, DataScanStart)
             End If
             s.Position = CurrentPosition
             Return ret
