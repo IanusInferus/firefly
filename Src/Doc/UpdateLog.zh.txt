@@ -1,6 +1,8 @@
 ﻿2011.03.02
 Firefly.Core.Mapping:
 完全支持新增元类型：别名、标签联合、元组。
+Examples.Mapping:
+按照Firefly.Core.Mapping的调整增加命名空间引用。
 
 2011.02.28
 Firefly.Core.Mapping:
