@@ -3,7 +3,7 @@
 //  File:        MyXmlSerializer.cs
 //  Location:    Firefly.Examples <Visual Basic .Net>
 //  Description: 自定义XML序列化器
-//  Version:     2010.11.17.
+//  Version:     2011.03.02.
 //  Author:      F.R.C.
 //  Copyright(C) public Domain
 //
@@ -19,6 +19,7 @@ using System.Text.RegularExpressions;
 using Firefly;
 using Firefly.TextEncoding;
 using Firefly.Mapping;
+using Firefly.Mapping.XmlText;
 
 /// <summary>自定义序列化器，简便起见，这里直接序列化到字节数组，而不是流</summary>
 public class MyXmlSerializer

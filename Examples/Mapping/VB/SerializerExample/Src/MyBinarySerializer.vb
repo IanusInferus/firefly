@@ -16,6 +16,7 @@ Imports Firefly
 Imports Firefly.Streaming
 Imports Firefly.TextEncoding
 Imports Firefly.Mapping
+Imports Firefly.Mapping.Binary
 
 ''' <summary>自定义二进制序列化器，简便起见，这里直接序列化到字节数组，而不是流</summary>
 Public Class MyBinarySerializer

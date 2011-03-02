@@ -3,7 +3,7 @@
 '  File:        MyXmlSerializer.vb
 '  Location:    Firefly.Examples <Visual Basic .Net>
 '  Description: 自定义XML序列化器
-'  Version:     2010.11.17.
+'  Version:     2011.02.23.
 '  Author:      F.R.C.
 '  Copyright(C) Public Domain
 '
@@ -19,6 +19,7 @@ Imports System.Text.RegularExpressions
 Imports Firefly
 Imports Firefly.TextEncoding
 Imports Firefly.Mapping
+Imports Firefly.Mapping.XmlText
 
 ''' <summary>自定义序列化器，简便起见，这里直接序列化到字节数组，而不是流</summary>
 Public Class MyXmlSerializer
