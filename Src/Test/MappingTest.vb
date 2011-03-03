@@ -529,14 +529,14 @@ Public Module MappingTest
         End Operator
     End Class
 
-    Public Enum TaggedUnionTag
+    Public Enum TaggedUnionObjectTag
         Item1
         Item2
         Item3
         Item4
     End Enum
     <MetaSchema.TaggedUnion()> Public Class TaggedUnionObject
-        <MetaSchema.Tag()> Public _Tag As TaggedUnionTag
+        <MetaSchema.Tag()> Public _Tag As TaggedUnionObjectTag
         Public Item1 As Integer
         Public Item2 As Int16
         Public Item3 As Byte
@@ -544,13 +544,13 @@ Public Module MappingTest
         Public Shared Function Equal(ByVal Left As TaggedUnionObject, ByVal Right As TaggedUnionObject) As Boolean
             If Left._Tag <> Right._Tag Then Return False
             Select Case Left._Tag
-                Case TaggedUnionTag.Item1
+                Case TaggedUnionObjectTag.Item1
                     Return Left.Item1 = Right.Item1
-                Case TaggedUnionTag.Item2
+                Case TaggedUnionObjectTag.Item2
                     Return Left.Item2 = Right.Item2
-                Case TaggedUnionTag.Item3
+                Case TaggedUnionObjectTag.Item3
                     Return Left.Item3 = Right.Item3
-                Case TaggedUnionTag.Item4
+                Case TaggedUnionObjectTag.Item4
                     Return Equal(Left.Item4, Right.Item4)
                 Case Else
                     Throw New InvalidOperationException
@@ -573,6 +573,61 @@ Public Module MappingTest
         End Operator
         Public Shared Operator <>(ByVal Left As TupleObject, ByVal Right As TupleObject) As Boolean
             Return Not (Left = Right)
+        End Operator
+    End Class
+
+    <MetaSchema.Alias()> Public Class Alias2Object
+        Public i As MixedObject = New MixedObject With {._Tag = MixedObjectTag.Item3, .Item3 = 1}
+        Public Shared Operator =(ByVal Left As Alias2Object, ByVal Right As Alias2Object) As Boolean
+            Return Left.i = Right.i
+        End Operator
+        Public Shared Operator <>(ByVal Left As Alias2Object, ByVal Right As Alias2Object) As Boolean
+            Return Not (Left = Right)
+        End Operator
+    End Class
+    <MetaSchema.Tuple()> Public Class Tuple2Object
+        Public Item1 As Alias2Object = New Alias2Object
+        Public Item2 As MixedObject = New MixedObject With {._Tag = MixedObjectTag.Item3, .Item3 = 2}
+        Public Item3 As Byte = 3
+        Public Shared Operator =(ByVal Left As Tuple2Object, ByVal Right As Tuple2Object) As Boolean
+            Return Left.Item1 = Right.Item1 AndAlso Left.Item2 = Right.Item2 AndAlso Left.Item3 = Right.Item3
+        End Operator
+        Public Shared Operator <>(ByVal Left As Tuple2Object, ByVal Right As Tuple2Object) As Boolean
+            Return Not (Left = Right)
+        End Operator
+    End Class
+    Public Enum MixedObjectTag
+        Item1
+        Item2
+        Item3
+        Item4
+    End Enum
+    <MetaSchema.TaggedUnion()> Public Class MixedObject
+        <MetaSchema.Tag()> Public _Tag As MixedObjectTag
+        Public Item1 As Alias2Object
+        Public Item2 As Tuple2Object
+        Public Item3 As Byte
+        Public Item4 As MixedObject
+        Public Shared Function Equal(ByVal Left As MixedObject, ByVal Right As MixedObject) As Boolean
+            If Left._Tag <> Right._Tag Then Return False
+            Select Case Left._Tag
+                Case MixedObjectTag.Item1
+                    Return Left.Item1 = Right.Item1
+                Case MixedObjectTag.Item2
+                    Return Left.Item2 = Right.Item2
+                Case MixedObjectTag.Item3
+                    Return Left.Item3 = Right.Item3
+                Case MixedObjectTag.Item4
+                    Return Equal(Left.Item4, Right.Item4)
+                Case Else
+                    Throw New InvalidOperationException
+            End Select
+        End Function
+        Public Shared Operator =(ByVal Left As MixedObject, ByVal Right As MixedObject) As Boolean
+            Return Equal(Left, Right)
+        End Operator
+        Public Shared Operator <>(ByVal Left As MixedObject, ByVal Right As MixedObject) As Boolean
+            Return Not Equal(Left, Right)
         End Operator
     End Class
 
@@ -600,7 +655,7 @@ Public Module MappingTest
             Dim bs As New Binary.BinarySerializer
             Dim xs As New XmlSerializer
 
-            Dim a1 As New TaggedUnionObject With {._Tag = TaggedUnionTag.Item4, .Item4 = New TaggedUnionObject With {._Tag = TaggedUnionTag.Item2, .Item2 = 2}}
+            Dim a1 As New TaggedUnionObject With {._Tag = TaggedUnionObjectTag.Item4, .Item4 = New TaggedUnionObject With {._Tag = TaggedUnionObjectTag.Item2, .Item2 = 2}}
             Dim a2 As TaggedUnionObject
 
             bs.Write(s, a1)
@@ -635,6 +690,26 @@ Public Module MappingTest
         End Using
     End Sub
 
+    Public Sub TestMixed()
+        Using s = Streams.CreateMemoryStream
+            Dim bs As New Binary.BinarySerializer
+            Dim xs As New XmlSerializer
+
+            Dim a1 As New MixedObject With {._Tag = MixedObjectTag.Item2, .Item2 = New Tuple2Object}
+            Dim a2 As MixedObject
+
+            bs.Write(s, a1)
+
+            s.Position = 0
+            a2 = bs.Read(Of MixedObject)(s)
+            Assert(a1 = a2)
+
+            Dim x = xs.Write(a1)
+            Dim a3 = xs.Read(Of MixedObject)(x)
+            Assert(a1 = a3)
+        End Using
+    End Sub
+
     Public Sub TestMapping()
         TestMetaProgramming()
         TestObjectTreeMapper()
@@ -645,5 +720,6 @@ Public Module MappingTest
         TestAlias()
         TestTaggedUnion()
         TestTuple()
+        TestMixed()
     End Sub
 End Module
