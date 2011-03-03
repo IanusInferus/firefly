@@ -118,7 +118,7 @@ Public Module MappingTest
             Dim pr = New PrimitiveResolver
             Dim er = New Binary.EnumUnpacker(Of Integer)(mp)
             Dim cr = New CollectionUnpackerTemplate(Of Integer)(New GenericCollectionProjectorResolver(Of Integer)(mp))
-            Dim csr = New RecordUnpackerTemplate(Of Integer)(New FieldProjectorResolver(Of Integer)(mp), New AliasFieldProjectorResolver(Of Integer)(mp), New TagProjectorResolver(Of Integer)(mp), New TupleElementProjectorResolver(Of Integer)(mp))
+            Dim csr = New RecordUnpackerTemplate(Of Integer)(mp)
             Dim mprs As New List(Of IProjectorResolver) From {pr, er, cr, csr}
             pr.PutProjector(
                 Function(i As Integer) As Byte
@@ -162,7 +162,7 @@ Public Module MappingTest
             Dim pr = New PrimitiveResolver
             Dim er = New Binary.EnumPacker(Of Integer)(mp)
             Dim cr = New CollectionPackerTemplate(Of Integer)(New GenericListAggregatorResolver(Of Integer)(mp))
-            Dim csr = New RecordPackerTemplate(Of Integer)(New FieldAggregatorResolver(Of Integer)(mp), New AliasFieldAggregatorResolver(Of Integer)(mp), New TagAggregatorResolver(Of Integer)(mp), New TupleElementAggregatorResolver(Of Integer)(mp))
+            Dim csr = New RecordPackerTemplate(Of Integer)(mp)
             Dim mprs As New List(Of IAggregatorResolver) From {pr, er, cr, csr}
             pr.PutAggregator(
                 Sub(Key As Byte, Value As Integer)
@@ -577,7 +577,7 @@ Public Module MappingTest
     End Class
 
     <MetaSchema.Alias()> Public Class Alias2Object
-        Public i As MixedObject = New MixedObject With {._Tag = MixedObjectTag.Item3, .Item3 = 1}
+        Public i As MixedObject = New MixedObject With {._Tag = MixedObjectTag.Item3, .Item3 = New Alias3Object With {.i = 1}}
         Public Shared Operator =(ByVal Left As Alias2Object, ByVal Right As Alias2Object) As Boolean
             Return Left.i = Right.i
         End Operator
@@ -585,10 +585,19 @@ Public Module MappingTest
             Return Not (Left = Right)
         End Operator
     End Class
+    <MetaSchema.Alias()> Public Class Alias3Object
+        Public i As Byte = 123
+        Public Shared Operator =(ByVal Left As Alias3Object, ByVal Right As Alias3Object) As Boolean
+            Return Left.i = Right.i
+        End Operator
+        Public Shared Operator <>(ByVal Left As Alias3Object, ByVal Right As Alias3Object) As Boolean
+            Return Not (Left = Right)
+        End Operator
+    End Class
     <MetaSchema.Tuple()> Public Class Tuple2Object
         Public Item1 As Alias2Object = New Alias2Object
-        Public Item2 As MixedObject = New MixedObject With {._Tag = MixedObjectTag.Item3, .Item3 = 2}
-        Public Item3 As Byte = 3
+        Public Item2 As MixedObject = New MixedObject With {._Tag = MixedObjectTag.Item3, .Item3 = New Alias3Object With {.i = 2}}
+        Public Item3 As New Alias3Object With {.i = 3}
         Public Shared Operator =(ByVal Left As Tuple2Object, ByVal Right As Tuple2Object) As Boolean
             Return Left.Item1 = Right.Item1 AndAlso Left.Item2 = Right.Item2 AndAlso Left.Item3 = Right.Item3
         End Operator
@@ -606,7 +615,7 @@ Public Module MappingTest
         <MetaSchema.Tag()> Public _Tag As MixedObjectTag
         Public Item1 As Alias2Object
         Public Item2 As Tuple2Object
-        Public Item3 As Byte
+        Public Item3 As Alias3Object
         Public Item4 As MixedObject
         Public Shared Function Equal(ByVal Left As MixedObject, ByVal Right As MixedObject) As Boolean
             If Left._Tag <> Right._Tag Then Return False
@@ -658,12 +667,12 @@ Public Module MappingTest
             Dim a1 As New TaggedUnionObject With {._Tag = TaggedUnionObjectTag.Item4, .Item4 = New TaggedUnionObject With {._Tag = TaggedUnionObjectTag.Item2, .Item2 = 2}}
             Dim a2 As TaggedUnionObject
 
-            bs.Write(s, a1)
-            Assert(s.Length = 10)
+            'bs.Write(s, a1)
+            'Assert(s.Length = 10)
 
-            s.Position = 0
-            a2 = bs.Read(Of TaggedUnionObject)(s)
-            Assert(a1 = a2)
+            's.Position = 0
+            'a2 = bs.Read(Of TaggedUnionObject)(s)
+            'Assert(a1 = a2)
 
             Dim x = xs.Write(a1)
             Dim a3 = xs.Read(Of TaggedUnionObject)(x)
