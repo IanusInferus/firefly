@@ -3,7 +3,7 @@
 '  File:        XmlSerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Xml序列化类
-'  Version:     2011.03.02.
+'  Version:     2011.03.03.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -284,7 +284,6 @@ Namespace Mapping.XmlText
     End Module
 
     Public Class ElementUnpackerState
-        Public UseParent As Boolean
         Public Parent As XElement
         Public List As List(Of XElement)
         Public Dict As Dictionary(Of String, XElement)
@@ -398,35 +397,22 @@ Namespace Mapping.XmlText
         Public Function TranslateProjectorToProjectorDomain(Of R)(ByVal Projector As Func(Of ElementUnpackerState, R)) As Func(Of XElement, R) Implements IProjectorToProjectorDomainTranslator(Of XElement, ElementUnpackerState).TranslateProjectorToProjectorDomain
             Return Function(Element) As R
                        If Not Element.IsEmpty Then
-                           If Element.HasElements Then
-                               Dim l = Element.Elements.ToList()
-                               Dim d As New Dictionary(Of String, XElement)(StringComparer.OrdinalIgnoreCase)
-                               For Each e In l
-                                   Dim LocalName = e.Name.LocalName
-                                   If Not d.ContainsKey(LocalName) Then
-                                       d.Add(LocalName, e)
-                                   End If
-                               Next
-                               Dim ad As New Dictionary(Of String, XAttribute)(StringComparer.OrdinalIgnoreCase)
-                               For Each a In Element.Attributes
-                                   Dim LocalName = a.Name.LocalName
-                                   If Not ad.ContainsKey(LocalName) Then
-                                       ad.Add(LocalName, a)
-                                   End If
-                               Next
-                               Return Projector(New ElementUnpackerState With {.UseParent = False, .Parent = Nothing, .List = l, .Dict = d, .AttributeDict = ad})
-                           Else
-                               Dim l As New List(Of XElement)
-                               Dim d As New Dictionary(Of String, XElement)(StringComparer.OrdinalIgnoreCase)
-                               Dim ad As New Dictionary(Of String, XAttribute)(StringComparer.OrdinalIgnoreCase)
-                               For Each a In Element.Attributes
-                                   Dim LocalName = a.Name.LocalName
-                                   If Not ad.ContainsKey(LocalName) Then
-                                       ad.Add(LocalName, a)
-                                   End If
-                               Next
-                               Return Projector(New ElementUnpackerState With {.UseParent = True, .Parent = Element, .List = l, .Dict = d, .AttributeDict = ad})
-                           End If
+                           Dim l = Element.Elements.ToList()
+                           Dim d As New Dictionary(Of String, XElement)(StringComparer.OrdinalIgnoreCase)
+                           For Each e In l
+                               Dim LocalName = e.Name.LocalName
+                               If Not d.ContainsKey(LocalName) Then
+                                   d.Add(LocalName, e)
+                               End If
+                           Next
+                           Dim ad As New Dictionary(Of String, XAttribute)(StringComparer.OrdinalIgnoreCase)
+                           For Each a In Element.Attributes
+                               Dim LocalName = a.Name.LocalName
+                               If Not ad.ContainsKey(LocalName) Then
+                                   ad.Add(LocalName, a)
+                               End If
+                           Next
+                           Return Projector(New ElementUnpackerState With {.Parent = Element, .List = l, .Dict = d, .AttributeDict = ad})
                        Else
                            Return Nothing
                        End If
@@ -551,11 +537,7 @@ Namespace Mapping.XmlText
             Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(XElement), GetType(R))), Func(Of XElement, R))
             Dim F =
                 Function(s As ElementUnpackerState) As R
-                    If s.UseParent Then
-                        Return Mapper(s.Parent)
-                    Else
-                        Throw New InvalidOperationException
-                    End If
+                    Return Mapper(s.Parent)
                 End Function
             Return F
         End Function
