@@ -533,23 +533,40 @@ Public Module MappingTest
         Item1
         Item2
         Item3
+        Item4
     End Enum
     <MetaSchema.TaggedUnion()> Public Class TaggedUnionObject
-        <MetaSchema.Tag()> Public _Tag As TaggedUnionTag = TaggedUnionTag.Item3
-        Public Item1 As Integer = 1
-        Public Item2 As Integer = 2
-        Public Item3 As Byte = 3
+        <MetaSchema.Tag()> Public _Tag As TaggedUnionTag
+        Public Item1 As Integer
+        Public Item2 As Int16
+        Public Item3 As Byte
+        Public Item4 As TaggedUnionObject
+        Public Shared Function Equal(ByVal Left As TaggedUnionObject, ByVal Right As TaggedUnionObject) As Boolean
+            If Left._Tag <> Right._Tag Then Return False
+            Select Case Left._Tag
+                Case TaggedUnionTag.Item1
+                    Return Left.Item1 = Right.Item1
+                Case TaggedUnionTag.Item2
+                    Return Left.Item2 = Right.Item2
+                Case TaggedUnionTag.Item3
+                    Return Left.Item3 = Right.Item3
+                Case TaggedUnionTag.Item4
+                    Return Equal(Left.Item4, Right.Item4)
+                Case Else
+                    Throw New InvalidOperationException
+            End Select
+        End Function
         Public Shared Operator =(ByVal Left As TaggedUnionObject, ByVal Right As TaggedUnionObject) As Boolean
-            Return Left._Tag = Right._Tag AndAlso Left.Item1 = Right.Item1 AndAlso Left.Item2 = Right.Item2 AndAlso Left.Item3 = Right.Item3
+            Return Equal(Left, Right)
         End Operator
         Public Shared Operator <>(ByVal Left As TaggedUnionObject, ByVal Right As TaggedUnionObject) As Boolean
-            Return Not (Left = Right)
+            Return Not Equal(Left, Right)
         End Operator
     End Class
 
     <MetaSchema.Tuple()> Public Class TupleObject
         Public Item1 As Integer = 1
-        Public Item2 As Integer = 2
+        Public Item2 As int16 = 2
         Public Item3 As Byte = 3
         Public Shared Operator =(ByVal Left As TupleObject, ByVal Right As TupleObject) As Boolean
             Return Left.Item1 = Right.Item1 AndAlso Left.Item2 = Right.Item2 AndAlso Left.Item3 = Right.Item3
@@ -583,11 +600,11 @@ Public Module MappingTest
             Dim bs As New Binary.BinarySerializer
             Dim xs As New XmlSerializer
 
-            Dim a1 As New TaggedUnionObject
+            Dim a1 As New TaggedUnionObject With {._Tag = TaggedUnionTag.Item4, .Item4 = New TaggedUnionObject With {._Tag = TaggedUnionTag.Item2, .Item2 = 2}}
             Dim a2 As TaggedUnionObject
 
             bs.Write(s, a1)
-            Assert(s.Length = 5)
+            Assert(s.Length = 10)
 
             s.Position = 0
             a2 = bs.Read(Of TaggedUnionObject)(s)

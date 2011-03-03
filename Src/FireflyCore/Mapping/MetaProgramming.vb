@@ -3,7 +3,7 @@
 '  File:        MetaProgramming.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 元编程
-'  Version:     2011.03.01.
+'  Version:     2011.03.03.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -181,6 +181,14 @@ Namespace Mapping
             If Not Method.IsGenericMethod Then Throw New ArgumentException
             If Method.IsGenericMethodDefinition Then Throw New ArgumentException
             Return Method.GetGenericMethodDefinition().MakeGenericMethod(Method.GetGenericArguments().Select(Function(t) t.MakeGenericTypeFromDummy(DummyType, RealType)).ToArray)
+        End Function
+        <Extension()> Public Function MakeDelegateMethod(ByVal m As [Delegate], ByVal GenericParams As Type(), ByVal MethodType As Type) As [Delegate]
+            Dim Target = m.Target
+            Dim Method = m.Method
+            If Not Method.IsGenericMethod Then Throw New ArgumentException
+            If Method.IsGenericMethodDefinition Then Throw New ArgumentException
+            Dim GenericMethod = Method.GetGenericMethodDefinition.MakeGenericMethod(GenericParams)
+            Return [Delegate].CreateDelegate(MethodType, Target, GenericMethod)
         End Function
         <Extension()> Public Function MakeDelegateMethodFromDummy(ByVal m As [Delegate], ByVal Mapping As Func(Of Type, Type)) As [Delegate]
             Dim Target = m.Target
