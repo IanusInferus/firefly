@@ -3,7 +3,7 @@
 '  File:        BinarySerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 二进制序列化类
-'  Version:     2011.03.02.
+'  Version:     2011.03.03.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -168,12 +168,7 @@ Namespace Mapping.Binary
                 PrimitiveResolver,
                 New EnumUnpacker(Of TReadStream)(Root),
                 New CollectionUnpackerTemplate(Of TReadStream)(New GenericCollectionProjectorResolver(Of TReadStream)(Root)),
-                New RecordUnpackerTemplate(Of TReadStream)(
-                    New FieldProjectorResolver(Of TReadStream)(Root),
-                    New AliasFieldProjectorResolver(Of TReadStream)(Root),
-                    New TagProjectorResolver(Of TReadStream)(Root),
-                    New TupleElementProjectorResolver(Of TReadStream)(Root)
-                )
+                New RecordUnpackerTemplate(Of TReadStream)(Root)
             })
             Resolver = CreateMapper(ProjectorResolverList.Concatenated, EmptyAggregatorResolver)
         End Sub
@@ -222,12 +217,7 @@ Namespace Mapping.Binary
                 PrimitiveResolver,
                 New EnumPacker(Of TWriteStream)(Root),
                 New CollectionPackerTemplate(Of TWriteStream)(New GenericCollectionAggregatorResolver(Of TWriteStream)(Root)),
-                New RecordPackerTemplate(Of TWriteStream)(
-                    New FieldAggregatorResolver(Of TWriteStream)(Root),
-                    New AliasFieldAggregatorResolver(Of TWriteStream)(Root),
-                    New TagAggregatorResolver(Of TWriteStream)(Root),
-                    New TupleElementAggregatorResolver(Of TWriteStream)(Root)
-                )
+                New RecordPackerTemplate(Of TWriteStream)(Root)
             })
             Resolver = CreateMapper(EmptyProjectorResolver, AggregatorResolverList.Concatenated)
         End Sub
@@ -301,13 +291,8 @@ Namespace Mapping.Binary
             AggregatorResolverList = New LinkedList(Of IAggregatorResolver)({
                 New EnumPacker(Of CounterState)(Root),
                 New CollectionPackerTemplate(Of CounterState)(New GenericCollectionAggregatorResolver(Of CounterState)(Root)),
-                New RecordPackerTemplate(Of CounterState)(
-                    New FieldAggregatorResolver(Of CounterState)(Root),
-                    New AliasFieldAggregatorResolver(Of CounterState)(Root),
-                    New TagAggregatorResolver(Of CounterState)(Root),
-                    New TupleElementAggregatorResolver(Of CounterState)(Root)
-                ),
-            TranslatorResolver.Create(Root, New IntToCounterStateRangeTranslator)
+                New RecordPackerTemplate(Of CounterState)(Root),
+                TranslatorResolver.Create(Root, New IntToCounterStateRangeTranslator)
             })
             Resolver = CreateMapper(ProjectorResolverList.Concatenated, AggregatorResolverList.Concatenated)
         End Sub
@@ -319,7 +304,7 @@ Namespace Mapping.Binary
             ProjectorResolverList.AddFirst(TranslatorResolver.Create(Root, Translator))
         End Sub
 
-        Private Class CounterState
+        Public Class CounterState
             Public Number As Int64
         End Class
         Private Class CounterStateToIntRangeTranslator

@@ -56,6 +56,16 @@ Namespace Mapping
         Function ResolveAggregator(ByVal Member As MemberInfo, ByVal TagType As Type) As [Delegate]
     End Interface
     ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
+    Public Interface ITaggedUnionFieldProjectorResolver(Of D)
+        ''' <returns>返回Func(Of ${DomainType}, ${FieldOrPropertyType})</returns>
+        Function ResolveProjector(ByVal Member As MemberInfo, ByVal Type As Type) As [Delegate]
+    End Interface
+    ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
+    Public Interface ITaggedUnionFieldAggregatorResolver(Of R)
+        ''' <returns>返回Action(Of ${FieldOrPropertyType}, ${RangeType})</returns>
+        Function ResolveAggregator(ByVal Member As MemberInfo, ByVal Type As Type) As [Delegate]
+    End Interface
+    ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>
     Public Interface ITupleElementProjectorResolver(Of D)
         ''' <returns>返回Func(Of ${DomainType}, ${Type})</returns>
         Function ResolveProjector(ByVal Member As MemberInfo, ByVal Index As Integer, ByVal Type As Type) As [Delegate]
@@ -394,7 +404,7 @@ Namespace Mapping
                 DelegateCalls.Add(CreatePair(TagResolver.ResolveProjector(TagMember.Member, TagMember.Type), New Expression() {dParam}))
                 For Each Pair In FieldsAndProperties
                     Dim p = Pair
-                    Dim f = Function() FieldResolver.ResolveProjector(p.Member, p.Type)
+                    Dim f = Function() TaggedUnionFieldResolver.ResolveProjector(p.Member, p.Type)
                     Dim c As New CallClosure With {.CallDelegate = f}
                     Dim cf = DirectCast(AddressOf c.Invoke(Of DummyType, DummyType), Func(Of DummyType, DummyType)).MakeDelegateMethod({DomainType, p.Type}, GetType(Func(Of ,)).MakeGenericType(DomainType, p.Type))
                     DelegateCalls.Add(CreatePair(cf, New Expression() {dParam}))
@@ -498,12 +508,28 @@ Namespace Mapping
         Private FieldResolver As IFieldProjectorResolver(Of D)
         Private AliasFieldResolver As IAliasFieldProjectorResolver(Of D)
         Private TagResolver As ITagProjectorResolver(Of D)
+        Private TaggedUnionFieldResolver As ITaggedUnionFieldProjectorResolver(Of D)
         Private TupleElementResolver As ITupleElementProjectorResolver(Of D)
-        Public Sub New(ByVal FieldResolver As IFieldProjectorResolver(Of D), ByVal AliasFieldResolver As IAliasFieldProjectorResolver(Of D), ByVal TagResolver As ITagProjectorResolver(Of D), ByVal TupleElementResolver As ITupleElementProjectorResolver(Of D))
+        Public Sub New(ByVal FieldResolver As IFieldProjectorResolver(Of D), ByVal AliasFieldResolver As IAliasFieldProjectorResolver(Of D), ByVal TagResolver As ITagProjectorResolver(Of D), ByVal TaggedUnionFieldResolver As ITaggedUnionFieldProjectorResolver(Of D), ByVal TupleElementResolver As ITupleElementProjectorResolver(Of D))
             Me.FieldResolver = FieldResolver
             Me.AliasFieldResolver = AliasFieldResolver
             Me.TagResolver = TagResolver
+            Me.TaggedUnionFieldResolver = TaggedUnionFieldResolver
             Me.TupleElementResolver = TupleElementResolver
+        End Sub
+        Public Sub New(ByVal InnerResolver As IProjectorResolver, ByVal FieldResolver As IFieldProjectorResolver(Of D))
+            Me.FieldResolver = FieldResolver
+            Me.AliasFieldResolver = New AliasFieldProjectorResolver(Of D)(InnerResolver)
+            Me.TagResolver = New TagProjectorResolver(Of D)(InnerResolver)
+            Me.TaggedUnionFieldResolver = New TaggedUnionFieldProjectorResolver(Of D)(InnerResolver)
+            Me.TupleElementResolver = New TupleElementProjectorResolver(Of D)(InnerResolver)
+        End Sub
+        Public Sub New(ByVal InnerResolver As IProjectorResolver)
+            Me.FieldResolver = New FieldProjectorResolver(Of D)(InnerResolver)
+            Me.AliasFieldResolver = New AliasFieldProjectorResolver(Of D)(InnerResolver)
+            Me.TagResolver = New TagProjectorResolver(Of D)(InnerResolver)
+            Me.TaggedUnionFieldResolver = New TaggedUnionFieldProjectorResolver(Of D)(InnerResolver)
+            Me.TupleElementResolver = New TupleElementProjectorResolver(Of D)(InnerResolver)
         End Sub
     End Class
     <DebuggerNonUserCode()>
@@ -595,7 +621,7 @@ Namespace Mapping
                 DelegateCalls.Add(CreatePair(TagResolver.ResolveAggregator(TagMember.Member, TagMember.Type), New Expression() {TagMemberExpr, rParam}))
                 For Each Pair In FieldsAndProperties
                     Dim p = Pair
-                    Dim f = Function() FieldResolver.ResolveAggregator(p.Member, p.Type)
+                    Dim f = Function() TaggedUnionFieldResolver.ResolveAggregator(p.Member, p.Type)
                     Dim c As New CallClosure With {.CallDelegate = f}
                     Dim cf = DirectCast(AddressOf c.Invoke(Of DummyType, DummyType), Action(Of DummyType, DummyType)).MakeDelegateMethod({p.Type, RangeType}, GetType(Action(Of ,)).MakeGenericType(p.Type, RangeType))
                     Dim FieldOrPropertyExpr = CreateFieldOrPropertyExpression(dParam, p.Member)
@@ -693,12 +719,28 @@ Namespace Mapping
         Private FieldResolver As IFieldAggregatorResolver(Of R)
         Private AliasFieldResolver As IAliasFieldAggregatorResolver(Of R)
         Private TagResolver As ITagAggregatorResolver(Of R)
+        Private TaggedUnionFieldResolver As ITaggedUnionFieldAggregatorResolver(Of R)
         Private TupleElementResolver As ITupleElementAggregatorResolver(Of R)
-        Public Sub New(ByVal FieldResolver As IFieldAggregatorResolver(Of R), ByVal AliasFieldResolver As IAliasFieldAggregatorResolver(Of R), ByVal TagResolver As ITagAggregatorResolver(Of R), ByVal TupleElementResolver As ITupleElementAggregatorResolver(Of R))
+        Public Sub New(ByVal FieldResolver As IFieldAggregatorResolver(Of R), ByVal AliasFieldResolver As IAliasFieldAggregatorResolver(Of R), ByVal TagResolver As ITagAggregatorResolver(Of R), ByVal TaggedUnionFieldResolver As ITaggedUnionFieldAggregatorResolver(Of R), ByVal TupleElementResolver As ITupleElementAggregatorResolver(Of R))
             Me.FieldResolver = FieldResolver
             Me.AliasFieldResolver = AliasFieldResolver
             Me.TagResolver = TagResolver
+            Me.TaggedUnionFieldResolver = TaggedUnionFieldResolver
             Me.TupleElementResolver = TupleElementResolver
+        End Sub
+        Public Sub New(ByVal InnerResolver As IAggregatorResolver, ByVal FieldResolver As IFieldAggregatorResolver(Of R))
+            Me.FieldResolver = FieldResolver
+            Me.AliasFieldResolver = New AliasFieldAggregatorResolver(Of R)(InnerResolver)
+            Me.TagResolver = New TagAggregatorResolver(Of R)(InnerResolver)
+            Me.TaggedUnionFieldResolver = New TaggedUnionFieldAggregatorResolver(Of R)(InnerResolver)
+            Me.TupleElementResolver = New TupleElementAggregatorResolver(Of R)(InnerResolver)
+        End Sub
+        Public Sub New(ByVal InnerResolver As IAggregatorResolver)
+            Me.FieldResolver = New FieldAggregatorResolver(Of R)(InnerResolver)
+            Me.AliasFieldResolver = New AliasFieldAggregatorResolver(Of R)(InnerResolver)
+            Me.TagResolver = New TagAggregatorResolver(Of R)(InnerResolver)
+            Me.TaggedUnionFieldResolver = New TaggedUnionFieldAggregatorResolver(Of R)(InnerResolver)
+            Me.TupleElementResolver = New TupleElementAggregatorResolver(Of R)(InnerResolver)
         End Sub
     End Class
 
@@ -775,6 +817,33 @@ Namespace Mapping
 
         Public Function ResolveAggregator(ByVal Member As MemberInfo, ByVal TagType As Type) As [Delegate] Implements ITagAggregatorResolver(Of R).ResolveAggregator
             Return InnerResolver.ResolveAggregator(CreatePair(TagType, GetType(R)))
+        End Function
+
+        Private InnerResolver As IAggregatorResolver
+        Public Sub New(ByVal Resolver As IAggregatorResolver)
+            Me.InnerResolver = Resolver.AsNoncircular
+        End Sub
+    End Class
+
+    <DebuggerNonUserCode()>
+    Public Class TaggedUnionFieldProjectorResolver(Of D)
+        Implements ITaggedUnionFieldProjectorResolver(Of D)
+
+        Public Function ResolveProjector(ByVal Member As MemberInfo, ByVal Type As Type) As [Delegate] Implements ITaggedUnionFieldProjectorResolver(Of D).ResolveProjector
+            Return InnerResolver.ResolveProjector(CreatePair(GetType(D), Type))
+        End Function
+
+        Private InnerResolver As IProjectorResolver
+        Public Sub New(ByVal Resolver As IProjectorResolver)
+            Me.InnerResolver = Resolver.AsNoncircular
+        End Sub
+    End Class
+    <DebuggerNonUserCode()>
+    Public Class TaggedUnionFieldAggregatorResolver(Of R)
+        Implements ITaggedUnionFieldAggregatorResolver(Of R)
+
+        Public Function ResolveAggregator(ByVal Member As MemberInfo, ByVal Type As Type) As [Delegate] Implements ITaggedUnionFieldAggregatorResolver(Of R).ResolveAggregator
+            Return InnerResolver.ResolveAggregator(CreatePair(Type, GetType(R)))
         End Function
 
         Private InnerResolver As IAggregatorResolver

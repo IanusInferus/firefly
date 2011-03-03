@@ -3,7 +3,7 @@
 '  File:        XmlCompatibility.vb
 '  Location:    Firefly.Setting <Visual Basic .Net>
 '  Description: Xml读写兼容支持，用于兼容System.Xml.Serialization.XmlSerializer
-'  Version:     2011.02.27.
+'  Version:     2011.03.03.
 '  Copyright:   F.R.C.
 '
 '==========================================================================
@@ -15,6 +15,7 @@ Imports System.Collections.Generic
 Imports System.Xml
 Imports System.Xml.Linq
 Imports System.Text
+Imports System.Reflection
 Imports System.Globalization
 Imports Firefly
 Imports Firefly.Texting
@@ -24,13 +25,8 @@ Imports Firefly.Mapping.XmlText
 Namespace Setting
     ''' <summary>Xml读写兼容支持，用于兼容System.Xml.Serialization.XmlSerializer</summary>
     Public NotInheritable Class XmlCompatibility
-        Private Sub New()
-        End Sub
-
         Public Shared Function ReadFile(Of T)(ByVal Reader As StreamReader) As T
-            Dim xs As New XmlSerializer
-            xs.PutReader(XmlCompatibility.Base64StringToByteArray)
-            xs.PutReader(XmlCompatibility.StringToDateTime)
+            Dim xs As New XmlCompatibilitySerializer
 
             Dim Root As XElement
             Using r = XmlReader.Create(Reader)
@@ -41,11 +37,7 @@ Namespace Setting
         End Function
 
         Public Shared Sub WriteFile(Of T)(ByVal Writer As StreamWriter, ByVal Value As T)
-            Dim xs As New XmlSerializer
-            xs.PutWriter(XmlCompatibility.BooleanToString)
-            xs.PutWriter(XmlCompatibility.ByteArrayToBase64String)
-            xs.PutWriter(XmlCompatibility.DateTimeToString)
-            xs.PutWriterTranslator(New CompatibleXElementToStringRangeTranslator)
+            Dim xs As New XmlCompatibilitySerializer
 
             Dim Root = xs.Write(Of T)(Value)
             Root.SetAttributeValue(XNamespace.Xmlns + "xsi", xsi)
@@ -191,5 +183,86 @@ Namespace Setting
                        End Function
             End Function
         End Class
+
+        Public Class FieldProjectorResolver
+            Implements IFieldProjectorResolver(Of ElementUnpackerState)
+
+            Private Function Resolve(Of R)(ByVal Name As String) As Func(Of ElementUnpackerState, R)
+                Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(XElement), GetType(R))), Func(Of XElement, R))
+                Dim F =
+                    Function(s As ElementUnpackerState) As R
+                        Dim d = s.Dict
+                        If d.ContainsKey(Name) Then
+                            Return Mapper(d(Name))
+                        Else
+                            Return Nothing
+                        End If
+                    End Function
+                Return F
+            End Function
+
+            Private Dict As New Dictionary(Of Type, Func(Of String, [Delegate]))
+            Public Function ResolveProjector(ByVal Member As MemberInfo, ByVal Type As Type) As [Delegate] Implements IFieldProjectorResolver(Of ElementUnpackerState).ResolveProjector
+                Dim Name = Member.Name
+                If Dict.ContainsKey(Type) Then
+                    Dim m = Dict(Type)
+                    Return m(Name)
+                Else
+                    Dim GenericMapper = DirectCast(AddressOf Resolve(Of DummyType), Func(Of String, Func(Of ElementUnpackerState, DummyType)))
+                    Dim m = GenericMapper.MakeDelegateMethodFromDummy(Type).AdaptFunction(Of String, [Delegate])()
+                    Dict.Add(Type, m)
+                    Return m(Name)
+                End If
+            End Function
+
+            Private InnerResolver As IProjectorResolver
+            Public Sub New(ByVal Resolver As IProjectorResolver)
+                Me.InnerResolver = Resolver.AsNoncircular
+            End Sub
+        End Class
+    End Class
+
+    Public NotInheritable Class XmlCompatibilitySerializer
+        Implements IXmlSerializer
+
+        Private ReaderCache As IMapperResolver
+        Private WriterCache As IMapperResolver
+
+        Public Sub New()
+            Dim ReaderReference As New ReferenceMapperResolver
+            ReaderCache = ReaderReference
+            Dim ReaderResolver = New XmlReaderResolver(ReaderReference, New Type() {})
+            ReaderResolver.PutReader(XmlCompatibility.Base64StringToByteArray)
+            ReaderResolver.PutReader(XmlCompatibility.StringToDateTime)
+            Dim ProjectorResolverList = New List(Of IProjectorResolver) From {
+                New RecordUnpackerTemplate(Of ElementUnpackerState)(
+                    New XmlCompatibility.FieldProjectorResolver(ReaderReference),
+                    New AliasFieldProjectorResolver(ReaderReference),
+                    New TagProjectorResolver(ReaderReference),
+                    New TaggedUnionFieldProjectorResolver(ReaderReference),
+                    New TupleElementProjectorResolver(ReaderReference)
+                ),
+                ReaderResolver
+            }
+            ReaderReference.Inner = CreateMapper(ProjectorResolverList.Concatenated, EmptyAggregatorResolver)
+
+            Dim WriterReference As New ReferenceMapperResolver
+            WriterCache = WriterReference
+            Dim WriterResolver = New XmlWriterResolver(WriterReference, New Type() {})
+            WriterResolver.PutWriter(XmlCompatibility.BooleanToString)
+            WriterResolver.PutWriter(XmlCompatibility.ByteArrayToBase64String)
+            WriterResolver.PutWriter(XmlCompatibility.DateTimeToString)
+            WriterResolver.PutWriterTranslator(New XmlCompatibility.CompatibleXElementToStringRangeTranslator)
+            WriterReference.Inner = WriterResolver.AsCached
+        End Sub
+
+        Public Function Read(Of T)(ByVal s As XElement) As T Implements IXmlReader.Read
+            Dim m = ReaderCache.ResolveProjector(Of XElement, T)()
+            Return m(s)
+        End Function
+        Public Function Write(Of T)(ByVal Value As T) As XElement Implements IXmlWriter.Write
+            Dim m = WriterCache.ResolveProjector(Of T, XElement)()
+            Return m(Value)
+        End Function
     End Class
 End Namespace
