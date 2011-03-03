@@ -3,7 +3,7 @@
 '  File:        ResolverTemplates.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Object映射器解析器
-'  Version:     2011.03.02.
+'  Version:     2011.03.03.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -322,27 +322,26 @@ Namespace Mapping
             Dim RangeType = TypePair.Value
             If DomainType IsNot GetType(D) Then Return Nothing
             With Nothing
-                Dim d = TryResolveAlias(TypePair)
+                Dim d = TryResolveAlias(RangeType)
                 If d IsNot Nothing Then Return d
             End With
             With Nothing
-                Dim d = TryResolveTaggedUnion(TypePair)
+                Dim d = TryResolveTaggedUnion(RangeType)
                 If d IsNot Nothing Then Return d
             End With
             With Nothing
-                Dim d = TryResolveTuple(TypePair)
+                Dim d = TryResolveTuple(RangeType)
                 If d IsNot Nothing Then Return d
             End With
             With Nothing
-                Dim d = TryResolveRecord(TypePair)
+                Dim d = TryResolveRecord(RangeType)
                 If d IsNot Nothing Then Return d
             End With
             Return Nothing
         End Function
 
-        Private Function TryResolveAlias(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate]
-            Dim DomainType = TypePair.Key
-            Dim RangeType = TypePair.Value
+        Private Function TryResolveAlias(ByVal RangeType As Type) As [Delegate]
+            Dim DomainType = GetType(D)
             If RangeType.IsValueType OrElse RangeType.IsClass Then
                 Dim FieldsAndProperties As FieldOrPropertyInfo() = Nothing
                 If FieldsAndProperties Is Nothing Then
@@ -370,9 +369,14 @@ Namespace Mapping
             Return Nothing
         End Function
 
-        Private Function TryResolveTaggedUnion(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate]
-            Dim DomainType = TypePair.Key
-            Dim RangeType = TypePair.Value
+        Private Class CallClosure
+            Public CallDelegate As Func(Of [Delegate])
+            Public Function Invoke(Of CD, CR)(ByVal Key As CD) As CR
+                Return DirectCast(CallDelegate(), Func(Of CD, CR))(Key)
+            End Function
+        End Class
+        Private Function TryResolveTaggedUnion(ByVal RangeType As Type) As [Delegate]
+            Dim DomainType = GetType(D)
             If RangeType.IsValueType OrElse RangeType.IsClass Then
                 Dim FieldsAndProperties As FieldOrPropertyInfo() = Nothing
                 Dim TagMember As FieldOrPropertyInfo = Nothing
@@ -389,7 +393,11 @@ Namespace Mapping
                 Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
                 DelegateCalls.Add(CreatePair(TagResolver.ResolveProjector(TagMember.Member, TagMember.Type), New Expression() {dParam}))
                 For Each Pair In FieldsAndProperties
-                    DelegateCalls.Add(CreatePair(FieldResolver.ResolveProjector(Pair.Member, Pair.Type), New Expression() {dParam}))
+                    Dim p = Pair
+                    Dim f = Function() FieldResolver.ResolveProjector(p.Member, p.Type)
+                    Dim c As New CallClosure With {.CallDelegate = f}
+                    Dim cf = DirectCast(AddressOf c.Invoke(Of DummyType, DummyType), Func(Of DummyType, DummyType)).MakeDelegateMethod({DomainType, p.Type}, GetType(Func(Of ,)).MakeGenericType(DomainType, p.Type))
+                    DelegateCalls.Add(CreatePair(cf, New Expression() {dParam}))
                 Next
                 Dim Context = CreateDelegateExpressionContext(DelegateCalls)
 
@@ -412,9 +420,8 @@ Namespace Mapping
             Return Nothing
         End Function
 
-        Private Function TryResolveTuple(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate]
-            Dim DomainType = TypePair.Key
-            Dim RangeType = TypePair.Value
+        Private Function TryResolveTuple(ByVal RangeType As Type) As [Delegate]
+            Dim DomainType = GetType(D)
             If RangeType.IsValueType OrElse RangeType.IsClass Then
                 Dim FieldsAndProperties As FieldOrPropertyInfo() = Nothing
                 If FieldsAndProperties Is Nothing Then
@@ -444,9 +451,8 @@ Namespace Mapping
             Return Nothing
         End Function
 
-        Private Function TryResolveRecord(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate]
-            Dim DomainType = TypePair.Key
-            Dim RangeType = TypePair.Value
+        Private Function TryResolveRecord(ByVal RangeType As Type) As [Delegate]
+            Dim DomainType = GetType(D)
             If RangeType.IsValueType OrElse RangeType.IsClass Then
                 Dim FieldsAndProperties As FieldOrPropertyInfo() = Nothing
                 Dim Constructor As ConstructorInfo = Nothing
@@ -509,27 +515,26 @@ Namespace Mapping
             Dim RangeType = TypePair.Value
             If RangeType IsNot GetType(R) Then Return Nothing
             With Nothing
-                Dim d = TryResolveAlias(TypePair)
+                Dim d = TryResolveAlias(DomainType)
                 If d IsNot Nothing Then Return d
             End With
             With Nothing
-                Dim d = TryResolveTaggedUnion(TypePair)
+                Dim d = TryResolveTaggedUnion(DomainType)
                 If d IsNot Nothing Then Return d
             End With
             With Nothing
-                Dim d = TryResolveTuple(TypePair)
+                Dim d = TryResolveTuple(DomainType)
                 If d IsNot Nothing Then Return d
             End With
             With Nothing
-                Dim d = TryResolveRecord(TypePair)
+                Dim d = TryResolveRecord(DomainType)
                 If d IsNot Nothing Then Return d
             End With
             Return Nothing
         End Function
 
-        Private Function TryResolveAlias(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate]
-            Dim DomainType = TypePair.Key
-            Dim RangeType = TypePair.Value
+        Private Function TryResolveAlias(ByVal DomainType As Type) As [Delegate]
+            Dim RangeType = GetType(R)
             If DomainType.IsValueType OrElse DomainType.IsClass Then
                 If Not (DomainType.IsValueType OrElse DomainType.IsClass) Then Return Nothing
 
@@ -561,9 +566,14 @@ Namespace Mapping
             Return Nothing
         End Function
 
-        Private Function TryResolveTaggedUnion(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate]
-            Dim DomainType = TypePair.Key
-            Dim RangeType = TypePair.Value
+        Private Class CallClosure
+            Public CallDelegate As Func(Of [Delegate])
+            Public Sub Invoke(Of CD, CR)(ByVal Key As CD, ByVal Value As CR)
+                DirectCast(CallDelegate(), Action(Of CD, CR))(Key, Value)
+            End Sub
+        End Class
+        Private Function TryResolveTaggedUnion(ByVal DomainType As Type) As [Delegate]
+            Dim RangeType = GetType(R)
             If DomainType.IsValueType OrElse DomainType.IsClass Then
                 If Not (DomainType.IsValueType OrElse DomainType.IsClass) Then Return Nothing
 
@@ -584,8 +594,12 @@ Namespace Mapping
                 Dim TagMemberExpr = CreateFieldOrPropertyExpression(dParam, TagMember.Member)
                 DelegateCalls.Add(CreatePair(TagResolver.ResolveAggregator(TagMember.Member, TagMember.Type), New Expression() {TagMemberExpr, rParam}))
                 For Each Pair In FieldsAndProperties
-                    Dim FieldOrPropertyExpr = CreateFieldOrPropertyExpression(dParam, Pair.Member)
-                    DelegateCalls.Add(CreatePair(FieldResolver.ResolveAggregator(Pair.Member, Pair.Type), New Expression() {FieldOrPropertyExpr, rParam}))
+                    Dim p = Pair
+                    Dim f = Function() FieldResolver.ResolveAggregator(p.Member, p.Type)
+                    Dim c As New CallClosure With {.CallDelegate = f}
+                    Dim cf = DirectCast(AddressOf c.Invoke(Of DummyType, DummyType), Action(Of DummyType, DummyType)).MakeDelegateMethod({p.Type, RangeType}, GetType(Action(Of ,)).MakeGenericType(p.Type, RangeType))
+                    Dim FieldOrPropertyExpr = CreateFieldOrPropertyExpression(dParam, p.Member)
+                    DelegateCalls.Add(CreatePair(cf, New Expression() {FieldOrPropertyExpr, rParam}))
                 Next
                 Dim Context = CreateDelegateExpressionContext(DelegateCalls)
                 Dim Cases As New List(Of SwitchCase)
@@ -604,9 +618,8 @@ Namespace Mapping
             Return Nothing
         End Function
 
-        Private Function TryResolveTuple(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate]
-            Dim DomainType = TypePair.Key
-            Dim RangeType = TypePair.Value
+        Private Function TryResolveTuple(ByVal DomainType As Type) As [Delegate]
+            Dim RangeType = GetType(R)
             If DomainType.IsValueType OrElse DomainType.IsClass Then
                 If Not (DomainType.IsValueType OrElse DomainType.IsClass) Then Return Nothing
 
@@ -640,9 +653,8 @@ Namespace Mapping
             Return Nothing
         End Function
 
-        Private Function TryResolveRecord(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate]
-            Dim DomainType = TypePair.Key
-            Dim RangeType = TypePair.Value
+        Private Function TryResolveRecord(ByVal DomainType As Type) As [Delegate]
+            Dim RangeType = GetType(R)
             If DomainType.IsValueType OrElse DomainType.IsClass Then
                 If Not (DomainType.IsValueType OrElse DomainType.IsClass) Then Return Nothing
 
