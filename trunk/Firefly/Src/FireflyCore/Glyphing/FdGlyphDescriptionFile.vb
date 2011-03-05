@@ -3,7 +3,7 @@
 '  File:        FdGlyphDescriptionFile.vb
 '  Location:    Firefly.TextEncoding <Visual Basic .Net>
 '  Description: fd字形描述文件
-'  Version:     2011.02.23.
+'  Version:     2011.03.05.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -64,11 +64,11 @@ Namespace Glyphing
             Return d
         End Function
         Public Shared Function ReadFile(ByVal Reader As StreamReader) As IEnumerable(Of GlyphDescriptor)
-            Return ReadFile(Reader, Function(LineNumber) New InvalidTextFormatException(LineNumber))
+            Return ReadFile(Reader, Function(LineNumber) New InvalidTextFormatException("", New FileLocationInformation With {.LineNumber = LineNumber}))
         End Function
         Public Shared Function ReadFile(ByVal Path As String, ByVal Encoding As System.Text.Encoding) As IEnumerable(Of GlyphDescriptor)
             Using s = Txt.CreateTextReader(Path, Encoding, True)
-                Return ReadFile(s, Function(LineNumber) New InvalidTextFormatException(Path, LineNumber))
+                Return ReadFile(s, Function(LineNumber) New InvalidTextFormatException("", New FileLocationInformation With {.Path = Path, .LineNumber = LineNumber}))
             End Using
         End Function
         Public Shared Function ReadFile(ByVal Path As String) As IEnumerable(Of GlyphDescriptor)

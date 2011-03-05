@@ -3,7 +3,7 @@
 '  File:        WQSG.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: WQSGText文本格式
-'  Version:     2010.09.17.
+'  Version:     2011.03.05.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -64,11 +64,11 @@ Namespace Texting
             Return l.ToArray
         End Function
         Public Shared Function ReadFile(ByVal Reader As StreamReader) As Triple()
-            Return ReadFile(Reader, Function(LineNumber) New InvalidTextFormatException(LineNumber))
+            Return ReadFile(Reader, Function(LineNumber) New InvalidTextFormatException("", New FileLocationInformation With {.LineNumber = LineNumber}))
         End Function
         Public Shared Function ReadFile(ByVal Path As String, ByVal Encoding As Encoding) As Triple()
             Using s = Txt.CreateTextReader(Path, Encoding, True)
-                Return ReadFile(s, Function(LineNumber) New InvalidTextFormatException(Path, LineNumber))
+                Return ReadFile(s, Function(LineNumber) New InvalidTextFormatException("", New FileLocationInformation With {.Path = Path, .LineNumber = LineNumber}))
             End Using
         End Function
         Public Shared Function VerifyFile(ByVal Reader As StreamReader, ByVal WriteFormatError As Action(Of Integer)) As Boolean
