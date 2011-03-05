@@ -667,12 +667,12 @@ Public Module MappingTest
             Dim a1 As New TaggedUnionObject With {._Tag = TaggedUnionObjectTag.Item4, .Item4 = New TaggedUnionObject With {._Tag = TaggedUnionObjectTag.Item2, .Item2 = 2}}
             Dim a2 As TaggedUnionObject
 
-            'bs.Write(s, a1)
-            'Assert(s.Length = 10)
+            bs.Write(s, a1)
+            Assert(s.Length = 10)
 
-            's.Position = 0
-            'a2 = bs.Read(Of TaggedUnionObject)(s)
-            'Assert(a1 = a2)
+            s.Position = 0
+            a2 = bs.Read(Of TaggedUnionObject)(s)
+            Assert(a1 = a2)
 
             Dim x = xs.Write(a1)
             Dim a3 = xs.Read(Of TaggedUnionObject)(x)

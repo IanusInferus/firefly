@@ -1,4 +1,10 @@
-﻿2011.03.03
+﻿2011.03.06
+Firefly.Core.Texting:
+修改文本异常，增加列信息。
+Firefly.Core.Mapping:
+增加XmlSerializer的当前读取XElement，便于获取调试信息，如文件位置。
+
+2011.03.03
 Firefly.Core.Packaging:
 修正ISO文件因为数据开始位置决定不当导致的文件打开抛出异常的问题。
 修正ISO文件的Files属性包含文件夹的问题。

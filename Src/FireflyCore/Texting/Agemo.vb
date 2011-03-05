@@ -3,7 +3,7 @@
 '  File:        Agemo.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: Agemo文本格式
-'  Version:     2010.09.17.
+'  Version:     2011.03.05.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -87,11 +87,11 @@ Namespace Texting
             Return ret
         End Function
         Public Shared Function ReadFile(ByVal Reader As StreamReader) As String()
-            Return ReadFile(Reader, Function(LineNumber) New InvalidTextFormatException(LineNumber), Function(LineNumber) New InvalidTextFormatOrEncodingException(LineNumber))
+            Return ReadFile(Reader, Function(LineNumber) New InvalidTextFormatException("", New FileLocationInformation With {.LineNumber = LineNumber}), Function(LineNumber) New InvalidTextFormatOrEncodingException("", New FileLocationInformation With {.LineNumber = LineNumber}))
         End Function
         Public Shared Function ReadFile(ByVal Path As String, ByVal Encoding As System.Text.Encoding) As String()
             Using s = Txt.CreateTextReader(Path, Encoding, True)
-                Return ReadFile(s, Function(LineNumber) New InvalidTextFormatException(Path, LineNumber), Function(LineNumber) New InvalidTextFormatOrEncodingException(Path, LineNumber))
+                Return ReadFile(s, Function(LineNumber) New InvalidTextFormatException("", New FileLocationInformation With {.Path = Path, .LineNumber = LineNumber}), Function(LineNumber) New InvalidTextFormatOrEncodingException("", New FileLocationInformation With {.Path = Path, .LineNumber = LineNumber}))
             End Using
         End Function
         Private Shared Function VerifyFile(ByVal Reader As StreamReader, ByVal WriteFormatError As Action(Of Integer), ByVal WriteFormatOrEncodingError As Action(Of Integer)) As Boolean

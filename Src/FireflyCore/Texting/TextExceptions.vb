@@ -3,7 +3,7 @@
 '  File:        TextExceptions.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: 文本异常
-'  Version:     2011.02.23.
+'  Version:     2011.03.05.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -13,59 +13,44 @@ Imports System.Collections.Generic
 Imports System.IO
 
 Namespace Texting
+    Public Class FileLocationInformation
+        Public Path As String = ""
+        Public LineNumber As Integer = 0
+        Public ColumnNumber As Integer = 0
+    End Class
+
     Public Class InvalidTextFormatException
         Inherits Exception
 
         Public Sub New()
         End Sub
 
-        Public Sub New(ByVal Path As String, ByVal Message As String)
-            MyBase.New(GetMessage(Path, "", Message))
-            PathValue = Path
+        Public Sub New(ByVal Message As String, ByVal i As FileLocationInformation)
+            MyBase.New(GetMessage(Message, i))
+            FileLocationInformationValue = i
+        End Sub
+        Public Sub New(ByVal Message As String, ByVal i As FileLocationInformation, ByVal InnerException As Exception)
+            MyBase.New(GetMessage(Message, i), InnerException)
+            FileLocationInformationValue = i
         End Sub
 
-        Public Sub New(ByVal LineNumber As Integer, ByVal Message As String)
-            MyBase.New(GetMessage("", CStr(LineNumber), Message))
-            LineNumberValue = LineNumber
-        End Sub
+        Private FileLocationInformationValue As FileLocationInformation
 
-        Public Sub New(ByVal Path As String, ByVal LineNumber As Integer, ByVal Message As String)
-            MyBase.New(GetMessage(Path, CStr(LineNumber), Message))
-            PathValue = Path
-            LineNumberValue = LineNumber
-        End Sub
-
-        Public Sub New(ByVal Path As String)
-            Me.New(Path, "")
-        End Sub
-
-        Public Sub New(ByVal LineNumber As Integer)
-            Me.New(LineNumber, "")
-        End Sub
-
-        Public Sub New(ByVal Path As String, ByVal LineNumber As Integer)
-            Me.New(Path, LineNumber, "")
-        End Sub
-
-        Private PathValue As String
-        Private LineNumberValue As Integer
-
-        Public ReadOnly Property Path As String
+        Public ReadOnly Property FileLocationInformation As FileLocationInformation
             Get
-                Return PathValue
+                Return FileLocationInformationValue
             End Get
         End Property
 
-        Public ReadOnly Property LineNumber As Integer
-            Get
-                Return LineNumberValue
-            End Get
-        End Property
-
-        Private Shared Function GetMessage(ByVal Path As String, ByVal LineNumber As String, ByVal Message As String) As String
+        Private Shared Function GetMessage(ByVal Message As String, ByVal i As FileLocationInformation) As String
             Dim l As New List(Of String)
-            If Path <> "" Then l.Add(Path)
-            If LineNumber <> "" Then l.Add("({0})".Formats(LineNumber))
+            If i.Path <> "" Then l.Add(i.Path)
+            If i.LineNumber <> 0 AndAlso i.ColumnNumber <> 0 Then
+                l.Add("({0}, {1})".Formats(i.LineNumber, i.ColumnNumber))
+            Else
+                If i.LineNumber <> 0 Then l.Add("({0})".Formats(i.LineNumber))
+                If i.ColumnNumber <> 0 Then l.Add("({0})".Formats(i.ColumnNumber))
+            End If
             If Message <> "" Then l.Add(" : {0}".Formats(Message))
             Return String.Join("", l.ToArray())
         End Function
@@ -77,53 +62,32 @@ Namespace Texting
         Public Sub New()
         End Sub
 
-        Public Sub New(ByVal Path As String, ByVal Message As String)
-            MyBase.New(GetMessage(Path, "", Message))
-            PathValue = Path
+        Public Sub New(ByVal Message As String, ByVal i As FileLocationInformation)
+            MyBase.New(GetMessage(Message, i))
+            FileLocationInformationValue = i
+        End Sub
+        Public Sub New(ByVal Message As String, ByVal i As FileLocationInformation, ByVal InnerException As Exception)
+            MyBase.New(GetMessage(Message, i), InnerException)
+            FileLocationInformationValue = i
         End Sub
 
-        Public Sub New(ByVal LineNumber As Integer, ByVal Message As String)
-            MyBase.New(GetMessage("", CStr(LineNumber), Message))
-            LineNumberValue = LineNumber
-        End Sub
+        Private FileLocationInformationValue As FileLocationInformation
 
-        Public Sub New(ByVal Path As String, ByVal LineNumber As Integer, ByVal Message As String)
-            MyBase.New(GetMessage(Path, CStr(LineNumber), Message))
-            PathValue = Path
-            LineNumberValue = LineNumber
-        End Sub
-
-        Public Sub New(ByVal Path As String)
-            Me.New(Path, "")
-        End Sub
-
-        Public Sub New(ByVal LineNumber As Integer)
-            Me.New(LineNumber, "")
-        End Sub
-
-        Public Sub New(ByVal Path As String, ByVal LineNumber As Integer)
-            Me.New(Path, LineNumber, "")
-        End Sub
-
-        Private PathValue As String
-        Private LineNumberValue As Integer
-
-        Public ReadOnly Property Path As String
+        Public ReadOnly Property FileLocationInformation As FileLocationInformation
             Get
-                Return PathValue
+                Return FileLocationInformationValue
             End Get
         End Property
 
-        Public ReadOnly Property LineNumber As Integer
-            Get
-                Return LineNumberValue
-            End Get
-        End Property
-
-        Private Shared Function GetMessage(ByVal Path As String, ByVal LineNumber As String, ByVal Message As String) As String
+        Private Shared Function GetMessage(ByVal Message As String, ByVal i As FileLocationInformation) As String
             Dim l As New List(Of String)
-            If Path <> "" Then l.Add(Path)
-            If LineNumber <> "" Then l.Add("({0})".Formats(LineNumber))
+            If i.Path <> "" Then l.Add(i.Path)
+            If i.LineNumber <> 0 AndAlso i.ColumnNumber <> 0 Then
+                l.Add("({0}, {1})".Formats(i.LineNumber, i.ColumnNumber))
+            Else
+                If i.LineNumber <> 0 Then l.Add("({0})".Formats(i.LineNumber))
+                If i.ColumnNumber <> 0 Then l.Add("({0})".Formats(i.ColumnNumber))
+            End If
             If Message <> "" Then l.Add(" : {0}".Formats(Message))
             Return String.Join("", l.ToArray())
         End Function

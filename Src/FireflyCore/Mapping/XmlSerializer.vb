@@ -3,7 +3,7 @@
 '  File:        XmlSerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Xml序列化类
-'  Version:     2011.03.03.
+'  Version:     2011.03.06.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -105,6 +105,12 @@ Namespace Mapping.XmlText
             Dim m = WriterCache.ResolveProjector(Of T, XElement)()
             Return m(Value)
         End Function
+
+        Public ReadOnly Property CurrentReadingXElement As XElement
+            Get
+                Return ReaderResolver.CurrentReadingXElement
+            End Get
+        End Property
     End Class
 
     Public Class XmlReaderResolver
@@ -114,6 +120,7 @@ Namespace Mapping.XmlText
         Private PrimitiveResolver As PrimitiveResolver
         Private Resolver As IMapperResolver
         Private ProjectorResolverList As LinkedList(Of IProjectorResolver)
+        Private DebugResolver As DebugReaderResolver
 
         Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IProjectorResolver.TryResolveProjector
             Return Resolver.TryResolveProjector(TypePair)
@@ -166,7 +173,8 @@ Namespace Mapping.XmlText
                 New InheritanceResolver(Root, ExternalTypes),
                 TranslatorResolver.Create(Root, New XElementProjectorToProjectorDomainTranslator)
             })
-            Resolver = CreateMapper(ProjectorResolverList.Concatenated, EmptyAggregatorResolver)
+            DebugResolver = New DebugReaderResolver(CreateMapper(ProjectorResolverList.Concatenated, EmptyAggregatorResolver))
+            Resolver = DebugResolver
         End Sub
 
         Public Sub PutReader(Of T)(ByVal Reader As Func(Of String, T))
@@ -181,6 +189,12 @@ Namespace Mapping.XmlText
         Public Sub PutReaderTranslator(Of M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of XElement, M))
             ProjectorResolverList.AddFirst(TranslatorResolver.Create(Root, Translator))
         End Sub
+
+        Public ReadOnly Property CurrentReadingXElement As XElement
+            Get
+                Return DebugResolver.CurrentReadingXElement
+            End Get
+        End Property
     End Class
 
     Public Class XmlWriterResolver
@@ -852,5 +866,54 @@ Namespace Mapping.XmlText
             Me.InnerResolver = Resolver.AsNoncircular
             Me.ExternalTypeDict = ExternalTypes.ToDictionary(Function(type) GetTypeFriendlyName(type), StringComparer.OrdinalIgnoreCase)
         End Sub
+    End Class
+
+    Public Class DebugReaderResolver
+        Implements IMapperResolver
+
+        Private InnerResolver As IMapperResolver
+        Public Sub New(ByVal InnerResolver As IMapperResolver)
+            Me.InnerResolver = InnerResolver
+        End Sub
+
+        Private CurrentReadingXElementValue As XElement
+        Private Sub SetCurrentXElement(ByVal x As XElement)
+            CurrentReadingXElementValue = x
+        End Sub
+        Public ReadOnly Property CurrentReadingXElement As XElement
+            Get
+                Return CurrentReadingXElementValue
+            End Get
+        End Property
+
+        Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IProjectorResolver.TryResolveProjector
+            Dim m = InnerResolver.TryResolveProjector(TypePair)
+            If TypePair.Key IsNot GetType(XElement) Then Return m
+            If m Is Nothing Then Return Nothing
+
+            Dim Parameters = m.GetParameters().Select(Function(p) Expression.Parameter(p.ParameterType, p.Name)).ToArray()
+            Dim DebugDelegate = DirectCast(DirectCast(AddressOf Me.SetCurrentXElement, Action(Of XElement)), [Delegate])
+            Dim DebugCall = CreatePair(DebugDelegate, New Expression() {Parameters.First})
+            Dim OriginalCall = CreatePair(m, Parameters.Select(Function(p) DirectCast(p, Expression)).ToArray())
+            Dim Context = CreateDelegateExpressionContext({DebugCall, OriginalCall})
+            Dim FunctionLambda = Expression.Lambda(m.GetType(), Expression.Block(Context.DelegateExpressions), Parameters)
+
+            Return CreateDelegate(Context.ClosureParam, Context.Closure, FunctionLambda)
+        End Function
+
+        Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IAggregatorResolver.TryResolveAggregator
+            Dim m = InnerResolver.TryResolveAggregator(TypePair)
+            If TypePair.Key IsNot GetType(XElement) Then Return m
+            If m Is Nothing Then Return Nothing
+
+            Dim Parameters = m.GetParameters().Select(Function(p) Expression.Parameter(p.ParameterType, p.Name)).ToArray()
+            Dim DebugDelegate = DirectCast(DirectCast(AddressOf Me.SetCurrentXElement, Action(Of XElement)), [Delegate])
+            Dim DebugCall = CreatePair(DebugDelegate, New Expression() {Parameters.First})
+            Dim OriginalCall = CreatePair(m, Parameters.Select(Function(p) DirectCast(p, Expression)).ToArray())
+            Dim Context = CreateDelegateExpressionContext({DebugCall, OriginalCall})
+            Dim FunctionLambda = Expression.Lambda(m.GetType(), Expression.Block(Context.DelegateExpressions), Parameters)
+
+            Return CreateDelegate(Context.ClosureParam, Context.Closure, FunctionLambda)
+        End Function
     End Class
 End Namespace
