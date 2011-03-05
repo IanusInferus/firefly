@@ -3,7 +3,7 @@
 '  File:        Xml.vb
 '  Location:    Firefly.Setting <Visual Basic .Net>
 '  Description: Xml读写
-'  Version:     2011.03.03.
+'  Version:     2011.03.06.
 '  Copyright:   F.R.C.
 '
 '==========================================================================
@@ -99,7 +99,7 @@ Namespace Setting
         Public Shared Function ReadFile(Of T)(ByVal xs As IXmlReader, ByVal Reader As StreamReader) As T
             Dim Root As XElement
             Using r = XmlReader.Create(Reader)
-                Root = XElement.Load(r)
+                Root = XElement.Load(r, LoadOptions.PreserveWhitespace Or LoadOptions.SetLineInfo)
             End Using
             Return xs.Read(Of T)(Root)
         End Function
