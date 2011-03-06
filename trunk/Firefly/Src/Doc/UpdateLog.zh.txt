@@ -1,6 +1,7 @@
 ﻿2011.03.07
 Firefly.Core.Mapping:
-增加运行时循环引用检测器。
+增加运行时循环引用检测器RuntimeNoncircular。
+将所有Noncircular解析器更换为RuntimeNoncircular。
 
 2011.03.06
 Firefly.Core.Texting:

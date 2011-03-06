@@ -361,7 +361,7 @@ Namespace Mapping.XmlText
 
         Private InnerResolver As IProjectorResolver
         Public Sub New(ByVal Resolver As IProjectorResolver)
-            Me.InnerResolver = Resolver.AsNoncircular
+            Me.InnerResolver = Resolver.AsRuntimeNoncircular
         End Sub
     End Class
     Public Class CollectionPacker
@@ -380,7 +380,7 @@ Namespace Mapping.XmlText
 
         Private InnerResolver As IProjectorResolver
         Public Sub New(ByVal Resolver As IProjectorResolver)
-            Me.InnerResolver = Resolver.AsNoncircular
+            Me.InnerResolver = Resolver.AsRuntimeNoncircular
         End Sub
     End Class
 
