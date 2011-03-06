@@ -97,10 +97,7 @@ Namespace Setting
             End Using
         End Function
         Public Shared Function ReadFile(Of T)(ByVal xs As IXmlReader, ByVal Reader As StreamReader) As T
-            Dim Root As XElement
-            Using r = XmlReader.Create(Reader)
-                Root = XElement.Load(r, LoadOptions.PreserveWhitespace Or LoadOptions.SetLineInfo)
-            End Using
+            Dim Root = XmlFile.ReadFile(Reader)
             Return xs.Read(Of T)(Root)
         End Function
 
@@ -153,10 +150,7 @@ Namespace Setting
         End Sub
         Public Shared Sub WriteFile(Of T)(ByVal xs As IXmlWriter, ByVal Writer As StreamWriter, ByVal Value As T)
             Dim Root = xs.Write(Of T)(Value)
-            Dim Setting = New XmlWriterSettings With {.Encoding = Writer.Encoding, .Indent = True, .OmitXmlDeclaration = False}
-            Using w = XmlWriter.Create(Writer, Setting)
-                Root.Save(w)
-            End Using
+            XmlFile.WriteFile(Writer, Root)
         End Sub
 
         Private Class DummyType2

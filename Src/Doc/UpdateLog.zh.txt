@@ -5,6 +5,8 @@ Firefly.Core.Mapping:
 增加XmlSerializer的当前读取XElement，便于获取调试信息，如文件位置。
 Firefly.Core.Streaming:
 增加ArrayStream的Peek功能。
+Firefly.Core.Texting:
+增加XmlFile用于直接读取XElement。
 
 2011.03.03
 Firefly.Core.Packaging:
