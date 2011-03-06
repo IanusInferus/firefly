@@ -3,7 +3,7 @@
 '  File:        ArrayStream.vb
 '  Location:    Firefly.Streaming <Visual Basic .Net>
 '  Description: 数组流
-'  Version:     2010.12.01.
+'  Version:     2011.03.06.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -65,6 +65,15 @@ Namespace Streaming
             BaseArray(PositionValue) = b
             PositionValue += 1
         End Sub
+        ''' <summary>查看元素。</summary>
+        Public Function PeekElement() As T
+            Dim HoldPosition = PositionValue
+            Try
+                Return ReadElement()
+            Finally
+                PositionValue = HoldPosition
+            End Try
+        End Function
 
         ''' <summary>强制同步缓冲数据。</summary>
         Public Sub Flush()
