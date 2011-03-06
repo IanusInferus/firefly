@@ -91,25 +91,32 @@ Namespace Mapping.MetaSchema
         Public Class StringAggregatorToProjectorRangeTranslator
             Implements IAggregatorToProjectorRangeTranslator(Of String, PackerState)
 
+            Private CallStackDepth As Integer = 0
             Public Function TranslateAggregatorToProjectorRange(Of D)(ByVal Aggregator As Action(Of D, PackerState)) As Func(Of D, String) Implements IAggregatorToProjectorRangeTranslator(Of String, PackerState).TranslateAggregatorToProjectorRange
                 Dim Name = GetType(D).Name
                 Return Function(v)
-                           If v Is Nothing Then Return "$Empty"
-                           Dim s As New PackerState With {.List = New List(Of String)(), .NoBraces = False, .NoName = False}
-                           Aggregator(v, s)
-                           If s.NoBraces Then
-                               If s.NoName Then
-                                   Return s.List.Single
+                           CallStackDepth += 1
+                           Try
+                               If v Is Nothing Then Return "$Empty"
+                               If CallStackDepth >= 5 Then Return ".."
+                               Dim s As New PackerState With {.List = New List(Of String)(), .NoBraces = False, .NoName = False}
+                               Aggregator(v, s)
+                               If s.NoBraces Then
+                                   If s.NoName Then
+                                       Return s.List.Single
+                                   Else
+                                       Throw New InvalidOperationException
+                                   End If
                                Else
-                                   Throw New InvalidOperationException
+                                   If s.NoName Then
+                                       Return "{" & String.Join(", ", s.List.ToArray()) & "}"
+                                   Else
+                                       Return Name & "{" & String.Join(", ", s.List.ToArray()) & "}"
+                                   End If
                                End If
-                           Else
-                               If s.NoName Then
-                                   Return "{" & String.Join(", ", s.List.ToArray()) & "}"
-                               Else
-                                   Return Name & "{" & String.Join(", ", s.List.ToArray()) & "}"
-                               End If
-                           End If
+                           Finally
+                               CallStackDepth -= 1
+                           End Try
                        End Function
             End Function
         End Class
