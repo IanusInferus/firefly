@@ -85,7 +85,7 @@ Public Module MappingTest
 
         Private InnerResolver As IProjectorResolver
         Public Sub New(ByVal Resolver As IProjectorResolver)
-            Me.InnerResolver = Resolver.AsNoncircular
+            Me.InnerResolver = Resolver.AsRuntimeNoncircular
         End Sub
     End Class
 
@@ -106,7 +106,7 @@ Public Module MappingTest
 
         Private InnerResolver As IAggregatorResolver
         Public Sub New(ByVal Resolver As IAggregatorResolver)
-            Me.InnerResolver = Resolver.AsNoncircular
+            Me.InnerResolver = Resolver.AsRuntimeNoncircular
         End Sub
     End Class
 
