@@ -5,10 +5,12 @@ Firefly.Core.Mapping:
 增加XmlSerializer的当前读取XElement，便于获取调试信息，如文件位置。
 所有元类型的Mapper解析改为运行时进行，以支持递归类型。
 增加DebugDisplay。
+增加MetaSchema元类型描述。
 Firefly.Core.Streaming:
 增加ArrayStream的Peek功能。
 Firefly.Core.Texting:
 增加XmlFile用于直接读取XElement。
+增加TreeFile(Xml等价格式)用于读写树状Tree格式文件到XElement。
 
 2011.03.03
 Firefly.Core.Packaging:
