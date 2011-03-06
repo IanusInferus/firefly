@@ -309,6 +309,7 @@ Public NotInheritable Class TreeFile
             Return Head.ToUTF32.Skip(4 * IndentLevel).ToUTF16B
         End Function
 
+        Private Shared Tab As String = "\t".Descape
         Public Function GetTokens(ByVal IndentLevel As Integer, ByVal Line As String) As String()
             '双引号(")中的字符串是一个token，且两个双引号表示一个双引号
             '双斜杠(//)及之后的字符表示注释
@@ -348,7 +349,7 @@ Public NotInheritable Class TreeFile
                             If ls.Position >= ls.Length Then Exit While
 
                             Dim c = ls.ReadElement()
-                            If c = "\t".Descape Then Throw New InvalidTextFormatException("UseOnlySpaceAsWhitespace", New FileLocationInformation With {.LineNumber = s.Position + 1, .ColumnNumber = ColumeIndex + 1})
+                            If c = Tab Then Throw New InvalidTextFormatException("UseOnlySpaceAsWhitespace", New FileLocationInformation With {.LineNumber = s.Position + 1, .ColumnNumber = ColumeIndex + 1})
                             ColumeIndex += 1
                             If c = " " Then Continue While
                             If rWhitespace.Match(c).Success Then Throw New InvalidTextFormatException("UseOnlySpaceAsWhitespace", New FileLocationInformation With {.LineNumber = s.Position + 1, .ColumnNumber = ColumeIndex + 1 - 1})
@@ -370,7 +371,7 @@ Public NotInheritable Class TreeFile
                             If ls.Position >= ls.Length Then Throw New InvalidTextFormatException("", New FileLocationInformation With {.LineNumber = s.Position + 1, .ColumnNumber = ColumeIndex + 1})
 
                             Dim c = ls.ReadElement()
-                            If c = "\t".Descape Then
+                            If c = Tab Then
                                 ColumeIndex += 4
                             Else
                                 ColumeIndex += 1
@@ -398,7 +399,7 @@ Public NotInheritable Class TreeFile
                             End If
 
                             Dim c = ls.ReadElement()
-                            If c = "\t".Descape Then Throw New InvalidTextFormatException("UseOnlySpaceAsWhitespace", New FileLocationInformation With {.LineNumber = s.Position + 1, .ColumnNumber = ColumeIndex + 1})
+                            If c = Tab Then Throw New InvalidTextFormatException("UseOnlySpaceAsWhitespace", New FileLocationInformation With {.LineNumber = s.Position + 1, .ColumnNumber = ColumeIndex + 1})
                             ColumeIndex += 1
                             If c = " " Then
                                 Tokens.Add(InnerTokens.ToArray.ToUTF16B)
