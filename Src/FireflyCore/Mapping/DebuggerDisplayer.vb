@@ -94,6 +94,7 @@ Namespace Mapping.MetaSchema
             Public Function TranslateAggregatorToProjectorRange(Of D)(ByVal Aggregator As Action(Of D, PackerState)) As Func(Of D, String) Implements IAggregatorToProjectorRangeTranslator(Of String, PackerState).TranslateAggregatorToProjectorRange
                 Dim Name = GetType(D).Name
                 Return Function(v)
+                           If v Is Nothing Then Return "$Empty"
                            Dim s As New PackerState With {.List = New List(Of String)(), .NoBraces = False, .NoName = False}
                            Aggregator(v, s)
                            If s.NoBraces Then
@@ -126,12 +127,13 @@ Namespace Mapping.MetaSchema
             Implements IMapperResolver
 
             Private Shared Function ConvertStringToString(ByVal v As String) As String
+                If v Is Nothing Then Return "$Empty"
                 Return """" & v & """"
             End Function
 
             Private Shared Function ConvertToString(Of D)(ByVal v As D) As String
                 If v Is Nothing Then
-                    Return "unit"
+                    Return "$Empty"
                 Else
                     Return v.ToString()
                 End If
@@ -155,11 +157,16 @@ Namespace Mapping.MetaSchema
             Implements IFieldAggregatorResolver(Of PackerState)
 
             Private Function Resolve(Of D)(ByVal Name As String) As Action(Of D, PackerState)
-                Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(String))), Func(Of D, String))
                 Dim F =
                     Sub(k As D, s As PackerState)
-                        Dim e = Mapper(k)
-                        s.List.Add(Name & " = " & e)
+                        Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(String))), Func(Of D, String))
+                        If k Is Nothing Then
+                            Dim e = "$Empty"
+                            s.List.Add(Name & " = " & e)
+                        Else
+                            Dim e = Mapper(k)
+                            s.List.Add(Name & " = " & e)
+                        End If
                     End Sub
                 Return F
             End Function
@@ -188,10 +195,14 @@ Namespace Mapping.MetaSchema
             Implements IAliasFieldAggregatorResolver(Of PackerState)
 
             Private Function Resolve(Of D)() As Action(Of D, PackerState)
-                Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(String))), Func(Of D, String))
                 Dim F =
                     Sub(k As D, s As PackerState)
-                        s.List.Add(Mapper(k))
+                        Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(String))), Func(Of D, String))
+                        If k Is Nothing Then
+                            s.List.Add("$Empty")
+                        Else
+                            s.List.Add(Mapper(k))
+                        End If
                         s.NoBraces = True
                         s.NoName = True
                     End Sub
@@ -214,7 +225,6 @@ Namespace Mapping.MetaSchema
             Implements ITagAggregatorResolver(Of PackerState)
 
             Private Function Resolve(Of D)() As Action(Of D, PackerState)
-                Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(String))), Func(Of D, String))
                 Dim F =
                     Sub(k As D, s As PackerState)
                     End Sub
@@ -237,11 +247,16 @@ Namespace Mapping.MetaSchema
             Implements ITaggedUnionFieldAggregatorResolver(Of PackerState)
 
             Private Function Resolve(Of D)(ByVal Name As String) As Action(Of D, PackerState)
-                Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(String))), Func(Of D, String))
                 Dim F =
                     Sub(k As D, s As PackerState)
-                        Dim e = Mapper(k)
-                        s.List.Add(Name & "{" & e & "}")
+                        Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(String))), Func(Of D, String))
+                        If k Is Nothing Then
+                            Dim e = "$Empty"
+                            s.List.Add(Name & "{" & e & "}")
+                        Else
+                            Dim e = Mapper(k)
+                            s.List.Add(Name & "{" & e & "}")
+                        End If
                         s.NoBraces = True
                         s.NoName = True
                     End Sub
@@ -272,10 +287,14 @@ Namespace Mapping.MetaSchema
             Implements ITupleElementAggregatorResolver(Of PackerState)
 
             Private Function Resolve(Of D)(ByVal Index As Integer) As Action(Of D, PackerState)
-                Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(String))), Func(Of D, String))
                 Dim F =
                     Sub(k As D, s As PackerState)
-                        s.List.Add(Mapper(k))
+                        Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(String))), Func(Of D, String))
+                        If k Is Nothing Then
+                            s.List.Add("$Empty")
+                        Else
+                            s.List.Add(Mapper(k))
+                        End If
                         s.NoName = True
                     End Sub
                 Return F
