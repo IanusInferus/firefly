@@ -3,7 +3,7 @@
 '  File:        BinarySerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 二进制序列化类
-'  Version:     2011.03.03.
+'  Version:     2011.03.07.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -353,7 +353,7 @@ Namespace Mapping.Binary
 
         Private InnerResolver As IProjectorResolver
         Public Sub New(ByVal Resolver As IProjectorResolver)
-            Me.InnerResolver = Resolver.AsNoncircular
+            Me.InnerResolver = Resolver.AsRuntimeNoncircular
         End Sub
     End Class
 
@@ -383,7 +383,7 @@ Namespace Mapping.Binary
 
         Private InnerResolver As IAggregatorResolver
         Public Sub New(ByVal Resolver As IAggregatorResolver)
-            Me.InnerResolver = Resolver.AsNoncircular
+            Me.InnerResolver = Resolver.AsRuntimeNoncircular
         End Sub
     End Class
 
@@ -407,7 +407,7 @@ Namespace Mapping.Binary
 
         Private InnerResolver As IProjectorResolver
         Public Sub New(ByVal Resolver As IProjectorResolver)
-            Me.InnerResolver = Resolver.AsNoncircular
+            Me.InnerResolver = Resolver.AsRuntimeNoncircular
         End Sub
     End Class
 
@@ -430,7 +430,7 @@ Namespace Mapping.Binary
 
         Private InnerResolver As IAggregatorResolver
         Public Sub New(ByVal Resolver As IAggregatorResolver)
-            Me.InnerResolver = Resolver.AsNoncircular
+            Me.InnerResolver = Resolver.AsRuntimeNoncircular
         End Sub
     End Class
 End Namespace
