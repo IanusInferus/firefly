@@ -3,7 +3,7 @@
 '  File:        DebuggerDisplayer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 调试序列化器
-'  Version:     2011.03.06.
+'  Version:     2011.03.07.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -194,7 +194,7 @@ Namespace Mapping.MetaSchema
 
             Private InnerResolver As IProjectorResolver
             Public Sub New(ByVal Resolver As IProjectorResolver)
-                Me.InnerResolver = Resolver.AsNoncircular
+                Me.InnerResolver = Resolver.AsRuntimeNoncircular
             End Sub
         End Class
 
@@ -224,7 +224,7 @@ Namespace Mapping.MetaSchema
 
             Private InnerResolver As IProjectorResolver
             Public Sub New(ByVal Resolver As IProjectorResolver)
-                Me.InnerResolver = Resolver.AsNoncircular
+                Me.InnerResolver = Resolver.AsRuntimeNoncircular
             End Sub
         End Class
 
@@ -246,7 +246,7 @@ Namespace Mapping.MetaSchema
 
             Private InnerResolver As IProjectorResolver
             Public Sub New(ByVal Resolver As IProjectorResolver)
-                Me.InnerResolver = Resolver.AsNoncircular
+                Me.InnerResolver = Resolver.AsRuntimeNoncircular
             End Sub
         End Class
 
@@ -286,7 +286,7 @@ Namespace Mapping.MetaSchema
 
             Private InnerResolver As IProjectorResolver
             Public Sub New(ByVal Resolver As IProjectorResolver)
-                Me.InnerResolver = Resolver.AsNoncircular
+                Me.InnerResolver = Resolver.AsRuntimeNoncircular
             End Sub
         End Class
 
@@ -322,7 +322,7 @@ Namespace Mapping.MetaSchema
 
             Private InnerResolver As IProjectorResolver
             Public Sub New(ByVal Resolver As IProjectorResolver)
-                Me.InnerResolver = Resolver.AsNoncircular
+                Me.InnerResolver = Resolver.AsRuntimeNoncircular
             End Sub
         End Class
     End Class

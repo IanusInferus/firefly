@@ -1,4 +1,8 @@
-﻿2011.03.06
+﻿2011.03.07
+Firefly.Core.Mapping:
+增加运行时循环引用检测器。
+
+2011.03.06
 Firefly.Core.Texting:
 修改文本异常，增加列信息。
 Firefly.Core.Mapping:
