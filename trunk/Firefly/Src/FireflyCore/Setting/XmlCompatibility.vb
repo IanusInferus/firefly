@@ -3,7 +3,7 @@
 '  File:        XmlCompatibility.vb
 '  Location:    Firefly.Setting <Visual Basic .Net>
 '  Description: Xml读写兼容支持，用于兼容System.Xml.Serialization.XmlSerializer
-'  Version:     2011.03.03.
+'  Version:     2011.03.07.
 '  Copyright:   F.R.C.
 '
 '==========================================================================
@@ -217,7 +217,7 @@ Namespace Setting
 
             Private InnerResolver As IProjectorResolver
             Public Sub New(ByVal Resolver As IProjectorResolver)
-                Me.InnerResolver = Resolver.AsNoncircular
+                Me.InnerResolver = Resolver.AsRuntimeNoncircular
             End Sub
         End Class
     End Class

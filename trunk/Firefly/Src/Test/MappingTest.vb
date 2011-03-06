@@ -566,7 +566,7 @@ Public Module MappingTest
 
     <MetaSchema.Tuple()> Public Class TupleObject
         Public Item1 As Integer = 1
-        Public Item2 As int16 = 2
+        Public Item2 As Int16 = 2
         Public Item3 As Byte = 3
         Public Shared Operator =(ByVal Left As TupleObject, ByVal Right As TupleObject) As Boolean
             Return Left.Item1 = Right.Item1 AndAlso Left.Item2 = Right.Item2 AndAlso Left.Item3 = Right.Item3
@@ -729,6 +729,39 @@ Public Module MappingTest
         Dim s = MetaSchema.DebuggerDisplayer.ConvertToString(o)
     End Sub
 
+    Public Sub TestRecursive()
+        Using s = Streams.CreateMemoryStream
+            Dim bs As New Binary.BinarySerializer
+            Dim xs As New XmlSerializer
+
+            Dim o As New RecursiveObject With {.Items = {New RecursiveObject With {.Items = New RecursiveObject() {}}}}
+
+            Dim o2 As New RecursiveObject
+            o2.Items = New RecursiveObject() {o2}
+
+            bs.Write(s, o)
+            s.Position = 0
+            Dim o_2 = bs.Read(Of RecursiveObject)(s)
+
+            Dim x = xs.Write(o)
+            Dim o_3 = xs.Read(Of RecursiveObject)(x)
+
+            Try
+                bs.Write(s, o2)
+                Assert(False)
+            Catch ex As InvalidOperationException
+                Assert(True)
+            End Try
+
+            Try
+                Dim x_2 = xs.Write(o2)
+                Assert(False)
+            Catch ex As InvalidOperationException
+                Assert(True)
+            End Try
+        End Using
+    End Sub
+
     Public Sub TestMapping()
         TestMetaProgramming()
         TestObjectTreeMapper()
@@ -741,5 +774,6 @@ Public Module MappingTest
         TestTuple()
         TestMixed()
         TestDebuggerDisplayer()
+        TestRecursive()
     End Sub
 End Module
