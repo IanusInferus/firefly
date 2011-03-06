@@ -719,6 +719,16 @@ Public Module MappingTest
         End Using
     End Sub
 
+    Public Class RecursiveObject
+        Public Items As RecursiveObject()
+    End Class
+
+    Public Sub TestDebuggerDisplayer()
+        Dim o As New RecursiveObject With {.Items = {New RecursiveObject With {.Items = New RecursiveObject() {}}, New RecursiveObject With {.Items = Nothing}}}
+
+        Dim s = MetaSchema.DebuggerDisplayer.ConvertToString(o)
+    End Sub
+
     Public Sub TestMapping()
         TestMetaProgramming()
         TestObjectTreeMapper()
@@ -730,5 +740,6 @@ Public Module MappingTest
         TestTaggedUnion()
         TestTuple()
         TestMixed()
+        TestDebuggerDisplayer()
     End Sub
 End Module
