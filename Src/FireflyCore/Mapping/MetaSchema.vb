@@ -3,12 +3,13 @@
 '  File:        MetaSchema.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 元类型结构
-'  Version:     2011.02.27.
+'  Version:     2011.03.07.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
 
 Imports System
+Imports System.Diagnostics
 
 Namespace Mapping.MetaSchema
     ''' <summary>记录类型标记</summary>
@@ -57,5 +58,153 @@ Namespace Mapping.MetaSchema
     ''' </remarks>
     Public Class TagAttribute
         Inherits Attribute
+    End Class
+
+
+    Public Enum ConceptDefTag
+        Primitive
+        [Alias]
+        Record
+        TaggedUnion
+    End Enum
+
+    Public Enum ConceptSpecTag
+        ConceptRef
+        Tuple
+        List
+    End Enum
+
+    <TaggedUnion(), DebuggerDisplay("{ToString()}")>
+    Public Class ConceptDef
+        <Tag()> Public _Tag As ConceptDefTag
+        Public Primitive As Primitive
+        Public [Alias] As [Alias]
+        Public Record As Record
+        Public TaggedUnion As TaggedUnion
+
+        Public Overrides Function ToString() As String
+            Return DebuggerDisplayer.ConvertToString(Me)
+        End Function
+    End Class
+
+    <[Alias](), DebuggerDisplay("{ToString()}")>
+    Public Class ConceptRef
+        Public Name As String
+
+        Public Shared Widening Operator CType(ByVal o As String) As ConceptRef
+            Return New ConceptRef With {.Name = o}
+        End Operator
+        Public Shared Widening Operator CType(ByVal c As ConceptRef) As String
+            Return c.Name
+        End Operator
+
+        Public Overrides Function ToString() As String
+            Return DebuggerDisplayer.ConvertToString(Me)
+        End Function
+    End Class
+
+    <TaggedUnion(), DebuggerDisplay("{ToString()}")>
+    Public Class ConceptSpec
+        <Tag()> Public _Tag As ConceptSpecTag
+        Public ConceptRef As ConceptRef
+        Public Tuple As Tuple
+        Public List As List
+
+        Public Overrides Function ToString() As String
+            Return DebuggerDisplayer.ConvertToString(Me)
+        End Function
+    End Class
+
+    <[Alias](), DebuggerDisplay("{ToString()}")>
+    Public Class Primitive
+        Public Name As String
+
+        Public Shared Widening Operator CType(ByVal o As String) As Primitive
+            Return New Primitive With {.Name = o}
+        End Operator
+        Public Shared Widening Operator CType(ByVal c As Primitive) As String
+            Return c.Name
+        End Operator
+
+        Public Overrides Function ToString() As String
+            Return DebuggerDisplayer.ConvertToString(Me)
+        End Function
+    End Class
+
+    <Record(), DebuggerDisplay("{ToString()}")>
+    Public Class [Alias]
+        Public Name As String
+        Public Type As ConceptSpec
+
+        Public Overrides Function ToString() As String
+            Return DebuggerDisplayer.ConvertToString(Me)
+        End Function
+    End Class
+
+    <Record(), DebuggerDisplay("{ToString()}")>
+    Public Class Tuple
+        Public Types As ConceptSpec()
+
+        Public Overrides Function ToString() As String
+            Return DebuggerDisplayer.ConvertToString(Me)
+        End Function
+    End Class
+
+    <Record(), DebuggerDisplay("{ToString()}")>
+    Public Class List
+        Public ElementType As ConceptSpec
+
+        Public Overrides Function ToString() As String
+            Return DebuggerDisplayer.ConvertToString(Me)
+        End Function
+    End Class
+
+    <Record(), DebuggerDisplay("{ToString()}")>
+    Public Class Field
+        Public Name As String
+        Public Type As ConceptSpec
+
+        Public Overrides Function ToString() As String
+            Return DebuggerDisplayer.ConvertToString(Me)
+        End Function
+    End Class
+
+    <Record(), DebuggerDisplay("{ToString()}")>
+    Public Class Record
+        Public Name As String
+        Public Fields As Field()
+
+        Public Overrides Function ToString() As String
+            Return DebuggerDisplayer.ConvertToString(Me)
+        End Function
+    End Class
+
+    <Record(), DebuggerDisplay("{ToString()}")>
+    Public Class Alternative
+        Public Name As String
+        Public Type As ConceptSpec
+
+        Public Overrides Function ToString() As String
+            Return DebuggerDisplayer.ConvertToString(Me)
+        End Function
+    End Class
+
+    <Record(), DebuggerDisplay("{ToString()}")>
+    Public Class TaggedUnion
+        Public Name As String
+        Public Alternatives As Alternative()
+
+        Public Overrides Function ToString() As String
+            Return DebuggerDisplayer.ConvertToString(Me)
+        End Function
+    End Class
+
+    <Record(), DebuggerDisplay("{ToString()}")>
+    Public Class Schema
+        Public Concepts As ConceptDef()
+
+        Public Overrides Function ToString() As String
+            Return DebuggerDisplayer.ConvertToString(Me)
+        End Function
     End Class
 End Namespace
