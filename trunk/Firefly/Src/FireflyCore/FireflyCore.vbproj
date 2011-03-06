@@ -137,6 +137,7 @@
     <Compile Include="Texting\UniHanDatabase.vb" />
     <Compile Include="Texting\WQSG.vb" />
     <Compile Include="Texting\Txt.vb" />
+    <Compile Include="Texting\XmlFile.vb" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="My Project\" />
