@@ -3,6 +3,8 @@ Firefly.Core.Texting:
 修改文本异常，增加列信息。
 Firefly.Core.Mapping:
 增加XmlSerializer的当前读取XElement，便于获取调试信息，如文件位置。
+所有元类型的Mapper解析改为运行时进行，以支持递归类型。
+增加DebugDisplay。
 Firefly.Core.Streaming:
 增加ArrayStream的Peek功能。
 Firefly.Core.Texting:

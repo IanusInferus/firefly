@@ -350,6 +350,13 @@ Namespace Mapping
             Return Nothing
         End Function
 
+        Private Class CallClosure
+            Public CallDelegate As Func(Of [Delegate])
+            Public Function Invoke(Of CD, CR)(ByVal Key As CD) As CR
+                Return DirectCast(CallDelegate(), Func(Of CD, CR))(Key)
+            End Function
+        End Class
+
         Private Function TryResolveAlias(ByVal RangeType As Type) As [Delegate]
             Dim DomainType = GetType(D)
             If RangeType.IsValueType OrElse RangeType.IsClass Then
@@ -363,7 +370,11 @@ Namespace Mapping
                 Dim dParam = Expression.Parameter(DomainType, "Key")
                 Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
                 For Each Pair In FieldsAndProperties
-                    DelegateCalls.Add(CreatePair(AliasFieldResolver.ResolveProjector(Pair.Member, Pair.Type), New Expression() {dParam}))
+                    Dim p = Pair
+                    Dim f = Function() AliasFieldResolver.ResolveProjector(p.Member, p.Type)
+                    Dim c As New CallClosure With {.CallDelegate = f}
+                    Dim cf = DirectCast(AddressOf c.Invoke(Of DummyType, DummyType), Func(Of DummyType, DummyType)).MakeDelegateMethod({DomainType, p.Type}, GetType(Func(Of ,)).MakeGenericType(DomainType, p.Type))
+                    DelegateCalls.Add(CreatePair(cf, New Expression() {dParam}))
                 Next
                 Dim Context = CreateDelegateExpressionContext(DelegateCalls)
 
@@ -379,12 +390,6 @@ Namespace Mapping
             Return Nothing
         End Function
 
-        Private Class CallClosure
-            Public CallDelegate As Func(Of [Delegate])
-            Public Function Invoke(Of CD, CR)(ByVal Key As CD) As CR
-                Return DirectCast(CallDelegate(), Func(Of CD, CR))(Key)
-            End Function
-        End Class
         Private Function TryResolveTaggedUnion(ByVal RangeType As Type) As [Delegate]
             Dim DomainType = GetType(D)
             If RangeType.IsValueType OrElse RangeType.IsClass Then
@@ -444,7 +449,12 @@ Namespace Mapping
                 Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
                 Dim n = 0
                 For Each Pair In FieldsAndProperties
-                    DelegateCalls.Add(CreatePair(TupleElementResolver.ResolveProjector(Pair.Member, n, Pair.Type), New Expression() {dParam}))
+                    Dim nInLoop = n
+                    Dim p = Pair
+                    Dim f = Function() TupleElementResolver.ResolveProjector(p.Member, nInLoop, p.Type)
+                    Dim c As New CallClosure With {.CallDelegate = f}
+                    Dim cf = DirectCast(AddressOf c.Invoke(Of DummyType, DummyType), Func(Of DummyType, DummyType)).MakeDelegateMethod({DomainType, p.Type}, GetType(Func(Of ,)).MakeGenericType(DomainType, p.Type))
+                    DelegateCalls.Add(CreatePair(cf, New Expression() {dParam}))
                     n += 1
                 Next
                 Dim Context = CreateDelegateExpressionContext(DelegateCalls)
@@ -482,7 +492,11 @@ Namespace Mapping
                 Dim dParam = Expression.Parameter(DomainType, "Key")
                 Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
                 For Each Pair In FieldsAndProperties
-                    DelegateCalls.Add(CreatePair(FieldResolver.ResolveProjector(Pair.Member, Pair.Type), New Expression() {dParam}))
+                    Dim p = Pair
+                    Dim f = Function() FieldResolver.ResolveProjector(p.Member, p.Type)
+                    Dim c As New CallClosure With {.CallDelegate = f}
+                    Dim cf = DirectCast(AddressOf c.Invoke(Of DummyType, DummyType), Func(Of DummyType, DummyType)).MakeDelegateMethod({DomainType, p.Type}, GetType(Func(Of ,)).MakeGenericType(DomainType, p.Type))
+                    DelegateCalls.Add(CreatePair(cf, New Expression() {dParam}))
                 Next
                 Dim Context = CreateDelegateExpressionContext(DelegateCalls)
 
@@ -559,6 +573,13 @@ Namespace Mapping
             Return Nothing
         End Function
 
+        Private Class CallClosure
+            Public CallDelegate As Func(Of [Delegate])
+            Public Sub Invoke(Of CD, CR)(ByVal Key As CD, ByVal Value As CR)
+                DirectCast(CallDelegate(), Action(Of CD, CR))(Key, Value)
+            End Sub
+        End Class
+
         Private Function TryResolveAlias(ByVal DomainType As Type) As [Delegate]
             Dim RangeType = GetType(R)
             If DomainType.IsValueType OrElse DomainType.IsClass Then
@@ -575,8 +596,12 @@ Namespace Mapping
                 Dim rParam = Expression.Parameter(RangeType, "Value")
                 Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
                 For Each Pair In FieldsAndProperties
-                    Dim FieldOrPropertyExpr = CreateFieldOrPropertyExpression(dParam, Pair.Member)
-                    DelegateCalls.Add(CreatePair(AliasFieldResolver.ResolveAggregator(Pair.Member, Pair.Type), New Expression() {FieldOrPropertyExpr, rParam}))
+                    Dim p = Pair
+                    Dim f = Function() AliasFieldResolver.ResolveAggregator(p.Member, p.Type)
+                    Dim c As New CallClosure With {.CallDelegate = f}
+                    Dim cf = DirectCast(AddressOf c.Invoke(Of DummyType, DummyType), Action(Of DummyType, DummyType)).MakeDelegateMethod({p.Type, RangeType}, GetType(Action(Of ,)).MakeGenericType(p.Type, RangeType))
+                    Dim FieldOrPropertyExpr = CreateFieldOrPropertyExpression(dParam, p.Member)
+                    DelegateCalls.Add(CreatePair(cf, New Expression() {FieldOrPropertyExpr, rParam}))
                 Next
                 Dim Context = CreateDelegateExpressionContext(DelegateCalls)
                 Dim Body As Expression
@@ -592,12 +617,6 @@ Namespace Mapping
             Return Nothing
         End Function
 
-        Private Class CallClosure
-            Public CallDelegate As Func(Of [Delegate])
-            Public Sub Invoke(Of CD, CR)(ByVal Key As CD, ByVal Value As CR)
-                DirectCast(CallDelegate(), Action(Of CD, CR))(Key, Value)
-            End Sub
-        End Class
         Private Function TryResolveTaggedUnion(ByVal DomainType As Type) As [Delegate]
             Dim RangeType = GetType(R)
             If DomainType.IsValueType OrElse DomainType.IsClass Then
@@ -661,8 +680,13 @@ Namespace Mapping
                 Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
                 Dim n = 0
                 For Each Pair In FieldsAndProperties
-                    Dim FieldOrPropertyExpr = CreateFieldOrPropertyExpression(dParam, Pair.Member)
-                    DelegateCalls.Add(CreatePair(TupleElementResolver.ResolveAggregator(Pair.Member, n, Pair.Type), New Expression() {FieldOrPropertyExpr, rParam}))
+                    Dim nInLoop = n
+                    Dim p = Pair
+                    Dim f = Function() TupleElementResolver.ResolveAggregator(p.Member, nInLoop, p.Type)
+                    Dim c As New CallClosure With {.CallDelegate = f}
+                    Dim cf = DirectCast(AddressOf c.Invoke(Of DummyType, DummyType), Action(Of DummyType, DummyType)).MakeDelegateMethod({p.Type, RangeType}, GetType(Action(Of ,)).MakeGenericType(p.Type, RangeType))
+                    Dim FieldOrPropertyExpr = CreateFieldOrPropertyExpression(dParam, p.Member)
+                    DelegateCalls.Add(CreatePair(cf, New Expression() {FieldOrPropertyExpr, rParam}))
                     n += 1
                 Next
                 Dim Context = CreateDelegateExpressionContext(DelegateCalls)
@@ -699,8 +723,12 @@ Namespace Mapping
                 Dim rParam = Expression.Parameter(RangeType, "Value")
                 Dim DelegateCalls As New List(Of KeyValuePair(Of [Delegate], Expression()))
                 For Each Pair In FieldsAndProperties
-                    Dim FieldOrPropertyExpr = CreateFieldOrPropertyExpression(dParam, Pair.Member)
-                    DelegateCalls.Add(CreatePair(FieldResolver.ResolveAggregator(Pair.Member, Pair.Type), New Expression() {FieldOrPropertyExpr, rParam}))
+                    Dim p = Pair
+                    Dim f = Function() FieldResolver.ResolveAggregator(p.Member, p.Type)
+                    Dim c As New CallClosure With {.CallDelegate = f}
+                    Dim cf = DirectCast(AddressOf c.Invoke(Of DummyType, DummyType), Action(Of DummyType, DummyType)).MakeDelegateMethod({p.Type, RangeType}, GetType(Action(Of ,)).MakeGenericType(p.Type, RangeType))
+                    Dim FieldOrPropertyExpr = CreateFieldOrPropertyExpression(dParam, p.Member)
+                    DelegateCalls.Add(CreatePair(cf, New Expression() {FieldOrPropertyExpr, rParam}))
                 Next
                 Dim Context = CreateDelegateExpressionContext(DelegateCalls)
                 Dim Body As Expression
