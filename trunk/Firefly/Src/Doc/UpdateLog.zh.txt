@@ -1,4 +1,8 @@
-﻿2011.03.07
+﻿2011.03.08
+Firefly.Core.Mapping:
+BinarySerializer增加将所有字段类Resolver翻译为FieldResolver的功能。
+
+2011.03.07
 Firefly.Core.Mapping:
 增加运行时循环引用检测器RuntimeNoncircular。
 将所有Noncircular解析器更换为RuntimeNoncircular。
