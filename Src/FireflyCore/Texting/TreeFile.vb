@@ -3,7 +3,7 @@
 '  File:        TreeFile.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: Tree文件(Xml等价)读写
-'  Version:     2011.03.07.
+'  Version:     2011.03.09.
 '  Copyright:   F.R.C.
 '
 '==========================================================================
@@ -31,7 +31,12 @@ Public NotInheritable Class TreeFile
         Dim Lines As String() = Txt.ReadFile(Path, Encoding).UnifyNewLineToLf.Split(CChar(Lf))
 
         Dim r As New Reader With {.s = New ArrayStream(Of String)(Lines)}
-        Dim Root = r.ReadRoot()
+        Dim Root As TreeElement
+        Try
+            Root = r.ReadRoot()
+        Catch ex As Exception When Not TypeOf ex Is InvalidTextFormatException
+            Throw New InvalidTextFormatException("", New FileLocationInformation With {.LineNumber = r.s.Position + 1}, ex)
+        End Try
         Dim t As New ReaderTranslator With {.LineInformation = r.LineInformation, .ValueLineInformation = r.ValueLineInformation}
         Return t.GetRoot(Root)
     End Function
@@ -49,6 +54,7 @@ Public NotInheritable Class TreeFile
     Private Shared ReadOnly Empty As String = "$Empty"
     Private Shared ReadOnly List As String = "$List"
     Private Shared ReadOnly StringLiteral As String = "$String"
+    Private Shared ReadOnly Comment As String = "$Comment"
 
     Private Class ReaderTranslator
         Public LineInformation As New Dictionary(Of TreeElement, FileLocationInformation)
@@ -143,26 +149,34 @@ Public NotInheritable Class TreeFile
             Dim l = ReadNodes(0)
             If l.Length <> 1 Then Throw New InvalidTextFormatException("UseOnlyOneRoot", New FileLocationInformation With {.LineNumber = 1})
             Dim x = l.Single
-            If x._Tag <> TreeObjectTag.Element Then Throw New InvalidTextFormatException("RootMustBeElement", New FileLocationInformation With {.LineNumber = 1})
+            If x._Tag <> NodeResultTag.Element Then Throw New InvalidTextFormatException("RootMustBeElement", New FileLocationInformation With {.LineNumber = 1})
             Return x.Element
         End Function
 
-        Public Function ReadNode(ByVal IndentLevel As Integer) As TreeObject
-            Dim LineNumber = s.Position
-            Dim Node = TryReadNode(IndentLevel)
-            If Node Is Nothing Then Throw New InvalidTextFormatException("", New FileLocationInformation With {.LineNumber = LineNumber})
-            Return Node
-        End Function
-        Public Function TryReadNode(ByVal IndentLevel As Integer) As TreeObject
-            Dim LineNumber = s.Position
+        Public Function TryReadNode(ByVal IndentLevel As Integer) As NodeResult
+            Dim LineNumber = s.Position + 1
 
-            Dim Text = TryReadRaw(IndentLevel)
-            If Text Is Nothing Then Return Nothing
-            Dim Chars = Text.ToUTF32.Distinct.ToArray()
-            If Chars.Length = 0 Then Return Nothing
-            If Chars.Length = 1 AndAlso Chars.Single = " " Then Return Nothing
-            If Text.StartsWith(" ") Then Throw New InvalidTextFormatException("IndentError", New FileLocationInformation With {.LineNumber = LineNumber})
-            Dim Tokens = GetTokens(IndentLevel, Text)
+            Dim RawResult As RawResult = Nothing
+            Dim Tokens As String() = Nothing
+            While True
+                LineNumber = s.Position + 1
+                RawResult = TryReadRaw(IndentLevel)
+                Select Case RawResult._Tag
+                    Case RawResultTag.Normal
+                        Dim Text = RawResult.Normal
+                        If Text.StartsWith(" ") Then Throw New InvalidTextFormatException("IndentError", New FileLocationInformation With {.LineNumber = LineNumber})
+                        Tokens = GetTokens(IndentLevel, Text)
+                        If Tokens.Length = 0 Then Continue While
+                        Exit While
+                    Case RawResultTag.EmptyLineWithIndentedSpaces, RawResultTag.EmptyLineWithoutIndentedSpaces
+                        Continue While
+                    Case RawResultTag.EndOfBranch, RawResultTag.EndOfStream
+                        Return New NodeResult With {._Tag = NodeResultTag.EndOfBranch}
+                    Case Else
+                        Throw New InvalidOperationException
+                End Select
+            End While
+
             Dim HeadToken = Tokens.First
 
             Dim HeadChar = HeadToken.ToUTF32()(0)
@@ -172,24 +186,24 @@ Public NotInheritable Class TreeFile
                 If Tokens.Length = 1 AndAlso Nodes.Length = 0 Then
                     Dim v As New TreeValue With {.Value = Tokens(0)}
                     ValueLineInformation.Add(v, New FileLocationInformation With {.LineNumber = LineNumber})
-                    Return New TreeObject With {._Tag = TreeObjectTag.Value, .Value = v}
+                    Return New NodeResult With {._Tag = NodeResultTag.Value, .Value = v}
                 End If
                 Dim Node As New TreeElement With {.Name = HeadToken}
                 LineInformation.Add(Node, New FileLocationInformation With {.LineNumber = LineNumber, .ColumnNumber = 4 * IndentLevel + 1})
                 Dim PreventMultiple As Boolean = False
                 For Each n In Nodes
                     Select Case n._Tag
-                        Case TreeObjectTag.Attribute
+                        Case NodeResultTag.Attribute
                             Dim a = n.Attribute
                             Node.Attributes.Add(New TreeAttribute With {.Name = a.Name, .Value = a.Value})
-                        Case TreeObjectTag.Element
+                        Case NodeResultTag.Element
                             Node.Elements.Add(n.Element)
                             PreventMultiple = True
-                        Case TreeObjectTag.Elements
+                        Case NodeResultTag.Elements
                             Node.Elements.AddRange(n.Elements)
                             PreventMultiple = True
-                        Case TreeObjectTag.Value
-                            If PreventMultiple Then Throw New InvalidTextFormatException("ValueSyntaxError", New FileLocationInformation With {.LineNumber = LineNumber})
+                        Case NodeResultTag.Value
+                            If PreventMultiple Then Throw New InvalidTextFormatException("ValueSyntaxError", ValueLineInformation(n.Value))
                             Node.Value = n.Value
                             PreventMultiple = True
                         Case Else
@@ -212,17 +226,17 @@ Public NotInheritable Class TreeFile
                         p.Elements.Add(n)
                     Next
                 End If
-                Return New TreeObject With {._Tag = TreeObjectTag.Element, .Element = Node}
+                Return New NodeResult With {._Tag = NodeResultTag.Element, .Element = Node}
             ElseIf HeadChar = "@" Then
                 If Tokens.Length > 2 Then Throw New InvalidTextFormatException("TokenError", New FileLocationInformation With {.LineNumber = LineNumber})
                 Dim Nodes = ReadNodes(IndentLevel + 1)
-                If Nodes.Length > 0 Then Throw New InvalidTextFormatException("IndentError", New FileLocationInformation With {.LineNumber = LineNumber})
+                If Nodes.Length > 0 Then Throw New InvalidTextFormatException("IndentError", New FileLocationInformation With {.LineNumber = LineNumber + 1})
                 Dim AttributeName = HeadToken.ToUTF32.Skip(1).ToUTF16B
-                Return New TreeObject With {._Tag = TreeObjectTag.Attribute, .Attribute = New TreeAttribute With {.Name = AttributeName, .Value = Tokens(1)}}
+                Return New NodeResult With {._Tag = NodeResultTag.Attribute, .Attribute = New TreeAttribute With {.Name = AttributeName, .Value = Tokens(1)}}
             ElseIf HeadChar = "$" Then
                 Select Case HeadToken
                     Case Empty
-                        Return Nothing
+                        Return New NodeResult With {._Tag = NodeResultTag.Value, .Value = Nothing}
                     Case List
                         If Tokens.Length <> 2 Then Throw New InvalidTextFormatException("ErrorProcessorDirectiveParam", New FileLocationInformation With {.LineNumber = LineNumber})
                         Dim Name = Tokens(1)
@@ -230,83 +244,104 @@ Public NotInheritable Class TreeFile
                         Dim l As New List(Of TreeElement)
                         For Each n In Nodes
                             Select Case n._Tag
-                                Case TreeObjectTag.Attribute
+                                Case NodeResultTag.Attribute
                                     Throw New InvalidTextFormatException("ListMustNotHaveAttribute", New FileLocationInformation With {.LineNumber = LineNumber})
-                                Case TreeObjectTag.Element
+                                Case NodeResultTag.Element
                                     Dim Node = New TreeElement With {.Name = Name}
-                                    If LineInformation.ContainsKey(n.Element) Then
-                                        LineInformation.Add(Node, LineInformation(n.Element))
-                                    Else
-                                        LineInformation.Add(Node, New FileLocationInformation With {.LineNumber = LineNumber, .ColumnNumber = 4 * IndentLevel + 1})
-                                    End If
+                                    LineInformation.Add(Node, LineInformation(n.Element))
                                     Node.Elements.Add(n.Element)
                                     l.Add(Node)
-                                Case TreeObjectTag.Elements
+                                Case NodeResultTag.Elements
                                     For Each e In n.Elements
                                         Dim Node = New TreeElement With {.Name = Name}
-                                        If LineInformation.ContainsKey(e) Then
-                                            LineInformation.Add(Node, LineInformation(e))
-                                        Else
-                                            LineInformation.Add(Node, New FileLocationInformation With {.LineNumber = LineNumber, .ColumnNumber = 4 * IndentLevel + 1})
-                                        End If
+                                        LineInformation.Add(Node, LineInformation(e))
                                         Node.Elements.Add(e)
                                         l.Add(Node)
                                     Next
-                                Case TreeObjectTag.Value
+                                Case NodeResultTag.Value
                                     Dim Node = New TreeElement With {.Name = Name}
-                                    If ValueLineInformation.ContainsKey(n.Value) Then
-                                        LineInformation.Add(Node, ValueLineInformation(n.Value))
-                                    Else
-                                        LineInformation.Add(Node, New FileLocationInformation With {.LineNumber = LineNumber, .ColumnNumber = 4 * IndentLevel + 1})
-                                    End If
+                                    LineInformation.Add(Node, ValueLineInformation(n.Value))
                                     Node.Value = n.Value
                                     l.Add(Node)
                                 Case Else
                                     Throw New InvalidOperationException
                             End Select
                         Next
-                        Return New TreeObject With {._Tag = TreeObjectTag.Elements, .Elements = l}
-                    Case StringLiteral
+                        Return New NodeResult With {._Tag = NodeResultTag.Elements, .Elements = l}
+                    Case StringLiteral, Comment
                         Dim l As New List(Of String)
                         While True
                             Dim Line = TryReadRaw(IndentLevel + 1)
-                            If Line Is Nothing Then Exit While
-                            l.Add(Line)
+                            Select Case Line._Tag
+                                Case RawResultTag.Normal
+                                    l.Add(Line.Normal)
+                                Case RawResultTag.EmptyLineWithIndentedSpaces
+                                    l.Add(Line.EmptyLineWithIndentedSpaces)
+                                Case RawResultTag.EmptyLineWithoutIndentedSpaces
+                                    l.Add("")
+                                Case RawResultTag.EndOfBranch, RawResultTag.EndOfStream
+                                    Exit While
+                                Case Else
+                                    Throw New InvalidOperationException
+                            End Select
                         End While
-                        Dim v As New TreeValue With {.Value = String.Join(CrLf, l.ToArray())}
-                        ValueLineInformation.Add(v, New FileLocationInformation With {.LineNumber = LineNumber})
-                        Return New TreeObject With {._Tag = TreeObjectTag.Value, .Value = v}
+                        Select Case HeadToken
+                            Case StringLiteral
+                                Dim v As New TreeValue With {.Value = String.Join(CrLf, l.ToArray())}
+                                ValueLineInformation.Add(v, New FileLocationInformation With {.LineNumber = LineNumber})
+                                Return New NodeResult With {._Tag = NodeResultTag.Value, .Value = v}
+                            Case Comment
+                                Return New NodeResult With {._Tag = NodeResultTag.Comment, .Comment = String.Join(CrLf, l.ToArray())}
+                            Case Else
+                                Throw New InvalidOperationException
+                        End Select
                     Case Else
                         Throw New InvalidTextFormatException("UndefinedProcessorDirective {0}".Formats(HeadToken), New FileLocationInformation With {.LineNumber = LineNumber})
                 End Select
-                Stop
             Else
                 Throw New InvalidTextFormatException("UndefinedProcessorDirective", New FileLocationInformation With {.LineNumber = LineNumber})
             End If
         End Function
 
-        Public Function ReadNodes(ByVal IndentLevel As Integer) As TreeObject()
-            Dim l As New List(Of TreeObject)
+        Public Function ReadNodes(ByVal IndentLevel As Integer) As NodeResult()
+            Dim l As New List(Of NodeResult)
             While True
                 Dim Node = TryReadNode(IndentLevel)
-                If Node Is Nothing Then Exit While
+                Select Case Node._Tag
+                    Case NodeResultTag.Comment
+                        Continue While
+                    Case NodeResultTag.EndOfBranch
+                        Exit While
+                    Case Else
+                        Exit Select
+                End Select
                 l.Add(Node)
             End While
             Return l.ToArray()
         End Function
 
-        Public Function ReadRaw(ByVal IndentLevel As Integer) As String
-            Dim LineNumber = s.Position
-            Dim Text = TryReadRaw(IndentLevel)
-            If Text Is Nothing Then Throw New InvalidTextFormatException("", New FileLocationInformation With {.LineNumber = LineNumber})
-            Return Text
-        End Function
-        Public Function TryReadRaw(ByVal IndentLevel As Integer) As String
-            If s.Position >= s.Length Then Return Nothing
+        Public Function TryReadRaw(ByVal IndentLevel As Integer) As RawResult
+            If s.Position >= s.Length Then Return New RawResult With {._Tag = RawResultTag.EndOfStream}
             Dim Head = s.PeekElement
-            If Not Head.StartsWith(New String(" "c, 4 * IndentLevel)) Then Return Nothing
-            s.ReadElement()
-            Return Head.ToUTF32.Skip(4 * IndentLevel).ToUTF16B
+            Dim Line32 = Head.ToUTF32
+            Dim Chars = Line32.Distinct.ToArray()
+            If Not Head.StartsWith(New String(" "c, 4 * IndentLevel)) Then
+                If Chars.Length = 0 OrElse (Chars.Length = 1 AndAlso Chars.Single = " ") Then
+                    s.ReadElement()
+                    Return New RawResult With {._Tag = RawResultTag.EmptyLineWithoutIndentedSpaces}
+                Else
+                    Return New RawResult With {._Tag = RawResultTag.EndOfBranch}
+                End If
+            Else
+                Dim Str = Line32.Skip(4 * IndentLevel).ToUTF16B
+                If Chars.Length = 0 OrElse (Chars.Length = 1 AndAlso Chars.Single = " ") Then
+                    s.ReadElement()
+                    Return New RawResult With {._Tag = RawResultTag.EmptyLineWithIndentedSpaces, .EmptyLineWithIndentedSpaces = Str}
+                Else
+                    s.ReadElement()
+                    Return New RawResult With {._Tag = RawResultTag.Normal, .Normal = Str}
+                End If
+            End If
         End Function
 
         Private Shared Tab As String = "\t".Descape
@@ -571,19 +606,46 @@ Public NotInheritable Class TreeFile
         End Function
     End Class
 
-    Private Enum TreeObjectTag
+    Private Structure NullObject
+    End Structure
+    Private Enum RawResultTag
+        Normal
+        EmptyLineWithIndentedSpaces
+        EmptyLineWithoutIndentedSpaces
+        EndOfBranch
+        EndOfStream
+    End Enum
+    <TaggedUnion(), DebuggerDisplay("{ToString()}")>
+    Private Class RawResult
+        <Tag()> Public _Tag As RawResultTag
+        Public Normal As String
+        Public EmptyLineWithIndentedSpaces As String
+        Public EmptyLineWithoutIndentedSpaces As NullObject
+        Public EndOfBranch As NullObject
+        Public EndOfStream As NullObject
+
+        Public Overrides Function ToString() As String
+            Return DebuggerDisplayer.ConvertToString(Me)
+        End Function
+    End Class
+
+    Private Enum NodeResultTag
         Element
         Elements
         Attribute
         Value
+        Comment
+        EndOfBranch
     End Enum
     <TaggedUnion(), DebuggerDisplay("{ToString()}")>
-    Private Class TreeObject
-        <Tag()> Public _Tag As TreeObjectTag
+    Private Class NodeResult
+        <Tag()> Public _Tag As NodeResultTag
         Public Element As TreeElement
         Public Elements As List(Of TreeElement)
         Public Attribute As TreeAttribute
         Public Value As TreeValue
+        Public Comment As String
+        Public EndOfBranch As NullObject
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
