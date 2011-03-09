@@ -3,7 +3,7 @@
 '  File:        XmlSerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Xml序列化类
-'  Version:     2011.03.07.
+'  Version:     2011.03.09.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -70,6 +70,22 @@ Namespace Mapping.XmlText
             WriterCache = WriterReference
             WriterResolver = New XmlWriterResolver(WriterReference, ExternalTypes)
             WriterReference.Inner = WriterResolver.AsCached
+        End Sub
+        Public Sub New(ByVal UseByteArrayTranslator As Boolean)
+            MyClass.New(New Type() {})
+            If UseByteArrayTranslator Then
+                Dim bat As New ByteArrayTranslator
+                PutReaderTranslator(bat)
+                PutWriterTranslator(bat)
+            End If
+        End Sub
+        Public Sub New(ByVal ExternalTypes As IEnumerable(Of Type), ByVal UseByteArrayTranslator As Boolean)
+            MyClass.New(ExternalTypes)
+            If UseByteArrayTranslator Then
+                Dim bat As New ByteArrayTranslator
+                PutReaderTranslator(bat)
+                PutWriterTranslator(bat)
+            End If
         End Sub
 
         Public Sub PutReader(Of T)(ByVal Reader As Func(Of String, T))
@@ -764,6 +780,19 @@ Namespace Mapping.XmlText
         Public Sub New(ByVal Resolver As IProjectorResolver)
             Me.InnerResolver = Resolver.AsRuntimeNoncircular
         End Sub
+    End Class
+
+    Public Class ByteArrayTranslator
+        Implements IProjectorToProjectorRangeTranslator(Of Byte(), String) 'Reader
+        Implements IProjectorToProjectorDomainTranslator(Of Byte(), String) 'Writer
+
+        Private Function TranslateProjectorToProjectorRange(Of D)(ByVal Projector As Func(Of D, String)) As Func(Of D, Byte()) Implements IProjectorToProjectorRangeTranslator(Of Byte(), String).TranslateProjectorToProjectorRange
+            Return Function(k) Regex.Split(Projector(k).Trim(" \t\r\n".Descape.ToCharArray), "( |\t|\r|\n)+", RegexOptions.ExplicitCapture).Select(Function(s) Byte.Parse(s, Globalization.NumberStyles.HexNumber)).ToArray
+        End Function
+
+        Private Function TranslateProjectorToProjectorDomain(Of R)(ByVal Projector As Func(Of String, R)) As Func(Of Byte(), R) Implements IProjectorToProjectorDomainTranslator(Of Byte(), String).TranslateProjectorToProjectorDomain
+            Return Function(ba) Projector(String.Join(" ", (ba.Select(Function(b) b.ToString("X2")).ToArray)))
+        End Function
     End Class
 
     Public Class InheritanceResolver

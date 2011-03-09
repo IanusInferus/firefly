@@ -1,4 +1,10 @@
-﻿2011.03.08
+﻿2011.03.09
+Firefly.Core.Texting:
+增强TreeFile的注释功能。
+Firefly.Core.Mapping:
+增加默认Byte数组转换。
+
+2011.03.08
 Firefly.Core.Mapping:
 BinarySerializer增加将所有字段类Resolver翻译为FieldResolver的功能。
 
