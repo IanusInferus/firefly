@@ -92,11 +92,4 @@ Public Module NumericOperations
     <Extension()> Public Function CeilToMultipleOf(ByVal This As ULong, ByVal n As ULong) As ULong
         Return ((This + n - 1UL) \ n) * n
     End Function
-    Public Function IIf(Of T)(ByVal Condition As Boolean, ByVal TrueValue As T, ByVal FalseValue As T) As T
-        If Condition Then
-            Return TrueValue
-        Else
-            Return FalseValue
-        End If
-    End Function
 End Module

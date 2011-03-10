@@ -1,4 +1,8 @@
-﻿2011.03.09
+﻿2011.03.10
+Firefly.Core:
+去除NumericOperations中的IIf函数，类似操作可用If( [argument1,] argument2, argument3 )语法完成。
+
+2011.03.09
 Firefly.Core.Texting:
 增强TreeFile的注释功能。
 Firefly.Core.Mapping:
