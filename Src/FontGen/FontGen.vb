@@ -3,7 +3,7 @@
 '  File:        FontGen.vb
 '  Location:    Firefly.FontGen <Visual Basic .Net>
 '  Description: 字库图片生成器
-'  Version:     2010.11.25.
+'  Version:     2011.03.11.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -547,7 +547,7 @@ Public Class FontGen
         Options.Add("/add:" & String.Join(",", (From p In AddParameters Select Esc(p)).ToArray))
         Options.Add("/save:" & Esc(ChangeExtension(GetFileName(FileSelectBox_File.Path), "fd")))
         Dim Cmd = FormatEsc("FontGen " & String.Join(" ", Options.ToArray))
-        My.Computer.Clipboard.SetText(Cmd)
+        Clipboard.SetText(Cmd)
         MessageBox.Show(Cmd, Me.Text)
     End Sub
 
