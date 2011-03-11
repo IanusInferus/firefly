@@ -3,7 +3,7 @@
 '  File:        BruteForceExporter.vb
 '  Location:    Firefly.BruteForceExporter <Visual Basic .Net>
 '  Description: 暴力文本导出器
-'  Version:     2011.02.23.
+'  Version:     2011.03.11.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -93,9 +93,9 @@ Public Module BruteForceExporter
 
         Dim XmlPath As String
         If IO.Directory.Exists("..\Ini") Then
-            XmlPath = String.Format("..\Ini\{0}.xml", My.Application.Info.ProductName)
+            XmlPath = String.Format("..\Ini\{0}.xml", ExceptionInfo.AssemblyProduct)
         Else
-            XmlPath = String.Format("{0}.xml", My.Application.Info.ProductName)
+            XmlPath = String.Format("{0}.xml", ExceptionInfo.AssemblyProduct)
         End If
         If IO.File.Exists(XmlPath) Then
             Macros = Xml.ReadFile(Of Macro())(XmlPath)

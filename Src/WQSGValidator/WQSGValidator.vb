@@ -3,7 +3,7 @@
 '  File:        WQSGValidator.vb
 '  Location:    Firefly.WQSGValidator <Visual Basic .Net>
 '  Description: WQSG文本格式验证器
-'  Version:     2010.09.17.
+'  Version:     2011.03.11.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -11,12 +11,41 @@
 Imports System
 Imports System.Collections.Generic
 Imports System.Linq
+Imports System.Diagnostics
 Imports System.Windows.Forms
 Imports Firefly
 Imports Firefly.TextEncoding
 Imports Firefly.Texting
+Imports Firefly.GUI
 
 Public Class WQSGValidator
+    Public Shared Sub Application_ThreadException(ByVal sender As Object, ByVal e As System.Threading.ThreadExceptionEventArgs)
+        ExceptionHandler.PopupException(e.Exception, New StackTrace(4, True))
+    End Sub
+
+    Public Shared Function Main() As Integer
+        If Debugger.IsAttached Then
+            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException)
+            Return MainWindow()
+        Else
+            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException)
+            Try
+                AddHandler Application.ThreadException, AddressOf Application_ThreadException
+                Return MainWindow()
+            Catch ex As Exception
+                ExceptionHandler.PopupException(ex)
+                Return -1
+            Finally
+                RemoveHandler Application.ThreadException, AddressOf Application_ThreadException
+            End Try
+        End If
+    End Function
+
+    Public Shared Function MainWindow() As Integer
+        Application.EnableVisualStyles()
+        Application.Run(New WQSGValidator)
+        Return 0
+    End Function
 
     Private Sub ListBox_Files_DragEnter(ByVal sender As Object, ByVal e As System.Windows.Forms.DragEventArgs) Handles ListBox_Files.DragEnter
         If e.Data.GetDataPresent(DataFormats.FileDrop) Then
