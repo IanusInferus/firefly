@@ -7,17 +7,18 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{4FE3AFAE-CCE5-4138-B526-7593EED74E4E}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <StartupObject>WQSGValidator.My.MyApplication</StartupObject>
+    <StartupObject>Sub Main</StartupObject>
     <RootNamespace>WQSGValidator</RootNamespace>
     <AssemblyName>WQSGValidator</AssemblyName>
     <FileAlignment>512</FileAlignment>
-    <MyType>WindowsForms</MyType>
+    <MyType>WindowsFormsWithCustomSubMain</MyType>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>
     <OptionExplicit>On</OptionExplicit>
     <OptionCompare>Binary</OptionCompare>
     <OptionStrict>Off</OptionStrict>
     <OptionInfer>On</OptionInfer>
+    <VBRuntime>Embed</VBRuntime>
     <SignAssembly>false</SignAssembly>
     <AssemblyOriginatorKeyFile>$(FLTKey)</AssemblyOriginatorKeyFile>
     <ApplicationIcon>WQSGValidator.ico</ApplicationIcon>
@@ -98,6 +99,10 @@
     <ProjectReference Include="..\FireflyCore\FireflyCore.vbproj">
       <Project>{1DE5CF1F-2526-4520-87D8-B1B1B8D1F214}</Project>
       <Name>FireflyCore</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\FireflyGUI\FireflyGUI.vbproj">
+      <Project>{C1103082-812C-42B8-8F70-500F97BF845A}</Project>
+      <Name>FireflyGUI</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

@@ -3,7 +3,7 @@
 '  File:        PackageManager.vb
 '  Location:    Firefly.GUI <Visual Basic .Net>
 '  Description: Package文件管理器
-'  Version:     2010.08.28.
+'  Version:     2010.03.11.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -838,8 +838,8 @@ Public Class PackageManager
     End Sub
     Protected Sub RecentFilesHandler(ByVal sender As Object, ByVal e As EventArgs)
         Dim Success = False
+        Dim r As MenuItem = CType(sender, MenuItem)
         Try
-            Dim r As MenuItem = sender
             Dim Path As String = r.Text.Substring(3)
             If Not r.Text.Contains(",") Then RemoveRecent(r.Text.Substring(1, 1))
             Dim TypeIndex As Integer = 0
@@ -859,7 +859,7 @@ Public Class PackageManager
             Success = True
         Finally
             If Not Success Then
-                If Not System.Diagnostics.Debugger.IsAttached Then RemoveRecent(sender.Text.Substring(1, 1))
+                If Not System.Diagnostics.Debugger.IsAttached Then RemoveRecent(r.Text.Substring(1, 1))
             End If
         End Try
     End Sub
