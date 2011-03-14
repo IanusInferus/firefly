@@ -3,7 +3,7 @@
 '  File:        XmlSerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Xml序列化类
-'  Version:     2011.03.09.
+'  Version:     2011.03.14.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -183,7 +183,7 @@ Namespace Mapping.XmlText
                     New FieldProjectorResolver(Root),
                     New AliasFieldProjectorResolver(Root),
                     New TagProjectorResolver(Root),
-                    New TaggedUnionFieldProjectorResolver(Root),
+                    New TaggedUnionAlternativeProjectorResolver(Root),
                     New TupleElementProjectorResolver(Root)
                 ),
                 New InheritanceResolver(Root, ExternalTypes),
@@ -275,7 +275,7 @@ Namespace Mapping.XmlText
                     New FieldAggregatorResolver(Root),
                     New AliasFieldAggregatorResolver(Root),
                     New TagAggregatorResolver(Root),
-                    New TaggedUnionFieldAggregatorResolver(Root),
+                    New TaggedUnionAlternativeAggregatorResolver(Root),
                     New TupleElementAggregatorResolver(Root)
                 ),
                 TranslatorResolver.Create(Root, New XElementProjectorToAggregatorRangeTranslator)
@@ -654,8 +654,8 @@ Namespace Mapping.XmlText
         End Sub
     End Class
 
-    Public Class TaggedUnionFieldProjectorResolver
-        Implements ITaggedUnionFieldProjectorResolver(Of ElementUnpackerState)
+    Public Class TaggedUnionAlternativeProjectorResolver
+        Implements ITaggedUnionAlternativeProjectorResolver(Of ElementUnpackerState)
 
         Private Function Resolve(Of R)(ByVal Name As String) As Func(Of ElementUnpackerState, R)
             Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(XElement), GetType(R))), Func(Of XElement, R))
@@ -668,7 +668,7 @@ Namespace Mapping.XmlText
         End Function
 
         Private Dict As New Dictionary(Of Type, Func(Of String, [Delegate]))
-        Public Function ResolveProjector(ByVal Member As MemberInfo, ByVal Type As Type) As [Delegate] Implements ITaggedUnionFieldProjectorResolver(Of ElementUnpackerState).ResolveProjector
+        Public Function ResolveProjector(ByVal Member As MemberInfo, ByVal Type As Type) As [Delegate] Implements ITaggedUnionAlternativeProjectorResolver(Of ElementUnpackerState).ResolveProjector
             Dim Name = Member.Name
             If Dict.ContainsKey(Type) Then
                 Dim m = Dict(Type)
@@ -686,8 +686,8 @@ Namespace Mapping.XmlText
             Me.InnerResolver = Resolver.AsRuntimeNoncircular
         End Sub
     End Class
-    Public Class TaggedUnionFieldAggregatorResolver
-        Implements ITaggedUnionFieldAggregatorResolver(Of ElementPackerState)
+    Public Class TaggedUnionAlternativeAggregatorResolver
+        Implements ITaggedUnionAlternativeAggregatorResolver(Of ElementPackerState)
 
         Private Function Resolve(Of D)(ByVal Name As String) As Action(Of D, ElementPackerState)
             Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(XElement))), Func(Of D, XElement))
@@ -701,7 +701,7 @@ Namespace Mapping.XmlText
         End Function
 
         Private Dict As New Dictionary(Of Type, Func(Of String, [Delegate]))
-        Public Function ResolveAggregator(ByVal Member As MemberInfo, ByVal Type As Type) As [Delegate] Implements ITaggedUnionFieldAggregatorResolver(Of ElementPackerState).ResolveAggregator
+        Public Function ResolveAggregator(ByVal Member As MemberInfo, ByVal Type As Type) As [Delegate] Implements ITaggedUnionAlternativeAggregatorResolver(Of ElementPackerState).ResolveAggregator
             Dim Name = Member.Name
             If Dict.ContainsKey(Type) Then
                 Dim m = Dict(Type)
