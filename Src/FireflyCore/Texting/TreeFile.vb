@@ -3,7 +3,7 @@
 '  File:        TreeFile.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: Tree文件(Xml等价)读写
-'  Version:     2011.03.09.
+'  Version:     2011.03.14.
 '  Copyright:   F.R.C.
 '
 '==========================================================================
@@ -28,7 +28,14 @@ Public NotInheritable Class TreeFile
         Return ReadFile(Path, TextEncoding.Default)
     End Function
     Public Shared Function ReadFile(ByVal Path As String, ByVal Encoding As Encoding) As XElement
-        Dim Lines As String() = Txt.ReadFile(Path, Encoding).UnifyNewLineToLf.Split(CChar(Lf))
+        Using s As New FileStream(Path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
+            Using sr As New StreamReader(s, Encoding, True)
+                Return ReadFile(sr)
+            End Using
+        End Using
+    End Function
+    Public Shared Function ReadFile(ByVal Reader As StreamReader) As XElement
+        Dim Lines As String() = Txt.ReadFile(Reader).UnifyNewLineToLf.Split(CChar(Lf))
 
         Dim r As New Reader With {.s = New ArrayStream(Of String)(Lines)}
         Dim Root As TreeElement
@@ -45,10 +52,13 @@ Public NotInheritable Class TreeFile
         WriteFile(Path, TextEncoding.WritingDefault, Value)
     End Sub
     Public Shared Sub WriteFile(ByVal Path As String, ByVal Encoding As Encoding, ByVal Value As XElement)
-        Using sw = Txt.CreateTextWriter(Path, Encoding)
-            Dim w As New Writer With {.sw = sw}
-            w.WriteNode(0, Value)
+        Using tw = Txt.CreateTextWriter(Path, Encoding)
+            WriteFile(tw, Value)
         End Using
+    End Sub
+    Public Shared Sub WriteFile(ByVal Writer As StreamWriter, ByVal Value As XElement)
+        Dim w As New Writer With {.sw = Writer}
+        w.WriteNode(0, Value)
     End Sub
 
     Private Shared ReadOnly Empty As String = "$Empty"
