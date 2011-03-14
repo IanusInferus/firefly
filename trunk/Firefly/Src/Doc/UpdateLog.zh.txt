@@ -3,6 +3,8 @@ Firefly.Core.Mapping, Firefly.Core.Setting:
 将TaggedUnionField的名称统一为TaggedUnionAlternative。
 Firefly.Core.Texting:
 增加TreeFile对StreamReader和StreamWriter的支持。
+Firefly.Core.Mapping:
+将所有Alias的字段名修改为Value。
 
 2011.03.11
 Firefly.*:
