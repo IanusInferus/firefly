@@ -3,7 +3,7 @@
 '  File:        MetaSchema.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 元类型结构
-'  Version:     2011.03.07.
+'  Version:     2011.03.14.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -89,13 +89,13 @@ Namespace Mapping.MetaSchema
 
     <[Alias](), DebuggerDisplay("{ToString()}")>
     Public Class ConceptRef
-        Public Name As String
+        Public Value As String
 
         Public Shared Widening Operator CType(ByVal o As String) As ConceptRef
-            Return New ConceptRef With {.Name = o}
+            Return New ConceptRef With {.Value = o}
         End Operator
         Public Shared Widening Operator CType(ByVal c As ConceptRef) As String
-            Return c.Name
+            Return c.Value
         End Operator
 
         Public Overrides Function ToString() As String
@@ -117,13 +117,13 @@ Namespace Mapping.MetaSchema
 
     <[Alias](), DebuggerDisplay("{ToString()}")>
     Public Class Primitive
-        Public Name As String
+        Public Value As String
 
         Public Shared Widening Operator CType(ByVal o As String) As Primitive
-            Return New Primitive With {.Name = o}
+            Return New Primitive With {.Value = o}
         End Operator
         Public Shared Widening Operator CType(ByVal c As Primitive) As String
-            Return c.Name
+            Return c.Value
         End Operator
 
         Public Overrides Function ToString() As String
