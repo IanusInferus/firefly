@@ -288,13 +288,22 @@ Public NotInheritable Class TreeFile
                                 Case RawResultTag.EmptyLineWithIndentedSpaces
                                     l.Add(Line.EmptyLineWithIndentedSpaces)
                                 Case RawResultTag.EmptyLineWithoutIndentedSpaces
-                                    l.Add("")
+                                    l.Add(Nothing)
                                 Case RawResultTag.EndOfBranch, RawResultTag.EndOfStream
                                     Exit While
                                 Case Else
                                     Throw New InvalidOperationException
                             End Select
                         End While
+                        Dim NonTailNothingCount As Integer = l.Count
+                        While NonTailNothingCount > 0
+                            If l(NonTailNothingCount - 1) Is Nothing Then
+                                NonTailNothingCount -= 1
+                            Else
+                                Exit While
+                            End If
+                        End While
+                        l = l.Take(NonTailNothingCount).Select(Function(s) If(s, "")).ToList
                         Select Case HeadToken
                             Case StringLiteral
                                 Dim v As New TreeValue With {.Value = String.Join(CrLf, l.ToArray())}
