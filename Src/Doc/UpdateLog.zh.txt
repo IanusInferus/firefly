@@ -1,4 +1,8 @@
-﻿2011.03.11
+﻿2011.03.14
+Firefly.Core.Mapping, Firefly.Core.Setting:
+将TaggedUnionField的名称统一为TaggedUnionAlternative。
+
+2011.03.11
 Firefly.*:
 使用Update for Microsoft .NET Framework 4。(http://support.microsoft.com/kb/2468871)
 打开Visual Basic Runtime embedding编译选项。修正编译问题。

@@ -3,7 +3,7 @@
 '  File:        DebuggerDisplayer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 调试序列化器
-'  Version:     2011.03.07.
+'  Version:     2011.03.14.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -52,7 +52,7 @@ Namespace Mapping.MetaSchema
                         New FieldAggregatorResolver(Root),
                         New AliasFieldAggregatorResolver(Root),
                         New TagAggregatorResolver(Root),
-                        New TaggedUnionFieldAggregatorResolver(Root),
+                        New TaggedUnionAlternativeAggregatorResolver(Root),
                         New TupleElementAggregatorResolver(Root)
                     ),
                     TranslatorResolver.Create(Root, New StringProjectorToAggregatorRangeTranslator)
@@ -250,8 +250,8 @@ Namespace Mapping.MetaSchema
             End Sub
         End Class
 
-        Public Class TaggedUnionFieldAggregatorResolver
-            Implements ITaggedUnionFieldAggregatorResolver(Of PackerState)
+        Public Class TaggedUnionAlternativeAggregatorResolver
+            Implements ITaggedUnionAlternativeAggregatorResolver(Of PackerState)
 
             Private Function Resolve(Of D)(ByVal Name As String) As Action(Of D, PackerState)
                 Dim F =
@@ -271,7 +271,7 @@ Namespace Mapping.MetaSchema
             End Function
 
             Private Dict As New Dictionary(Of Type, Func(Of String, [Delegate]))
-            Public Function ResolveAggregator(ByVal Member As MemberInfo, ByVal Type As Type) As [Delegate] Implements ITaggedUnionFieldAggregatorResolver(Of PackerState).ResolveAggregator
+            Public Function ResolveAggregator(ByVal Member As MemberInfo, ByVal Type As Type) As [Delegate] Implements ITaggedUnionAlternativeAggregatorResolver(Of PackerState).ResolveAggregator
                 Dim Name = Member.Name
                 If Dict.ContainsKey(Type) Then
                     Dim m = Dict(Type)
