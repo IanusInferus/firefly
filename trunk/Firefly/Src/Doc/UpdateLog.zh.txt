@@ -2,6 +2,10 @@
 Firefly.Core.Texting:
 增加XmlFile对XmlReaderSetting和XmlWriterSetting的支持。
 修正无法通过XML头自动识别编码的问题。
+Firefly.MetaSchemaManipulator:
+增加元类型结构处理工具，支持VB.Net代码生成。
+Examples\MetaSchema:
+增加元类型结构代码生成示例。
 
 2011.03.14
 Firefly.Core.Mapping, Firefly.Core.Setting:
