@@ -31,4 +31,7 @@ Packaging
 Texting
 演示文本读写。
 
+MetaSchema
+演示元类型结构代码生成。
+
 本框架的示例进入公有领域，可以随意修改使用。
