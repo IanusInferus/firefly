@@ -1,6 +1,7 @@
 ﻿2011.03.16
 Firefly.Core.Texting:
 增加XmlFile对XmlReaderSetting和XmlWriterSetting的支持。
+修正无法通过XML头自动识别编码的问题。
 
 2011.03.14
 Firefly.Core.Mapping, Firefly.Core.Setting:
