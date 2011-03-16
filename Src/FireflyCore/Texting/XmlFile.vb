@@ -3,7 +3,7 @@
 '  File:        XmlFile.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: Xml读写
-'  Version:     2011.03.06.
+'  Version:     2011.03.16.
 '  Copyright:   F.R.C.
 '
 '==========================================================================
@@ -34,8 +34,23 @@ Namespace Texting
                 End Using
             End Using
         End Function
+        Public Shared Function ReadFile(ByVal Path As String, Setting As XmlReaderSettings) As XElement
+            Return ReadFile(Path, TextEncoding.Default, Setting)
+        End Function
+        Public Shared Function ReadFile(ByVal Path As String, ByVal Encoding As Encoding, Setting As XmlReaderSettings) As XElement
+            Using s As New FileStream(Path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
+                Using sr As New StreamReader(s, Encoding, True)
+                    Return ReadFile(sr, Setting)
+                End Using
+            End Using
+        End Function
         Public Shared Function ReadFile(ByVal Reader As StreamReader) As XElement
-            Using r = XmlReader.Create(Reader)
+            Using r = XmlReader.Create(Reader, New XmlReaderSettings With {.CheckCharacters = False})
+                Return XElement.Load(r, LoadOptions.PreserveWhitespace Or LoadOptions.SetLineInfo)
+            End Using
+        End Function
+        Public Shared Function ReadFile(ByVal Reader As StreamReader, Setting As XmlReaderSettings) As XElement
+            Using r = XmlReader.Create(Reader, Setting)
                 Return XElement.Load(r, LoadOptions.PreserveWhitespace Or LoadOptions.SetLineInfo)
             End Using
         End Function
@@ -48,8 +63,16 @@ Namespace Texting
                 WriteFile(tw, Value)
             End Using
         End Sub
+        Public Shared Sub WriteFile(ByVal Path As String, ByVal Value As XElement, Setting As XmlWriterSettings)
+            Using tw = Txt.CreateTextWriter(Path, Setting.Encoding)
+                WriteFile(tw, Value, Setting)
+            End Using
+        End Sub
         Public Shared Sub WriteFile(ByVal Writer As StreamWriter, ByVal Value As XElement)
-            Dim Setting = New XmlWriterSettings With {.Encoding = Writer.Encoding, .Indent = True, .OmitXmlDeclaration = False}
+            Dim Setting = New XmlWriterSettings With {.Encoding = Writer.Encoding, .Indent = True, .OmitXmlDeclaration = False, .CheckCharacters = False}
+            WriteFile(Writer, Value, Setting)
+        End Sub
+        Public Shared Sub WriteFile(ByVal Writer As StreamWriter, ByVal Value As XElement, Setting As XmlWriterSettings)
             Using w = XmlWriter.Create(Writer, Setting)
                 Value.Save(w)
             End Using
