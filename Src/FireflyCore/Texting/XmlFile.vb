@@ -29,7 +29,7 @@ Namespace Texting
         Public Shared Function ReadFile(ByVal Path As String) As XElement
             Return ReadFile(Path, DefaultReaderSetting)
         End Function
-        Public Shared Function ReadFile(ByVal Path As String, Setting As XmlReaderSettings) As XElement
+        Public Shared Function ReadFile(ByVal Path As String, ByVal Setting As XmlReaderSettings) As XElement
             Using s = Streams.OpenReadable(Path)
                 Return ReadFile(s, Setting)
             End Using
@@ -37,7 +37,7 @@ Namespace Texting
         Public Shared Function ReadFile(ByVal s As IReadableStream) As XElement
             Return ReadFile(s, DefaultReaderSetting)
         End Function
-        Public Shared Function ReadFile(ByVal s As IReadableStream, Setting As XmlReaderSettings) As XElement
+        Public Shared Function ReadFile(ByVal s As IReadableStream, ByVal Setting As XmlReaderSettings) As XElement
             Using r = XmlReader.Create(s.ToUnsafeStream, Setting)
                 Return XElement.Load(r, LoadOptions.PreserveWhitespace Or LoadOptions.SetLineInfo)
             End Using
@@ -45,7 +45,7 @@ Namespace Texting
         Public Shared Function ReadFile(ByVal Path As String, ByVal Encoding As Encoding) As XElement
             Return ReadFile(Path, Encoding, DefaultReaderSetting)
         End Function
-        Public Shared Function ReadFile(ByVal Path As String, ByVal Encoding As Encoding, Setting As XmlReaderSettings) As XElement
+        Public Shared Function ReadFile(ByVal Path As String, ByVal Encoding As Encoding, ByVal Setting As XmlReaderSettings) As XElement
             Using s = Streams.OpenReadable(Path)
                 Using sr = Txt.CreateTextReader(s.AsNewReading, Encoding)
                     Return ReadFile(sr, Setting)
@@ -55,7 +55,7 @@ Namespace Texting
         Public Shared Function ReadFile(ByVal Reader As StreamReader) As XElement
             Return ReadFile(Reader, DefaultReaderSetting)
         End Function
-        Public Shared Function ReadFile(ByVal Reader As StreamReader, Setting As XmlReaderSettings) As XElement
+        Public Shared Function ReadFile(ByVal Reader As StreamReader, ByVal Setting As XmlReaderSettings) As XElement
             Using r = XmlReader.Create(Reader, Setting)
                 Return XElement.Load(r, LoadOptions.PreserveWhitespace Or LoadOptions.SetLineInfo)
             End Using
@@ -69,7 +69,7 @@ Namespace Texting
                 WriteFile(tw, Value)
             End Using
         End Sub
-        Public Shared Sub WriteFile(ByVal Path As String, ByVal Value As XElement, Setting As XmlWriterSettings)
+        Public Shared Sub WriteFile(ByVal Path As String, ByVal Value As XElement, ByVal Setting As XmlWriterSettings)
             Using tw = Txt.CreateTextWriter(Path, Setting.Encoding)
                 WriteFile(tw, Value, Setting)
             End Using
@@ -78,7 +78,7 @@ Namespace Texting
             Dim Setting = New XmlWriterSettings With {.Encoding = Writer.Encoding, .Indent = True, .OmitXmlDeclaration = False, .CheckCharacters = False}
             WriteFile(Writer, Value, Setting)
         End Sub
-        Public Shared Sub WriteFile(ByVal Writer As StreamWriter, ByVal Value As XElement, Setting As XmlWriterSettings)
+        Public Shared Sub WriteFile(ByVal Writer As StreamWriter, ByVal Value As XElement, ByVal Setting As XmlWriterSettings)
             Using w = XmlWriter.Create(Writer, Setting)
                 Value.Save(w)
             End Using

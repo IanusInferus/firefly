@@ -97,7 +97,7 @@ Public Module Main
         Console.WriteLine("MetaSchemaManipulator /t2vb:BinarySchema.tree,BinarySchema.vb,BinarySchema")
     End Sub
 
-    Public Sub MetaSchemaToVbCode(MetaSchemaPath As String, VbCodePath As String, Optional NamespaceName As String = "")
+    Public Sub MetaSchemaToVbCode(ByVal MetaSchemaPath As String, ByVal VbCodePath As String, Optional ByVal NamespaceName As String = "")
         Dim x = TreeFile.ReadFile(MetaSchemaPath)
         Dim xs As New XmlSerializer
         Dim MetaSchema = xs.Read(Of MetaSchema.Schema)(x)
