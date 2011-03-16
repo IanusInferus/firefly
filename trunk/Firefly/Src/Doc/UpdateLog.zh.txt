@@ -1,4 +1,8 @@
-﻿2011.03.14
+﻿2011.03.16
+Firefly.Core.Texting:
+增加XmlFile对XmlReaderSetting和XmlWriterSetting的支持。
+
+2011.03.14
 Firefly.Core.Mapping, Firefly.Core.Setting:
 将TaggedUnionField的名称统一为TaggedUnionAlternative。
 Firefly.Core.Texting:
