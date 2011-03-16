@@ -37,7 +37,7 @@ Public Module MetaSchemaVbCodeGenerator
         Public PrimitiveMappings As Dictionary(Of String, PrimitiveMapping)
         Public Templates As Dictionary(Of String, Template)
 
-        Public Sub New(Template As MetaSchemaVbTemplate)
+        Public Sub New(ByVal Template As MetaSchemaVbTemplate)
             Keywords = New HashSet(Of String)(Template.Keywords, StringComparer.OrdinalIgnoreCase)
             PrimitiveMappings = Template.PrimitiveMappings.ToDictionary(Function(m) m.Name, StringComparer.OrdinalIgnoreCase)
             Templates = Template.Templates.ToDictionary(Function(t) t.Name, StringComparer.OrdinalIgnoreCase)
@@ -79,7 +79,7 @@ Public Module MetaSchemaVbCodeGenerator
             Return GetTemplate("Header")
         End Function
 
-        Public Function GetPrimitive(Name As String, PlatformName As String)
+        Public Function GetPrimitive(ByVal Name As String, ByVal PlatformName As String)
             Return GetTemplate("Primitive").Substitute("Name", GetEscapedIdentifier(Name)).Substitute("PlatformName", PlatformName)
         End Function
         Public Function GetPrimitives() As String()
@@ -97,7 +97,7 @@ Public Module MetaSchemaVbCodeGenerator
 
         Private Tuples As New List(Of String)
         Private TupleDict As New Dictionary(Of String, Tuple)
-        Public Function GetTypeFriendlyName(Type As ConceptSpec) As String
+        Public Function GetTypeFriendlyName(ByVal Type As ConceptSpec) As String
             Select Case Type._Tag
                 Case ConceptSpecTag.ConceptRef
                     Return Type.ConceptRef.Value
@@ -115,7 +115,7 @@ Public Module MetaSchemaVbCodeGenerator
                     Throw New InvalidOperationException
             End Select
         End Function
-        Public Function GetTypeString(Type As ConceptSpec) As String
+        Public Function GetTypeString(ByVal Type As ConceptSpec) As String
             Select Case Type._Tag
                 Case ConceptSpecTag.List
                     Return GetEscapedIdentifier(GetTypeFriendlyName(Type.List.ElementType)) & "()"
@@ -125,10 +125,10 @@ Public Module MetaSchemaVbCodeGenerator
                     Throw New InvalidOperationException
             End Select
         End Function
-        Public Function GetAlias(a As [Alias]) As String()
+        Public Function GetAlias(ByVal a As [Alias]) As String()
             Return GetTemplate("Alias").Substitute("Name", GetEscapedIdentifier(a.Name)).Substitute("Type", GetTypeString(a.Type))
         End Function
-        Public Function GetTupleElement(NameIndex As Int64, Type As ConceptSpec) As String()
+        Public Function GetTupleElement(ByVal NameIndex As Int64, ByVal Type As ConceptSpec) As String()
             Return GetTemplate("TupleElement").Substitute("NameIndex", NameIndex.ToString(Globalization.CultureInfo.InvariantCulture)).Substitute("Type", GetTypeString(Type))
         End Function
         Public Function GetTupleElements(ByVal Types As ConceptSpec()) As String()
@@ -140,11 +140,11 @@ Public Module MetaSchemaVbCodeGenerator
             Next
             Return l.ToArray
         End Function
-        Public Function GetTuple(Name As String, t As Tuple) As String()
+        Public Function GetTuple(ByVal Name As String, ByVal t As Tuple) As String()
             Dim TupleElements = GetTupleElements(t.Types)
             Return GetTemplate("Tuple").Substitute("Name", GetEscapedIdentifier(Name)).Substitute("TupleElements", TupleElements)
         End Function
-        Public Function GetField(f As Field) As String()
+        Public Function GetField(ByVal f As Field) As String()
             Return GetTemplate("Field").Substitute("Name", GetEscapedIdentifier(f.Name)).Substitute("Type", GetTypeString(f.Type))
         End Function
         Public Function GetFields(ByVal Fields As Field()) As String()
@@ -154,7 +154,7 @@ Public Module MetaSchemaVbCodeGenerator
             Next
             Return l.ToArray
         End Function
-        Public Function GetRecord(r As Record) As String()
+        Public Function GetRecord(ByVal r As Record) As String()
             Dim Fields = GetFields(r.Fields)
             Return GetTemplate("Record").Substitute("Name", GetEscapedIdentifier(r.Name)).Substitute("Fields", Fields)
         End Function
@@ -165,7 +165,7 @@ Public Module MetaSchemaVbCodeGenerator
             Next
             Return l.ToArray
         End Function
-        Public Function GetAlternative(a As Alternative) As String()
+        Public Function GetAlternative(ByVal a As Alternative) As String()
             Return GetTemplate("Alternative").Substitute("Name", GetEscapedIdentifier(a.Name)).Substitute("Type", GetTypeString(a.Type))
         End Function
         Public Function GetAlternatives(ByVal Alternatives As Alternative()) As String()
@@ -175,7 +175,7 @@ Public Module MetaSchemaVbCodeGenerator
             Next
             Return l.ToArray
         End Function
-        Public Function GetTaggedUnion(tu As TaggedUnion) As String()
+        Public Function GetTaggedUnion(ByVal tu As TaggedUnion) As String()
             Dim AlternativeNames = GetAlternativeNames(tu.Alternatives)
             Dim Alternatives = GetAlternatives(tu.Alternatives)
             Return GetTemplate("TaggedUnion").Substitute("Name", GetEscapedIdentifier(tu.Name)).Substitute("AlternativeNames", AlternativeNames).Substitute("Alternatives", Alternatives)
@@ -209,13 +209,13 @@ Public Module MetaSchemaVbCodeGenerator
             Return l.ToArray()
         End Function
 
-        Public Function GetTemplate(Name As String) As String()
+        Public Function GetTemplate(ByVal Name As String) As String()
             Return GetLines(TemplateInfo.Templates(Name).Value)
         End Function
-        Public Function GetLines(Value As String) As String()
+        Public Function GetLines(ByVal Value As String) As String()
             Return Value.UnifyNewLineToLf.Split(Lf)
         End Function
-        Public Function GetEscapedIdentifier(Identifier As String) As String
+        Public Function GetEscapedIdentifier(ByVal Identifier As String) As String
             If TemplateInfo.Keywords.Contains(Identifier) Then
                 Return "[" & Identifier & "]"
             Else
@@ -224,7 +224,7 @@ Public Module MetaSchemaVbCodeGenerator
         End Function
     End Class
 
-    <Extension()> Private Function Substitute(ByVal Lines As String(), Parameter As String, Value As String) As String()
+    <Extension()> Private Function Substitute(ByVal Lines As String(), ByVal Parameter As String, ByVal Value As String) As String()
         Dim l As New List(Of String)
         For Each Line In Lines
             Dim ParameterString = "${" & Parameter & "}"
@@ -236,7 +236,7 @@ Public Module MetaSchemaVbCodeGenerator
         Next
         Return l.ToArray()
     End Function
-    <Extension()> Private Function Substitute(ByVal Lines As String(), Parameter As String, Value As String()) As String()
+    <Extension()> Private Function Substitute(ByVal Lines As String(), ByVal Parameter As String, ByVal Value As String()) As String()
         Dim l As New List(Of String)
         For Each Line In Lines
             Dim ParameterString = "${" & Parameter & "}"
