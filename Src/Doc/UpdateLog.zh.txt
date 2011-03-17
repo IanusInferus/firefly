@@ -3,6 +3,8 @@ Firefly.VBValidator:
 增加此工具以检查由于VS2010 SP1中VB去除自动添加ByVal导致的代码风格问题。
 Firefly.Core.Texting, Firefly.MetaSchemaManipulator:
 修正ByVal问题导致的代码风格不一致。
+Firefly.MetaSchemaManipulator:
+修正多层数组的类型名称错误问题。
 
 2011.03.16
 Firefly.Core.Texting:
