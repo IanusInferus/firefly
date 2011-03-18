@@ -1,6 +1,8 @@
 ﻿2011.03.18
 Firefly.Core.Texting:
 在XmlFile中增加化简功能。
+Firefly.Core.Mapping, Firefly.MetaSchemaManipulator:
+增加对空类型Unit的支持。
 
 2011.03.17
 Firefly.VBValidator:
