@@ -1,4 +1,8 @@
-﻿2011.03.17
+﻿2011.03.18
+Firefly.Core.Texting:
+在XmlFile中增加化简功能。
+
+2011.03.17
 Firefly.VBValidator:
 增加此工具以检查由于VS2010 SP1中VB去除自动添加ByVal导致的代码风格问题。
 Firefly.Core.Texting, Firefly.MetaSchemaManipulator:
