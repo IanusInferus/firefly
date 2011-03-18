@@ -3,7 +3,7 @@
 '  File:        XmlFile.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: Xml读写
-'  Version:     2011.03.16.
+'  Version:     2011.03.18.
 '  Copyright:   F.R.C.
 '
 '==========================================================================
@@ -14,6 +14,7 @@ Imports System.Collections.Generic
 Imports System.Xml
 Imports System.Xml.Linq
 Imports System.Text
+Imports System.Runtime.CompilerServices
 Imports Firefly
 Imports Firefly.Mapping
 Imports Firefly.Mapping.XmlText
@@ -61,6 +62,7 @@ Namespace Texting
             End Using
         End Function
 
+        Private Shared DefaultWriterSetting As New XmlWriterSettings With {.CheckCharacters = True, .Indent = True, .NamespaceHandling = NamespaceHandling.OmitDuplicates}
         Public Shared Sub WriteFile(ByVal Path As String, ByVal Value As XElement)
             WriteFile(Path, TextEncoding.WritingDefault, Value)
         End Sub
@@ -75,7 +77,8 @@ Namespace Texting
             End Using
         End Sub
         Public Shared Sub WriteFile(ByVal Writer As StreamWriter, ByVal Value As XElement)
-            Dim Setting = New XmlWriterSettings With {.Encoding = Writer.Encoding, .Indent = True, .OmitXmlDeclaration = False, .CheckCharacters = False}
+            Dim Setting = DefaultWriterSetting.Clone()
+            Setting.Encoding = Writer.Encoding
             WriteFile(Writer, Value, Setting)
         End Sub
         Public Shared Sub WriteFile(ByVal Writer As StreamWriter, ByVal Value As XElement, ByVal Setting As XmlWriterSettings)
@@ -84,4 +87,19 @@ Namespace Texting
             End Using
         End Sub
     End Class
+    Public Module XmlOperations
+        <Extension()> Public Function Reduce(x As XElement) As XElement
+            Dim n As New XElement(x.Name)
+            For Each a In x.Attributes
+                n.SetAttributeValue(a.Name, a.Value)
+            Next
+            For Each e In x.Elements
+                n.Add(Reduce(e))
+            Next
+            If Not (x.IsEmpty OrElse x.HasElements) Then
+                n.Value = x.Value
+            End If
+            Return n
+        End Function
+    End Module
 End Namespace
