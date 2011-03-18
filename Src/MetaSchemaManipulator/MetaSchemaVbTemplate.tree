@@ -4,7 +4,7 @@ $Comment
       File:        MetaSchemaVbTemplate.tree
       Location:    Firefly.MetaSchemaManipulator <Tree>
       Description: 元类型结构VB模板数据
-      Version:     2011.03.16.
+      Version:     2011.03.18.
       Copyright(C) F.R.C.
     
     ==========================================================================
@@ -165,6 +165,9 @@ MetaSchemaVbTemplate
             WriteOnly
             Xor
     PrimitiveMappings
+        PrimitiveMapping
+            Name Unit
+            PlatformName Firefly.Mapping.MetaSchema.Unit
         PrimitiveMapping
             Name BooleanLiteral
             PlatformName System.Boolean

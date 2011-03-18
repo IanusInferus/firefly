@@ -3,7 +3,7 @@
 '  File:        MetaSchema.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 元类型结构
-'  Version:     2011.03.14.
+'  Version:     2011.03.18.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -110,6 +110,13 @@ Namespace Mapping.MetaSchema
         Public Tuple As Tuple
         Public List As List
 
+        Public Overrides Function ToString() As String
+            Return DebuggerDisplayer.ConvertToString(Me)
+        End Function
+    End Class
+
+    <Record(), DebuggerDisplay("{ToString()}")>
+    Public Class Unit
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
         End Function

@@ -74,7 +74,7 @@ Namespace Mapping
             Dim FieldsAndProperties = FieldMembers.Concat(PropertyMembers).OrderBy(Function(f) MemberToIndex(f.Member)).ToArray
             If Type.IsValueType Then
                 If FieldsAndProperties.Length = 0 Then
-                    Return Nothing
+                    If Type.GetCustomAttributes(GetType(RecordAttribute), False).Length = 0 Then Return Nothing
                 End If
             End If
 
@@ -99,7 +99,7 @@ Namespace Mapping
             Dim ReadableAndWritableFields = Type.GetFields(BindingFlags.Public Or BindingFlags.Instance).Where(Function(f) Not f.IsInitOnly).ToArray
             Dim ReadableAndWritableProperties = Type.GetProperties(BindingFlags.Public Or BindingFlags.Instance).Where(Function(p) p.CanRead AndAlso p.CanWrite AndAlso p.GetIndexParameters.Length = 0).ToArray
             Dim WritableProperties = Type.GetProperties(BindingFlags.Public Or BindingFlags.Instance).Where(Function(p) p.CanWrite AndAlso p.GetIndexParameters.Length = 0).ToArray
-            If Not ((ReadableAndWritableFields.Length > 0 AndAlso WritableProperties.Length = 0) OrElse (ReadableAndWritableFields.Length = 0 AndAlso ReadableAndWritableProperties.Length > 0)) Then Return Nothing
+            If Not ((ReadableAndWritableFields.Length >= 0 AndAlso WritableProperties.Length = 0) OrElse (ReadableAndWritableFields.Length = 0 AndAlso ReadableAndWritableProperties.Length >= 0)) Then Return Nothing
 
             Dim FieldMembers = ReadableAndWritableFields.Select(Function(f) New FieldOrPropertyInfo With {.Member = DirectCast(f, MemberInfo), .Type = f.FieldType}).ToArray
             Dim PropertyMembers = ReadableAndWritableProperties.Select(Function(f) New FieldOrPropertyInfo With {.Member = DirectCast(f, MemberInfo), .Type = f.PropertyType}).ToArray
@@ -107,7 +107,7 @@ Namespace Mapping
             Dim FieldsAndProperties = FieldMembers.Concat(PropertyMembers).OrderBy(Function(f) MemberToIndex(f.Member)).ToArray
             If Type.IsValueType Then
                 If FieldsAndProperties.Length = 0 Then
-                    Return Nothing
+                    If Type.GetCustomAttributes(GetType(RecordAttribute), False).Length = 0 Then Return Nothing
                 End If
             End If
 
