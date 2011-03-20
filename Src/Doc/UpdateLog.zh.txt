@@ -1,4 +1,8 @@
-﻿2011.03.18
+﻿2011.03.20.0
+Firefly.VBValidator:
+增加自动修复ByVal的功能。
+
+2011.03.18
 Firefly.Core.Texting:
 在XmlFile中增加化简功能。
 Firefly.Core.Mapping, Firefly.MetaSchemaManipulator:
