@@ -3,7 +3,7 @@
 '  File:        VBValidator.vb
 '  Location:    Firefly.VBValidator <Visual Basic .Net>
 '  Description: VB文本验证工具
-'  Version:     2011.03.17.
+'  Version:     2011.03.20.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -35,19 +35,21 @@ Public Module VBValidator
         Dim CmdLine = CommandLine.GetCmdLine()
         Dim argv = CmdLine.Arguments
 
-        Dim NoBom As Boolean = False
+        Dim RepairByVal As Boolean = False
         For Each opt In CmdLine.Options
             Select Case opt.Name.ToLower
                 Case "?", "help"
                     DisplayInfo()
                     Return 0
+                Case "repairbyval"
+                    RepairByVal = True
                 Case Else
                     Throw New ArgumentException(opt.Name)
             End Select
         Next
         Select Case argv.Length
             Case 0
-                Verify()
+                Validate(RepairByVal)
             Case Else
                 DisplayInfo()
                 Return -1
@@ -61,16 +63,19 @@ Public Module VBValidator
         Console.WriteLine("F.R.C.")
         Console.WriteLine("")
         Console.WriteLine("用法:")
-        Console.WriteLine("VBValidator")
+        Console.WriteLine("VBValidator [/repairbyval]")
+        Console.WriteLine("/repairbyval 自动修复ByVal缺失问题。")
         Console.WriteLine("")
         Console.WriteLine("示例:")
         Console.WriteLine("VBValidator")
         Console.WriteLine("将验证当前目录下所有.vb文件。")
     End Sub
 
-    Public Sub Verify()
+    Public Sub Validate(ByVal RepairByVal As Boolean)
         For Each f In Directory.EnumerateFiles(Environment.CurrentDirectory, "*.vb", SearchOption.AllDirectories)
             Dim Lines = Txt.ReadFile(f).UnifyNewLineToLf.Split(Lf)
+            Dim NewLines As New List(Of String)
+            Dim Changed As Boolean = False
             Dim ErrorLines As New List(Of KeyValuePair(Of Integer, String))
             For n = 0 To Lines.Length - 1
                 Dim k = n
@@ -95,6 +100,9 @@ Public Module VBValidator
                                                 If Param = "" Then Continue For
                                                 If Param.Contains("ByVal") OrElse Param.Contains("ByRef") Then Continue For
                                                 ErrorLines.Add(CreatePair(k, "ByValError"))
+                                                Line = Line.Replace(Param, "ByVal " & Param)
+                                                Changed = True
+                                                Continue For
                                             End If
                                         Case Else
                                     End Select
@@ -137,6 +145,7 @@ Public Module VBValidator
                         ForEachParentheses(Line)
                     End If
                 End If
+                NewLines.Add(Line)
             Next
 
             If ErrorLines.Count > 0 Then
@@ -144,6 +153,11 @@ Public Module VBValidator
                 For Each p In ErrorLines
                     Console.WriteLine("  {0} : {1}".Formats(p.Key + 1, p.Value))
                 Next
+            End If
+            If RepairByVal AndAlso Changed Then
+                Console.WriteLine("按任意键修正。")
+                Console.ReadKey()
+                Txt.WriteFile(f, String.Join(CrLf, NewLines.ToArray))
             End If
         Next
     End Sub
