@@ -1,3 +1,3 @@
 PATH %PATH%;..\Bin
-VBValidator.exe
+VBValidator.exe /repairbyval
 pause
