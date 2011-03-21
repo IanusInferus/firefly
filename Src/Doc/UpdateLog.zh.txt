@@ -1,4 +1,8 @@
-﻿2011.03.20.0
+﻿2011.03.21
+Firefly.Core.Mapping:
+修正在BinarySerializer的Reader中使用RuntimeNoncircular循环引用防止器的问题。
+
+2011.03.20.0
 Firefly.VBValidator:
 增加自动修复ByVal的功能。
 

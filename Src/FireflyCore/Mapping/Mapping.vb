@@ -3,7 +3,7 @@
 '  File:        Mapping.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 映射
-'  Version:     2011.03.07.
+'  Version:     2011.03.21.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -88,17 +88,33 @@ Namespace Mapping
             Return New MapperResolver(New NoncircularProjectorResolver(This), New NoncircularAggregatorResolver(This))
         End Function
 
-        ''' <remarks>获取运行时循环解析器，用于在出现循环引用时延迟到运行时解析。</remarks>
-        <Extension()> Public Function AsRuntimeNoncircular(ByVal This As IProjectorResolver) As IProjectorResolver
-            Return New RuntimeNoncircularProjectorResolver(This)
+        ''' <remarks>获取运行时解析器，用于在出现循环类型引用时延迟到运行时解析。</remarks>
+        <Extension()> Public Function AsRuntimeProjectorResolver(ByVal This As IProjectorResolver) As IProjectorResolver
+            Return New RuntimeProjectorResolver(This)
         End Function
-        ''' <remarks>获取运行时循环解析器，用于在出现循环引用时延迟到运行时解析。</remarks>
-        <Extension()> Public Function AsRuntimeNoncircular(ByVal This As IAggregatorResolver) As IAggregatorResolver
-            Return New RuntimeNoncircularAggregatorResolver(This)
+        ''' <remarks>获取运行时解析器，用于在出现循环类型引用时延迟到运行时解析。</remarks>
+        <Extension()> Public Function AsRuntimeAggregatorResolver(ByVal This As IAggregatorResolver) As IAggregatorResolver
+            Return New RuntimeAggregatorResolver(This)
         End Function
-        ''' <remarks>获取运行时循环解析器，用于在出现循环引用时延迟到运行时解析。</remarks>
-        <Extension()> Public Function AsRuntimeNoncircular(ByVal This As IMapperResolver) As IMapperResolver
-            Return New MapperResolver(New RuntimeNoncircularProjectorResolver(This), New RuntimeNoncircularAggregatorResolver(This))
+        ''' <remarks>获取运行时解析器，用于在出现循环类型引用时延迟到运行时解析。</remarks>
+        <Extension()> Public Function AsRuntime(ByVal This As IMapperResolver) As IMapperResolver
+            Return CreateMapper(This.AsRuntimeProjectorResolver, This.AsRuntimeAggregatorResolver)
+        End Function
+        ''' <remarks>获取运行时定义域非循环解析器，用于在出现循环类型引用时延迟到运行时解析。</remarks>
+        <Extension()> Public Function AsRuntimeDomainNoncircularProjectorResolver(ByVal This As IProjectorResolver) As IProjectorResolver
+            Return New RuntimeDomainNoncircularProjectorResolver(This)
+        End Function
+        ''' <remarks>获取运行时定义域非循环解析器，用于在出现循环类型引用时延迟到运行时解析。</remarks>
+        <Extension()> Public Function AsRuntimeDomainNoncircularAggregatorResolver(ByVal This As IAggregatorResolver) As IAggregatorResolver
+            Return New RuntimeDomainNoncircularAggregatorResolver(This)
+        End Function
+        ''' <remarks>获取运行时定义域非循环解析器，用于在出现循环类型引用时延迟到运行时解析。</remarks>
+        <Extension()> Public Function AsRuntimeDomainNoncircular(ByVal This As IMapperResolver) As IMapperResolver
+            Return CreateMapper(This.AsRuntimeDomainNoncircularProjectorResolver, This.AsRuntimeDomainNoncircularAggregatorResolver)
+        End Function
+        ''' <remarks>获取运行时值域非循环解析器，用于在出现循环类型引用时延迟到运行时解析。</remarks>
+        <Extension()> Public Function AsRuntimeRangeNoncircularAggregatorResolver(ByVal This As IAggregatorResolver) As IAggregatorResolver
+            Return New RuntimeRangeNoncircularAggregatorResolver(This)
         End Function
 
         ''' <remarks>获取缓存解析器。</remarks>
@@ -204,8 +220,21 @@ Namespace Mapping
             End Function
         End Class
 
+        Private Class DelayFunc(Of D, R)
+            Public CallDelegate As Func(Of [Delegate])
+            Public Function Invoke(ByVal Key As D) As R
+                Return DirectCast(CallDelegate(), Func(Of D, R))(Key)
+            End Function
+        End Class
+        Private Class DelayAction(Of D, R)
+            Public CallDelegate As Func(Of [Delegate])
+            Public Sub Invoke(ByVal Key As D, ByVal Value As R)
+                DirectCast(CallDelegate(), Action(Of D, R))(Key, Value)
+            End Sub
+        End Class
+
         <DebuggerNonUserCode()>
-        Private Class RuntimeNoncircularProjectorResolver
+        Private Class RuntimeProjectorResolver
             Implements IProjectorResolver
 
             Private InnerResolver As IProjectorResolver
@@ -213,12 +242,63 @@ Namespace Mapping
                 Me.InnerResolver = InnerResolver
             End Sub
 
-            Private Class DelayFunc(Of D, R)
-                Public CallDelegate As Func(Of [Delegate])
-                Public Function Invoke(ByVal Key As D) As R
-                    Return DirectCast(CallDelegate(), Func(Of D, R))(Key)
-                End Function
-            End Class
+            Private Shared Function GetDelayFunc(Of D, R)(ByVal f As Func(Of [Delegate])) As [Delegate]
+                Dim c As New DelayFunc(Of D, R) With {.CallDelegate = f}
+                Return DirectCast(AddressOf c.Invoke, Func(Of D, R))
+            End Function
+            Private ResolvingProjectorTypePairs As New HashSet(Of KeyValuePair(Of Type, Type))
+            Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IProjectorResolver.TryResolveProjector
+                If ResolvingProjectorTypePairs.Contains(TypePair) Then
+                    Dim f = DirectCast(Function() InnerResolver.TryResolveProjector(TypePair), Func(Of [Delegate]))
+                    Dim df = DirectCast(AddressOf GetDelayFunc(Of DummyType, DummyType), Func(Of Func(Of [Delegate]), [Delegate])).MakeDelegateMethod({TypePair.Key, TypePair.Value}, GetType(Func(Of Func(Of [Delegate]), [Delegate])))
+                    Return DirectCast(df, Func(Of Func(Of [Delegate]), [Delegate]))(f)
+                End If
+                ResolvingProjectorTypePairs.Add(TypePair)
+                Try
+                    Return InnerResolver.TryResolveProjector(TypePair)
+                Finally
+                    ResolvingProjectorTypePairs.Remove(TypePair)
+                End Try
+            End Function
+        End Class
+        <DebuggerNonUserCode()>
+        Private Class RuntimeAggregatorResolver
+            Implements IAggregatorResolver
+
+            Private InnerResolver As IAggregatorResolver
+            Public Sub New(ByVal InnerResolver As IAggregatorResolver)
+                Me.InnerResolver = InnerResolver
+            End Sub
+
+            Private Shared Function GetDelayAction(Of D, R)(ByVal f As Func(Of [Delegate])) As [Delegate]
+                Dim c As New DelayAction(Of D, R) With {.CallDelegate = f}
+                Return DirectCast(AddressOf c.Invoke, Action(Of D, R))
+            End Function
+            Private ResolvingAggregatorTypePairs As New HashSet(Of KeyValuePair(Of Type, Type))
+            Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IAggregatorResolver.TryResolveAggregator
+                If ResolvingAggregatorTypePairs.Contains(TypePair) Then
+                    Dim f = DirectCast(Function() InnerResolver.TryResolveAggregator(TypePair), Func(Of [Delegate]))
+                    Dim df = DirectCast(AddressOf GetDelayAction(Of DummyType, DummyType), Func(Of Func(Of [Delegate]), [Delegate])).MakeDelegateMethod({TypePair.Key, TypePair.Value}, GetType(Func(Of Func(Of [Delegate]), [Delegate])))
+                    Return DirectCast(df, Func(Of Func(Of [Delegate]), [Delegate]))(f)
+                End If
+                ResolvingAggregatorTypePairs.Add(TypePair)
+                Try
+                    Return InnerResolver.TryResolveAggregator(TypePair)
+                Finally
+                    ResolvingAggregatorTypePairs.Remove(TypePair)
+                End Try
+            End Function
+        End Class
+
+        <DebuggerNonUserCode()>
+        Private Class RuntimeDomainNoncircularProjectorResolver
+            Implements IProjectorResolver
+
+            Private InnerResolver As IProjectorResolver
+            Public Sub New(ByVal InnerResolver As IProjectorResolver)
+                Me.InnerResolver = InnerResolver
+            End Sub
+
             Private Class DelayFuncNoncircular(Of D, R)
                 Public CallDelegate As Func(Of [Delegate])
                 Private Dict As New HashSet(Of D)
@@ -264,7 +344,7 @@ Namespace Mapping
             End Function
         End Class
         <DebuggerNonUserCode()>
-        Private Class RuntimeNoncircularAggregatorResolver
+        Private Class RuntimeDomainNoncircularAggregatorResolver
             Implements IAggregatorResolver
 
             Private InnerResolver As IAggregatorResolver
@@ -272,12 +352,6 @@ Namespace Mapping
                 Me.InnerResolver = InnerResolver
             End Sub
 
-            Private Class DelayAction(Of D, R)
-                Public CallDelegate As Func(Of [Delegate])
-                Public Sub Invoke(ByVal Key As D, ByVal Value As R)
-                    DirectCast(CallDelegate(), Action(Of D, R))(Key, Value)
-                End Sub
-            End Class
             Private Class DelayActionNoncircular(Of D, R)
                 Public CallDelegate As Func(Of [Delegate])
                 Private Dict As New HashSet(Of D)
@@ -288,6 +362,57 @@ Namespace Mapping
                         DirectCast(CallDelegate(), Action(Of D, R))(Key, Value)
                     Finally
                         Dict.Remove(Key)
+                    End Try
+                End Sub
+            End Class
+            Private Shared Function GetDelayAction(Of D, R)(ByVal f As Func(Of [Delegate])) As [Delegate]
+                Dim c As New DelayAction(Of D, R) With {.CallDelegate = f}
+                Return DirectCast(AddressOf c.Invoke, Action(Of D, R))
+            End Function
+            Private Shared Function GetDelayActionNoncircular(Of D, R)(ByVal f As Func(Of [Delegate])) As [Delegate]
+                Dim c As New DelayActionNoncircular(Of D, R) With {.CallDelegate = f}
+                Return DirectCast(AddressOf c.Invoke, Action(Of D, R))
+            End Function
+            Private ResolvingAggregatorTypePairs As New HashSet(Of KeyValuePair(Of Type, Type))
+            Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IAggregatorResolver.TryResolveAggregator
+                If ResolvingAggregatorTypePairs.Contains(TypePair) Then
+                    Dim f = DirectCast(Function() InnerResolver.TryResolveAggregator(TypePair), Func(Of [Delegate]))
+                    Dim df As [Delegate]
+                    If TypePair.Key.IsValueType Then
+                        df = DirectCast(AddressOf GetDelayAction(Of DummyType, DummyType), Func(Of Func(Of [Delegate]), [Delegate])).MakeDelegateMethod({TypePair.Key, TypePair.Value}, GetType(Func(Of Func(Of [Delegate]), [Delegate])))
+                    Else
+                        df = DirectCast(AddressOf GetDelayActionNoncircular(Of DummyType, DummyType), Func(Of Func(Of [Delegate]), [Delegate])).MakeDelegateMethod({TypePair.Key, TypePair.Value}, GetType(Func(Of Func(Of [Delegate]), [Delegate])))
+                    End If
+                    Return DirectCast(df, Func(Of Func(Of [Delegate]), [Delegate]))(f)
+                End If
+                ResolvingAggregatorTypePairs.Add(TypePair)
+                Try
+                    Return InnerResolver.TryResolveAggregator(TypePair)
+                Finally
+                    ResolvingAggregatorTypePairs.Remove(TypePair)
+                End Try
+            End Function
+        End Class
+
+        <DebuggerNonUserCode()>
+        Private Class RuntimeRangeNoncircularAggregatorResolver
+            Implements IAggregatorResolver
+
+            Private InnerResolver As IAggregatorResolver
+            Public Sub New(ByVal InnerResolver As IAggregatorResolver)
+                Me.InnerResolver = InnerResolver
+            End Sub
+
+            Private Class DelayActionNoncircular(Of D, R)
+                Public CallDelegate As Func(Of [Delegate])
+                Private Dict As New HashSet(Of R)
+                Public Sub Invoke(ByVal Key As D, ByVal Value As R)
+                    If Dict.Contains(Value) Then Throw New InvalidOperationException("CircularReference: Aggregator({0}, {1})".Formats(GetType(D).FullName, GetType(R).FullName))
+                    Dict.Add(Value)
+                    Try
+                        DirectCast(CallDelegate(), Action(Of D, R))(Key, Value)
+                    Finally
+                        Dict.Remove(Value)
                     End Try
                 End Sub
             End Class

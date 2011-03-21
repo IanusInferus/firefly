@@ -3,7 +3,7 @@
 '  File:        BinarySerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 二进制序列化类
-'  Version:     2011.03.07.
+'  Version:     2011.03.21.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -166,9 +166,9 @@ Namespace Mapping.Binary
 
             ProjectorResolverList = New LinkedList(Of IProjectorResolver)({
                 PrimitiveResolver,
-                New EnumUnpacker(Of TReadStream)(Root),
-                New CollectionUnpackerTemplate(Of TReadStream)(New GenericCollectionProjectorResolver(Of TReadStream)(Root)),
-                New RecordUnpackerTemplate(Of TReadStream)(Root)
+                New EnumUnpacker(Of TReadStream)(Root.AsRuntime),
+                New CollectionUnpackerTemplate(Of TReadStream)(New GenericCollectionProjectorResolver(Of TReadStream)(Root.AsRuntime)),
+                New RecordUnpackerTemplate(Of TReadStream)(Root.AsRuntime)
             })
             Resolver = CreateMapper(ProjectorResolverList.Concatenated, EmptyAggregatorResolver)
         End Sub
@@ -177,7 +177,7 @@ Namespace Mapping.Binary
             PrimitiveResolver.PutProjector(Reader)
         End Sub
         Public Sub PutReaderTranslator(Of R, M)(ByVal Translator As IProjectorToProjectorRangeTranslator(Of R, M))
-            ProjectorResolverList.AddFirst(TranslatorResolver.Create(Root, Translator))
+            ProjectorResolverList.AddFirst(TranslatorResolver.Create(Root.AsRuntime, Translator))
         End Sub
     End Class
 
@@ -215,9 +215,9 @@ Namespace Mapping.Binary
 
             AggregatorResolverList = New LinkedList(Of IAggregatorResolver)({
                 PrimitiveResolver,
-                New EnumPacker(Of TWriteStream)(Root),
-                New CollectionPackerTemplate(Of TWriteStream)(New GenericCollectionAggregatorResolver(Of TWriteStream)(Root)),
-                New RecordPackerTemplate(Of TWriteStream)(Root)
+                New EnumPacker(Of TWriteStream)(Root.AsRuntimeDomainNoncircular),
+                New CollectionPackerTemplate(Of TWriteStream)(New GenericCollectionAggregatorResolver(Of TWriteStream)(Root.AsRuntimeDomainNoncircular)),
+                New RecordPackerTemplate(Of TWriteStream)(Root.AsRuntimeDomainNoncircular)
             })
             Resolver = CreateMapper(EmptyProjectorResolver, AggregatorResolverList.Concatenated)
         End Sub
@@ -226,11 +226,11 @@ Namespace Mapping.Binary
             PrimitiveResolver.PutAggregator(Writer)
         End Sub
         Public Sub PutWriterTranslator(Of D, M)(ByVal Translator As IAggregatorToAggregatorDomainTranslator(Of D, M))
-            AggregatorResolverList.AddFirst(TranslatorResolver.Create(Root, Translator))
+            AggregatorResolverList.AddFirst(TranslatorResolver.Create(Root.AsRuntimeDomainNoncircular, Translator))
         End Sub
         Public Sub PutWriterTranslator(Of D, M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of D, M))
             Dim t = New PP2AADomainTranslatorTranslator(Of D, M)(Translator)
-            AggregatorResolverList.AddFirst(TranslatorResolver.Create(Root, t))
+            AggregatorResolverList.AddFirst(TranslatorResolver.Create(Root.AsRuntimeDomainNoncircular, t))
         End Sub
 
         'AA(D, M)(R): (M aggr R) -> (D aggr R) = (D proj M) @ (M aggr R)
@@ -286,13 +286,13 @@ Namespace Mapping.Binary
 
             ProjectorResolverList = New LinkedList(Of IProjectorResolver)({
                 PrimitiveResolver,
-                TranslatorResolver.Create(Root, New CounterStateToIntRangeTranslator)
+                TranslatorResolver.Create(Root.AsRuntimeDomainNoncircular, New CounterStateToIntRangeTranslator)
             })
             AggregatorResolverList = New LinkedList(Of IAggregatorResolver)({
-                New EnumPacker(Of CounterState)(Root),
-                New CollectionPackerTemplate(Of CounterState)(New GenericCollectionAggregatorResolver(Of CounterState)(Root)),
-                New RecordPackerTemplate(Of CounterState)(Root),
-                TranslatorResolver.Create(Root, New IntToCounterStateRangeTranslator)
+                New EnumPacker(Of CounterState)(Root.AsRuntimeDomainNoncircular),
+                New CollectionPackerTemplate(Of CounterState)(New GenericCollectionAggregatorResolver(Of CounterState)(Root.AsRuntimeDomainNoncircular)),
+                New RecordPackerTemplate(Of CounterState)(Root.AsRuntimeDomainNoncircular),
+                TranslatorResolver.Create(Root.AsRuntimeDomainNoncircular, New IntToCounterStateRangeTranslator)
             })
             Resolver = CreateMapper(ProjectorResolverList.Concatenated, AggregatorResolverList.Concatenated)
         End Sub
@@ -301,7 +301,7 @@ Namespace Mapping.Binary
             PrimitiveResolver.PutProjector(Counter)
         End Sub
         Public Sub PutCounterTranslator(Of D, M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of D, M))
-            ProjectorResolverList.AddFirst(TranslatorResolver.Create(Root, Translator))
+            ProjectorResolverList.AddFirst(TranslatorResolver.Create(Root.AsRuntimeDomainNoncircular, Translator))
         End Sub
 
         Public Class CounterState
@@ -353,7 +353,7 @@ Namespace Mapping.Binary
 
         Private InnerResolver As IProjectorResolver
         Public Sub New(ByVal Resolver As IProjectorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
 
@@ -383,7 +383,7 @@ Namespace Mapping.Binary
 
         Private InnerResolver As IAggregatorResolver
         Public Sub New(ByVal Resolver As IAggregatorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
 
@@ -407,7 +407,7 @@ Namespace Mapping.Binary
 
         Private InnerResolver As IProjectorResolver
         Public Sub New(ByVal Resolver As IProjectorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
 
@@ -430,7 +430,7 @@ Namespace Mapping.Binary
 
         Private InnerResolver As IAggregatorResolver
         Public Sub New(ByVal Resolver As IAggregatorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
 End Namespace
