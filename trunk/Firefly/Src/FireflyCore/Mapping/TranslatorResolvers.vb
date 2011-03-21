@@ -3,7 +3,7 @@
 '  File:        TranslatorResolvers.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 映射分解器
-'  Version:     2011.03.07.
+'  Version:     2011.03.21.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -57,23 +57,23 @@ Namespace Mapping
         Private Sub New()
         End Sub
 
-        Public Shared Function Create(Of D, M)(ByVal Resolver As IMapperResolver, ByVal Translator As IProjectorToProjectorDomainTranslator(Of D, M)) As IProjectorResolver
-            Return New DPP(Of D, M) With {.Inner = Resolver.AsRuntimeNoncircular, .Translator = Translator}
+        Public Shared Function Create(Of D, M)(ByVal Resolver As IProjectorResolver, ByVal Translator As IProjectorToProjectorDomainTranslator(Of D, M)) As IProjectorResolver
+            Return New DPP(Of D, M) With {.Inner = Resolver, .Translator = Translator}
         End Function
-        Public Shared Function Create(Of D, M)(ByVal Resolver As IMapperResolver, ByVal Translator As IAggregatorToAggregatorDomainTranslator(Of D, M)) As IAggregatorResolver
-            Return New DAA(Of D, M) With {.Inner = Resolver.AsRuntimeNoncircular, .Translator = Translator}
+        Public Shared Function Create(Of D, M)(ByVal Resolver As IAggregatorResolver, ByVal Translator As IAggregatorToAggregatorDomainTranslator(Of D, M)) As IAggregatorResolver
+            Return New DAA(Of D, M) With {.Inner = Resolver, .Translator = Translator}
         End Function
-        Public Shared Function Create(Of R, M)(ByVal Resolver As IMapperResolver, ByVal Translator As IProjectorToProjectorRangeTranslator(Of R, M)) As IProjectorResolver
-            Return New RPP(Of R, M) With {.Inner = Resolver.AsRuntimeNoncircular, .Translator = Translator}
+        Public Shared Function Create(Of R, M)(ByVal Resolver As IProjectorResolver, ByVal Translator As IProjectorToProjectorRangeTranslator(Of R, M)) As IProjectorResolver
+            Return New RPP(Of R, M) With {.Inner = Resolver, .Translator = Translator}
         End Function
-        Public Shared Function Create(Of R, M)(ByVal Resolver As IMapperResolver, ByVal Translator As IProjectorToAggregatorRangeTranslator(Of R, M)) As IAggregatorResolver
-            Return New RPA(Of R, M) With {.Inner = Resolver.AsRuntimeNoncircular, .Translator = Translator}
+        Public Shared Function Create(Of R, M)(ByVal Resolver As IProjectorResolver, ByVal Translator As IProjectorToAggregatorRangeTranslator(Of R, M)) As IAggregatorResolver
+            Return New RPA(Of R, M) With {.Inner = Resolver, .Translator = Translator}
         End Function
-        Public Shared Function Create(Of R, M)(ByVal Resolver As IMapperResolver, ByVal Translator As IAggregatorToProjectorRangeTranslator(Of R, M)) As IProjectorResolver
-            Return New RAP(Of R, M) With {.Inner = Resolver.AsRuntimeNoncircular, .Translator = Translator}
+        Public Shared Function Create(Of R, M)(ByVal Resolver As IAggregatorResolver, ByVal Translator As IAggregatorToProjectorRangeTranslator(Of R, M)) As IProjectorResolver
+            Return New RAP(Of R, M) With {.Inner = Resolver, .Translator = Translator}
         End Function
-        Public Shared Function Create(Of R, M)(ByVal Resolver As IMapperResolver, ByVal Translator As IAggregatorToAggregatorRangeTranslator(Of R, M)) As IAggregatorResolver
-            Return New RAA(Of R, M) With {.Inner = Resolver.AsRuntimeNoncircular, .Translator = Translator}
+        Public Shared Function Create(Of R, M)(ByVal Resolver As IAggregatorResolver, ByVal Translator As IAggregatorToAggregatorRangeTranslator(Of R, M)) As IAggregatorResolver
+            Return New RAA(Of R, M) With {.Inner = Resolver, .Translator = Translator}
         End Function
 
 
@@ -82,7 +82,7 @@ Namespace Mapping
         <DebuggerNonUserCode()>
         Private Class DPP(Of D, M)
             Implements IProjectorResolver
-            Public Inner As IMapperResolver
+            Public Inner As IProjectorResolver
             Public Translator As IProjectorToProjectorDomainTranslator(Of D, M)
             Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IProjectorResolver.TryResolveProjector
                 Dim DomainType = TypePair.Key
@@ -100,7 +100,7 @@ Namespace Mapping
         <DebuggerNonUserCode()>
         Private Class DAA(Of D, M)
             Implements IAggregatorResolver
-            Public Inner As IMapperResolver
+            Public Inner As IAggregatorResolver
             Public Translator As IAggregatorToAggregatorDomainTranslator(Of D, M)
             Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IAggregatorResolver.TryResolveAggregator
                 Dim DomainType = TypePair.Key
@@ -122,7 +122,7 @@ Namespace Mapping
         <DebuggerNonUserCode()>
         Private Class RPP(Of R, M)
             Implements IProjectorResolver
-            Public Inner As IMapperResolver
+            Public Inner As IProjectorResolver
             Public Translator As IProjectorToProjectorRangeTranslator(Of R, M)
             Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IProjectorResolver.TryResolveProjector
                 Dim DomainType = TypePair.Key
@@ -140,7 +140,7 @@ Namespace Mapping
         <DebuggerNonUserCode()>
         Private Class RPA(Of R, M)
             Implements IAggregatorResolver
-            Public Inner As IMapperResolver
+            Public Inner As IProjectorResolver
             Public Translator As IProjectorToAggregatorRangeTranslator(Of R, M)
             Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IAggregatorResolver.TryResolveAggregator
                 Dim DomainType = TypePair.Key
@@ -158,7 +158,7 @@ Namespace Mapping
         <DebuggerNonUserCode()>
         Private Class RAP(Of R, M)
             Implements IProjectorResolver
-            Public Inner As IMapperResolver
+            Public Inner As IAggregatorResolver
             Public Translator As IAggregatorToProjectorRangeTranslator(Of R, M)
             Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IProjectorResolver.TryResolveProjector
                 Dim DomainType = TypePair.Key
@@ -176,7 +176,7 @@ Namespace Mapping
         <DebuggerNonUserCode()>
         Private Class RAA(Of R, M)
             Implements IAggregatorResolver
-            Public Inner As IMapperResolver
+            Public Inner As IAggregatorResolver
             Public Translator As IAggregatorToAggregatorRangeTranslator(Of R, M)
             Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IAggregatorResolver.TryResolveAggregator
                 Dim DomainType = TypePair.Key

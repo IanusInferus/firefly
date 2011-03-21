@@ -3,7 +3,7 @@
 '  File:        DebuggerDisplayer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 调试序列化器
-'  Version:     2011.03.14.
+'  Version:     2011.03.21.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -44,18 +44,18 @@ Namespace Mapping.MetaSchema
                 Resolver = Root
                 Dim ProjectorResolverList = New List(Of IProjectorResolver)({
                     New PrimitiveStringResolver,
-                    TranslatorResolver.Create(Root, New StringAggregatorToProjectorRangeTranslator)
+                    TranslatorResolver.Create(Root.AsRuntimeDomainNoncircular, New StringAggregatorToProjectorRangeTranslator)
                 })
                 Dim AggregatorResolverList = New List(Of IAggregatorResolver)({
-                    New CollectionPackerTemplate(Of PackerState)(New CollectionPacker(Root)),
+                    New CollectionPackerTemplate(Of PackerState)(New CollectionPacker(Root.AsRuntimeDomainNoncircular)),
                     New RecordPackerTemplate(Of PackerState)(
-                        New FieldAggregatorResolver(Root),
-                        New AliasFieldAggregatorResolver(Root),
-                        New TagAggregatorResolver(Root),
-                        New TaggedUnionAlternativeAggregatorResolver(Root),
-                        New TupleElementAggregatorResolver(Root)
+                        New FieldAggregatorResolver(Root.AsRuntimeDomainNoncircular),
+                        New AliasFieldAggregatorResolver(Root.AsRuntimeDomainNoncircular),
+                        New TagAggregatorResolver(Root.AsRuntimeDomainNoncircular),
+                        New TaggedUnionAlternativeAggregatorResolver(Root.AsRuntimeDomainNoncircular),
+                        New TupleElementAggregatorResolver(Root.AsRuntimeDomainNoncircular)
                     ),
-                    TranslatorResolver.Create(Root, New StringProjectorToAggregatorRangeTranslator)
+                    TranslatorResolver.Create(Root.AsRuntimeDomainNoncircular, New StringProjectorToAggregatorRangeTranslator)
                 })
                 Root.Inner = CreateMapper(ProjectorResolverList.Concatenated, AggregatorResolverList.Concatenated)
             End Sub
@@ -78,7 +78,7 @@ Namespace Mapping.MetaSchema
 
             Private InnerResolver As IProjectorResolver
             Public Sub New(ByVal Resolver As IProjectorResolver)
-                Me.InnerResolver = Resolver.AsRuntimeNoncircular
+                Me.InnerResolver = Resolver
             End Sub
         End Class
 
@@ -194,7 +194,7 @@ Namespace Mapping.MetaSchema
 
             Private InnerResolver As IProjectorResolver
             Public Sub New(ByVal Resolver As IProjectorResolver)
-                Me.InnerResolver = Resolver.AsRuntimeNoncircular
+                Me.InnerResolver = Resolver
             End Sub
         End Class
 
@@ -224,7 +224,7 @@ Namespace Mapping.MetaSchema
 
             Private InnerResolver As IProjectorResolver
             Public Sub New(ByVal Resolver As IProjectorResolver)
-                Me.InnerResolver = Resolver.AsRuntimeNoncircular
+                Me.InnerResolver = Resolver
             End Sub
         End Class
 
@@ -246,7 +246,7 @@ Namespace Mapping.MetaSchema
 
             Private InnerResolver As IProjectorResolver
             Public Sub New(ByVal Resolver As IProjectorResolver)
-                Me.InnerResolver = Resolver.AsRuntimeNoncircular
+                Me.InnerResolver = Resolver
             End Sub
         End Class
 
@@ -286,7 +286,7 @@ Namespace Mapping.MetaSchema
 
             Private InnerResolver As IProjectorResolver
             Public Sub New(ByVal Resolver As IProjectorResolver)
-                Me.InnerResolver = Resolver.AsRuntimeNoncircular
+                Me.InnerResolver = Resolver
             End Sub
         End Class
 
@@ -322,7 +322,7 @@ Namespace Mapping.MetaSchema
 
             Private InnerResolver As IProjectorResolver
             Public Sub New(ByVal Resolver As IProjectorResolver)
-                Me.InnerResolver = Resolver.AsRuntimeNoncircular
+                Me.InnerResolver = Resolver
             End Sub
         End Class
     End Class
