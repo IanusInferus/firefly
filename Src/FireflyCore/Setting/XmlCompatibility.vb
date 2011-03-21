@@ -217,7 +217,7 @@ Namespace Setting
 
             Private InnerResolver As IProjectorResolver
             Public Sub New(ByVal Resolver As IProjectorResolver)
-                Me.InnerResolver = Resolver.AsRuntimeNoncircular
+                Me.InnerResolver = Resolver
             End Sub
         End Class
     End Class
@@ -236,11 +236,11 @@ Namespace Setting
             ReaderResolver.PutReader(XmlCompatibility.StringToDateTime)
             Dim ProjectorResolverList = New List(Of IProjectorResolver) From {
                 New RecordUnpackerTemplate(Of ElementUnpackerState)(
-                    New XmlCompatibility.FieldProjectorResolver(ReaderReference),
-                    New AliasFieldProjectorResolver(ReaderReference),
-                    New TagProjectorResolver(ReaderReference),
-                    New TaggedUnionAlternativeProjectorResolver(ReaderReference),
-                    New TupleElementProjectorResolver(ReaderReference)
+                    New XmlCompatibility.FieldProjectorResolver(ReaderReference.AsRuntimeDomainNoncircular),
+                    New AliasFieldProjectorResolver(ReaderReference.AsRuntimeDomainNoncircular),
+                    New TagProjectorResolver(ReaderReference.AsRuntimeDomainNoncircular),
+                    New TaggedUnionAlternativeProjectorResolver(ReaderReference.AsRuntimeDomainNoncircular),
+                    New TupleElementProjectorResolver(ReaderReference.AsRuntimeDomainNoncircular)
                 ),
                 ReaderResolver
             }

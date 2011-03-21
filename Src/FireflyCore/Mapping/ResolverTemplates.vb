@@ -3,7 +3,7 @@
 '  File:        ResolverTemplates.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Object映射器解析器
-'  Version:     2011.03.14.
+'  Version:     2011.03.21.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -734,7 +734,7 @@ Namespace Mapping
 
         Private InnerResolver As IProjectorResolver
         Public Sub New(ByVal Resolver As IProjectorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
     <DebuggerNonUserCode()>
@@ -747,7 +747,7 @@ Namespace Mapping
 
         Private InnerResolver As IAggregatorResolver
         Public Sub New(ByVal Resolver As IAggregatorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
 
@@ -761,7 +761,7 @@ Namespace Mapping
 
         Private InnerResolver As IProjectorResolver
         Public Sub New(ByVal Resolver As IProjectorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
     <DebuggerNonUserCode()>
@@ -774,7 +774,7 @@ Namespace Mapping
 
         Private InnerResolver As IAggregatorResolver
         Public Sub New(ByVal Resolver As IAggregatorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
 
@@ -788,7 +788,7 @@ Namespace Mapping
 
         Private InnerResolver As IProjectorResolver
         Public Sub New(ByVal Resolver As IProjectorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
     <DebuggerNonUserCode()>
@@ -801,7 +801,7 @@ Namespace Mapping
 
         Private InnerResolver As IAggregatorResolver
         Public Sub New(ByVal Resolver As IAggregatorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
 
@@ -815,7 +815,7 @@ Namespace Mapping
 
         Private InnerResolver As IProjectorResolver
         Public Sub New(ByVal Resolver As IProjectorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
     <DebuggerNonUserCode()>
@@ -828,7 +828,7 @@ Namespace Mapping
 
         Private InnerResolver As IAggregatorResolver
         Public Sub New(ByVal Resolver As IAggregatorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
 
@@ -842,7 +842,7 @@ Namespace Mapping
 
         Private InnerResolver As IProjectorResolver
         Public Sub New(ByVal Resolver As IProjectorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
     <DebuggerNonUserCode()>
@@ -855,7 +855,7 @@ Namespace Mapping
 
         Private InnerResolver As IAggregatorResolver
         Public Sub New(ByVal Resolver As IAggregatorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
 

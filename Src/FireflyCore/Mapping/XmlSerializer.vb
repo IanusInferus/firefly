@@ -3,7 +3,7 @@
 '  File:        XmlSerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Xml序列化类
-'  Version:     2011.03.14.
+'  Version:     2011.03.21.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -177,17 +177,17 @@ Namespace Mapping.XmlText
             ProjectorResolverList = New LinkedList(Of IProjectorResolver)({
                 PrimitiveResolver,
                 New EnumResolver,
-                TranslatorResolver.Create(Root, New XElementToStringDomainTranslator),
-                New CollectionUnpackerTemplate(Of XElement)(New CollectionUnpacker(Root)),
+                TranslatorResolver.Create(Root.AsRuntimeDomainNoncircular, New XElementToStringDomainTranslator),
+                New CollectionUnpackerTemplate(Of XElement)(New CollectionUnpacker(Root.AsRuntimeDomainNoncircular)),
                 New RecordUnpackerTemplate(Of ElementUnpackerState)(
-                    New FieldProjectorResolver(Root),
-                    New AliasFieldProjectorResolver(Root),
-                    New TagProjectorResolver(Root),
-                    New TaggedUnionAlternativeProjectorResolver(Root),
-                    New TupleElementProjectorResolver(Root)
+                    New FieldProjectorResolver(Root.AsRuntimeDomainNoncircular),
+                    New AliasFieldProjectorResolver(Root.AsRuntimeDomainNoncircular),
+                    New TagProjectorResolver(Root.AsRuntimeDomainNoncircular),
+                    New TaggedUnionAlternativeProjectorResolver(Root.AsRuntimeDomainNoncircular),
+                    New TupleElementProjectorResolver(Root.AsRuntimeDomainNoncircular)
                 ),
-                New InheritanceResolver(Root, ExternalTypes),
-                TranslatorResolver.Create(Root, New XElementProjectorToProjectorDomainTranslator)
+                New InheritanceResolver(Root.AsRuntimeDomainNoncircular, ExternalTypes),
+                TranslatorResolver.Create(Root.AsRuntimeDomainNoncircular, New XElementProjectorToProjectorDomainTranslator)
             })
             DebugResolver = New DebugReaderResolver(CreateMapper(ProjectorResolverList.Concatenated, EmptyAggregatorResolver))
             Resolver = DebugResolver
@@ -200,10 +200,10 @@ Namespace Mapping.XmlText
             PrimitiveResolver.PutProjector(Reader)
         End Sub
         Public Sub PutReaderTranslator(Of R, M)(ByVal Translator As IProjectorToProjectorRangeTranslator(Of R, M))
-            ProjectorResolverList.AddFirst(TranslatorResolver.Create(Root, Translator))
+            ProjectorResolverList.AddFirst(TranslatorResolver.Create(Root.AsRuntimeDomainNoncircular, Translator))
         End Sub
         Public Sub PutReaderTranslator(Of M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of XElement, M))
-            ProjectorResolverList.AddFirst(TranslatorResolver.Create(Root, Translator))
+            ProjectorResolverList.AddFirst(TranslatorResolver.Create(Root.AsRuntimeDomainNoncircular, Translator))
         End Sub
 
         Public ReadOnly Property CurrentReadingXElement As XElement
@@ -265,20 +265,20 @@ Namespace Mapping.XmlText
             ProjectorResolverList = New LinkedList(Of IProjectorResolver)({
                 PrimitiveResolver,
                 New EnumResolver,
-                TranslatorResolver.Create(Root, New XElementToStringRangeTranslator),
-                New InheritanceResolver(Root, ExternalTypes),
-                TranslatorResolver.Create(Root, New XElementAggregatorToProjectorRangeTranslator)
+                TranslatorResolver.Create(Root.AsRuntimeDomainNoncircular, New XElementToStringRangeTranslator),
+                New InheritanceResolver(Root.AsRuntimeDomainNoncircular, ExternalTypes),
+                TranslatorResolver.Create(Root.AsRuntimeDomainNoncircular, New XElementAggregatorToProjectorRangeTranslator)
             })
             AggregatorResolverList = New LinkedList(Of IAggregatorResolver)({
-                New CollectionPackerTemplate(Of ElementPackerState)(New CollectionPacker(Root)),
+                New CollectionPackerTemplate(Of ElementPackerState)(New CollectionPacker(Root.AsRuntimeDomainNoncircular)),
                 New RecordPackerTemplate(Of ElementPackerState)(
-                    New FieldAggregatorResolver(Root),
-                    New AliasFieldAggregatorResolver(Root),
-                    New TagAggregatorResolver(Root),
-                    New TaggedUnionAlternativeAggregatorResolver(Root),
-                    New TupleElementAggregatorResolver(Root)
+                    New FieldAggregatorResolver(Root.AsRuntimeDomainNoncircular),
+                    New AliasFieldAggregatorResolver(Root.AsRuntimeDomainNoncircular),
+                    New TagAggregatorResolver(Root.AsRuntimeDomainNoncircular),
+                    New TaggedUnionAlternativeAggregatorResolver(Root.AsRuntimeDomainNoncircular),
+                    New TupleElementAggregatorResolver(Root.AsRuntimeDomainNoncircular)
                 ),
-                TranslatorResolver.Create(Root, New XElementProjectorToAggregatorRangeTranslator)
+                TranslatorResolver.Create(Root.AsRuntimeDomainNoncircular, New XElementProjectorToAggregatorRangeTranslator)
             })
             Resolver = CreateMapper(ProjectorResolverList.Concatenated, AggregatorResolverList.Concatenated)
         End Sub
@@ -290,10 +290,10 @@ Namespace Mapping.XmlText
             PrimitiveResolver.PutProjector(Writer)
         End Sub
         Public Sub PutWriterTranslator(Of D, M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of D, M))
-            ProjectorResolverList.AddFirst(TranslatorResolver.Create(Root, Translator))
+            ProjectorResolverList.AddFirst(TranslatorResolver.Create(Root.AsRuntimeDomainNoncircular, Translator))
         End Sub
         Public Sub PutWriterTranslator(Of M)(ByVal Translator As IProjectorToProjectorRangeTranslator(Of XElement, M))
-            ProjectorResolverList.AddFirst(TranslatorResolver.Create(Root, Translator))
+            ProjectorResolverList.AddFirst(TranslatorResolver.Create(Root.AsRuntimeDomainNoncircular, Translator))
         End Sub
     End Class
 
@@ -377,7 +377,7 @@ Namespace Mapping.XmlText
 
         Private InnerResolver As IProjectorResolver
         Public Sub New(ByVal Resolver As IProjectorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
     Public Class CollectionPacker
@@ -396,7 +396,7 @@ Namespace Mapping.XmlText
 
         Private InnerResolver As IProjectorResolver
         Public Sub New(ByVal Resolver As IProjectorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
 
@@ -521,7 +521,7 @@ Namespace Mapping.XmlText
 
         Private InnerResolver As IProjectorResolver
         Public Sub New(ByVal Resolver As IProjectorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
     Public Class FieldAggregatorResolver
@@ -554,7 +554,7 @@ Namespace Mapping.XmlText
 
         Private InnerResolver As IProjectorResolver
         Public Sub New(ByVal Resolver As IProjectorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
 
@@ -578,7 +578,7 @@ Namespace Mapping.XmlText
 
         Private InnerResolver As IProjectorResolver
         Public Sub New(ByVal Resolver As IProjectorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
     Public Class AliasFieldAggregatorResolver
@@ -603,7 +603,7 @@ Namespace Mapping.XmlText
 
         Private InnerResolver As IProjectorResolver
         Public Sub New(ByVal Resolver As IProjectorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
 
@@ -628,7 +628,7 @@ Namespace Mapping.XmlText
 
         Private InnerResolver As IProjectorResolver
         Public Sub New(ByVal Resolver As IProjectorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
     Public Class TagAggregatorResolver
@@ -650,7 +650,7 @@ Namespace Mapping.XmlText
 
         Private InnerResolver As IProjectorResolver
         Public Sub New(ByVal Resolver As IProjectorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
 
@@ -683,7 +683,7 @@ Namespace Mapping.XmlText
 
         Private InnerResolver As IProjectorResolver
         Public Sub New(ByVal Resolver As IProjectorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
     Public Class TaggedUnionAlternativeAggregatorResolver
@@ -716,7 +716,7 @@ Namespace Mapping.XmlText
 
         Private InnerResolver As IProjectorResolver
         Public Sub New(ByVal Resolver As IProjectorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
 
@@ -748,7 +748,7 @@ Namespace Mapping.XmlText
 
         Private InnerResolver As IProjectorResolver
         Public Sub New(ByVal Resolver As IProjectorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
     Public Class TupleElementAggregatorResolver
@@ -778,7 +778,7 @@ Namespace Mapping.XmlText
 
         Private InnerResolver As IProjectorResolver
         Public Sub New(ByVal Resolver As IProjectorResolver)
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
         End Sub
     End Class
 
@@ -892,7 +892,7 @@ Namespace Mapping.XmlText
         Private InnerResolver As IProjectorResolver
         Private ExternalTypeDict As Dictionary(Of String, Type)
         Public Sub New(ByVal Resolver As IProjectorResolver, ByVal ExternalTypes As IEnumerable(Of Type))
-            Me.InnerResolver = Resolver.AsRuntimeNoncircular
+            Me.InnerResolver = Resolver
             Me.ExternalTypeDict = ExternalTypes.ToDictionary(Function(type) GetTypeFriendlyName(type), StringComparer.OrdinalIgnoreCase)
         End Sub
     End Class
