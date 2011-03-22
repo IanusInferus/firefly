@@ -13,7 +13,7 @@ Imports System
 Imports System.Globalization
 Imports System.Runtime.CompilerServices
 
-Module NumericStrings
+Public Module NumericStrings
     Public Function InvariantParseUInt8(ByVal s As String) As Byte
         Return Byte.Parse(s, CultureInfo.InvariantCulture)
     End Function
