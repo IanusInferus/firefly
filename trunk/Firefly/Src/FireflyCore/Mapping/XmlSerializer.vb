@@ -3,7 +3,7 @@
 '  File:        XmlSerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Xml序列化类
-'  Version:     2011.03.21.
+'  Version:     2011.03.22.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -150,19 +150,19 @@ Namespace Mapping.XmlText
 
             PrimitiveResolver = New PrimitiveResolver
 
-            PutReader(Function(s As String) Byte.Parse(s, Globalization.CultureInfo.InvariantCulture))
-            PutReader(Function(s As String) UInt16.Parse(s, Globalization.CultureInfo.InvariantCulture))
-            PutReader(Function(s As String) UInt32.Parse(s, Globalization.CultureInfo.InvariantCulture))
-            PutReader(Function(s As String) UInt64.Parse(s, Globalization.CultureInfo.InvariantCulture))
-            PutReader(Function(s As String) SByte.Parse(s, Globalization.CultureInfo.InvariantCulture))
-            PutReader(Function(s As String) Int16.Parse(s, Globalization.CultureInfo.InvariantCulture))
-            PutReader(Function(s As String) Int32.Parse(s, Globalization.CultureInfo.InvariantCulture))
-            PutReader(Function(s As String) Int64.Parse(s, Globalization.CultureInfo.InvariantCulture))
-            PutReader(Function(s As String) Single.Parse(s, Globalization.CultureInfo.InvariantCulture))
-            PutReader(Function(s As String) Double.Parse(s, Globalization.CultureInfo.InvariantCulture))
-            PutReader(Function(s As String) Boolean.Parse(s))
+            PutReader(Function(s As String) InvariantParseUInt8(s))
+            PutReader(Function(s As String) InvariantParseUInt16(s))
+            PutReader(Function(s As String) InvariantParseUInt32(s))
+            PutReader(Function(s As String) InvariantParseUInt64(s))
+            PutReader(Function(s As String) InvariantParseInt8(s))
+            PutReader(Function(s As String) InvariantParseInt16(s))
+            PutReader(Function(s As String) InvariantParseInt32(s))
+            PutReader(Function(s As String) InvariantParseInt64(s))
+            PutReader(Function(s As String) InvariantParseFloat32(s))
+            PutReader(Function(s As String) InvariantParseFloat64(s))
+            PutReader(Function(s As String) InvariantParseBoolean(s))
             PutReader(Function(s As String) s)
-            PutReader(Function(s As String) Decimal.Parse(s, Globalization.CultureInfo.InvariantCulture))
+            PutReader(Function(s As String) InvariantParseDecimal(s))
 
             'Reader
             'proj <- proj
@@ -234,19 +234,19 @@ Namespace Mapping.XmlText
 
             PrimitiveResolver = New PrimitiveResolver
 
-            PutWriter(Function(b As Byte) b.ToString(Globalization.CultureInfo.InvariantCulture))
-            PutWriter(Function(i As UInt16) i.ToString(Globalization.CultureInfo.InvariantCulture))
-            PutWriter(Function(i As UInt32) i.ToString(Globalization.CultureInfo.InvariantCulture))
-            PutWriter(Function(i As UInt64) i.ToString(Globalization.CultureInfo.InvariantCulture))
-            PutWriter(Function(i As SByte) i.ToString(Globalization.CultureInfo.InvariantCulture))
-            PutWriter(Function(i As Int16) i.ToString(Globalization.CultureInfo.InvariantCulture))
-            PutWriter(Function(i As Int32) i.ToString(Globalization.CultureInfo.InvariantCulture))
-            PutWriter(Function(i As Int64) i.ToString(Globalization.CultureInfo.InvariantCulture))
-            PutWriter(Function(f As Single) f.ToString("r", Globalization.CultureInfo.InvariantCulture))
-            PutWriter(Function(f As Double) f.ToString("r", Globalization.CultureInfo.InvariantCulture))
-            PutWriter(Function(b As Boolean) b.ToString())
+            PutWriter(Function(b As Byte) b.ToInvariantString())
+            PutWriter(Function(i As UInt16) i.ToInvariantString())
+            PutWriter(Function(i As UInt32) i.ToInvariantString())
+            PutWriter(Function(i As UInt64) i.ToInvariantString())
+            PutWriter(Function(i As SByte) i.ToInvariantString())
+            PutWriter(Function(i As Int16) i.ToInvariantString())
+            PutWriter(Function(i As Int32) i.ToInvariantString())
+            PutWriter(Function(i As Int64) i.ToInvariantString())
+            PutWriter(Function(f As Single) f.ToInvariantString())
+            PutWriter(Function(f As Double) f.ToInvariantString())
+            PutWriter(Function(b As Boolean) b.ToInvariantString())
             PutWriter(Function(s As String) s)
-            PutWriter(Function(d As Decimal) d.ToString(Globalization.CultureInfo.InvariantCulture))
+            PutWriter(Function(d As Decimal) d.ToInvariantString())
 
             'Writer
             'proj <- proj/aggr

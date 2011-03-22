@@ -1,4 +1,8 @@
-﻿2011.03.21
+﻿2011.03.22
+Firefly.Core, Firefly.Core.Mapping:
+增加NumericStrings，封装掉数值与字符串的转换。
+
+2011.03.21
 Firefly.Core.Mapping:
 修正在BinarySerializer的Reader中使用RuntimeNoncircular循环引用防止器的问题。
 
