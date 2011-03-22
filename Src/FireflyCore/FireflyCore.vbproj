@@ -60,6 +60,7 @@
     <Compile Include="Compressing\LZ77Reversed.vb" />
     <Compile Include="Compressing\Pointer.vb" />
     <Compile Include="Compressing\RLE.vb" />
+    <Compile Include="Core\NumericStrings.vb" />
     <Compile Include="Glyphing\FdGlyphDescriptionFile.vb" />
     <Compile Include="Imaging\Bmp.vb" />
     <Compile Include="Mapping\BinarySerializer.vb" />
