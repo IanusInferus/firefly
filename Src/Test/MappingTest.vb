@@ -725,8 +725,10 @@ Public Module MappingTest
 
     Public Sub TestDebuggerDisplayer()
         Dim o As New RecursiveObject With {.Items = {New RecursiveObject With {.Items = New RecursiveObject() {}}, New RecursiveObject With {.Items = Nothing}}}
-
         Dim s = MetaSchema.DebuggerDisplayer.ConvertToString(o)
+
+        Dim o2 As Double? = 3
+        Dim s2 = MetaSchema.DebuggerDisplayer.ConvertToString(o2)
     End Sub
 
     Public Sub TestRecursive()
