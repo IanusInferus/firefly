@@ -3,7 +3,7 @@
 '  File:        DebuggerDisplayer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 调试序列化器
-'  Version:     2011.03.21.
+'  Version:     2011.04.05.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -44,6 +44,7 @@ Namespace Mapping.MetaSchema
                 Resolver = Root
                 Dim ProjectorResolverList = New List(Of IProjectorResolver)({
                     New PrimitiveStringResolver,
+                    New NullableStringResolver(Root.AsRuntimeDomainNoncircular),
                     TranslatorResolver.Create(Root.AsRuntimeDomainNoncircular, New StringAggregatorToProjectorRangeTranslator)
                 })
                 Dim AggregatorResolverList = New List(Of IAggregatorResolver)({
@@ -158,6 +159,51 @@ Namespace Mapping.MetaSchema
             Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IAggregatorResolver.TryResolveAggregator
                 Return Nothing
             End Function
+        End Class
+
+        ''' <remarks>可空解析器</remarks>
+        Public Class NullableStringResolver
+            Implements IMapperResolver
+
+            Private Class Converter
+                Public CallDelegate As [Delegate]
+
+                Public Function ConvertToString(Of D As Structure)(ByVal v As Nullable(Of D)) As String
+                    If v Is Nothing Then
+                        Return "$Empty"
+                    Else
+                        Return DirectCast(CallDelegate, Func(Of D, String))(CType(v, D))
+                    End If
+                End Function
+            End Class
+            Private Shared Function GetConvertToStringFunc(Of D As Structure)(ByVal m As [Delegate]) As [Delegate]
+                Dim c As New Converter With {.CallDelegate = m}
+                Return DirectCast(AddressOf c.ConvertToString(Of D), Func(Of Nullable(Of D), String))
+            End Function
+            Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IProjectorResolver.TryResolveProjector
+                If TypePair.Value Is GetType(String) Then
+                    Dim Domain = TypePair.Key
+                    If Domain.IsGenericType AndAlso Not Domain.IsGenericTypeDefinition Then
+                        If Domain.GetGenericTypeDefinition Is GetType(Nullable(Of )) Then
+                            Dim UnderlyingDomain = Domain.GetGenericArguments(0)
+                            Dim m = InnerResolver.TryResolveProjector(CreatePair(UnderlyingDomain, TypePair.Value))
+                            If m Is Nothing Then Return Nothing
+                            Dim md = DirectCast(AddressOf GetConvertToStringFunc(Of Integer), Func(Of [Delegate], [Delegate]))
+                            Dim d = DirectCast(md.MakeDelegateMethod({UnderlyingDomain}, GetType(Func(Of [Delegate], [Delegate]))), Func(Of [Delegate], [Delegate]))
+                            Return d(m)
+                        End If
+                    End If
+                End If
+                Return Nothing
+            End Function
+            Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IAggregatorResolver.TryResolveAggregator
+                Return Nothing
+            End Function
+
+            Private InnerResolver As IProjectorResolver
+            Public Sub New(ByVal Resolver As IProjectorResolver)
+                Me.InnerResolver = Resolver
+            End Sub
         End Class
 
         Public Class FieldAggregatorResolver
