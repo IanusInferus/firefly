@@ -3,7 +3,7 @@
 '  File:        TextExceptions.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: 文本异常
-'  Version:     2011.03.05.
+'  Version:     2011.04.05.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -51,7 +51,13 @@ Namespace Texting
                 If i.LineNumber <> 0 Then l.Add("({0})".Formats(i.LineNumber))
                 If i.ColumnNumber <> 0 Then l.Add("({0})".Formats(i.ColumnNumber))
             End If
-            If Message <> "" Then l.Add(" : {0}".Formats(Message))
+            If Message <> "" Then
+                If l.Count > 0 Then
+                    l.Add(" : {0}".Formats(Message))
+                Else
+                    l.Add(Message)
+                End If
+            End If
             Return String.Join("", l.ToArray())
         End Function
     End Class
@@ -88,7 +94,13 @@ Namespace Texting
                 If i.LineNumber <> 0 Then l.Add("({0})".Formats(i.LineNumber))
                 If i.ColumnNumber <> 0 Then l.Add("({0})".Formats(i.ColumnNumber))
             End If
-            If Message <> "" Then l.Add(" : {0}".Formats(Message))
+            If Message <> "" Then
+                If l.Count > 0 Then
+                    l.Add(" : {0}".Formats(Message))
+                Else
+                    l.Add(Message)
+                End If
+            End If
             Return String.Join("", l.ToArray())
         End Function
     End Class
