@@ -3,7 +3,7 @@
 '  File:        TreeFile.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: Tree文件(Xml等价)读写
-'  Version:     2011.03.14.
+'  Version:     2011.04.05.
 '  Copyright:   F.R.C.
 '
 '==========================================================================
@@ -72,21 +72,21 @@ Public NotInheritable Class TreeFile
 
         Public Function GetRoot(ByVal Root As TreeElement) As XElement
             Dim n = TryGetXName(Root.Name, Nothing)
+            Dim i As FileLocationInformation = Nothing
+            If LineInformation.ContainsKey(Root) Then
+                i = LineInformation(Root)
+            End If
             If n Is Nothing Then
-                Dim i As FileLocationInformation
-                If LineInformation.ContainsKey(Root) Then
-                    i = LineInformation(Root)
-                Else
-                    i = New FileLocationInformation
-                End If
+                If i Is Nothing Then i = New FileLocationInformation
                 Throw New InvalidTextFormatException("NamingError", i)
             End If
-            Dim x As XElement
+            Dim x As XElementEx
             If Root.Value IsNot Nothing Then
-                x = New XElement(n, Root.Value.Value)
+                x = New XElementEx(n, Root.Value.Value)
             Else
-                x = New XElement(n, Nothing)
+                x = New XElementEx(n, Nothing)
             End If
+            If i IsNot Nothing Then x.SetLineInfo(i)
             FillElement(Root, x)
             Return x
         End Function
@@ -98,21 +98,21 @@ Public NotInheritable Class TreeFile
             Next
             For Each e In t.Elements
                 Dim n = TryGetXName(e.Name, x)
+                Dim i As FileLocationInformation = Nothing
+                If LineInformation.ContainsKey(e) Then
+                    i = LineInformation(e)
+                End If
                 If n Is Nothing Then
-                    Dim i As FileLocationInformation
-                    If LineInformation.ContainsKey(e) Then
-                        i = LineInformation(e)
-                    Else
-                        i = New FileLocationInformation
-                    End If
+                    If i Is Nothing Then i = New FileLocationInformation
                     Throw New InvalidTextFormatException("NamingError", i)
                 End If
-                Dim xe As XElement
+                Dim xe As XElementEx
                 If e.Value IsNot Nothing Then
-                    xe = New XElement(n, e.Value.Value)
+                    xe = New XElementEx(n, e.Value.Value)
                 Else
-                    xe = New XElement(n, Nothing)
+                    xe = New XElementEx(n, Nothing)
                 End If
+                If i IsNot Nothing Then xe.SetLineInfo(i)
                 x.Add(xe)
                 FillElement(e, xe)
             Next

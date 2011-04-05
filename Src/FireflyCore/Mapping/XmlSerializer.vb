@@ -3,7 +3,7 @@
 '  File:        XmlSerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Xml序列化类
-'  Version:     2011.03.22.
+'  Version:     2011.04.05.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -14,9 +14,11 @@ Imports System.Collections.Generic
 Imports System.Linq
 Imports System.Linq.Expressions
 Imports System.Text.RegularExpressions
+Imports System.Xml
 Imports System.Xml.Linq
 Imports System.Reflection
 Imports Firefly
+Imports Firefly.Texting
 
 Namespace Mapping.XmlText
     Public Interface IXmlReader
@@ -500,6 +502,15 @@ Namespace Mapping.XmlText
             Dim F =
                 Function(s As ElementUnpackerState) As R
                     Dim d = s.Dict
+                    If Not d.ContainsKey(Name) Then
+                        Dim i As New FileLocationInformation
+                        Dim li = DirectCast(s.Parent, IXmlLineInfo)
+                        If li.HasLineInfo() Then
+                            i.LineNumber = li.LineNumber
+                            i.ColumnNumber = li.LinePosition
+                        End If
+                        Throw New InvalidTextFormatException("FieldNameNotFound: {0}".Formats(Name), i)
+                    End If
                     Return Mapper(d(Name))
                 End Function
             Return F
@@ -662,6 +673,15 @@ Namespace Mapping.XmlText
             Dim F =
                 Function(s As ElementUnpackerState) As R
                     Dim d = s.Dict
+                    If Not d.ContainsKey(Name) Then
+                        Dim i As New FileLocationInformation
+                        Dim li = DirectCast(s.Parent, IXmlLineInfo)
+                        If li.HasLineInfo() Then
+                            i.LineNumber = li.LineNumber
+                            i.ColumnNumber = li.LinePosition
+                        End If
+                        Throw New InvalidTextFormatException("AlternativeNameNotFound: {0}".Formats(Name), i)
+                    End If
                     Return Mapper(d(Name))
                 End Function
             Return F
