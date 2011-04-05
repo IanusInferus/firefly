@@ -1,6 +1,8 @@
 ﻿2011.04.05
-Firefly.Core.Mapping, Firefly.Core.Texting:
+Firefly.Core.Mapping:
 增加XmlSerializer在遇到不正常字段名时的错误信息。
+增加DebuggerDisplayer对可空类型的支持。
+Firefly.Core.Texting:
 增加TreeFile读取时的位置信息。
 
 2011.03.22
