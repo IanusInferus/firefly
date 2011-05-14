@@ -1,4 +1,8 @@
-﻿2011.04.05
+﻿2011.05.14.0
+Firefly.Core.Texting:
+增加TreeFile的Table语义。
+
+2011.04.05
 Firefly.Core.Mapping:
 增加XmlSerializer在遇到不正常字段名时的错误信息。
 增加DebuggerDisplayer对可空类型的支持。

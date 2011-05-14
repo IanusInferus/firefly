@@ -3,7 +3,7 @@
 '  File:        TreeFile.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: Tree文件(Xml等价)读写
-'  Version:     2011.04.05.
+'  Version:     2011.05.14.
 '  Copyright:   F.R.C.
 '
 '==========================================================================
@@ -65,6 +65,7 @@ Public NotInheritable Class TreeFile
     Private Shared ReadOnly List As String = "$List"
     Private Shared ReadOnly StringLiteral As String = "$String"
     Private Shared ReadOnly Comment As String = "$Comment"
+    Private Shared ReadOnly Table As String = "$Table"
 
     Private Class ReaderTranslator
         Public LineInformation As New Dictionary(Of TreeElement, FileLocationInformation)
@@ -277,6 +278,42 @@ Public NotInheritable Class TreeFile
                                     Throw New InvalidOperationException
                             End Select
                         Next
+                        Return New NodeResult With {._Tag = NodeResultTag.Elements, .Elements = l}
+                    Case Table
+                        If Tokens.Length < 2 Then Throw New InvalidTextFormatException("ErrorProcessorDirectiveParam", New FileLocationInformation With {.LineNumber = LineNumber})
+                        Dim Name = Tokens(1)
+                        Dim Fields = Tokens.Skip(2).ToArray()
+                        Dim l As New List(Of TreeElement)
+                        Dim LineIndex = 1
+                        While True
+                            Dim Line = TryReadRaw(IndentLevel + 1)
+                            Select Case Line._Tag
+                                Case RawResultTag.Normal
+                                    Dim LineTokens = GetTokens(0, Line.Normal)
+                                    Dim li As New FileLocationInformation With {.LineNumber = LineNumber + LineIndex}
+                                    If LineTokens.Length <> Fields.Length Then Throw New InvalidTextFormatException("TableFieldNameNotMatch", li)
+
+                                    Dim Node As New TreeElement With {.Name = Name}
+                                    LineInformation.Add(Node, li)
+
+                                    For Each t In Fields.ZipStrict(LineTokens, Function(f, lt) New With {.Field = f, .Token = lt})
+                                        Dim v As New TreeValue With {.Value = t.Token}
+                                        ValueLineInformation.Add(v, li)
+                                        Dim fe As New TreeElement With {.Name = t.Field, .Value = v}
+                                        LineInformation.Add(fe, li)
+                                        Node.Elements.Add(fe)
+                                    Next
+
+                                    l.Add(Node)
+                                Case RawResultTag.EmptyLineWithIndentedSpaces, RawResultTag.EmptyLineWithoutIndentedSpaces
+
+                                Case RawResultTag.EndOfBranch, RawResultTag.EndOfStream
+                                    Exit While
+                                Case Else
+                                    Throw New InvalidOperationException
+                            End Select
+                            LineIndex += 1
+                        End While
                         Return New NodeResult With {._Tag = NodeResultTag.Elements, .Elements = l}
                     Case StringLiteral, Comment
                         Dim l As New List(Of String)
