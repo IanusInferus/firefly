@@ -1,4 +1,8 @@
-﻿2011.05.14.0
+﻿2011.06.14
+Firefly.Core.Texting, Firefly.Core.Setting, Firefly.TransVariant:
+修正一些写法问题。
+
+2011.05.14.0
 Firefly.Core.Texting:
 增加TreeFile的Table语义。
 
