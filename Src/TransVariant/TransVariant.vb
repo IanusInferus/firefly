@@ -3,7 +3,7 @@
 '  File:        TransVariant.vb
 '  Location:    Firefly.TransVariant <Visual Basic .Net>
 '  Description: 简繁日汉字异体字转换器
-'  Version:     2010.09.11.
+'  Version:     2011.06.14.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -214,39 +214,39 @@ Public Module TransVariant
     Public Sub GenerateTables()
         Dim g As New HanziVariantTableGen("UnihanS.txt")
 
-        Using sr = Txt.CreateTextWriter("GT.txt", UTF16)
+        Using sw = Txt.CreateTextWriter("GT.txt", UTF16)
             Dim Table = g.GetGTMap()
-            sr.WriteLine((From p In Table Select p.Key).ToUTF16B)
-            sr.WriteLine((From p In Table Select p.Value).ToUTF16B)
+            sw.WriteLine((From p In Table Select p.Key).ToUTF16B)
+            sw.WriteLine((From p In Table Select p.Value).ToUTF16B)
         End Using
 
-        Using sr = Txt.CreateTextWriter("TG.txt", UTF16)
+        Using sw = Txt.CreateTextWriter("TG.txt", UTF16)
             Dim Table = g.GetTGMap()
-            sr.WriteLine((From p In Table Select p.Key).ToUTF16B)
-            sr.WriteLine((From p In Table Select p.Value).ToUTF16B)
+            sw.WriteLine((From p In Table Select p.Key).ToUTF16B)
+            sw.WriteLine((From p In Table Select p.Value).ToUTF16B)
         End Using
 
-        Using sr = Txt.CreateTextWriter("JT.txt", UTF16)
+        Using sw = Txt.CreateTextWriter("JT.txt", UTF16)
             Dim Table = g.GetJTMap()
-            sr.WriteLine((From p In Table Select p.Key).ToUTF16B)
-            sr.WriteLine((From p In Table Select p.Value).ToUTF16B)
+            sw.WriteLine((From p In Table Select p.Key).ToUTF16B)
+            sw.WriteLine((From p In Table Select p.Value).ToUTF16B)
         End Using
 
-        Using sr = Txt.CreateTextWriter("TJ.txt", UTF16)
+        Using sw = Txt.CreateTextWriter("TJ.txt", UTF16)
             Dim Table = g.GetTJMap()
-            sr.WriteLine((From p In Table Select p.Key).ToUTF16B)
-            sr.WriteLine((From p In Table Select p.Value).ToUTF16B)
+            sw.WriteLine((From p In Table Select p.Key).ToUTF16B)
+            sw.WriteLine((From p In Table Select p.Value).ToUTF16B)
         End Using
-        Using sr = Txt.CreateTextWriter("GJ.txt", UTF16)
+        Using sw = Txt.CreateTextWriter("GJ.txt", UTF16)
             Dim Table = g.GetGJMap()
-            sr.WriteLine((From p In Table Select p.Key).ToUTF16B)
-            sr.WriteLine((From p In Table Select p.Value).ToUTF16B)
+            sw.WriteLine((From p In Table Select p.Key).ToUTF16B)
+            sw.WriteLine((From p In Table Select p.Value).ToUTF16B)
         End Using
 
-        Using sr = Txt.CreateTextWriter("JG.txt", UTF16)
+        Using sw = Txt.CreateTextWriter("JG.txt", UTF16)
             Dim Table = g.GetJGMap()
-            sr.WriteLine((From p In Table Select p.Key).ToUTF16B)
-            sr.WriteLine((From p In Table Select p.Value).ToUTF16B)
+            sw.WriteLine((From p In Table Select p.Key).ToUTF16B)
+            sw.WriteLine((From p In Table Select p.Value).ToUTF16B)
         End Using
 
         Dim Text = g.GenerateTranslateTables()

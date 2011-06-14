@@ -3,7 +3,7 @@
 '  File:        TreeFile.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: Tree文件(Xml等价)读写
-'  Version:     2011.05.14.
+'  Version:     2011.06.14.
 '  Copyright:   F.R.C.
 '
 '==========================================================================
@@ -28,10 +28,8 @@ Public NotInheritable Class TreeFile
         Return ReadFile(Path, TextEncoding.Default)
     End Function
     Public Shared Function ReadFile(ByVal Path As String, ByVal Encoding As Encoding) As XElement
-        Using s As New FileStream(Path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
-            Using sr As New StreamReader(s, Encoding, True)
-                Return ReadFile(sr)
-            End Using
+        Using sr = Txt.CreateTextReader(Path, Encoding)
+            Return ReadFile(sr)
         End Using
     End Function
     Public Shared Function ReadFile(ByVal Reader As StreamReader) As XElement
@@ -52,8 +50,8 @@ Public NotInheritable Class TreeFile
         WriteFile(Path, TextEncoding.WritingDefault, Value)
     End Sub
     Public Shared Sub WriteFile(ByVal Path As String, ByVal Encoding As Encoding, ByVal Value As XElement)
-        Using tw = Txt.CreateTextWriter(Path, Encoding)
-            WriteFile(tw, Value)
+        Using sw = Txt.CreateTextWriter(Path, Encoding)
+            WriteFile(sw, Value)
         End Using
     End Sub
     Public Shared Sub WriteFile(ByVal Writer As StreamWriter, ByVal Value As XElement)
