@@ -3,7 +3,7 @@
 '  File:        XmlFile.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: Xml读写
-'  Version:     2011.03.18.
+'  Version:     2011.06.14.
 '  Copyright:   F.R.C.
 '
 '==========================================================================
@@ -47,10 +47,8 @@ Namespace Texting
             Return ReadFile(Path, Encoding, DefaultReaderSetting)
         End Function
         Public Shared Function ReadFile(ByVal Path As String, ByVal Encoding As Encoding, ByVal Setting As XmlReaderSettings) As XElement
-            Using s = Streams.OpenReadable(Path)
-                Using sr = Txt.CreateTextReader(s.AsNewReading, Encoding)
-                    Return ReadFile(sr, Setting)
-                End Using
+            Using sr = Txt.CreateTextReader(Path, Encoding)
+                Return ReadFile(sr, Setting)
             End Using
         End Function
         Public Shared Function ReadFile(ByVal Reader As StreamReader) As XElement
@@ -67,13 +65,13 @@ Namespace Texting
             WriteFile(Path, TextEncoding.WritingDefault, Value)
         End Sub
         Public Shared Sub WriteFile(ByVal Path As String, ByVal Encoding As Encoding, ByVal Value As XElement)
-            Using tw = Txt.CreateTextWriter(Path, Encoding)
-                WriteFile(tw, Value)
+            Using sw = Txt.CreateTextWriter(Path, Encoding)
+                WriteFile(sw, Value)
             End Using
         End Sub
         Public Shared Sub WriteFile(ByVal Path As String, ByVal Value As XElement, ByVal Setting As XmlWriterSettings)
-            Using tw = Txt.CreateTextWriter(Path, Setting.Encoding)
-                WriteFile(tw, Value, Setting)
+            Using sw = Txt.CreateTextWriter(Path, Setting.Encoding)
+                WriteFile(sw, Value, Setting)
             End Using
         End Sub
         Public Shared Sub WriteFile(ByVal Writer As StreamWriter, ByVal Value As XElement)

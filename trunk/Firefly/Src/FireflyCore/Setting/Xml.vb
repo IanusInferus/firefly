@@ -3,7 +3,7 @@
 '  File:        Xml.vb
 '  Location:    Firefly.Setting <Visual Basic .Net>
 '  Description: Xml读写
-'  Version:     2011.03.06.
+'  Version:     2011.06.14.
 '  Copyright:   F.R.C.
 '
 '==========================================================================
@@ -65,10 +65,8 @@ Namespace Setting
             Return ReadFile(Of T)(Path, New Type() {}, Mappers)
         End Function
         Public Shared Function ReadFile(Of T)(ByVal Path As String, ByVal ExternalTypes As IEnumerable(Of Type), ByVal Mappers As IEnumerable(Of IMapper)) As T
-            Using s As New FileStream(Path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
-                Using sr As New StreamReader(s)
-                    Return ReadFile(Of T)(sr, ExternalTypes, Mappers)
-                End Using
+            Using sr = Txt.CreateTextReader(Path)
+                Return ReadFile(Of T)(sr, ExternalTypes, Mappers)
             End Using
         End Function
         Public Shared Function ReadFile(Of T)(ByVal Reader As StreamReader, ByVal ExternalTypes As IEnumerable(Of Type), ByVal Mappers As IEnumerable(Of IMapper)) As T
@@ -90,10 +88,8 @@ Namespace Setting
         End Function
 
         Public Shared Function ReadFile(Of T)(ByVal xs As IXmlReader, ByVal Path As String) As T
-            Using s As New FileStream(Path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
-                Using sr As New StreamReader(s)
-                    Return ReadFile(Of T)(xs, sr)
-                End Using
+            Using sr = Txt.CreateTextReader(Path)
+                Return ReadFile(Of T)(xs, sr)
             End Using
         End Function
         Public Shared Function ReadFile(Of T)(ByVal xs As IXmlReader, ByVal Reader As StreamReader) As T
@@ -117,8 +113,8 @@ Namespace Setting
             WriteFile(Path, Encoding, Value, New Type() {}, Mappers)
         End Sub
         Public Shared Sub WriteFile(Of T)(ByVal Path As String, ByVal Encoding As Encoding, ByVal Value As T, ByVal ExternalTypes As IEnumerable(Of Type), ByVal Mappers As IEnumerable(Of IMapper))
-            Using tw = Txt.CreateTextWriter(Path, Encoding)
-                WriteFile(tw, Value, ExternalTypes, Mappers)
+            Using sw = Txt.CreateTextWriter(Path, Encoding)
+                WriteFile(sw, Value, ExternalTypes, Mappers)
             End Using
         End Sub
         Public Shared Sub WriteFile(Of T)(ByVal Writer As StreamWriter, ByVal Value As T, ByVal ExternalTypes As IEnumerable(Of Type), ByVal Mappers As IEnumerable(Of IMapper))
@@ -144,8 +140,8 @@ Namespace Setting
             WriteFile(xs, Path, TextEncoding.WritingDefault, Value)
         End Sub
         Public Shared Sub WriteFile(Of T)(ByVal xs As IXmlWriter, ByVal Path As String, ByVal Encoding As Encoding, ByVal Value As T)
-            Using tw = Txt.CreateTextWriter(Path, Encoding)
-                WriteFile(xs, tw, Value)
+            Using sw = Txt.CreateTextWriter(Path, Encoding)
+                WriteFile(xs, sw, Value)
             End Using
         End Sub
         Public Shared Sub WriteFile(Of T)(ByVal xs As IXmlWriter, ByVal Writer As StreamWriter, ByVal Value As T)
