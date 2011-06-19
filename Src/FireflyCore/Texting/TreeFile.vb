@@ -3,7 +3,7 @@
 '  File:        TreeFile.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: Tree文件(Xml等价)读写
-'  Version:     2011.06.14.
+'  Version:     2011.06.19.
 '  Copyright:   F.R.C.
 '
 '==========================================================================
@@ -188,12 +188,19 @@ Public NotInheritable Class TreeFile
 
             Dim HeadToken = Tokens.First
 
+            If HeadToken = "" Then
+                If Tokens.Length <> 1 Then Throw New InvalidTextFormatException("IndentError", New FileLocationInformation With {.LineNumber = LineNumber})
+                Dim v As New TreeValue With {.Value = HeadToken}
+                ValueLineInformation.Add(v, New FileLocationInformation With {.LineNumber = LineNumber})
+                Return New NodeResult With {._Tag = NodeResultTag.Value, .Value = v}
+            End If
+
             Dim HeadChar = HeadToken.ToUTF32()(0)
             If Not "!@#$%&/;=?\^`|~".ToUTF32.Any(Function(c) c = HeadChar) Then
                 Dim Nodes = ReadNodes(IndentLevel + 1)
                 If Tokens.Length > 1 AndAlso Nodes.Length > 0 Then Throw New InvalidTextFormatException("IndentError", New FileLocationInformation With {.LineNumber = LineNumber})
                 If Tokens.Length = 1 AndAlso Nodes.Length = 0 Then
-                    Dim v As New TreeValue With {.Value = Tokens(0)}
+                    Dim v As New TreeValue With {.Value = HeadToken}
                     ValueLineInformation.Add(v, New FileLocationInformation With {.LineNumber = LineNumber})
                     Return New NodeResult With {._Tag = NodeResultTag.Value, .Value = v}
                 End If
