@@ -3,7 +3,7 @@
 '  File:        Main.vb
 '  Location:    Firefly.MetaSchemaManipulator <Visual Basic .Net>
 '  Description: 元类型结构处理工具
-'  Version:     2011.03.16.
+'  Version:     2011.06.18.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -103,6 +103,12 @@ Public Module Main
         Dim MetaSchema = xs.Read(Of MetaSchema.Schema)(x)
 
         Dim Compiled = MetaSchema.CompileToVB(NamespaceName)
+        If IO.File.Exists(VbCodePath) Then
+            Dim Original = Txt.ReadFile(VbCodePath)
+            If String.Equals(Compiled, Original, StringComparison.Ordinal) Then
+                Return
+            End If
+        End If
         Txt.WriteFile(VbCodePath, Compiled)
     End Sub
 
