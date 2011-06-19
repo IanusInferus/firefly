@@ -1,4 +1,12 @@
-﻿2011.06.14
+﻿2011.06.19
+Firefly.Core.Texting:
+修正TreeFile读取时，遇到第一个Token是空的时候出现错误的问题。
+
+2011.06.18
+Firefly.MetaSchemaManipulator:
+增加VB代码生成时，没有改变的时候不重新覆盖文件的功能。
+
+2011.06.14
 Firefly.Core.Texting, Firefly.Core.Setting, Firefly.TransVariant:
 修正一些写法问题。
 
