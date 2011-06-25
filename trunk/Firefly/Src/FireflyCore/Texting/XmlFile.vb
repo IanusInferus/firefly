@@ -3,8 +3,8 @@
 '  File:        XmlFile.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: Xml读写
-'  Version:     2011.06.14.
-'  Copyright:   F.R.C.
+'  Version:     2011.06.26.
+'  Copyright(C) F.R.C.
 '
 '==========================================================================
 

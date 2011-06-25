@@ -1,4 +1,13 @@
-﻿2011.06.19
+﻿2011.06.26.0
+Doc:
+增加Tree文件格式定义。
+Firefly.Core.Texting:
+增加新的Tree文件读写代码，支持自定义函数等功能。
+Firefly.MetaSchemaManipulator:
+按照该变动做出一些对应的名称空间导入修改。
+
+
+2011.06.19
 Firefly.Core.Texting:
 修正TreeFile读取时，遇到第一个Token是空的时候出现错误的问题。
 
