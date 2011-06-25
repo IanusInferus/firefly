@@ -3,7 +3,7 @@
 '  File:        Main.vb
 '  Location:    Firefly.MetaSchemaManipulator <Visual Basic .Net>
 '  Description: 元类型结构处理工具
-'  Version:     2011.06.18.
+'  Version:     2011.06.26.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -13,6 +13,7 @@ Imports Firefly
 Imports Firefly.Mapping
 Imports Firefly.Mapping.XmlText
 Imports Firefly.Texting
+Imports Firefly.Texting.TreeFormat
 
 Public Module Main
     Public Function Main() As Integer

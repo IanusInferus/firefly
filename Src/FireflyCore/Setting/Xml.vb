@@ -4,7 +4,7 @@
 '  Location:    Firefly.Setting <Visual Basic .Net>
 '  Description: Xml读写
 '  Version:     2011.06.14.
-'  Copyright:   F.R.C.
+'  Copyright(C) F.R.C.
 '
 '==========================================================================
 
