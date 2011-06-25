@@ -1,0 +1,98 @@
+SingleLineNode
+SingleLineNode //×¢ÊÍ
+
+$String      //×¢ÊÍ
+    ÄÚÈÝ
+     
+    
+   
+    ÄÚÈÝ
+    ÄÚÈÝ
+
+$String
+    ÄÚÈÝ
+
+    ÄÚÈÝ
+    ÄÚÈÝ
+
+$End
+
+$String
+$End
+
+$String
+
+//×¢ÊÍ
+
+$Comment
+    ×¢ÊÍ
+
+$Comment //×¢ÊÍ
+    ×¢ÊÍ
+$End
+
+$Comment
+
+MultiLineNode //×¢ÊÍ
+    $String
+        ÄÚÈÝ
+
+    SingleLineNode Öµ
+
+$List Value //×¢ÊÍ
+    Int 0
+    Double 1.1
+    String ABC
+    HexInt 0x123445
+    $Table IntList Int //×¢ÊÍ
+        0
+        1
+        2
+
+Node
+    $List Int
+        0
+        1
+        2
+        3
+
+Node1 (Node2 (Node3) ((Node4))) (Node5 Node6) Node7
+
+$Table IntList Key Value Description//×¢ÊÍ
+    Name0 0 Test
+    Name1 1 "123"
+    Name2 2 """"
+
+MultiLineNode //×¢ÊÍ
+    $String
+        ÄÚÈÝ
+
+    $Table IntList Int //×¢ÊÍ
+        0
+        1
+        2
+
+#Function //×¢ÊÍ
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+$End
+
+#Function
+
+#Function (12) (((32)) "123") //×¢ÊÍ
+
+Single #Function (12) (((32)) "123") //×¢ÊÍ
+
+#TreeParameterFunction 1 2 3//×¢ÊÍ
+#TreeParameterFunction 1 2 3
+#TableParameterFunction 1 2 3//×¢ÊÍ
+#TableParameterFunction 1 2 3
+
+#TreeContentFunction
+    1 2 3
+    1 2 3
+
+#TableContentFunction
+    1 2 3
+    1 2 3
+
+EmptyNode $Empty

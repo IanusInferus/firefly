@@ -4,7 +4,7 @@
 '  Location:    Firefly.Setting <Visual Basic .Net>
 '  Description: Xml读写兼容支持，用于兼容System.Xml.Serialization.XmlSerializer
 '  Version:     2011.03.14.
-'  Copyright:   F.R.C.
+'  Copyright(C) F.R.C.
 '
 '==========================================================================
 

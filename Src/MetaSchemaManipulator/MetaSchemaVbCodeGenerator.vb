@@ -3,7 +3,7 @@
 '  File:        MetaSchemaVbCodeGenerator.vb
 '  Location:    Firefly.MetaSchemaManipulator <Visual Basic .Net>
 '  Description: 元类型结构VB代码生成器
-'  Version:     2011.03.17.
+'  Version:     2011.06.26.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -21,6 +21,7 @@ Imports Firefly.Mapping.XmlText
 Imports Firefly.TextEncoding
 Imports Firefly.Texting
 Imports Tuple = Firefly.Mapping.MetaSchema.Tuple
+Imports Firefly.Texting.TreeFormat
 
 Public Module MetaSchemaVbCodeGenerator
     <Extension()> Public Function CompileToVB(ByVal Schema As Schema, ByVal NamespaceName As String) As String
