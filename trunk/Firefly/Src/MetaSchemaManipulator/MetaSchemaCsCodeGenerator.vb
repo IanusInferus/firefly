@@ -1,8 +1,8 @@
 ﻿'==========================================================================
 '
-'  File:        MetaSchemaVbCodeGenerator.vb
+'  File:        MetaSchemaCsCodeGenerator.vb
 '  Location:    Firefly.MetaSchemaManipulator <Visual Basic .Net>
-'  Description: 元类型结构VB代码生成器
+'  Description: 元类型结构C#代码生成器
 '  Version:     2011.06.26.
 '  Copyright(C) F.R.C.
 '
@@ -23,22 +23,22 @@ Imports Firefly.Texting
 Imports Tuple = Firefly.Mapping.MetaSchema.Tuple
 Imports Firefly.Texting.TreeFormat
 
-Public Module MetaSchemaVbCodeGenerator
-    <Extension()> Public Function CompileToVB(ByVal Schema As Schema, ByVal NamespaceName As String) As String
+Public Module MetaSchemaCsCodeGenerator
+    <Extension()> Public Function CompileToCS(ByVal Schema As Schema, ByVal NamespaceName As String) As String
         Dim w As New Writer With {.Schema = Schema, .NamespaceName = NamespaceName}
         Dim a = w.GetSchema()
         Return String.Join(CrLf, a)
     End Function
-    <Extension()> Public Function CompileForVB(ByVal Schema As Schema) As String
-        Return CompileToVB(Schema, "")
+    <Extension()> Public Function CompileForCS(ByVal Schema As Schema) As String
+        Return CompileToCS(Schema, "")
     End Function
 
-    Private Class MetaSchemaVbTemplateInfo
+    Private Class MetaSchemaCsTemplateInfo
         Public Keywords As HashSet(Of String)
         Public PrimitiveMappings As Dictionary(Of String, PrimitiveMapping)
         Public Templates As Dictionary(Of String, Template)
 
-        Public Sub New(ByVal Template As MetaSchemaVbTemplate)
+        Public Sub New(ByVal Template As MetaSchemaCsTemplate)
             Keywords = New HashSet(Of String)(Template.Keywords, StringComparer.OrdinalIgnoreCase)
             PrimitiveMappings = Template.PrimitiveMappings.ToDictionary(Function(m) m.Name, StringComparer.OrdinalIgnoreCase)
             Templates = Template.Templates.ToDictionary(Function(t) t.Name, StringComparer.OrdinalIgnoreCase)
@@ -46,13 +46,13 @@ Public Module MetaSchemaVbCodeGenerator
     End Class
 
     Private Class Writer
-        Private Shared TemplateInfo As MetaSchemaVbTemplateInfo
+        Private Shared TemplateInfo As MetaSchemaCsTemplateInfo
 
         Public Schema As Schema
         Public NamespaceName As String
 
         Shared Sub New()
-            Dim b = My.Resources.MetaSchemaVbTemplate
+            Dim b = My.Resources.MetaSchemaCsTemplate
             Dim x As XElement
             Using s As New ByteArrayStream(b)
                 Using sr = Txt.CreateTextReader(s.AsNewReading, TextEncoding.Default, True)
@@ -60,8 +60,8 @@ Public Module MetaSchemaVbCodeGenerator
                 End Using
             End Using
             Dim xs As New XmlSerializer
-            Dim t = xs.Read(Of MetaSchemaVbTemplate)(x)
-            TemplateInfo = New MetaSchemaVbTemplateInfo(t)
+            Dim t = xs.Read(Of MetaSchemaCsTemplate)(x)
+            TemplateInfo = New MetaSchemaCsTemplateInfo(t)
         End Sub
 
         Public Function GetSchema() As String()
@@ -121,7 +121,7 @@ Public Module MetaSchemaVbCodeGenerator
                 Case ConceptSpecTag.ConceptRef
                     Return GetEscapedIdentifier(Type.ConceptRef.Value)
                 Case ConceptSpecTag.List
-                    Return GetEscapedIdentifier(GetTypeString(Type.List.ElementType)) & "()"
+                    Return GetEscapedIdentifier(GetTypeString(Type.List.ElementType)) & "[]"
                 Case ConceptSpecTag.Tuple
                     Return GetEscapedIdentifier(GetTypeFriendlyName(Type))
                 Case Else
@@ -220,7 +220,7 @@ Public Module MetaSchemaVbCodeGenerator
         End Function
         Public Function GetEscapedIdentifier(ByVal Identifier As String) As String
             If TemplateInfo.Keywords.Contains(Identifier) Then
-                Return "[" & Identifier & "]"
+                Return "@" & Identifier
             Else
                 Return Identifier
             End If

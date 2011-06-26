@@ -53,6 +53,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Main.vb" />
+    <Compile Include="MetaSchemaCsCodeGenerator.vb" />
+    <Compile Include="MetaSchemaCsTemplate.vb" />
     <Compile Include="MetaSchemaVbCodeGenerator.vb" />
     <Compile Include="MetaSchemaVbTemplate.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
@@ -80,6 +82,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <None Include="MetaSchemaCsTemplate.tree" />
     <None Include="MetaSchemaVbTemplate.tree" />
     <None Include="My Project\Application.myapp">
       <Generator>MyApplicationCodeGenerator</Generator>
