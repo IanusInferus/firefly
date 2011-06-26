@@ -176,7 +176,7 @@ MetaSchemaCsTemplate
 
                         public override string ToString()
                         {
-                        	return DebuggerDisplayer.ConvertToString(this);
+                            return DebuggerDisplayer.ConvertToString(this);
                         }
                     }
         Template
@@ -197,7 +197,7 @@ MetaSchemaCsTemplate
                         
                         public override string ToString()
                         {
-                        	return DebuggerDisplayer.ConvertToString(this);
+                            return DebuggerDisplayer.ConvertToString(this);
                         }
                     }
         Template
@@ -218,7 +218,7 @@ MetaSchemaCsTemplate
                         
                         public override string ToString()
                         {
-                        	return DebuggerDisplayer.ConvertToString(this);
+                            return DebuggerDisplayer.ConvertToString(this);
                         }
                     }
         Template
@@ -244,6 +244,6 @@ MetaSchemaCsTemplate
                         
                         public override string ToString()
                         {
-                        	return DebuggerDisplayer.ConvertToString(this);
+                            return DebuggerDisplayer.ConvertToString(this);
                         }
                     }
