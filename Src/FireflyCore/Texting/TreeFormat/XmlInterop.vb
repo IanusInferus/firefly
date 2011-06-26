@@ -3,7 +3,7 @@
 '  File:        XmlInterop.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: XML互操作
-'  Version:     2011.06.26.
+'  Version:     2011.06.27.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -59,7 +59,7 @@ Namespace Texting.TreeFormat
                 Dim n = TryGetXName(ns.Name, Nothing)
                 If n Is Nothing Then Throw New InvalidTextFormatException("NamingError", If(i, New FileLocationInformation))
                 Dim x As New XElementEx(n)
-                x.SetLineInfo(i)
+                If i IsNot Nothing Then x.SetLineInfo(i)
                 FillElement(ns, x)
                 Return x
             End Function
@@ -106,7 +106,7 @@ Namespace Texting.TreeFormat
                     Dim n = TryGetXName(ns.Name, Nothing)
                     If n Is Nothing Then Throw New InvalidTextFormatException("NamingError", If(ei, New FileLocationInformation))
                     Dim ex As New XElementEx(n)
-                    ex.SetLineInfo(ei)
+                    If ei IsNot Nothing Then ex.SetLineInfo(ei)
                     x.Add(ex)
                     FillElement(ns, ex)
                 Next
