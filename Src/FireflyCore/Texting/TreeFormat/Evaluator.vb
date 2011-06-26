@@ -21,11 +21,13 @@ Imports Firefly.Texting.TreeFormat.Syntax
 
 Namespace Texting.TreeFormat
     Public Interface ISyntaxMarker
+        Function GetRange(ByVal Obj As Object) As TextRange
         Function Mark(Of T)(ByVal Obj As T, ByVal Range As TextRange) As T
         Function Mark(Of T)(ByVal Obj As T, ByVal SyntaxRule As Object) As T
     End Interface
 
     Public Interface ISemanticsNodeMaker
+        Function GetRange(ByVal Obj As Object) As TextRange
         Function MakeEmptyNode(ByVal Range As TextRange) As Semantics.Node
         Function MakeLeafNode(ByVal Value As String, ByVal Range As TextRange) As Semantics.Node
         Function MakeStemNode(ByVal Name As String, ByVal Children As Semantics.Node(), ByVal Range As TextRange) As Semantics.Node
@@ -62,7 +64,7 @@ Namespace Texting.TreeFormat
             Return New TreeFormatResult With {.Value = F, .Positions = Positions.ToDictionary(Function(p) p.Key, Function(p) New FileTextRange With {.Path = pr.Path, .Range = p.Value})}
         End Function
 
-        Private Function GetRange(ByVal Obj As Object) As TextRange
+        Private Function GetRange(ByVal Obj As Object) As TextRange Implements ISyntaxMarker.GetRange, ISemanticsNodeMaker.GetRange
             Return Positions(Obj)
         End Function
         Private Function Mark(Of T)(ByVal Obj As T, ByVal Range As TextRange) As T Implements ISyntaxMarker.Mark
