@@ -2,6 +2,7 @@
 Firefly.Core.Texting.TreeFormat:
 修正一处Evaluator的外部接口功能不完备的问题。
 修正TokenParser返回结果命名不规范的问题。
+修正一处源代码不规范问题。
 
 2011.06.26.0
 Doc:
