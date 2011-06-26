@@ -1,4 +1,8 @@
-﻿2011.06.26.1
+﻿2011.06.27.0
+Firefly.Core.Texting.TreeFormat:
+修正XML转换在一些元素没有文件位置信息时出错的问题。
+
+2011.06.26
 Firefly.Core.Texting.TreeFormat:
 修正两处Evaluator的外部接口功能不完备的问题。
 修正TokenParser返回结果命名不规范的问题。
