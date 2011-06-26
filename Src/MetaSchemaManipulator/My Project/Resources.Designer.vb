@@ -60,6 +60,13 @@ Namespace My.Resources
             End Set
         End Property
         
+        Friend ReadOnly Property MetaSchemaCsTemplate() As Byte()
+            Get
+                Dim obj As Object = ResourceManager.GetObject("MetaSchemaCsTemplate", resourceCulture)
+                Return CType(obj,Byte())
+            End Get
+        End Property
+        
         Friend ReadOnly Property MetaSchemaVbTemplate() As Byte()
             Get
                 Dim obj As Object = ResourceManager.GetObject("MetaSchemaVbTemplate", resourceCulture)
