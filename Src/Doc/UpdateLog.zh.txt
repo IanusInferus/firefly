@@ -3,6 +3,8 @@ Firefly.Core.Texting.TreeFormat:
 修正一处Evaluator的外部接口功能不完备的问题。
 修正TokenParser返回结果命名不规范的问题。
 修正一处源代码不规范问题。
+Firefly.MetaSchemaManipulator:
+增加C#代码生成的功能。
 
 2011.06.26.0
 Doc:
@@ -11,7 +13,6 @@ Firefly.Core.Texting:
 增加新的Tree文件读写代码，支持自定义函数等功能。
 Firefly.MetaSchemaManipulator:
 按照该变动做出一些对应的名称空间导入修改。
-
 
 2011.06.19
 Firefly.Core.Texting:

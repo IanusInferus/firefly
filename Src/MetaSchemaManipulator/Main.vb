@@ -59,6 +59,17 @@ Public Module Main
                             DisplayInfo()
                             Return -1
                     End Select
+                Case "t2cs"
+                    Dim args = opt.Arguments
+                    Select Case args.Length
+                        Case 2
+                            MetaSchemaToCsCode(args(0), args(1))
+                        Case 3
+                            MetaSchemaToCsCode(args(0), args(1), args(2))
+                        Case Else
+                            DisplayInfo()
+                            Return -1
+                    End Select
                 Case "t2x", "x2t"
                     Dim args = opt.Arguments
                     If args.Length <> 2 Then
@@ -84,15 +95,17 @@ Public Module Main
         Console.WriteLine("元类型结构处理工具")
         Console.WriteLine("F.R.C.")
         Console.WriteLine("")
-        Console.WriteLine("本工具用于从元类型结构生成代码。目前只支持VB.Net代码生成。")
+        Console.WriteLine("本工具用于从元类型结构生成代码。目前只支持VB.Net和C#代码生成。")
         Console.WriteLine("")
         Console.WriteLine("用法:")
         Console.WriteLine("MetaSchemaManipulator /t2vb:<MetaSchemaPath>,<VbCodePath>[,<NamespaceName>]")
+        Console.WriteLine("MetaSchemaManipulator /t2cs:<MetaSchemaPath>,<CsCodePath>[,<NamespaceName>]")
         Console.WriteLine("MetaSchemaManipulator /t2x:<TreeFile>,<XmlFile>")
         Console.WriteLine("MetaSchemaManipulator /x2t:<XmlFile>,<TreeFile>")
         Console.WriteLine("MetaSchemaPath 元类型结构Tree文件路径。")
         Console.WriteLine("VbCodePath VB代码文件路径。")
-        Console.WriteLine("NamespaceName VB文件中的命名空间。")
+        Console.WriteLine("CsCodePath C#代码文件路径。")
+        Console.WriteLine("NamespaceName VB/C#文件中的命名空间。")
         Console.WriteLine("")
         Console.WriteLine("示例:")
         Console.WriteLine("MetaSchemaManipulator /t2vb:BinarySchema.tree,BinarySchema.vb,BinarySchema")
@@ -111,6 +124,21 @@ Public Module Main
             End If
         End If
         Txt.WriteFile(VbCodePath, Compiled)
+    End Sub
+
+    Public Sub MetaSchemaToCsCode(ByVal MetaSchemaPath As String, ByVal CsCodePath As String, Optional ByVal NamespaceName As String = "")
+        Dim x = TreeFile.ReadFile(MetaSchemaPath)
+        Dim xs As New XmlSerializer
+        Dim MetaSchema = xs.Read(Of MetaSchema.Schema)(x)
+
+        Dim Compiled = MetaSchema.CompileToCS(NamespaceName)
+        If IO.File.Exists(CsCodePath) Then
+            Dim Original = Txt.ReadFile(CsCodePath)
+            If String.Equals(Compiled, Original, StringComparison.Ordinal) Then
+                Return
+            End If
+        End If
+        Txt.WriteFile(CsCodePath, Compiled)
     End Sub
 
     Public Sub TreeToXml(ByVal TreePath As String, ByVal XmlPath As String)
