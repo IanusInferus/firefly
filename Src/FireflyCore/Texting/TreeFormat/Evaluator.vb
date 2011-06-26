@@ -26,6 +26,9 @@ Namespace Texting.TreeFormat
     End Interface
 
     Public Interface ISemanticsNodeMaker
+        Function MakeEmptyNode(ByVal Range As TextRange) As Semantics.Node
+        Function MakeLeafNode(ByVal Value As String, ByVal Range As TextRange) As Semantics.Node
+        Function MakeStemNode(ByVal Name As String, ByVal Children As Semantics.Node(), ByVal Range As TextRange) As Semantics.Node
         Function MakeEmptyNode(ByVal SyntaxRule As Object) As Semantics.Node
         Function MakeLeafNode(ByVal Value As String, ByVal SyntaxRule As Object) As Semantics.Node
         Function MakeStemNode(ByVal Name As String, ByVal Children As Semantics.Node(), ByVal SyntaxRule As Object) As Semantics.Node
@@ -70,6 +73,19 @@ Namespace Texting.TreeFormat
             Dim Range = GetRange(SyntaxRule)
             Positions.Add(Obj, Range)
             Return Obj
+        End Function
+        Private Function MakeEmptyNode(ByVal Range As TextRange) As Semantics.Node Implements ISemanticsNodeMaker.MakeEmptyNode
+            Dim n = Mark(New Semantics.Node With {._Tag = Semantics.NodeTag.Empty}, Range)
+            Return n
+        End Function
+        Private Function MakeLeafNode(ByVal Value As String, ByVal Range As TextRange) As Semantics.Node Implements ISemanticsNodeMaker.MakeLeafNode
+            Dim n = Mark(New Semantics.Node With {._Tag = Semantics.NodeTag.Leaf, .Leaf = Value}, Range)
+            Return n
+        End Function
+        Private Function MakeStemNode(ByVal Name As String, ByVal Children As Semantics.Node(), ByVal Range As TextRange) As Semantics.Node Implements ISemanticsNodeMaker.MakeStemNode
+            Dim s = Mark(New Semantics.Stem With {.Name = Name, .Children = Children}, Range)
+            Dim n = Mark(New Semantics.Node With {._Tag = Semantics.NodeTag.Stem, .Stem = s}, Range)
+            Return n
         End Function
         Private Function MakeEmptyNode(ByVal SyntaxRule As Object) As Semantics.Node Implements ISemanticsNodeMaker.MakeEmptyNode
             Dim Range = GetRange(SyntaxRule)
