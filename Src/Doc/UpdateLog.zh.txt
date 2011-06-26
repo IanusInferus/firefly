@@ -6,6 +6,7 @@ Firefly.Core.Texting.TreeFormat:
 Firefly.MetaSchemaManipulator:
 增加C#代码生成的功能。
 修正C#的大小写相关的问题。
+修正C#模板中残留有Tab的问题。
 
 2011.06.26.0
 Doc:
