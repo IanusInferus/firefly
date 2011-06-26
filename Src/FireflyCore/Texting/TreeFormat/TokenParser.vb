@@ -16,7 +16,7 @@ Imports Firefly.TextEncoding
 Imports Firefly.Texting.TreeFormat.Syntax
 
 Namespace Texting.TreeFormat
-    Public Class TokenParseResult
+    Public Class TreeFormatTokenParseResult
         Public Token As Opt(Of Token)
         Public RemainingChars As Opt(Of TextRange)
     End Class
@@ -71,7 +71,7 @@ Namespace Texting.TreeFormat
         Private rHex2 As New Regex("^[0-9A-Fa-f]{2}$", RegexOptions.ExplicitCapture)
         Private rHex4 As New Regex("^[0-9A-Fa-f]{4}$", RegexOptions.ExplicitCapture)
         Private rHex5 As New Regex("^[0-9A-Fa-f]{5}$", RegexOptions.ExplicitCapture)
-        Public Function ReadToken(ByVal RangeInLine As TextRange) As TokenParseResult
+        Public Function ReadToken(ByVal RangeInLine As TextRange) As TreeFormatTokenParseResult
             'State 0    Whitespace空格
             'State 1    普通Token
             'State 1-n  普通Token<中
@@ -244,7 +244,7 @@ Namespace Texting.TreeFormat
             While True
                 Select Case State
                     Case 0
-                        If EndOfLine() Then Return New TokenParseResult With {.Token = NullToken, .RemainingChars = NullRemainingChars}
+                        If EndOfLine() Then Return New TreeFormatTokenParseResult With {.Token = NullToken, .RemainingChars = NullRemainingChars}
                         Dim c = Peek(1)
                         If rForbiddenWhitespaces.Match(c).Success Then Throw MakeNextCharErrorTokenException("InvalidWhitespace")
                         If rForbiddenHeadChars.Match(c).Success Then Throw MakeNextCharErrorTokenException("InvalidHeadChar")
@@ -257,11 +257,11 @@ Namespace Texting.TreeFormat
                             Case "("
                                 MarkStart()
                                 Proceed()
-                                Return New TokenParseResult With {.Token = MakeLeftParenthesesToken(), .RemainingChars = MakeRemainingChars()}
+                                Return New TreeFormatTokenParseResult With {.Token = MakeLeftParenthesesToken(), .RemainingChars = MakeRemainingChars()}
                             Case ")"
                                 MarkStart()
                                 Proceed()
-                                Return New TokenParseResult With {.Token = MakeRightParenthesesToken(), .RemainingChars = MakeRemainingChars()}
+                                Return New TreeFormatTokenParseResult With {.Token = MakeRightParenthesesToken(), .RemainingChars = MakeRemainingChars()}
                             Case "/"
                                 If Peek(2) = "//" Then
                                     MarkStart()
@@ -271,7 +271,7 @@ Namespace Texting.TreeFormat
                                         Write(Peek(1))
                                         Proceed()
                                     End While
-                                    Return New TokenParseResult With {.Token = MakeSingleLineCommentToken(), .RemainingChars = NullRemainingChars}
+                                    Return New TreeFormatTokenParseResult With {.Token = MakeSingleLineCommentToken(), .RemainingChars = NullRemainingChars}
                                 End If
                                 Throw MakeNextCharErrorTokenException("InvalidChar")
                             Case "<"
@@ -305,13 +305,13 @@ Namespace Texting.TreeFormat
                     Case 1
                         If EndOfLine() Then
                             If ParentheseStack.Count <> 0 Then Throw MakeCurrentErrorTokenException("InvalidParentheses")
-                            Return New TokenParseResult With {.Token = MakeToken(), .RemainingChars = NullRemainingChars}
+                            Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = NullRemainingChars}
                         End If
                         Dim c = Peek(1)
                         If rForbiddenWhitespaces.Match(c).Success Then Throw MakeNextCharErrorTokenException("InvalidWhitespace")
                         Select Case c
                             Case " "
-                                If ParentheseStack.Count = 0 Then Return New TokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
+                                If ParentheseStack.Count = 0 Then Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
                                 Write(c)
                                 Proceed()
                             Case """"
@@ -320,12 +320,12 @@ Namespace Texting.TreeFormat
                                 Proceed()
                             Case "(", ")"
                                 If ParentheseStack.Count <> 0 Then Throw MakeCurrentErrorTokenException("InvalidParentheses")
-                                Return New TokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
+                                Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
                             Case "/"
                                 If ParentheseStack.Count = 0 Then
                                     If Peek(2) = "//" Then
                                         If ParentheseStack.Count <> 0 Then Throw MakeCurrentErrorTokenException("InvalidParentheses")
-                                        Return New TokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
+                                        Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
                                     End If
                                     Throw MakeNextCharErrorTokenException("InvalidChar")
                                 End If
@@ -377,11 +377,11 @@ Namespace Texting.TreeFormat
                             Proceed()
                         End If
                     Case 21
-                        If EndOfLine() Then Return New TokenParseResult With {.Token = MakeToken(), .RemainingChars = NullRemainingChars}
+                        If EndOfLine() Then Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = NullRemainingChars}
                         Dim c = Peek(1)
                         Select Case c
                             Case " "
-                                Return New TokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
+                                Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
                             Case """"
                                 Write(c)
                                 State = 22
@@ -404,24 +404,24 @@ Namespace Texting.TreeFormat
                             Proceed()
                         End If
                     Case 23
-                        If EndOfLine() Then Return New TokenParseResult With {.Token = MakeToken(), .RemainingChars = NullRemainingChars}
+                        If EndOfLine() Then Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = NullRemainingChars}
                         Dim c = Peek(1)
                         If rForbiddenWhitespaces.Match(c).Success Then Throw MakeNextCharErrorTokenException("InvalidWhitespace")
                         Select Case c
                             Case " "
                                 If ParentheseStack.Count <> 0 Then Throw New InvalidOperationException
-                                Return New TokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
+                                Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
                             Case """"
                                 Write(c)
                                 State = 22
                                 Proceed()
                             Case "(", ")"
                                 If ParentheseStack.Count <> 0 Then Throw New InvalidOperationException
-                                Return New TokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
+                                Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
                             Case "/"
                                 If Peek(2) = "//" Then
                                     If ParentheseStack.Count <> 0 Then Throw New InvalidOperationException
-                                    Return New TokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
+                                    Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
                                 End If
                                 Throw MakeNextCharErrorTokenException("InvalidChar")
                             Case Else
@@ -436,7 +436,7 @@ Namespace Texting.TreeFormat
                                     If ParentheseStack.Count <> 0 Then Throw New InvalidOperationException
                                     Proceed()
                                     Proceed()
-                                    Return New TokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
+                                    Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
                                 End If
                                 Throw MakeNextCharErrorTokenException("InvalidQuotationMarks")
                             Case "\"
