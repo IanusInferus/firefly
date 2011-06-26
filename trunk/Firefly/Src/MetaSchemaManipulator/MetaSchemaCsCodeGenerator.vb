@@ -39,7 +39,7 @@ Public Module MetaSchemaCsCodeGenerator
         Public Templates As Dictionary(Of String, Template)
 
         Public Sub New(ByVal Template As MetaSchemaCsTemplate)
-            Keywords = New HashSet(Of String)(Template.Keywords, StringComparer.OrdinalIgnoreCase)
+            Keywords = New HashSet(Of String)(Template.Keywords, StringComparer.Ordinal)
             PrimitiveMappings = Template.PrimitiveMappings.ToDictionary(Function(m) m.Name, StringComparer.OrdinalIgnoreCase)
             Templates = Template.Templates.ToDictionary(Function(t) t.Name, StringComparer.OrdinalIgnoreCase)
         End Sub
