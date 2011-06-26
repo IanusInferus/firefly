@@ -38,7 +38,7 @@ Public Module MetaSchemaCsCodeGenerator
         Public PrimitiveMappings As Dictionary(Of String, PrimitiveMapping)
         Public Templates As Dictionary(Of String, Template)
 
-        Public Sub New(ByVal Template As MetaSchemaCsTemplate)
+        Public Sub New(ByVal Template As MetaSchemaTemplate)
             Keywords = New HashSet(Of String)(Template.Keywords, StringComparer.Ordinal)
             PrimitiveMappings = Template.PrimitiveMappings.ToDictionary(Function(m) m.Name, StringComparer.OrdinalIgnoreCase)
             Templates = Template.Templates.ToDictionary(Function(t) t.Name, StringComparer.OrdinalIgnoreCase)
@@ -60,7 +60,7 @@ Public Module MetaSchemaCsCodeGenerator
                 End Using
             End Using
             Dim xs As New XmlSerializer
-            Dim t = xs.Read(Of MetaSchemaCsTemplate)(x)
+            Dim t = xs.Read(Of MetaSchemaTemplate)(x)
             TemplateInfo = New MetaSchemaCsTemplateInfo(t)
         End Sub
 

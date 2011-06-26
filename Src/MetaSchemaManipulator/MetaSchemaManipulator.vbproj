@@ -54,9 +54,8 @@
   <ItemGroup>
     <Compile Include="Main.vb" />
     <Compile Include="MetaSchemaCsCodeGenerator.vb" />
-    <Compile Include="MetaSchemaCsTemplate.vb" />
     <Compile Include="MetaSchemaVbCodeGenerator.vb" />
-    <Compile Include="MetaSchemaVbTemplate.vb" />
+    <Compile Include="MetaSchemaTemplate.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>
