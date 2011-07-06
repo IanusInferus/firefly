@@ -1,4 +1,8 @@
-﻿2011.06.27.0
+﻿2011.07.05
+Firefly.Core.Texting.TreeFormat:
+修正错误信息里的一个输出问题。
+
+2011.06.27.0
 Firefly.Core.Texting.TreeFormat:
 修正XML转换在一些元素没有文件位置信息时出错的问题。
 
