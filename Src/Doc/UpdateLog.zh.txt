@@ -1,4 +1,8 @@
-﻿2011.07.05
+﻿2011.07.09.0
+Firefly.Core.Glyphing:
+修正一个FontStyle无法fallback的问题。这个问题导致FontGen选择一些字体时会出错。
+
+2011.07.05
 Firefly.Core.Texting.TreeFormat:
 修正错误信息里的一个输出问题。
 
