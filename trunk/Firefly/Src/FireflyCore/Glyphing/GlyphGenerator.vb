@@ -3,7 +3,7 @@
 '  File:        GlyphGenerator.vb
 '  Location:    Firefly.Glyphing <Visual Basic .Net>
 '  Description: 字形生成器
-'  Version:     2011.02.23.
+'  Version:     2011.07.09.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -72,7 +72,19 @@ Namespace Glyphing
             Me.AnchorLeft = AnchorLeft
             Me.ChannelPatterns = ChannelPatterns
 
-            Font = New Font(FontName, FontSize, FontStyle, GraphicsUnit.Pixel)
+            Dim FontFamily = New FontFamily(FontName)
+            If FontFamily.IsStyleAvailable(FontStyle) Then
+                Font = New Font(FontFamily, FontSize, FontStyle, GraphicsUnit.Pixel)
+            Else
+                For Mask = 0 To FontStyle.Strikeout * 2 - 1
+                    Dim f = DirectCast(FontStyle Xor Mask, FontStyle)
+                    If FontFamily.IsStyleAvailable(f) Then
+                        Font = New Font(FontFamily, FontSize, f, GraphicsUnit.Pixel)
+                        Exit For
+                    End If
+                Next
+                If Font Is Nothing Then Throw New InvalidOperationException("NoFontStyleAvailable")
+            End If
             GlyphPiece = New Bitmap(PhysicalWidth, PhysicalHeight, Drawing.Imaging.PixelFormat.Format32bppArgb)
             g = Graphics.FromImage(GlyphPiece)
         End Sub
