@@ -3,7 +3,7 @@
 '  File:        SyntaxParser.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 文法解析器 - 用于从符号转到文法树
-'  Version:     2011.06.26.
+'  Version:     2011.07.19.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -65,7 +65,7 @@ Namespace Texting.TreeFormat
         Public Function Parse() As TreeFormatParseResult
             Text = New Text With {.Path = Path, .Lines = GetLines(RawText)}
             TokenParser = New TreeFormatTokenParser(Path, Text, Positions)
-            Dim Lines = New TextLineRange With {.StartRow = 1, .EndRow = Text.Lines.Length}
+            Dim Lines = New TextLineRange With {.StartRow = 1, .EndRow = Text.Lines.Length + 1}
             Dim MultiNodesList = ParseMultiNodesList(Lines, 0)
             Dim Forest = Mark(New Forest With {.MultiNodesList = MultiNodesList}, Lines)
             Return New TreeFormatParseResult With {.Value = Forest, .Path = Path, .Positions = Positions, .RawFunctionCalls = RawFunctionCalls}
