@@ -1,4 +1,8 @@
-﻿2011.07.19
+﻿2011.07.24.0
+Firefly.Core.Packaging:
+修正ISO文件导入时没有更新VolumeSpaceSize的问题。
+
+2011.07.19
 Firefly.Core.Texting.TreeFormat:
 修正Tree文件格式读取最后没有一个空行的文本时最后一行没被解析的问题。
 
