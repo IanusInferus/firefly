@@ -3,7 +3,7 @@
 '  File:        ISO.vb
 '  Location:    Firefly.Packaging <Visual Basic .Net>
 '  Description: ISO类
-'  Version:     2011.03.03.
+'  Version:     2011.07.24.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -51,6 +51,8 @@ Namespace Packaging
                         Exit For
                 End Select
             Next
+            If PrimaryDescriptor Is Nothing Then Throw New InvalidDataException
+            If PrimaryDescriptor.VolumeSetSize <> 1 Then Throw New InvalidDataException
             LogicalBlockSize = PrimaryDescriptor.LogicalBlockSize
             DataScanStart = Readable.Position
             RootValue = ToFileDB(PrimaryDescriptor.RootDirectoryRecord, LogicalBlockSize)
@@ -89,26 +91,26 @@ Namespace Packaging
         Public Overrides Property FileAddressInPhysicalFileDB(ByVal File As FileDB) As Int64
             Get
                 Readable.Position = PhysicalAdressAddressOfFile(File)
-                Return CLng(Readable.ReadInt32) * CLng(LogicalBlockSize)
+                Return CLng(Readable.ReadUInt32) * CLng(LogicalBlockSize)
             End Get
             Set(ByVal Value As Int64)
                 Writable.Position = PhysicalAdressAddressOfFile(File)
-                Dim ExtentLocation = CID(Value \ LogicalBlockSize)
-                Writable.WriteInt32(ExtentLocation)
-                Writable.WriteInt32B(ExtentLocation)
+                Dim ExtentLocation = CUInt(Value \ LogicalBlockSize)
+                Writable.WriteUInt32(ExtentLocation)
+                Writable.WriteUInt32B(ExtentLocation)
             End Set
         End Property
 
         Public Overrides Property FileLengthInPhysicalFileDB(ByVal File As FileDB) As Int64
             Get
                 Readable.Position = PhysicalLengthAddressOfFile(File)
-                Return Readable.ReadInt32
+                Return Readable.ReadUInt32
             End Get
             Set(ByVal Value As Int64)
                 Writable.Position = PhysicalLengthAddressOfFile(File)
-                Dim DataLength = CID(Value)
-                Writable.WriteInt32(DataLength)
-                Writable.WriteInt32B(DataLength)
+                Dim DataLength = CUInt(Value)
+                Writable.WriteUInt32(DataLength)
+                Writable.WriteUInt32B(DataLength)
             End Set
         End Property
 
@@ -139,8 +141,10 @@ Namespace Packaging
                 While Length <> 0
                     Dim r As New IsoDirectoryRecord(s)
                     Dim f As FileDB = ToFileDB(r, LogicalBlockSize)
-                    If f.Type <> FileDB.FileType.Directory Then
+                    If f.Type = FileDB.FileType.File Then
                         PushFile(f, ret)
+                    ElseIf f.Type = FileDB.FileType.Directory Then
+                        PushFileToDir(f, ret)
                     End If
                     Length = s.PeekByte
                 End While
@@ -150,6 +154,25 @@ Namespace Packaging
             s.Position = CurrentPosition
             Return ret
         End Function
+
+        Protected Overrides Sub ReplaceMultipleInner(Files() As FileDB, StreamPassers() As Streaming.NewReadingStreamPasser)
+            MyBase.ReplaceMultipleInner(Files, StreamPassers)
+            UpdateVolumeSpaceSize()
+        End Sub
+        Protected Overrides Sub ReplaceSingleInner(File As FileDB, sp As Streaming.NewReadingStreamPasser)
+            MyBase.ReplaceSingleInner(File, sp)
+            UpdateVolumeSpaceSize()
+        End Sub
+
+        Private Sub UpdateVolumeSpaceSize()
+            Dim NewVolumeSpaceSize = CUInt(Writable.Length \ LogicalBlockSize)
+            If PrimaryDescriptor.VolumeSpaceSize <> NewVolumeSpaceSize Then
+                Writable.Position = PrimaryDescriptor.VolumeSpaceSizeAddress
+                Writable.WriteUInt32(NewVolumeSpaceSize)
+                Writable.WriteUInt32B(NewVolumeSpaceSize)
+                PrimaryDescriptor.VolumeSpaceSize = NewVolumeSpaceSize
+            End If
+        End Sub
     End Class
 
     Public Class IsoPrimaryDescriptor
@@ -160,16 +183,16 @@ Namespace Packaging
         Public SystemId As IsoAnsiString
         Public VolumeId As IsoAnsiString
 
-        Public VolumeSpaceSize As Int32
+        Public VolumeSpaceSize As UInt32
 
-        Public VolumeSetSize As Int16
-        Public VolumeSequenceNumber As Int16
-        Public LogicalBlockSize As Int16
-        Public PathTableSize As Int32
-        Public TypeLPathTable As Int16
-        Public OptTypeLPathTable As Int16
-        Public TypeMPathTable As Int16
-        Public OptTypeMPathTable As Int16
+        Public VolumeSetSize As UInt16
+        Public VolumeSequenceNumber As UInt16
+        Public LogicalBlockSize As UInt16
+        Public PathTableSize As UInt32
+        Public TypeLPathTable As UInt16
+        Public OptTypeLPathTable As UInt16
+        Public TypeMPathTable As UInt16
+        Public OptTypeMPathTable As UInt16
         Public RootDirectoryRecord As IsoDirectoryRecord
         Public VolumeSetId As IsoAnsiString
         Public PublisherId As IsoAnsiString
@@ -187,6 +210,8 @@ Namespace Packaging
         Public ApplicationData As IsoAnsiString
 
 
+        Public VolumeSpaceSizeAddress As Int64
+
         Public Sub New(ByVal s As IReadableSeekableStream)
             Type = s.ReadByte
             Id = s.Read(5)
@@ -195,16 +220,17 @@ Namespace Packaging
             SystemId = s.Read(32)
             VolumeId = s.Read(32)
             s.Position += 8
-            VolumeSpaceSize = s.ReadInt32 : s.ReadInt32B()
+            VolumeSpaceSizeAddress = s.Position
+            VolumeSpaceSize = s.ReadUInt32 : s.ReadUInt32B()
             s.Position += 32
-            VolumeSetSize = s.ReadInt16 : s.ReadInt16B()
-            VolumeSequenceNumber = s.ReadInt16 : s.ReadInt16B()
-            LogicalBlockSize = s.ReadInt16 : s.ReadInt16B()
-            PathTableSize = s.ReadInt32 : s.ReadInt32B()
-            TypeLPathTable = s.ReadInt16 : s.ReadInt16B()
-            OptTypeLPathTable = s.ReadInt16 : s.ReadInt16B()
-            TypeMPathTable = s.ReadInt16 : s.ReadInt16B()
-            OptTypeMPathTable = s.ReadInt16 : s.ReadInt16B()
+            VolumeSetSize = s.ReadUInt16 : s.ReadUInt16B()
+            VolumeSequenceNumber = s.ReadUInt16 : s.ReadUInt16B()
+            LogicalBlockSize = s.ReadUInt16 : s.ReadUInt16B()
+            PathTableSize = s.ReadUInt32 : s.ReadUInt32B()
+            TypeLPathTable = s.ReadUInt16 : s.ReadUInt16B()
+            OptTypeLPathTable = s.ReadUInt16 : s.ReadUInt16B()
+            TypeMPathTable = s.ReadUInt16 : s.ReadUInt16B()
+            OptTypeMPathTable = s.ReadUInt16 : s.ReadUInt16B()
             RootDirectoryRecord = New IsoDirectoryRecord(s)
             VolumeSetId = s.Read(128)
             PublisherId = s.Read(128)
@@ -227,13 +253,13 @@ Namespace Packaging
     Public Class IsoDirectoryRecord
         Public Length As Byte
         Public ExtAttrLength As Byte
-        Public ExtentLocation As Int32
-        Public DataLength As Int32
+        Public ExtentLocation As UInt32
+        Public DataLength As UInt32
         Public RecordingDateAndTime As IsoAnsiString
         Public FileFlags As Byte
         Public FileUnitSize As Byte
         Public InterleaveGapSize As Byte
-        Public VolumeSequenceNumber As Int16
+        Public VolumeSequenceNumber As UInt16
         Public FileIdLen As Byte
         Public FileId As IsoAnsiString
 
@@ -245,16 +271,16 @@ Namespace Packaging
             ExtAttrLength = s.ReadByte
 
             PhysicalAdressAddress = s.Position
-            ExtentLocation = s.ReadInt32 : s.ReadInt32B()
+            ExtentLocation = s.ReadUInt32 : s.ReadUInt32B()
 
             PhysicalLengthAddress = s.Position
-            DataLength = s.ReadInt32 : s.ReadInt32B()
+            DataLength = s.ReadUInt32 : s.ReadUInt32B()
 
             RecordingDateAndTime = s.Read(7)
             FileFlags = s.ReadByte
             FileUnitSize = s.ReadByte
             InterleaveGapSize = s.ReadByte
-            VolumeSequenceNumber = s.ReadInt16 : s.ReadInt16B()
+            VolumeSequenceNumber = s.ReadUInt16 : s.ReadUInt16B()
             FileIdLen = s.ReadByte
             FileId = s.Read(FileIdLen)
             If (FileIdLen And 1) = 0 Then s.Position += 1
