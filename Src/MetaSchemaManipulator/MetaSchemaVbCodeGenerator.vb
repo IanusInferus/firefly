@@ -3,7 +3,7 @@
 '  File:        MetaSchemaVbCodeGenerator.vb
 '  Location:    Firefly.MetaSchemaManipulator <Visual Basic .Net>
 '  Description: 元类型结构VB代码生成器
-'  Version:     2011.06.26.
+'  Version:     2011.07.31.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -86,7 +86,7 @@ Public Module MetaSchemaVbCodeGenerator
         Public Function GetPrimitives() As String()
             Dim l As New List(Of String)
 
-            For Each p In Schema.Concepts.Where(Function(c) c._Tag = ConceptDefTag.Primitive).Select(Function(c) c.Primitive)
+            For Each p In Schema.Concepts.Where(Function(c) c.OnPrimitive).Select(Function(c) c.Primitive)
                 If TemplateInfo.PrimitiveMappings.ContainsKey(p.Value) Then
                     l.AddRange(GetPrimitive(p.Value, TemplateInfo.PrimitiveMappings(p.Value).PlatformName))
                 Else

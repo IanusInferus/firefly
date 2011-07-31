@@ -3,7 +3,7 @@
 '  File:        Syntax.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 文法对象定义
-'  Version:     2011.06.26.
+'  Version:     2011.07.31.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -88,6 +88,40 @@ Namespace Texting.TreeFormat.Syntax
         Public Property TableNodes As TableNodes
         Public Property FunctionNodes As FunctionNodes
 
+        Public Shared Function CreateNode(ByVal Value As Node) As MultiNodes
+            Return New MultiNodes With {._Tag = MultiNodesTag.Node, .Node = Value}
+        End Function
+        Public Shared Function CreateListNodes(ByVal Value As ListNodes) As MultiNodes
+            Return New MultiNodes With {._Tag = MultiNodesTag.ListNodes, .ListNodes = Value}
+        End Function
+        Public Shared Function CreateTableNodes(ByVal Value As TableNodes) As MultiNodes
+            Return New MultiNodes With {._Tag = MultiNodesTag.TableNodes, .TableNodes = Value}
+        End Function
+        Public Shared Function CreateFunctionNodes(ByVal Value As FunctionNodes) As MultiNodes
+            Return New MultiNodes With {._Tag = MultiNodesTag.FunctionNodes, .FunctionNodes = Value}
+        End Function
+
+        Public ReadOnly Property OnNode() As Boolean
+            Get
+                Return _Tag = MultiNodesTag.Node
+            End Get
+        End Property
+        Public ReadOnly Property OnListNodes() As Boolean
+            Get
+                Return _Tag = MultiNodesTag.ListNodes
+            End Get
+        End Property
+        Public ReadOnly Property OnTableNodes() As Boolean
+            Get
+                Return _Tag = MultiNodesTag.TableNodes
+            End Get
+        End Property
+        Public ReadOnly Property OnFunctionNodes() As Boolean
+            Get
+                Return _Tag = MultiNodesTag.FunctionNodes
+            End Get
+        End Property
+
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
         End Function
@@ -108,6 +142,48 @@ Namespace Texting.TreeFormat.Syntax
         Public Property SingleLineComment As SingleLineComment
         Public Property MultiLineComment As MultiLineComment
         Public Property MultiLineNode As MultiLineNode
+
+        Public Shared Function CreateSingleLineNodeLine(ByVal Value As SingleLineNodeLine) As Node
+            Return New Node With {._Tag = NodeTag.SingleLineNodeLine, .SingleLineNodeLine = Value}
+        End Function
+        Public Shared Function CreateMultiLineLiteral(ByVal Value As MultiLineLiteral) As Node
+            Return New Node With {._Tag = NodeTag.MultiLineLiteral, .MultiLineLiteral = Value}
+        End Function
+        Public Shared Function CreateSingleLineComment(ByVal Value As SingleLineComment) As Node
+            Return New Node With {._Tag = NodeTag.SingleLineComment, .SingleLineComment = Value}
+        End Function
+        Public Shared Function CreateMultiLineComment(ByVal Value As MultiLineComment) As Node
+            Return New Node With {._Tag = NodeTag.MultiLineComment, .MultiLineComment = Value}
+        End Function
+        Public Shared Function CreateMultiLineNode(ByVal Value As MultiLineNode) As Node
+            Return New Node With {._Tag = NodeTag.MultiLineNode, .MultiLineNode = Value}
+        End Function
+
+        Public ReadOnly Property OnSingleLineNodeLine() As Boolean
+            Get
+                Return _Tag = NodeTag.SingleLineNodeLine
+            End Get
+        End Property
+        Public ReadOnly Property OnMultiLineLiteral() As Boolean
+            Get
+                Return _Tag = NodeTag.MultiLineLiteral
+            End Get
+        End Property
+        Public ReadOnly Property OnSingleLineComment() As Boolean
+            Get
+                Return _Tag = NodeTag.SingleLineComment
+            End Get
+        End Property
+        Public ReadOnly Property OnMultiLineComment() As Boolean
+            Get
+                Return _Tag = NodeTag.MultiLineComment
+            End Get
+        End Property
+        Public ReadOnly Property OnMultiLineNode() As Boolean
+            Get
+                Return _Tag = NodeTag.MultiLineNode
+            End Get
+        End Property
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -139,6 +215,48 @@ Namespace Texting.TreeFormat.Syntax
         Public Property SingleLineLiteral As SingleLineLiteral
         Public Property ParenthesesNode As ParenthesesNode
         Public Property SingleLineNodeWithParameters As SingleLineNodeWithParameters
+
+        Public Shared Function CreateEmptyNode(ByVal Value As EmptyNode) As SingleLineNode
+            Return New SingleLineNode With {._Tag = SingleLineNodeTag.EmptyNode, .EmptyNode = Value}
+        End Function
+        Public Shared Function CreateSingleLineFunctionNode(ByVal Value As SingleLineFunctionNode) As SingleLineNode
+            Return New SingleLineNode With {._Tag = SingleLineNodeTag.SingleLineFunctionNode, .SingleLineFunctionNode = Value}
+        End Function
+        Public Shared Function CreateSingleLineLiteral(ByVal Value As SingleLineLiteral) As SingleLineNode
+            Return New SingleLineNode With {._Tag = SingleLineNodeTag.SingleLineLiteral, .SingleLineLiteral = Value}
+        End Function
+        Public Shared Function CreateParenthesesNode(ByVal Value As ParenthesesNode) As SingleLineNode
+            Return New SingleLineNode With {._Tag = SingleLineNodeTag.ParenthesesNode, .ParenthesesNode = Value}
+        End Function
+        Public Shared Function CreateSingleLineNodeWithParameters(ByVal Value As SingleLineNodeWithParameters) As SingleLineNode
+            Return New SingleLineNode With {._Tag = SingleLineNodeTag.SingleLineNodeWithParameters, .SingleLineNodeWithParameters = Value}
+        End Function
+
+        Public ReadOnly Property OnEmptyNode() As Boolean
+            Get
+                Return _Tag = SingleLineNodeTag.EmptyNode
+            End Get
+        End Property
+        Public ReadOnly Property OnSingleLineFunctionNode() As Boolean
+            Get
+                Return _Tag = SingleLineNodeTag.SingleLineFunctionNode
+            End Get
+        End Property
+        Public ReadOnly Property OnSingleLineLiteral() As Boolean
+            Get
+                Return _Tag = SingleLineNodeTag.SingleLineLiteral
+            End Get
+        End Property
+        Public ReadOnly Property OnParenthesesNode() As Boolean
+            Get
+                Return _Tag = SingleLineNodeTag.ParenthesesNode
+            End Get
+        End Property
+        Public ReadOnly Property OnSingleLineNodeWithParameters() As Boolean
+            Get
+                Return _Tag = SingleLineNodeTag.SingleLineNodeWithParameters
+            End Get
+        End Property
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -274,6 +392,40 @@ Namespace Texting.TreeFormat.Syntax
         Public Property SingleLineLiteral As SingleLineLiteral
         Public Property ParenthesesNode As ParenthesesNode
 
+        Public Shared Function CreateEmptyNode(ByVal Value As EmptyNode) As TableLineNode
+            Return New TableLineNode With {._Tag = TableLineNodeTag.EmptyNode, .EmptyNode = Value}
+        End Function
+        Public Shared Function CreateSingleLineFunctionNode(ByVal Value As SingleLineFunctionNode) As TableLineNode
+            Return New TableLineNode With {._Tag = TableLineNodeTag.SingleLineFunctionNode, .SingleLineFunctionNode = Value}
+        End Function
+        Public Shared Function CreateSingleLineLiteral(ByVal Value As SingleLineLiteral) As TableLineNode
+            Return New TableLineNode With {._Tag = TableLineNodeTag.SingleLineLiteral, .SingleLineLiteral = Value}
+        End Function
+        Public Shared Function CreateParenthesesNode(ByVal Value As ParenthesesNode) As TableLineNode
+            Return New TableLineNode With {._Tag = TableLineNodeTag.ParenthesesNode, .ParenthesesNode = Value}
+        End Function
+
+        Public ReadOnly Property OnEmptyNode() As Boolean
+            Get
+                Return _Tag = TableLineNodeTag.EmptyNode
+            End Get
+        End Property
+        Public ReadOnly Property OnSingleLineFunctionNode() As Boolean
+            Get
+                Return _Tag = TableLineNodeTag.SingleLineFunctionNode
+            End Get
+        End Property
+        Public ReadOnly Property OnSingleLineLiteral() As Boolean
+            Get
+                Return _Tag = TableLineNodeTag.SingleLineLiteral
+            End Get
+        End Property
+        Public ReadOnly Property OnParenthesesNode() As Boolean
+            Get
+                Return _Tag = TableLineNodeTag.ParenthesesNode
+            End Get
+        End Property
+
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
         End Function
@@ -327,6 +479,56 @@ Namespace Texting.TreeFormat.Syntax
         Public Property PreprocessDirective As String
         Public Property FunctionDirective As String
         Public Property SingleLineComment As String
+
+        Public Shared Function CreateSingleLineLiteral(ByVal Value As String) As Token
+            Return New Token With {._Tag = TokenTag.SingleLineLiteral, .SingleLineLiteral = Value}
+        End Function
+        Public Shared Function CreateLeftParentheses() As Token
+            Return New Token With {._Tag = TokenTag.LeftParentheses, .LeftParentheses = New Unit()}
+        End Function
+        Public Shared Function CreateRightParentheses() As Token
+            Return New Token With {._Tag = TokenTag.RightParentheses, .RightParentheses = New Unit()}
+        End Function
+        Public Shared Function CreatePreprocessDirective(ByVal Value As String) As Token
+            Return New Token With {._Tag = TokenTag.PreprocessDirective, .PreprocessDirective = Value}
+        End Function
+        Public Shared Function CreateFunctionDirective(ByVal Value As String) As Token
+            Return New Token With {._Tag = TokenTag.FunctionDirective, .FunctionDirective = Value}
+        End Function
+        Public Shared Function CreateSingleLineComment(ByVal Value As String) As Token
+            Return New Token With {._Tag = TokenTag.SingleLineComment, .SingleLineComment = Value}
+        End Function
+
+        Public ReadOnly Property OnSingleLineLiteral() As Boolean
+            Get
+                Return _Tag = TokenTag.SingleLineLiteral
+            End Get
+        End Property
+        Public ReadOnly Property OnLeftParentheses() As Boolean
+            Get
+                Return _Tag = TokenTag.LeftParentheses
+            End Get
+        End Property
+        Public ReadOnly Property OnRightParentheses() As Boolean
+            Get
+                Return _Tag = TokenTag.RightParentheses
+            End Get
+        End Property
+        Public ReadOnly Property OnPreprocessDirective() As Boolean
+            Get
+                Return _Tag = TokenTag.PreprocessDirective
+            End Get
+        End Property
+        Public ReadOnly Property OnFunctionDirective() As Boolean
+            Get
+                Return _Tag = TokenTag.FunctionDirective
+            End Get
+        End Property
+        Public ReadOnly Property OnSingleLineComment() As Boolean
+            Get
+                Return _Tag = TokenTag.SingleLineComment
+            End Get
+        End Property
 
         Public Overrides Function ToString() As String
             Select Case _Tag
@@ -400,6 +602,32 @@ Namespace Texting.TreeFormat.Syntax
         Public Property TreeParameter As Opt(Of SingleLineNode)
         Public Property TableParameters As TableLineNode()
 
+        Public Shared Function CreateTokenParameters(ByVal Value As Token()) As RawFunctionCallParameters
+            Return New RawFunctionCallParameters With {._Tag = RawFunctionCallParametersTag.TokenParameters, .TokenParameters = Value}
+        End Function
+        Public Shared Function CreateTreeParameter(ByVal Value As Opt(Of SingleLineNode)) As RawFunctionCallParameters
+            Return New RawFunctionCallParameters With {._Tag = RawFunctionCallParametersTag.TreeParameter, .TreeParameter = Value}
+        End Function
+        Public Shared Function CreateTableParameters(ByVal Value As TableLineNode()) As RawFunctionCallParameters
+            Return New RawFunctionCallParameters With {._Tag = RawFunctionCallParametersTag.TableParameters, .TableParameters = Value}
+        End Function
+
+        Public ReadOnly Property OnTokenParameters() As Boolean
+            Get
+                Return _Tag = RawFunctionCallParametersTag.TokenParameters
+            End Get
+        End Property
+        Public ReadOnly Property OnTreeParameter() As Boolean
+            Get
+                Return _Tag = RawFunctionCallParametersTag.TreeParameter
+            End Get
+        End Property
+        Public ReadOnly Property OnTableParameters() As Boolean
+            Get
+                Return _Tag = RawFunctionCallParametersTag.TableParameters
+            End Get
+        End Property
+
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
         End Function
@@ -416,6 +644,32 @@ Namespace Texting.TreeFormat.Syntax
         Public Property LineContent As FunctionContent
         Public Property TreeContent As MultiNodes()
         Public Property TableContent As TableLine()
+
+        Public Shared Function CreateLineContent(ByVal Value As FunctionContent) As RawFunctionCallContent
+            Return New RawFunctionCallContent With {._Tag = RawFunctionCallContentTag.LineContent, .LineContent = Value}
+        End Function
+        Public Shared Function CreateTreeContent(ByVal Value As MultiNodes()) As RawFunctionCallContent
+            Return New RawFunctionCallContent With {._Tag = RawFunctionCallContentTag.TreeContent, .TreeContent = Value}
+        End Function
+        Public Shared Function CreateTableContent(ByVal Value As TableLine()) As RawFunctionCallContent
+            Return New RawFunctionCallContent With {._Tag = RawFunctionCallContentTag.TableContent, .TableContent = Value}
+        End Function
+
+        Public ReadOnly Property OnLineContent() As Boolean
+            Get
+                Return _Tag = RawFunctionCallContentTag.LineContent
+            End Get
+        End Property
+        Public ReadOnly Property OnTreeContent() As Boolean
+            Get
+                Return _Tag = RawFunctionCallContentTag.TreeContent
+            End Get
+        End Property
+        Public ReadOnly Property OnTableContent() As Boolean
+            Get
+                Return _Tag = RawFunctionCallContentTag.TableContent
+            End Get
+        End Property
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -450,6 +704,32 @@ Namespace Texting.TreeFormat.Syntax
         Public Property LineContent As FunctionContent
         Public Property TreeContent As Semantics.Node()
         Public Property TableContent As FunctionCallTableLine()
+
+        Public Shared Function CreateLineContent(ByVal Value As FunctionContent) As FunctionCallContent
+            Return New FunctionCallContent With {._Tag = FunctionCallContentTag.LineContent, .LineContent = Value}
+        End Function
+        Public Shared Function CreateTreeContent(ByVal Value As Semantics.Node()) As FunctionCallContent
+            Return New FunctionCallContent With {._Tag = FunctionCallContentTag.TreeContent, .TreeContent = Value}
+        End Function
+        Public Shared Function CreateTableContent(ByVal Value As FunctionCallTableLine()) As FunctionCallContent
+            Return New FunctionCallContent With {._Tag = FunctionCallContentTag.TableContent, .TableContent = Value}
+        End Function
+
+        Public ReadOnly Property OnLineContent() As Boolean
+            Get
+                Return _Tag = FunctionCallContentTag.LineContent
+            End Get
+        End Property
+        Public ReadOnly Property OnTreeContent() As Boolean
+            Get
+                Return _Tag = FunctionCallContentTag.TreeContent
+            End Get
+        End Property
+        Public ReadOnly Property OnTableContent() As Boolean
+            Get
+                Return _Tag = FunctionCallContentTag.TableContent
+            End Get
+        End Property
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)

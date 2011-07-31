@@ -8,6 +8,7 @@ Imports Firefly.TextEncoding
 Imports Firefly.Streaming
 Imports Firefly.Texting
 Imports Firefly.Mapping
+Imports Firefly.Mapping.MetaProgramming
 Imports Firefly.Mapping.XmlText
 Imports Firefly.Setting
 

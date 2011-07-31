@@ -3,7 +3,7 @@
 '  File:        XmlCompatibility.vb
 '  Location:    Firefly.Setting <Visual Basic .Net>
 '  Description: Xml读写兼容支持，用于兼容System.Xml.Serialization.XmlSerializer
-'  Version:     2011.03.14.
+'  Version:     2011.07.31.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -20,6 +20,7 @@ Imports System.Globalization
 Imports Firefly
 Imports Firefly.Texting
 Imports Firefly.Mapping
+Imports Firefly.Mapping.MetaProgramming
 Imports Firefly.Mapping.XmlText
 
 Namespace Setting

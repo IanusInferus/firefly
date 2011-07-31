@@ -3,7 +3,7 @@
 '  File:        BinarySerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 二进制序列化类
-'  Version:     2011.03.21.
+'  Version:     2011.07.31.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -14,6 +14,7 @@ Imports System.Collections.Generic
 Imports System.Linq
 Imports System.Linq.Expressions
 Imports Firefly
+Imports Firefly.Mapping.MetaProgramming
 Imports Firefly.Streaming
 
 Namespace Mapping.Binary

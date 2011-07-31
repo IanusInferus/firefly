@@ -3,7 +3,7 @@
 '  File:        TokenParser.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 词法解析器
-'  Version:     2011.06.26.
+'  Version:     2011.07.31.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -204,15 +204,15 @@ Namespace Texting.TreeFormat
                     Dim Range = MakeTokenRange(StartIndex, Index)
                     Select Case Tag
                         Case TokenType.SingleLineLiteral
-                            Dim t As New Token With {._Tag = TokenTag.SingleLineLiteral, .SingleLineLiteral = New String(Output.ToArray())}
+                            Dim t = Token.CreateSingleLineLiteral(New String(Output.ToArray()))
                             Positions.Add(t, Range)
                             Return t
                         Case TokenType.PreprocessDirective
-                            Dim t As New Token With {._Tag = TokenTag.PreprocessDirective, .PreprocessDirective = New String(Output.ToArray())}
+                            Dim t = Token.CreatePreprocessDirective(New String(Output.ToArray()))
                             Positions.Add(t, Range)
                             Return t
                         Case TokenType.FunctionDirective
-                            Dim t As New Token With {._Tag = TokenTag.FunctionDirective, .FunctionDirective = New String(Output.ToArray())}
+                            Dim t = Token.CreateFunctionDirective(New String(Output.ToArray()))
                             Positions.Add(t, Range)
                             Return t
                         Case Else
@@ -222,21 +222,21 @@ Namespace Texting.TreeFormat
             Dim MakeLeftParenthesesToken =
                 Function() As Opt(Of Token)
                     Dim Range = MakeTokenRange(StartIndex, Index)
-                    Dim t As New Token With {._Tag = TokenTag.LeftParentheses}
+                    Dim t = Token.CreateLeftParentheses()
                     Positions.Add(t, Range)
                     Return t
                 End Function
             Dim MakeRightParenthesesToken =
                 Function() As Opt(Of Token)
                     Dim Range = MakeTokenRange(StartIndex, Index)
-                    Dim t As New Token With {._Tag = TokenTag.RightParentheses}
+                    Dim t = Token.CreateRightParentheses()
                     Positions.Add(t, Range)
                     Return t
                 End Function
             Dim MakeSingleLineCommentToken =
                 Function() As Opt(Of Token)
                     Dim Range = MakeTokenRange(StartIndex, Index)
-                    Dim t As New Token With {._Tag = TokenTag.SingleLineComment, .SingleLineComment = New String(Output.ToArray())}
+                    Dim t = Token.CreateSingleLineComment(New String(Output.ToArray()))
                     Positions.Add(t, Range)
                     Return t
                 End Function
