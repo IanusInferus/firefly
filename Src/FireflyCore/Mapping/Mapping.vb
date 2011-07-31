@@ -3,7 +3,7 @@
 '  File:        Mapping.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 映射
-'  Version:     2011.03.21.
+'  Version:     2011.07.31.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -14,6 +14,7 @@ Imports System.Collections.Generic
 Imports System.Diagnostics
 Imports System.Runtime.CompilerServices
 Imports Firefly
+Imports Firefly.Mapping.MetaProgramming
 
 Namespace Mapping
     Public Interface IProjectorResolver

@@ -3,7 +3,7 @@
 '  File:        Writer.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 文本输出类
-'  Version:     2011.06.26.
+'  Version:     2011.07.31.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -56,7 +56,7 @@ Namespace Texting.TreeFormat
                     If ns.Children.Length = 0 Then
                         WriteRaw(IndentLevel, EndDirective)
                     Else
-                        If ns.Children.Length > 1 AndAlso ns.Children.All(Function(c) c._Tag = NodeTag.Stem AndAlso c.Stem.Children.Length = 1) Then
+                        If ns.Children.Length > 1 AndAlso ns.Children.All(Function(c) c.OnStem AndAlso c.Stem.Children.Length = 1) Then
                             Dim ChildNames = ns.Children.Select(Function(c) c.Stem.Name).Distinct.ToArray()
                             If ChildNames.Length = 1 Then
                                 Dim ChildName = GetLiteral(ChildNames.Single(), True).SingleLine
@@ -88,16 +88,16 @@ Namespace Texting.TreeFormat
                         Exit While
                     Case NodeTag.Leaf
                         Dim s = GetLiteral(n.Leaf, False)
-                        If s._Tag = LiteralTag.MultiLine Then Return Opt(Of String).Empty
-                        If s._Tag <> LiteralTag.SingleLine Then Throw New InvalidOperationException
+                        If s.OnMultiLine Then Return Opt(Of String).Empty
+                        If Not s.OnSingleLine Then Throw New InvalidOperationException
                         l.Add(s.SingleLine)
                         Exit While
                     Case NodeTag.Stem
                         Dim ns = n.Stem
                         If ns.Children.Length <> 1 Then Return Opt(Of String).Empty
                         Dim s = GetLiteral(ns.Name, False)
-                        If s._Tag = LiteralTag.MultiLine Then Return Opt(Of String).Empty
-                        If s._Tag <> LiteralTag.SingleLine Then Throw New InvalidOperationException
+                        If s.OnMultiLine Then Return Opt(Of String).Empty
+                        If Not s.OnSingleLine Then Throw New InvalidOperationException
                         l.Add(s.SingleLine)
                         n = ns.Children.Single()
                     Case Else
@@ -145,6 +145,24 @@ Namespace Texting.TreeFormat
             Public Property SingleLine As String
             Public Property MultiLine As String()
 
+            Public Shared Function CreateSingleLine(ByVal Value As String) As Literal
+                Return New Literal With {._Tag = LiteralTag.SingleLine, .SingleLine = Value}
+            End Function
+            Public Shared Function CreateMultiLine(ByVal Value As String()) As Literal
+                Return New Literal With {._Tag = LiteralTag.MultiLine, .MultiLine = Value}
+            End Function
+
+            Public ReadOnly Property OnSingleLine() As Boolean
+                Get
+                    Return _Tag = LiteralTag.SingleLine
+                End Get
+            End Property
+            Public ReadOnly Property OnMultiLine() As Boolean
+                Get
+                    Return _Tag = LiteralTag.MultiLine
+                End Get
+            End Property
+
             Public Overrides Function ToString() As String
                 Return DebuggerDisplayer.ConvertToString(Me)
             End Function
@@ -160,21 +178,21 @@ Namespace Texting.TreeFormat
         Private Shared rForbiddenChars As New Regex("[()\f\t\v]", RegexOptions.ExplicitCapture)
         Private Shared rForbiddenHeadChars As New Regex("^[!%&;=?\^`|~]", RegexOptions.ExplicitCapture)
         Private Shared Function GetLiteral(ByVal Value As String, ByVal MustSingleLine As Boolean) As Literal
-            If Value Is Nothing Then Return New Literal With {._Tag = LiteralTag.SingleLine, .SingleLine = Empty}
-            If Value = "" Then Return New Literal With {._Tag = LiteralTag.SingleLine, .SingleLine = """"""}
+            If Value Is Nothing Then Return Literal.CreateSingleLine(Empty)
+            If Value = "" Then Return Literal.CreateSingleLine("""""")
             Dim wm = rWildCrOrLf.Match(Value).Success
             Dim cm = rCrLf.Match(Value).Success
             If wm OrElse (cm AndAlso MustSingleLine) Then
                 Dim s = Value.Escape().Replace("""", "\""")
                 If s.StartsWith(" ") Then
-                    Return New Literal With {._Tag = LiteralTag.SingleLine, .SingleLine = """""\" & s & """"""}
+                    Return Literal.CreateSingleLine("""""\" & s & """""")
                 Else
-                    Return New Literal With {._Tag = LiteralTag.SingleLine, .SingleLine = """""" & s & """"""}
+                    Return Literal.CreateSingleLine("""""" & s & """""")
                 End If
             End If
-            If cm Then Return New Literal With {._Tag = LiteralTag.MultiLine, .MultiLine = rCrLf.Split(Value)}
+            If cm Then Return Literal.CreateMultiLine(rCrLf.Split(Value))
 
-            Dim CreateQuotationLiteral = Function() New Literal With {._Tag = LiteralTag.SingleLine, .SingleLine = """" & Value.Replace("""", """""") & """"}
+            Dim CreateQuotationLiteral = Function() Literal.CreateSingleLine("""" & Value.Replace("""", """""") & """")
 
             If rForbiddenHeadChars.Match(Value).Success OrElse rForbiddenChars.Match(Value).Success Then
                 Return CreateQuotationLiteral()
@@ -213,7 +231,7 @@ Namespace Texting.TreeFormat
             Next
             If ParentheseStack.Count <> 0 Then Return CreateQuotationLiteral()
 
-            Return New Literal With {._Tag = LiteralTag.SingleLine, .SingleLine = Value}
+            Return Literal.CreateSingleLine(Value)
         End Function
     End Class
 End Namespace

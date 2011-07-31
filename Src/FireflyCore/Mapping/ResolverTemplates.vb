@@ -3,7 +3,7 @@
 '  File:        ResolverTemplates.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Object映射器解析器
-'  Version:     2011.03.21.
+'  Version:     2011.07.31.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -15,6 +15,7 @@ Imports System.Linq
 Imports System.Linq.Expressions
 Imports System.Reflection
 Imports System.Diagnostics
+Imports Firefly.Mapping.MetaProgramming
 
 Namespace Mapping
     ''' <remarks>实现带泛型约束的接口会导致代码分析无效。</remarks>

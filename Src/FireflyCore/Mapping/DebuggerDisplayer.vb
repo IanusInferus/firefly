@@ -3,7 +3,7 @@
 '  File:        DebuggerDisplayer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 调试序列化器
-'  Version:     2011.04.05.
+'  Version:     2011.07.31.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -14,6 +14,7 @@ Imports System.Linq
 Imports System.Reflection
 Imports Firefly
 Imports Firefly.Mapping
+Imports Firefly.Mapping.MetaProgramming
 
 Namespace Mapping.MetaSchema
     Public NotInheritable Class DebuggerDisplayer
