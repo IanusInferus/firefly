@@ -1,4 +1,4 @@
-﻿2011.07.31
+﻿2011.07.31.0
 Firefly.Core.Mapping:
 增加MetaProgramming命名空间，降低其中扩展函数的可见性，防止VB的Module内函数自动导入污染。
 增加MetaSchema的各个TaggedUnion的Create和On函数。
@@ -7,6 +7,7 @@ Firefly.Core.Texting.TreeFormat:
 按照MetaSchema修改去除一些冗余。
 Firefly.MetaSchemaManipulator:
 按增加的MetaSchema的函数修改。
+修改标识符避免与关键字重复的处理，改为在模板中加[[ ]]来括住，而不再在代码中手工书写。
 
 2011.07.24.0
 Firefly.Core.Packaging:
