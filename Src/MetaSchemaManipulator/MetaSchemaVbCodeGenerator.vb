@@ -13,6 +13,7 @@ Imports System.Collections.Generic
 Imports System.Linq
 Imports System.Xml.Linq
 Imports System.Runtime.CompilerServices
+Imports System.Text.RegularExpressions
 Imports Firefly
 Imports Firefly.Streaming
 Imports Firefly.Mapping
@@ -70,9 +71,9 @@ Public Module MetaSchemaVbCodeGenerator
             Dim ComplexConcepts = GetComplexConcepts(Schema)
 
             If NamespaceName <> "" Then
-                Return GetTemplate("MainWithNamespace").Substitute("Header", Header).Substitute("NamespaceName", GetEscapedIdentifier(NamespaceName)).Substitute("Primitives", Primitives).Substitute("ComplexConcepts", ComplexConcepts)
+                Return EvaluateEscapedIdentifiers(GetTemplate("MainWithNamespace").Substitute("Header", Header).Substitute("NamespaceName", NamespaceName).Substitute("Primitives", Primitives).Substitute("ComplexConcepts", ComplexConcepts))
             Else
-                Return GetTemplate("MainWithoutNamespace").Substitute("Header", Header).Substitute("Primitives", Primitives).Substitute("ComplexConcepts", ComplexConcepts)
+                Return EvaluateEscapedIdentifiers(GetTemplate("MainWithoutNamespace").Substitute("Header", Header).Substitute("Primitives", Primitives).Substitute("ComplexConcepts", ComplexConcepts))
             End If
         End Function
 
@@ -81,7 +82,7 @@ Public Module MetaSchemaVbCodeGenerator
         End Function
 
         Public Function GetPrimitive(ByVal Name As String, ByVal PlatformName As String) As String()
-            Return GetTemplate("Primitive").Substitute("Name", GetEscapedIdentifier(Name)).Substitute("PlatformName", PlatformName)
+            Return GetTemplate("Primitive").Substitute("Name", Name).Substitute("PlatformName", PlatformName)
         End Function
         Public Function GetPrimitives() As String()
             Dim l As New List(Of String)
@@ -119,17 +120,17 @@ Public Module MetaSchemaVbCodeGenerator
         Public Function GetTypeString(ByVal Type As ConceptSpec) As String
             Select Case Type._Tag
                 Case ConceptSpecTag.ConceptRef
-                    Return GetEscapedIdentifier(Type.ConceptRef.Value)
+                    Return Type.ConceptRef.Value
                 Case ConceptSpecTag.List
                     Return GetEscapedIdentifier(GetTypeString(Type.List.ElementType)) & "()"
                 Case ConceptSpecTag.Tuple
-                    Return GetEscapedIdentifier(GetTypeFriendlyName(Type))
+                    Return GetTypeFriendlyName(Type)
                 Case Else
                     Throw New InvalidOperationException
             End Select
         End Function
         Public Function GetAlias(ByVal a As [Alias]) As String()
-            Return GetTemplate("Alias").Substitute("Name", GetEscapedIdentifier(a.Name)).Substitute("Type", GetTypeString(a.Type))
+            Return GetTemplate("Alias").Substitute("Name", a.Name).Substitute("Type", GetTypeString(a.Type))
         End Function
         Public Function GetTupleElement(ByVal NameIndex As Int64, ByVal Type As ConceptSpec) As String()
             Return GetTemplate("TupleElement").Substitute("NameIndex", NameIndex.ToString(Globalization.CultureInfo.InvariantCulture)).Substitute("Type", GetTypeString(Type))
@@ -145,10 +146,10 @@ Public Module MetaSchemaVbCodeGenerator
         End Function
         Public Function GetTuple(ByVal Name As String, ByVal t As Tuple) As String()
             Dim TupleElements = GetTupleElements(t.Types)
-            Return GetTemplate("Tuple").Substitute("Name", GetEscapedIdentifier(Name)).Substitute("TupleElements", TupleElements)
+            Return GetTemplate("Tuple").Substitute("Name", Name).Substitute("TupleElements", TupleElements)
         End Function
         Public Function GetField(ByVal f As Field) As String()
-            Return GetTemplate("Field").Substitute("Name", GetEscapedIdentifier(f.Name)).Substitute("Type", GetTypeString(f.Type))
+            Return GetTemplate("Field").Substitute("Name", f.Name).Substitute("Type", GetTypeString(f.Type))
         End Function
         Public Function GetFields(ByVal Fields As Field()) As String()
             Dim l As New List(Of String)
@@ -159,17 +160,17 @@ Public Module MetaSchemaVbCodeGenerator
         End Function
         Public Function GetRecord(ByVal r As Record) As String()
             Dim Fields = GetFields(r.Fields)
-            Return GetTemplate("Record").Substitute("Name", GetEscapedIdentifier(r.Name)).Substitute("Fields", Fields)
+            Return GetTemplate("Record").Substitute("Name", r.Name).Substitute("Fields", Fields)
         End Function
         Public Function GetAlternativeNames(ByVal Alternatives As Alternative()) As String()
             Dim l As New List(Of String)
             For Each a In Alternatives
-                l.Add(GetEscapedIdentifier(a.Name))
+                l.Add(a.Name)
             Next
             Return l.ToArray
         End Function
         Public Function GetAlternative(ByVal a As Alternative) As String()
-            Return GetTemplate("Alternative").Substitute("Name", GetEscapedIdentifier(a.Name)).Substitute("Type", GetTypeString(a.Type))
+            Return GetTemplate("Alternative").Substitute("Name", a.Name).Substitute("Type", GetTypeString(a.Type))
         End Function
         Public Function GetAlternatives(ByVal Alternatives As Alternative()) As String()
             Dim l As New List(Of String)
@@ -178,10 +179,36 @@ Public Module MetaSchemaVbCodeGenerator
             Next
             Return l.ToArray
         End Function
+        Public Function GetAlternativeCreate(tu As TaggedUnion, a As Alternative) As [String]()
+            If (a.Type.OnConceptRef) AndAlso (a.Type.ConceptRef.Value.Equals("Unit", StringComparison.OrdinalIgnoreCase)) Then
+                Return GetTemplate("AlternativeCreateUnit").Substitute("TaggedUnionName", tu.Name).Substitute("Name", a.Name)
+            Else
+                Return GetTemplate("AlternativeCreate").Substitute("TaggedUnionName", tu.Name).Substitute("Name", a.Name).Substitute("Type", GetTypeString(a.Type))
+            End If
+        End Function
+        Public Function GetAlternativeCreates(tu As TaggedUnion) As [String]()
+            Dim l As New List(Of [String])()
+            For Each a In tu.Alternatives
+                l.AddRange(GetAlternativeCreate(tu, a))
+            Next
+            Return l.ToArray()
+        End Function
+        Public Function GetAlternativePredicate(tu As TaggedUnion, a As Alternative) As [String]()
+            Return GetTemplate("AlternativePredicate").Substitute("TaggedUnionName", tu.Name).Substitute("Name", a.Name)
+        End Function
+        Public Function GetAlternativePredicates(tu As TaggedUnion) As [String]()
+            Dim l As New List(Of [String])()
+            For Each a In tu.Alternatives
+                l.AddRange(GetAlternativePredicate(tu, a))
+            Next
+            Return l.ToArray()
+        End Function
         Public Function GetTaggedUnion(ByVal tu As TaggedUnion) As String()
             Dim AlternativeNames = GetAlternativeNames(tu.Alternatives)
             Dim Alternatives = GetAlternatives(tu.Alternatives)
-            Return GetTemplate("TaggedUnion").Substitute("Name", GetEscapedIdentifier(tu.Name)).Substitute("AlternativeNames", AlternativeNames).Substitute("Alternatives", Alternatives)
+            Dim AlternativeCreates = GetAlternativeCreates(tu)
+            Dim AlternativePredicates = GetAlternativePredicates(tu)
+            Return GetTemplate("TaggedUnion").Substitute("Name", tu.Name).Substitute("AlternativeNames", AlternativeNames).Substitute("Alternatives", Alternatives).Substitute("AlternativeCreates", AlternativeCreates).Substitute("AlternativePredicates", AlternativePredicates)
         End Function
         Public Function GetComplexConcepts(ByVal Schema As Schema) As String()
             Dim l As New List(Of String)
@@ -224,6 +251,10 @@ Public Module MetaSchemaVbCodeGenerator
             Else
                 Return Identifier
             End If
+        End Function
+        Private rIdentifier As New Regex("(?<!\[\[)\[\[(?<Identifier>.*?)\]\](?!\]\])", RegexOptions.ExplicitCapture)
+        Private Function EvaluateEscapedIdentifiers(ByVal Lines As String()) As String()
+            Return Lines.Select(Function(Line) rIdentifier.Replace(Line, Function(s) GetEscapedIdentifier(s.Result("${Identifier}"))).Replace("[[[[", "[[").Replace("]]]]", "]]")).ToArray()
         End Function
     End Class
 
