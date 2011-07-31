@@ -3,7 +3,7 @@
 '  File:        XmlSerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Xml序列化类
-'  Version:     2011.04.05.
+'  Version:     2011.07.31.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -18,6 +18,7 @@ Imports System.Xml
 Imports System.Xml.Linq
 Imports System.Reflection
 Imports Firefly
+Imports Firefly.Mapping.MetaProgramming
 Imports Firefly.Texting
 
 Namespace Mapping.XmlText

@@ -3,7 +3,7 @@
 '  File:        MetaSchema.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 元类型结构
-'  Version:     2011.03.18.
+'  Version:     2011.07.31.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -82,6 +82,40 @@ Namespace Mapping.MetaSchema
         Public Record As Record
         Public TaggedUnion As TaggedUnion
 
+        Public Shared Function CreatePrimitive(ByVal Value As Primitive) As ConceptDef
+            Return New ConceptDef With {._Tag = ConceptDefTag.Primitive, .Primitive = Value}
+        End Function
+        Public Shared Function CreateAlias(ByVal Value As [Alias]) As ConceptDef
+            Return New ConceptDef With {._Tag = ConceptDefTag.Alias, .Alias = Value}
+        End Function
+        Public Shared Function CreateRecord(ByVal Value As Record) As ConceptDef
+            Return New ConceptDef With {._Tag = ConceptDefTag.Record, .Record = Value}
+        End Function
+        Public Shared Function CreateTaggedUnion(ByVal Value As TaggedUnion) As ConceptDef
+            Return New ConceptDef With {._Tag = ConceptDefTag.TaggedUnion, .TaggedUnion = Value}
+        End Function
+
+        Public ReadOnly Property OnPrimitive() As Boolean
+            Get
+                Return _Tag = ConceptDefTag.Primitive
+            End Get
+        End Property
+        Public ReadOnly Property OnAlias() As Boolean
+            Get
+                Return _Tag = ConceptDefTag.Alias
+            End Get
+        End Property
+        Public ReadOnly Property OnRecord() As Boolean
+            Get
+                Return _Tag = ConceptDefTag.Record
+            End Get
+        End Property
+        Public ReadOnly Property OnTaggedUnion() As Boolean
+            Get
+                Return _Tag = ConceptDefTag.TaggedUnion
+            End Get
+        End Property
+
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
         End Function
@@ -110,17 +144,43 @@ Namespace Mapping.MetaSchema
         Public Tuple As Tuple
         Public List As List
 
+        Public Shared Function CreateConceptRef(ByVal Value As ConceptRef) As ConceptSpec
+            Return New ConceptSpec With {._Tag = ConceptSpecTag.ConceptRef, .ConceptRef = Value}
+        End Function
+        Public Shared Function CreateTuple(ByVal Value As Tuple) As ConceptSpec
+            Return New ConceptSpec With {._Tag = ConceptSpecTag.Tuple, .Tuple = Value}
+        End Function
+        Public Shared Function CreateList(ByVal Value As List) As ConceptSpec
+            Return New ConceptSpec With {._Tag = ConceptSpecTag.List, .List = Value}
+        End Function
+
+        Public ReadOnly Property OnConceptRef() As Boolean
+            Get
+                Return _Tag = ConceptSpecTag.ConceptRef
+            End Get
+        End Property
+        Public ReadOnly Property OnTuple() As Boolean
+            Get
+                Return _Tag = ConceptSpecTag.Tuple
+            End Get
+        End Property
+        Public ReadOnly Property OnList() As Boolean
+            Get
+                Return _Tag = ConceptSpecTag.List
+            End Get
+        End Property
+
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
         End Function
     End Class
 
     <Record(), DebuggerDisplay("{ToString()}")>
-    Public Class Unit
+    Public Structure Unit
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
         End Function
-    End Class
+    End Structure
 
     <[Alias](), DebuggerDisplay("{ToString()}")>
     Public Class Primitive

@@ -3,7 +3,7 @@
 '  File:        XmlInterop.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: XML互操作
-'  Version:     2011.06.27.
+'  Version:     2011.07.31.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -53,7 +53,7 @@ Namespace Texting.TreeFormat
 
                 If Value.Nodes.Length <> 1 Then Throw New InvalidTextFormatException("NotTree", If(i, New FileLocationInformation))
                 Dim Root = Value.Nodes.Single()
-                If Root._Tag <> NodeTag.Stem Then Throw New InvalidTextFormatException("NotTree", If(i, New FileLocationInformation))
+                If Not Root.OnStem Then Throw New InvalidTextFormatException("NotTree", If(i, New FileLocationInformation))
 
                 Dim ns = Root.Stem
                 Dim n = TryGetXName(ns.Name, Nothing)
@@ -127,11 +127,11 @@ Namespace Texting.TreeFormat
 
             Private Function GetAttribute(ByVal t As Node, ByVal Parent As XElement) As XAttribute
                 Dim i = GetFileLocationInformation(t)
-                If t._Tag <> NodeTag.Stem Then Throw New InvalidTextFormatException("NotAttribute", If(i, New FileLocationInformation))
+                If Not t.OnStem Then Throw New InvalidTextFormatException("NotAttribute", If(i, New FileLocationInformation))
                 Dim ns = t.Stem
                 If ns.Children.Length <> 1 Then Throw New InvalidTextFormatException("NotAttribute", If(i, New FileLocationInformation))
                 Dim c = ns.Children.Single()
-                If c._Tag <> NodeTag.Leaf Then Throw New InvalidTextFormatException("NotAttribute", If(i, New FileLocationInformation))
+                If Not c.OnLeaf Then Throw New InvalidTextFormatException("NotAttribute", If(i, New FileLocationInformation))
                 Dim xa As New XAttribute(TryGetXName(ns.Name.Substring(1), Parent), c.Leaf)
                 Return xa
             End Function
@@ -276,18 +276,18 @@ Namespace Texting.TreeFormat
             End Function
             Private Function MakeEmptyNode(ByVal x As XObject) As Node
                 Dim Range = GetFileTextRange(x)
-                Dim n = Mark(New Node With {._Tag = NodeTag.Empty}, Range)
+                Dim n = Mark(Node.CreateEmpty(), Range)
                 Return n
             End Function
             Private Function MakeLeafNode(ByVal Value As String, ByVal x As XObject) As Node
                 Dim Range = GetFileTextRange(x)
-                Dim n = Mark(New Node With {._Tag = NodeTag.Leaf, .Leaf = Value}, Range)
+                Dim n = Mark(Node.CreateLeaf(Value), Range)
                 Return n
             End Function
             Private Function MakeStemNode(ByVal Name As String, ByVal Children As Node(), ByVal x As XObject) As Node
                 Dim Range = GetFileTextRange(x)
                 Dim s = Mark(New Stem With {.Name = Name, .Children = Children}, Range)
-                Dim n = Mark(New Node With {._Tag = NodeTag.Stem, .Stem = s}, Range)
+                Dim n = Mark(Node.CreateStem(s), Range)
                 Return n
             End Function
 

@@ -3,7 +3,7 @@
 '  File:        Evaluator.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 求值器 - 用于执行自定义函数，并将文法树转为语义树
-'  Version:     2011.06.26.
+'  Version:     2011.07.31.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -82,32 +82,32 @@ Namespace Texting.TreeFormat
             Return Obj
         End Function
         Private Function MakeEmptyNode(ByVal Range As TextRange) As Semantics.Node Implements ISemanticsNodeMaker.MakeEmptyNode
-            Dim n = Mark(New Semantics.Node With {._Tag = Semantics.NodeTag.Empty}, Range)
+            Dim n = Mark(Semantics.Node.CreateEmpty(), Range)
             Return n
         End Function
         Private Function MakeLeafNode(ByVal Value As String, ByVal Range As TextRange) As Semantics.Node Implements ISemanticsNodeMaker.MakeLeafNode
-            Dim n = Mark(New Semantics.Node With {._Tag = Semantics.NodeTag.Leaf, .Leaf = Value}, Range)
+            Dim n = Mark(Semantics.Node.CreateLeaf(Value), Range)
             Return n
         End Function
         Private Function MakeStemNode(ByVal Name As String, ByVal Children As Semantics.Node(), ByVal Range As TextRange) As Semantics.Node Implements ISemanticsNodeMaker.MakeStemNode
             Dim s = Mark(New Semantics.Stem With {.Name = Name, .Children = Children}, Range)
-            Dim n = Mark(New Semantics.Node With {._Tag = Semantics.NodeTag.Stem, .Stem = s}, Range)
+            Dim n = Mark(Semantics.Node.CreateStem(s), Range)
             Return n
         End Function
         Private Function MakeEmptyNode(ByVal SyntaxRule As Object) As Semantics.Node Implements ISemanticsNodeMaker.MakeEmptyNode
             Dim Range = GetRange(SyntaxRule)
-            Dim n = Mark(New Semantics.Node With {._Tag = Semantics.NodeTag.Empty}, Range)
+            Dim n = Mark(Semantics.Node.CreateEmpty(), Range)
             Return n
         End Function
         Private Function MakeLeafNode(ByVal Value As String, ByVal SyntaxRule As Object) As Semantics.Node Implements ISemanticsNodeMaker.MakeLeafNode
             Dim Range = GetRange(SyntaxRule)
-            Dim n = Mark(New Semantics.Node With {._Tag = Semantics.NodeTag.Leaf, .Leaf = Value}, Range)
+            Dim n = Mark(Semantics.Node.CreateLeaf(Value), Range)
             Return n
         End Function
         Private Function MakeStemNode(ByVal Name As String, ByVal Children As Semantics.Node(), ByVal SyntaxRule As Object) As Semantics.Node Implements ISemanticsNodeMaker.MakeStemNode
             Dim Range = GetRange(SyntaxRule)
             Dim s = Mark(New Semantics.Stem With {.Name = Name, .Children = Children}, Range)
-            Dim n = Mark(New Semantics.Node With {._Tag = Semantics.NodeTag.Stem, .Stem = s}, Range)
+            Dim n = Mark(Semantics.Node.CreateStem(s), Range)
             Return n
         End Function
 
@@ -249,13 +249,13 @@ Namespace Texting.TreeFormat
                 Dim rfcc = rfc.Content.Value
                 Select Case rfcc._Tag
                     Case RawFunctionCallContentTag.LineContent
-                        Content = Mark(New FunctionCallContent With {._Tag = FunctionCallContentTag.LineContent, .LineContent = rfcc.LineContent}, rfcc)
+                        Content = Mark(FunctionCallContent.CreateLineContent(rfcc.LineContent), rfcc)
                     Case RawFunctionCallContentTag.TreeContent
                         Dim TreeContent = EvaluateMultiNodesList(rfcc.TreeContent)
-                        Content = Mark(New FunctionCallContent With {._Tag = FunctionCallContentTag.TreeContent, .TreeContent = TreeContent}, rfcc)
+                        Content = Mark(FunctionCallContent.CreateTreeContent(TreeContent), rfcc)
                     Case RawFunctionCallContentTag.TableContent
                         Dim TableContent = rfcc.TableContent.Select(Function(Line) Mark(New FunctionCallTableLine With {.Nodes = Line.Nodes.Select(Function(LineNode) EvaluateTableLineNode(LineNode)).ToArray()}, Line)).ToArray()
-                        Content = Mark(New FunctionCallContent With {._Tag = FunctionCallContentTag.TableContent, .TableContent = TableContent}, rfcc)
+                        Content = Mark(FunctionCallContent.CreateTableContent(TableContent), rfcc)
                     Case Else
                         Throw New ArgumentException
                 End Select
