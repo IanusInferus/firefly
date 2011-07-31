@@ -8,6 +8,8 @@ Firefly.Core.Texting.TreeFormat:
 Firefly.MetaSchemaManipulator:
 按增加的MetaSchema的函数修改。
 修改标识符避免与关键字重复的处理，改为在模板中加[[ ]]来括住，而不再在代码中手工书写。
+Examples\MetaSchema:
+增加C#的代码生成例子。
 
 2011.07.24.0
 Firefly.Core.Packaging:
