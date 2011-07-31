@@ -4,7 +4,7 @@ $Comment
       File:        MetaSchemaCsTemplate.tree
       Location:    Firefly.MetaSchemaManipulator <Tree>
       Description: 元类型结构C#模板数据
-      Version:     2011.06.26.
+      Version:     2011.07.31.
       Copyright(C) F.R.C.
     
     ==========================================================================
@@ -117,7 +117,7 @@ MetaSchemaCsTemplate
                     ${Header}
                     ${Primitives}
                     
-                    namespace ${NamespaceName}
+                    namespace [[${NamespaceName}]]
                     {
                         ${ComplexConcepts}
                     }
@@ -154,22 +154,22 @@ MetaSchemaCsTemplate
             //Parameters: ${Name}, ${PlatformName}
             Value
                 $String
-                    using ${Name} = ${PlatformName};
+                    using [[${Name}]] = ${PlatformName};
         Template
             Name Alias
             //Parameters: ${Name}, ${Type}
             Value
                 $String
                     [Alias, DebuggerDisplay("{ToString()}")]
-                    public class ${Name}
+                    public class [[${Name}]]
                     {
-                        public ${Type} Value;
+                        public [[${Type}]] Value;
                         
-                        public static implicit operator ${Name}(${Type} o)
+                        public static implicit operator [[${Name}]]([[${Type}]] o)
                         {
-                            return new ${Name} {Value = o};
+                            return new [[${Name}]] {Value = o};
                         }
-                        public static implicit operator ${Type}(${Name} c)
+                        public static implicit operator [[${Type}]]([[${Name}]] c)
                         {
                             return c.Value;
                         }
@@ -184,14 +184,14 @@ MetaSchemaCsTemplate
             //Parameters: ${NameIndex}, ${Type}
             Value
                 $String
-                    public ${Type} Item${NameIndex};
+                    public [[${Type}]] [[Item${NameIndex}]];
         Template
             Name Tuple
             //Parameters: ${Name}, ${TupleElements}
             Value
                 $String
                     [Tuple, DebuggerDisplay("{ToString()}")]
-                    public class ${Name}
+                    public class [[${Name}]]
                     {
                         ${TupleElements}
                         
@@ -205,14 +205,14 @@ MetaSchemaCsTemplate
             //Parameters: ${Name}, ${Type}
             Value
                 $String
-                    public ${Type} ${Name};
+                    public [[${Type}]] [[${Name}]];
         Template
             Name Record
             //Parameters: ${Name}, ${Fields}
             Value
                 $String
                     [Record, DebuggerDisplay("{ToString()}")]
-                    public class ${Name}
+                    public class [[${Name}]]
                     {
                         ${Fields}
                         
@@ -226,22 +226,44 @@ MetaSchemaCsTemplate
             //Parameters: ${Name}, ${Type}
             Value
                 $String
-                    public ${Type} ${Name};
+                    public [[${Type}]] [[${Name}]];
+        Template
+            Name AlternativeCreate
+            //Parameters: ${TaggedUnionName}, ${Name}, ${Type}
+            Value
+                $String
+                    public static [[${TaggedUnionName}]] [[Create${Name}]]([[${Type}]] Value) { return new [[${TaggedUnionName}]] { _Tag = [[${TaggedUnionName}Tag.${Name}]], [[${Name}]] = Value }; }
+        Template
+            Name AlternativeCreateUnit
+            //Parameters: ${TaggedUnionName}, ${Name}
+            Value
+                $String
+                    public static [[${TaggedUnionName}]] [[Create${Name}]]() { return new [[${TaggedUnionName}]] { _Tag = [[${TaggedUnionName}Tag.${Name}]], [[${Name}]] = new Unit() }; }
+        Template
+            Name AlternativePredicate
+            //Parameters: ${TaggedUnionName}, ${Name}
+            Value
+                $String
+                    public Boolean [[On${Name}]] { get { return _Tag == [[${TaggedUnionName}Tag.${Name}]]; } }
         Template
             Name TaggedUnion
-            //Parameters: ${Name}, ${AlternativeNames}, ${Alternatives}
+            //Parameters: ${Name}, ${AlternativeNames}, ${Alternatives}, ${AlternativeCreates}, ${AlternativePredicates}
             Value
                 $String
                     public enum ${Name}Tag
                     {
-                        ${AlternativeNames},
+                        [[${AlternativeNames}]],
                     }
                     [TaggedUnion, DebuggerDisplay("{ToString()}")]
-                    public class ${Name}
+                    public class [[${Name}]]
                     {
-                        [Tag] public ${Name}Tag _Tag;
+                        [[Tag]] public [[${Name}Tag]] _Tag;
                         ${Alternatives}
                         
+                        ${AlternativeCreates}
+
+                        ${AlternativePredicates}
+
                         public override string ToString()
                         {
                             return DebuggerDisplayer.ConvertToString(this);

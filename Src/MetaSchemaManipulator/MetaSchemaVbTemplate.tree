@@ -4,7 +4,7 @@ $Comment
       File:        MetaSchemaVbTemplate.tree
       Location:    Firefly.MetaSchemaManipulator <Tree>
       Description: 元类型结构VB模板数据
-      Version:     2011.03.18.
+      Version:     2011.07.31.
       Copyright(C) F.R.C.
     
     ==========================================================================
@@ -186,7 +186,7 @@ MetaSchemaVbTemplate
                     ${Header}
                     ${Primitives}
                     
-                    Namespace ${NamespaceName}
+                    Namespace [[${NamespaceName}]]
                         ${ComplexConcepts}
                     End Namespace
                     
@@ -222,20 +222,20 @@ MetaSchemaVbTemplate
             //Parameters: ${Name}, ${PlatformName}
             Value
                 $String
-                    Imports ${Name} = ${PlatformName}
+                    Imports [[${Name}]] = ${PlatformName}
         Template
             Name Alias
             //Parameters: ${Name}, ${Type}
             Value
                 $String
-                    <[Alias](), DebuggerDisplay("{ToString()}")>
-                    Public Class ${Name}
-                        Public Value As ${Type}
+                    <[[Alias]](), DebuggerDisplay("{ToString()}")>
+                    Public Class [[${Name}]]
+                        Public Value As [[${Type}]]
                         
-                        Public Shared Widening Operator CType(ByVal o As ${Type}) As ${Name}
-                            Return New ${Name} With {.Value = o}
+                        Public Shared Widening Operator CType(ByVal o As [[${Type}]]) As [[${Name}]]
+                            Return New [[${Name}]] With {.Value = o}
                         End Operator
-                        Public Shared Widening Operator CType(ByVal c As ${Name}) As ${Type}
+                        Public Shared Widening Operator CType(ByVal c As [[${Name}]]) As [[${Type}]]
                             Return c.Value
                         End Operator
 
@@ -248,14 +248,14 @@ MetaSchemaVbTemplate
             //Parameters: ${NameIndex}, ${Type}
             Value
                 $String
-                    Public Item${NameIndex} As ${Type}
+                    Public [[Item${NameIndex}]] As [[${Type}]]
         Template
             Name Tuple
             //Parameters: ${Name}, ${TupleElements}
             Value
                 $String
                     <Tuple(), DebuggerDisplay("{ToString()}")>
-                    Public Class ${Name}
+                    Public Class [[${Name}]]
                         ${TupleElements}
                         
                         Public Overrides Function ToString() As String
@@ -267,14 +267,14 @@ MetaSchemaVbTemplate
             //Parameters: ${Name}, ${Type}
             Value
                 $String
-                    Public ${Name} As ${Type}
+                    Public [[${Name}]] As [[${Type}]]
         Template
             Name Record
             //Parameters: ${Name}, ${Fields}
             Value
                 $String
                     <Record(), DebuggerDisplay("{ToString()}")>
-                    Public Class ${Name}
+                    Public Class [[${Name}]]
                         ${Fields}
                         
                         Public Overrides Function ToString() As String
@@ -286,20 +286,50 @@ MetaSchemaVbTemplate
             //Parameters: ${Name}, ${Type}
             Value
                 $String
-                    Public ${Name} As ${Type}
+                    Public [[${Name}]] As [[${Type}]]
+        Template
+            Name AlternativeCreate
+            //Parameters: ${TaggedUnionName}, ${Name}, ${Type}
+            Value
+                $String
+                    Public Shared Function [[Create${Name}]](ByVal Value As [[${Type}]]) As [[${TaggedUnionName}]]
+                        Return New [[${TaggedUnionName}]] With {._Tag = [[${TaggedUnionName}Tag.${Name}]], [[.${Name}]] = Value}
+                    End Function
+        Template
+            Name AlternativeCreateUnit
+            //Parameters: ${TaggedUnionName}, ${Name}
+            Value
+                $String
+                    Public Shared Function [[Create${Name}]]() As ${TaggedUnionName}
+                        Return New [[${TaggedUnionName}]] With {._Tag = [[${TaggedUnionName}Tag.${Name}]], [[.${Name}]] = New Unit()}
+                    End Function
+        Template
+            Name AlternativePredicate
+            //Parameters: ${TaggedUnionName}, ${Name}
+            Value
+                $String
+                    Public ReadOnly Property [[On${Name}]]() As Boolean
+                        Get
+                            Return _Tag = [[${TaggedUnionName}Tag.${Name}]]
+                        End Get
+                    End Property
         Template
             Name TaggedUnion
-            //Parameters: ${Name}, ${AlternativeNames}, ${Alternatives}
+            //Parameters: ${Name}, ${AlternativeNames}, ${Alternatives}, ${AlternativeCreates}, ${AlternativePredicates}
             Value
                 $String
                     Public Enum ${Name}Tag
-                        ${AlternativeNames}
+                        [[${AlternativeNames}]]
                     End Enum
                     <TaggedUnion(), DebuggerDisplay("{ToString()}")>
-                    Public Class ${Name}
-                        <Tag()> Public _Tag As ${Name}Tag
+                    Public Class [[${Name}]]
+                        <Tag()> Public _Tag As [[${Name}Tag]]
                         ${Alternatives}
                         
+                        ${AlternativeCreates}
+
+                        ${AlternativePredicates}
+
                         Public Overrides Function ToString() As String
                             Return DebuggerDisplayer.ConvertToString(Me)
                         End Function
