@@ -5,6 +5,10 @@ Firefly.MetaSchemaManipulator:
 增加F#代码生成的功能。
 Examples\MetaSchema:
 增加F#的代码生成例子。
+Firefly.Core.Packaging:
+修正几处ByVal代码风格错误。
+Firefly.MetaSchemaManipulator:
+修正几处ByVal代码风格错误。
 
 2011.07.31
 Firefly.Core.Mapping:
