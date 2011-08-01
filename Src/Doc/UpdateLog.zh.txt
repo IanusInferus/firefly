@@ -1,6 +1,7 @@
 ﻿2011.08.01.0
 Firefly.MetaSchemaManipulator:
 修正C#模板中的一个[[ ]]错误。
+修正C#标识符规则的每个.分隔的标识符需要分别转义的问题。
 
 2011.07.31
 Firefly.Core.Mapping:
