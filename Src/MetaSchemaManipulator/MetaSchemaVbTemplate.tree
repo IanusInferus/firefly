@@ -1,15 +1,15 @@
 $Comment
     ==========================================================================
-    
+
       File:        MetaSchemaVbTemplate.tree
       Location:    Firefly.MetaSchemaManipulator <Tree>
       Description: 元类型结构VB模板数据
-      Version:     2011.07.31.
+      Version:     2011.08.01.
       Copyright(C) F.R.C.
-    
+
     ==========================================================================
 
-MetaSchemaVbTemplate
+MetaSchemaTemplate
     Keywords
         $List String
             AddHandler
@@ -185,11 +185,12 @@ MetaSchemaVbTemplate
                 $String
                     ${Header}
                     ${Primitives}
-                    
+
                     Namespace [[${NamespaceName}]]
                         ${ComplexConcepts}
                     End Namespace
-                    
+
+                $End
         Template
             Name MainWithoutNamespace
             //Parameters: ${Header}, ${Primitives}, ${ComplexConcepts}
@@ -199,7 +200,8 @@ MetaSchemaVbTemplate
                     ${Primitives}
 
                     ${ComplexConcepts}
-                    
+
+                $End
         Template
             Name Header
             //Parameters:
@@ -231,7 +233,7 @@ MetaSchemaVbTemplate
                     <[[Alias]](), DebuggerDisplay("{ToString()}")>
                     Public Class [[${Name}]]
                         Public Value As [[${Type}]]
-                        
+
                         Public Shared Widening Operator CType(ByVal o As [[${Type}]]) As [[${Name}]]
                             Return New [[${Name}]] With {.Value = o}
                         End Operator
@@ -257,7 +259,7 @@ MetaSchemaVbTemplate
                     <Tuple(), DebuggerDisplay("{ToString()}")>
                     Public Class [[${Name}]]
                         ${TupleElements}
-                        
+
                         Public Overrides Function ToString() As String
                             Return DebuggerDisplayer.ConvertToString(Me)
                         End Function
@@ -276,7 +278,7 @@ MetaSchemaVbTemplate
                     <Record(), DebuggerDisplay("{ToString()}")>
                     Public Class [[${Name}]]
                         ${Fields}
-                        
+
                         Public Overrides Function ToString() As String
                             Return DebuggerDisplayer.ConvertToString(Me)
                         End Function
@@ -325,7 +327,7 @@ MetaSchemaVbTemplate
                     Public Class [[${Name}]]
                         <Tag()> Public _Tag As [[${Name}Tag]]
                         ${Alternatives}
-                        
+
                         ${AlternativeCreates}
 
                         ${AlternativePredicates}
