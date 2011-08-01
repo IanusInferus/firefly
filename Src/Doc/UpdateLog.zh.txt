@@ -2,6 +2,9 @@
 Firefly.MetaSchemaManipulator:
 修正C#模板中的一个[[ ]]错误。
 修正C#标识符规则的每个.分隔的标识符需要分别转义的问题。
+增加F#代码生成的功能。
+Examples\MetaSchema:
+增加F#的代码生成例子。
 
 2011.07.31
 Firefly.Core.Mapping:
