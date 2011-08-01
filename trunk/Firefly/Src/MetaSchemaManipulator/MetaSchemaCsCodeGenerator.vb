@@ -3,7 +3,7 @@
 '  File:        MetaSchemaCsCodeGenerator.vb
 '  Location:    Firefly.MetaSchemaManipulator <Visual Basic .Net>
 '  Description: 元类型结构C#代码生成器
-'  Version:     2011.07.31.
+'  Version:     2011.08.01.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -246,11 +246,15 @@ Public Module MetaSchemaCsCodeGenerator
             Return Value.UnifyNewLineToLf.Split(Lf)
         End Function
         Public Function GetEscapedIdentifier(ByVal Identifier As String) As String
-            If TemplateInfo.Keywords.Contains(Identifier) Then
-                Return "@" & Identifier
-            Else
-                Return Identifier
-            End If
+            Dim l As New List(Of String)
+            For Each IdentifierPart In Identifier.Split("."c)
+                If TemplateInfo.Keywords.Contains(IdentifierPart) Then
+                    l.Add("@" & IdentifierPart)
+                Else
+                    l.Add(IdentifierPart)
+                End If
+            Next
+            Return String.Join(".", l.ToArray())
         End Function
         Private rIdentifier As New Regex("(?<!\[\[)\[\[(?<Identifier>.*?)\]\](?!\]\])", RegexOptions.ExplicitCapture)
         Private Function EvaluateEscapedIdentifiers(ByVal Lines As String()) As String()
