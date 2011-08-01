@@ -1,4 +1,8 @@
-﻿2011.07.31.0
+﻿2011.08.01.0
+Firefly.MetaSchemaManipulator:
+修正C#模板中的一个[[ ]]错误。
+
+2011.07.31
 Firefly.Core.Mapping:
 增加MetaProgramming命名空间，降低其中扩展函数的可见性，防止VB的Module内函数自动导入污染。
 增加MetaSchema的各个TaggedUnion的Create和On函数。
