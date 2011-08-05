@@ -3,7 +3,7 @@
 '  File:        Encoding.vb
 '  Location:    Firefly.TextEncoding <Visual Basic .Net>
 '  Description: 编码
-'  Version:     2009.12.22.
+'  Version:     2011.08.04.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -165,12 +165,12 @@ Namespace TextEncoding
             Get
                 If DefaultValue Is Nothing Then
                     DefaultValue = Encoding.Default
-                    If DefaultValue Is GB2312 Then
-                        Try
+                    Try
+                        If DefaultValue.WindowsCodePage = 936 Then
                             DefaultValue = GB18030
-                        Catch
-                        End Try
-                    End If
+                        End If
+                    Catch
+                    End Try
                 End If
                 Return DefaultValue
             End Get
