@@ -1,4 +1,8 @@
-﻿2011.08.04
+﻿2011.08.09.0
+Firefly.RegexReplace:
+修正说明中的一处问题。
+
+2011.08.04
 Firefly.Core.TextEncoding:
 修正默认编码判断时，在Linux系统下没有GB2312编码时的异常问题。
 
