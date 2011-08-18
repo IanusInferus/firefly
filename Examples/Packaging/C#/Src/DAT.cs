@@ -3,9 +3,9 @@
 //  File:        DAT.cs
 //  Location:    Firefly.Examples <Visual C#>
 //  Description: プリニ DAT格式
-//  Version:     2012.02.23.
+//  Version:     2011.08.18.
 //  Author:      F.R.C.
-//  Copyright(C) public Domain
+//  Copyright(C) Public Domain
 //
 //==========================================================================
 
