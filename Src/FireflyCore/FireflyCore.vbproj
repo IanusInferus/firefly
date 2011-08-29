@@ -123,6 +123,7 @@
     <Compile Include="Streaming\PartialStreams.vb" />
     <Compile Include="Packaging\PCK.vb" />
     <Compile Include="Streaming\Streams.vb" />
+    <Compile Include="Texting\HalfWidth.vb" />
     <Compile Include="TextEncoding\MultiByteEncoding.vb" />
     <Compile Include="TextEncoding\TblCharMappingFile.vb" />
     <Compile Include="TextEncoding\Char32.vb" />
@@ -142,7 +143,9 @@
     <Compile Include="Texting\TreeFormat\Semantics.vb" />
     <Compile Include="Texting\TreeFormat\Syntax.vb" />
     <Compile Include="Texting\TreeFormat\SyntaxParser.vb" />
+    <Compile Include="Texting\TreeFormat\SyntaxWriter.vb" />
     <Compile Include="Texting\TreeFormat\TokenParser.vb" />
+    <Compile Include="Texting\TreeFormat\LiteralWriter.vb" />
     <Compile Include="Texting\TreeFormat\TreeFile.vb" />
     <Compile Include="Texting\TreeFormat\TreeFile1.vb" />
     <Compile Include="Texting\TreeFormat\Writer.vb" />
