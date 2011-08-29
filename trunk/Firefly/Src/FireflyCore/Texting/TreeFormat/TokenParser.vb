@@ -3,7 +3,7 @@
 '  File:        TokenParser.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 词法解析器
-'  Version:     2011.07.31.
+'  Version:     2011.08.29.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -115,8 +115,6 @@ Namespace Texting.TreeFormat
             '    " -> 检查栈，(加入Output，保持，前进)或失败
             '    ( -> 检查栈，失败或返回(Tag 0 => SingleLineLiteral | PreprocessDirective | FunctionDirective)
             '    ) -> 检查栈，失败或返回(Tag 0 => SingleLineLiteral | PreprocessDirective | FunctionDirective)
-            '    // -> 检查栈，(加入Output，保持，前进)或返回(Tag 0 => SingleLineLiteral | PreprocessDirective | FunctionDirective)
-            '    / -> 检查栈，(加入Output，保持，前进)或失败
             '    < -> 压栈，加入Output，保持，前进
             '    [ -> 压栈，加入Output，保持，前进
             '    { -> 压栈，加入Output，保持，前进
@@ -149,8 +147,6 @@ Namespace Texting.TreeFormat
             '    " -> 加入Output，State 22，前进
             '    ( -> 返回SingleLineLiteral
             '    ) -> 返回SingleLineLiteral
-            '    // -> 返回SingleLineLiteral
-            '    / -> 失败
             '    . -> 失败
 
             'State 3
@@ -321,16 +317,6 @@ Namespace Texting.TreeFormat
                             Case "(", ")"
                                 If ParentheseStack.Count <> 0 Then Throw MakeCurrentErrorTokenException("InvalidParentheses")
                                 Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
-                            Case "/"
-                                If ParentheseStack.Count = 0 Then
-                                    If Peek(2) = "//" Then
-                                        If ParentheseStack.Count <> 0 Then Throw MakeCurrentErrorTokenException("InvalidParentheses")
-                                        Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
-                                    End If
-                                    Throw MakeNextCharErrorTokenException("InvalidChar")
-                                End If
-                                Write(c)
-                                Proceed()
                             Case "<"
                                 ParentheseStack.Push(ParentheseType.Angle)
                                 Write(c)
@@ -418,12 +404,6 @@ Namespace Texting.TreeFormat
                             Case "(", ")"
                                 If ParentheseStack.Count <> 0 Then Throw New InvalidOperationException
                                 Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
-                            Case "/"
-                                If Peek(2) = "//" Then
-                                    If ParentheseStack.Count <> 0 Then Throw New InvalidOperationException
-                                    Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
-                                End If
-                                Throw MakeNextCharErrorTokenException("InvalidChar")
                             Case Else
                                 Throw MakeNextCharErrorTokenException("InvalidChar")
                         End Select

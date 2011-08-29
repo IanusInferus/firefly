@@ -248,6 +248,11 @@ Namespace Texting.TreeFormat
                             Return Mark(Node.CreateMultiLineLiteral(ParseMultiLineLiteral(Lines, FirstLine, ChildLines, EndLine, IndentLevel, FirstToken, RemainingChars)), Lines)
                         Case "Comment"
                             Return Mark(Node.CreateMultiLineComment(ParseMultiLineComment(Lines, FirstLine, ChildLines, EndLine, IndentLevel, FirstToken, RemainingChars)), Lines)
+                        Case "Empty"
+                            If EndLine.HasValue OrElse (ChildLines.StartRow < ChildLines.EndRow AndAlso Text.GetLines(ChildLines).Any(Function(Line) Not TokenParser.IsBlankLine(Line))) Then
+                                Throw New InvalidSynaxRuleException("InvalidEmptyDirective", GetFileRange(FirstToken), FirstToken)
+                            End If
+                            Return Mark(Node.CreateSingleLineNodeLine(ParseSingleLineNodeLine(FirstLine, FirstToken, RemainingChars)), FirstLine.Range)
                         Case Else
                             Throw New InvalidSynaxRuleException("InvalidPreprocessDirective", GetFileRange(FirstToken), FirstToken)
                     End Select
