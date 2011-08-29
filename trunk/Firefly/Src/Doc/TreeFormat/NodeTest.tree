@@ -58,7 +58,7 @@ Node
 
 Node1 (Node2 (Node3) ((Node4))) (Node5 Node6) Node7
 
-$Table IntList Key Value Description//×¢ÊÍ
+$Table IntList Key Value Description //×¢ÊÍ
     Name0 0 Test
     Name1 1 "123"
     Name2 2 """"
@@ -82,9 +82,9 @@ $End
 
 Single #Function (12) (((32)) "123") //×¢ÊÍ
 
-#TreeParameterFunction 1 2 3//×¢ÊÍ
+#TreeParameterFunction 1 2 3 //×¢ÊÍ
 #TreeParameterFunction 1 2 3
-#TableParameterFunction 1 2 3//×¢ÊÍ
+#TableParameterFunction 1 2 3 //×¢ÊÍ
 #TableParameterFunction 1 2 3
 
 #TreeContentFunction

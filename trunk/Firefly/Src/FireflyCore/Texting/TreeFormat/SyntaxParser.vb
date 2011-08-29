@@ -359,8 +359,19 @@ Namespace Texting.TreeFormat
             End While
             Dim ParameterRange As New TextRange With {.Start = ParametersStart, .End = ParameterEnd}
             Dim SingleLineComment = ParseSingleLineComment(CurrentRemainingChars)
-            Dim Content = Mark(New FunctionContent With {.Lines = Text.GetLines(ChildLines).ToArray(), .IndentLevel = IndentLevel + 1}, ChildLines)
             Dim EndDirective = ParseEndDirective(EndLine)
+            Dim Content As FunctionContent
+            If EndDirective.HasValue Then
+                Content = Mark(New FunctionContent With {.Lines = Text.GetLines(ChildLines).ToArray(), .IndentLevel = IndentLevel + 1}, ChildLines)
+            Else
+                Dim StartRow = ChildLines.StartRow
+                Dim EndRow = ChildLines.EndRow
+                While EndRow > StartRow AndAlso Text.Lines(EndRow - 2).Text.Where(Function(c) c <> " ").Count = 0
+                    EndRow -= 1
+                End While
+                Dim cl = New TextLineRange With {.StartRow = StartRow, .EndRow = EndRow}
+                Content = Mark(New FunctionContent With {.Lines = Text.GetLines(cl).ToArray(), .IndentLevel = IndentLevel + 1}, cl)
+            End If
             Dim F = Mark(New FunctionNodes With {.FunctionDirective = FunctionDirective, .Parameters = l.ToArray(), .SingleLineComment = SingleLineComment, .Content = Content, .EndDirective = EndDirective}, Lines)
 
             Dim RawFunctionCallParameters As RawFunctionCallParameters

@@ -3,7 +3,7 @@
 '  File:        TreeFile.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: Tree文件格式 - 版本2
-'  Version:     2011.06.26.
+'  Version:     2011.08.30.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -77,6 +77,19 @@ Namespace Texting.TreeFormat
             Dim er = ReadDirect(Reader, New TreeFormatParseSetting, New TreeFormatEvaluateSetting)
             Return XmlInterop.TreeToXml(er)
         End Function
+
+        Public Shared Sub WriteRaw(ByVal Path As String, ByVal Value As Syntax.Forest)
+            WriteRaw(Path, TextEncoding.WritingDefault, Value)
+        End Sub
+        Public Shared Sub WriteRaw(ByVal Path As String, ByVal Encoding As Encoding, ByVal Value As Syntax.Forest)
+            Using sw = Txt.CreateTextWriter(Path, Encoding)
+                WriteRaw(sw, Value)
+            End Using
+        End Sub
+        Public Shared Sub WriteRaw(ByVal Writer As StreamWriter, ByVal Value As Syntax.Forest)
+            Dim w As New TreeFormatSyntaxWriter(Writer)
+            w.Write(Value)
+        End Sub
 
         Public Shared Sub WriteDirect(ByVal Path As String, ByVal Value As Semantics.Forest)
             WriteDirect(Path, TextEncoding.WritingDefault, Value)
