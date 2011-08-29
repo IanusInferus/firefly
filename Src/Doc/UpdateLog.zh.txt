@@ -1,4 +1,11 @@
-﻿2011.08.29
+﻿2011.08.30.0
+Firefly.Core.Texting.TreeFormat:
+修正函数最后的空行没有被忽略的问题。
+增加Tree文件格式原始输出功能。
+Firefly.Core.Texting:
+增加半角字符判断。
+
+2011.08.29
 Doc:
 修正Tree文件格式定义中字面量里“/”字符与单行注释的矛盾，使得单行注释不能跟在字面量后面，之间必须有分隔。
 Firefly.Core.Texting.TreeFormat:
