@@ -1,4 +1,8 @@
-﻿2011.08.30.0
+﻿2011.09.20
+Firefly.Core.Texting.TreeFormat:
+修正双双引号转义字面量第一个字符被漏掉的问题。
+
+2011.08.30.0
 Firefly.Core.Texting.TreeFormat:
 修正函数最后的空行没有被忽略的问题。
 增加Tree文件格式原始输出功能。
