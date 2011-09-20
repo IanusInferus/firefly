@@ -3,7 +3,7 @@
 '  File:        TokenParser.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 词法解析器
-'  Version:     2011.08.29.
+'  Version:     2011.09.20.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -133,7 +133,7 @@ Namespace Texting.TreeFormat
             '    空格 -> 返回SingleLineLiteral
             '    " -> 加入Output，State 22，前进
             '    \ -> State 31，前进
-            '    . -> State 3，前进
+            '    . -> 加入Output，State 3，前进
 
             'State 22
             '    EndOfLine -> 失败
@@ -376,6 +376,7 @@ Namespace Texting.TreeFormat
                                 State = 31
                                 Proceed()
                             Case Else
+                                Write(c)
                                 State = 3
                                 Proceed()
                         End Select
