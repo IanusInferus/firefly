@@ -4,7 +4,7 @@ $Comment
       File:        MetaSchemaCsTemplate.tree
       Location:    Firefly.MetaSchemaManipulator <Tree>
       Description: 元类型结构C#模板数据
-      Version:     2011.08.01.
+      Version:     2011.09.24.
       Copyright(C) F.R.C.
 
     ==========================================================================
@@ -163,7 +163,7 @@ MetaSchemaTemplate
             Value
                 $String
                     [Alias, DebuggerDisplay("{ToString()}")]
-                    public class [[${Name}]]
+                    public sealed class [[${Name}]]
                     {
                         public [[${Type}]] Value;
 
@@ -193,7 +193,7 @@ MetaSchemaTemplate
             Value
                 $String
                     [Tuple, DebuggerDisplay("{ToString()}")]
-                    public class [[${Name}]]
+                    public sealed class [[${Name}]]
                     {
                         ${TupleElements}
 
@@ -214,7 +214,7 @@ MetaSchemaTemplate
             Value
                 $String
                     [Record, DebuggerDisplay("{ToString()}")]
-                    public class [[${Name}]]
+                    public sealed class [[${Name}]]
                     {
                         ${Fields}
 
@@ -257,7 +257,7 @@ MetaSchemaTemplate
                         [[${AlternativeNames}]],
                     }
                     [TaggedUnion, DebuggerDisplay("{ToString()}")]
-                    public class [[${Name}]]
+                    public sealed class [[${Name}]]
                     {
                         [Tag] public [[${Name}Tag]] _Tag;
                         ${Alternatives}

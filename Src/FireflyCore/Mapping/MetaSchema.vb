@@ -3,7 +3,7 @@
 '  File:        MetaSchema.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 元类型结构
-'  Version:     2011.07.31.
+'  Version:     2011.09.24.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -75,7 +75,7 @@ Namespace Mapping.MetaSchema
     End Enum
 
     <TaggedUnion(), DebuggerDisplay("{ToString()}")>
-    Public Class ConceptDef
+    Public NotInheritable Class ConceptDef
         <Tag()> Public _Tag As ConceptDefTag
         Public Primitive As Primitive
         Public [Alias] As [Alias]
@@ -122,7 +122,7 @@ Namespace Mapping.MetaSchema
     End Class
 
     <[Alias](), DebuggerDisplay("{ToString()}")>
-    Public Class ConceptRef
+    Public NotInheritable Class ConceptRef
         Public Value As String
 
         Public Shared Widening Operator CType(ByVal o As String) As ConceptRef
@@ -138,7 +138,7 @@ Namespace Mapping.MetaSchema
     End Class
 
     <TaggedUnion(), DebuggerDisplay("{ToString()}")>
-    Public Class ConceptSpec
+    Public NotInheritable Class ConceptSpec
         <Tag()> Public _Tag As ConceptSpecTag
         Public ConceptRef As ConceptRef
         Public Tuple As Tuple
@@ -183,7 +183,7 @@ Namespace Mapping.MetaSchema
     End Structure
 
     <[Alias](), DebuggerDisplay("{ToString()}")>
-    Public Class Primitive
+    Public NotInheritable Class Primitive
         Public Value As String
 
         Public Shared Widening Operator CType(ByVal o As String) As Primitive
@@ -199,7 +199,7 @@ Namespace Mapping.MetaSchema
     End Class
 
     <Record(), DebuggerDisplay("{ToString()}")>
-    Public Class [Alias]
+    Public NotInheritable Class [Alias]
         Public Name As String
         Public Type As ConceptSpec
 
@@ -209,7 +209,7 @@ Namespace Mapping.MetaSchema
     End Class
 
     <Record(), DebuggerDisplay("{ToString()}")>
-    Public Class Tuple
+    Public NotInheritable Class Tuple
         Public Types As ConceptSpec()
 
         Public Overrides Function ToString() As String
@@ -218,7 +218,7 @@ Namespace Mapping.MetaSchema
     End Class
 
     <Record(), DebuggerDisplay("{ToString()}")>
-    Public Class List
+    Public NotInheritable Class List
         Public ElementType As ConceptSpec
 
         Public Overrides Function ToString() As String
@@ -227,7 +227,7 @@ Namespace Mapping.MetaSchema
     End Class
 
     <Record(), DebuggerDisplay("{ToString()}")>
-    Public Class Field
+    Public NotInheritable Class Field
         Public Name As String
         Public Type As ConceptSpec
 
@@ -237,7 +237,7 @@ Namespace Mapping.MetaSchema
     End Class
 
     <Record(), DebuggerDisplay("{ToString()}")>
-    Public Class Record
+    Public NotInheritable Class Record
         Public Name As String
         Public Fields As Field()
 
@@ -247,7 +247,7 @@ Namespace Mapping.MetaSchema
     End Class
 
     <Record(), DebuggerDisplay("{ToString()}")>
-    Public Class Alternative
+    Public NotInheritable Class Alternative
         Public Name As String
         Public Type As ConceptSpec
 
@@ -257,7 +257,7 @@ Namespace Mapping.MetaSchema
     End Class
 
     <Record(), DebuggerDisplay("{ToString()}")>
-    Public Class TaggedUnion
+    Public NotInheritable Class TaggedUnion
         Public Name As String
         Public Alternatives As Alternative()
 
@@ -267,7 +267,7 @@ Namespace Mapping.MetaSchema
     End Class
 
     <Record(), DebuggerDisplay("{ToString()}")>
-    Public Class Schema
+    Public NotInheritable Class Schema
         Public Concepts As ConceptDef()
 
         Public Overrides Function ToString() As String

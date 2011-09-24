@@ -1,4 +1,10 @@
-﻿2011.09.20
+﻿2011.09.24.0
+Firefly.Core.Mapping:
+将所有的元类型结构标记为不可继承。
+Firefly.MetaSchemaManipulator:
+将生成的所有类型标记为不可继承。
+
+2011.09.20
 Firefly.Core.Texting.TreeFormat:
 修正双双引号转义字面量第一个字符被漏掉的问题。
 
