@@ -3,7 +3,7 @@
 '  File:        Gif.vb
 '  Location:    Firefly.Imaging <Visual Basic .Net>
 '  Description: 基本Gif文件类
-'  Version:     2011.02.23.
+'  Version:     2011.12.13.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -20,7 +20,6 @@ Namespace Imaging
     ''' <summary>基本Gif文件类</summary>
     ''' <remarks>用于GIF89a，但忽略无用功能</remarks>
     Public Class Gif
-        Public Const Identifier As String = "GIF89a"
         Private PicWidth As Int16
         Public ReadOnly Property Width() As Int16
             Get
@@ -87,11 +86,10 @@ Namespace Imaging
         Public Sub New(ByVal Path As String)
             Using gf = Streams.OpenResizable(Path)
                 With Me
-                    For n As Integer = 0 To 5
-                        If gf.ReadByte <> AscW(Identifier(n)) Then
-                            Throw New InvalidDataException
-                        End If
-                    Next
+                    Dim Identifier = gf.ReadSimpleString(6)
+                    If Identifier <> "GIF87a" AndAlso Identifier <> "GIF89a" Then
+                        Throw New InvalidDataException
+                    End If
                     .PicWidth = gf.ReadInt16
                     .PicHeight = gf.ReadInt16
                     Dim b As Byte = gf.ReadByte
@@ -231,9 +229,7 @@ Namespace Imaging
 
         Public Sub WriteToFile(ByVal Path As String)
             Using gf = Streams.CreateResizable(Path)
-                For n As Integer = 0 To Identifier.Length - 1
-                    gf.WriteByte(CByte(AscW(Identifier(n))))
-                Next
+                gf.WriteSimpleString("GIF89a")
                 gf.WriteInt16(PicWidth)
                 gf.WriteInt16(PicHeight)
                 Dim b As Byte

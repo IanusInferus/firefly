@@ -1,4 +1,8 @@
-﻿2011.09.24.0
+﻿2011.12.13
+Firefly.Core.Imaging:
+增加对GIF87a的支持。
+
+2011.09.24.0
 Firefly.Core.Mapping:
 将所有的元类型结构标记为不可继承。
 Firefly.MetaSchemaManipulator:
