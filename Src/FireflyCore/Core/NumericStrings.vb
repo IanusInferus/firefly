@@ -3,7 +3,7 @@
 '  File:        NumericStrings.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 数值字符串操作
-'  Version:     2011.03.22.
+'  Version:     2012.03.20.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -15,27 +15,35 @@ Imports System.Runtime.CompilerServices
 
 Public Module NumericStrings
     Public Function InvariantParseUInt8(ByVal s As String) As Byte
+        If (s.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) Then Return Byte.Parse(s.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture)
         Return Byte.Parse(s, CultureInfo.InvariantCulture)
     End Function
     Public Function InvariantParseUInt16(ByVal s As String) As UInt16
+        If (s.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) Then Return UInt16.Parse(s.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture)
         Return UInt16.Parse(s, CultureInfo.InvariantCulture)
     End Function
     Public Function InvariantParseUInt32(ByVal s As String) As UInt32
+        If (s.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) Then Return UInt32.Parse(s.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture)
         Return UInt32.Parse(s, CultureInfo.InvariantCulture)
     End Function
     Public Function InvariantParseUInt64(ByVal s As String) As UInt64
+        If (s.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) Then Return UInt64.Parse(s.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture)
         Return UInt64.Parse(s, CultureInfo.InvariantCulture)
     End Function
     Public Function InvariantParseInt8(ByVal s As String) As SByte
+        If (s.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) Then Return SByte.Parse(s.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture)
         Return SByte.Parse(s, CultureInfo.InvariantCulture)
     End Function
     Public Function InvariantParseInt16(ByVal s As String) As Int16
+        If (s.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) Then Return Int16.Parse(s.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture)
         Return Int16.Parse(s, CultureInfo.InvariantCulture)
     End Function
     Public Function InvariantParseInt32(ByVal s As String) As Int32
+        If (s.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) Then Return Int32.Parse(s.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture)
         Return Int32.Parse(s, CultureInfo.InvariantCulture)
     End Function
     Public Function InvariantParseInt64(ByVal s As String) As Int64
+        If (s.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) Then Return Int64.Parse(s.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture)
         Return Int64.Parse(s, CultureInfo.InvariantCulture)
     End Function
     Public Function InvariantParseFloat32(ByVal s As String) As Single
