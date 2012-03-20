@@ -1,4 +1,8 @@
-﻿2012.02.09.0
+﻿2012.03.20
+Firefly.Core:
+增加NumericStrings解析整数16进制数值的支持。
+
+2012.02.09.0
 
 2011.12.13
 Firefly.Core.Imaging:
