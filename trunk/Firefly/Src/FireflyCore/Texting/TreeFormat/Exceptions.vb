@@ -3,7 +3,7 @@
 '  File:        Exceptions.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 异常定义
-'  Version:     2011.07.06.
+'  Version:     2012.04.11.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -100,7 +100,7 @@ Namespace Texting.TreeFormat.Syntax
         End Function
     End Class
 
-    Public Class InvalidSynaxRuleException
+    Public Class InvalidSyntaxRuleException
         Inherits InvalidSyntaxException
 
         Public Sub New()
