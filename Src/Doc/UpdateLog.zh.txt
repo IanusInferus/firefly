@@ -1,4 +1,9 @@
-﻿2012.03.20
+﻿2012.04.11
+Firefly.Core.Texting.TreeFormat:
+增加一些错误信息的路径输出。
+修改InvalidSyntaxRuleException的命名错误。
+
+2012.03.20
 Firefly.Core:
 增加NumericStrings解析整数16进制数值的支持。
 
