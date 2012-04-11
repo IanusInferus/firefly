@@ -3,7 +3,7 @@
 '  File:        TreeFile.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: Tree文件格式 - 版本2
-'  Version:     2011.08.30.
+'  Version:     2012.04.11.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -31,7 +31,11 @@ Namespace Texting.TreeFormat
             Using sr = Txt.CreateTextReader(Path, Encoding)
                 Dim t = Txt.ReadFile(sr)
                 Dim tfp As New TreeFormatSyntaxParser(ParseSetting, t, Path)
-                Return tfp.Parse()
+                Try
+                    Return tfp.Parse()
+                Catch ex As InvalidOperationException
+                    Throw New Syntax.InvalidSyntaxException("", New Syntax.FileTextRange With {.Path = Path, .Range = Opt(Of Syntax.TextRange).Empty}, ex)
+                End Try
             End Using
         End Function
         Public Shared Function ReadRaw(ByVal Reader As StreamReader, ByVal ParseSetting As TreeFormatParseSetting) As TreeFormatParseResult
