@@ -3,7 +3,7 @@
 '  File:        XmlSerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Xml序列化类
-'  Version:     2011.07.31.
+'  Version:     2012.04.18.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -808,7 +808,11 @@ Namespace Mapping.XmlText
         Implements IProjectorToProjectorDomainTranslator(Of Byte(), String) 'Writer
 
         Private Function TranslateProjectorToProjectorRange(Of D)(ByVal Projector As Func(Of D, String)) As Func(Of D, Byte()) Implements IProjectorToProjectorRangeTranslator(Of Byte(), String).TranslateProjectorToProjectorRange
-            Return Function(k) Regex.Split(Projector(k).Trim(" \t\r\n".Descape.ToCharArray), "( |\t|\r|\n)+", RegexOptions.ExplicitCapture).Select(Function(s) Byte.Parse(s, Globalization.NumberStyles.HexNumber)).ToArray
+            Return Function(k)
+                       Dim Trimmed = Projector(k).Trim(" \t\r\n".Descape.ToCharArray)
+                       If Trimmed = "" Then Return New Byte() {}
+                       Return Regex.Split(Trimmed, "( |\t|\r|\n)+", RegexOptions.ExplicitCapture).Select(Function(s) Byte.Parse(s, Globalization.NumberStyles.HexNumber)).ToArray()
+                   End Function
         End Function
 
         Private Function TranslateProjectorToProjectorDomain(Of R)(ByVal Projector As Func(Of String, R)) As Func(Of Byte(), R) Implements IProjectorToProjectorDomainTranslator(Of Byte(), String).TranslateProjectorToProjectorDomain

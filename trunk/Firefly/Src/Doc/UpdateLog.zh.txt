@@ -1,4 +1,8 @@
-﻿2012.04.11
+﻿2012.04.18
+Firefly.Core.Mapping.XmlText:
+修正字节数组转换，当数组为空的时候解析出错的问题。
+
+2012.04.11
 Firefly.Core.Texting.TreeFormat:
 增加一些错误信息的路径输出。
 修改InvalidSyntaxRuleException的命名错误。
