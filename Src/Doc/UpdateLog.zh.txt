@@ -1,4 +1,8 @@
-﻿2012.06.06.0
+﻿2012.07.06
+Firefly.Core.TextEncoding, Firefly.Core.Texting:
+修正由于Linux下不存在GB18030编码导致的写入BOM时的异常。
+
+2012.06.06.0
 
 2012.04.18
 Firefly.Core.Mapping.XmlText:

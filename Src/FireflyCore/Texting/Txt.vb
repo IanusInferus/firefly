@@ -3,7 +3,7 @@
 '  File:        Txt.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: 文本文件格式
-'  Version:     2011.02.23.
+'  Version:     2012.07.06.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -126,7 +126,7 @@ Namespace Texting
                 If Encoding Is UTF16 Then
                     s.WriteByte(&HFF)
                     s.WriteByte(&HFE)
-                ElseIf Encoding Is GB18030 Then
+                ElseIf GB18030Available AndAlso Encoding Is GB18030 Then
                     s.WriteInt32B(&H84319533)
                 ElseIf Encoding Is UTF8 Then
                     s.WriteByte(&HEF)
