@@ -3,7 +3,7 @@
 '  File:        Encoding.vb
 '  Location:    Firefly.TextEncoding <Visual Basic .Net>
 '  Description: 编码
-'  Version:     2011.08.04.
+'  Version:     2012.07.06.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -245,6 +245,21 @@ Namespace TextEncoding
                 Static e As Encoding = Nothing
                 If e Is Nothing Then e = Encoding.GetEncoding("GB18030") '54936
                 Return e
+            End Get
+        End Property
+
+        Public ReadOnly Property GB18030Available() As Boolean
+            Get
+                Static b As Boolean? = Nothing
+                If b Is Nothing Then
+                    Try
+                        Encoding.GetEncoding("GB18030") '54936
+                        b = True
+                    Catch
+                        b = False
+                    End Try
+                End If
+                Return b.Value
             End Get
         End Property
 
