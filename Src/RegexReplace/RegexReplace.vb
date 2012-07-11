@@ -3,7 +3,7 @@
 '  File:        RegexReplace.vb
 '  Location:    Firefly.RegexReplace <Visual Basic .Net>
 '  Description: 正则表达式字符串替换工具
-'  Version:     2011.08.09.
+'  Version:     2012.07.12.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -77,7 +77,7 @@ Public Module RegexRename
         Console.WriteLine("F.R.C.")
         Console.WriteLine("")
         Console.WriteLine("用法:")
-        Console.WriteLine("RegexReplace <FilePath> Replace* [/Y]")
+        Console.WriteLine("RegexReplace <FilePath> Replace*")
         Console.WriteLine("FilePath 欲替换字符串的文件，注意替换时会直接覆盖原文件")
         Console.WriteLine("Replace ::= /replace:<Pattern>,<Replacement>")
         Console.WriteLine("Pattern 匹配模式，已打开多行模式，参考 MSDN - 正则表达式 [.NET Framework]")

@@ -3,7 +3,7 @@
 '  File:        TransEncoding.vb
 '  Location:    Firefly.TransEncoding <Visual Basic .Net>
 '  Description: 编码转换器
-'  Version:     2010.11.10.
+'  Version:     2012.07.12.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -64,7 +64,7 @@ Public Module TransEncoding
         Console.WriteLine("F.R.C.")
         Console.WriteLine("")
         Console.WriteLine("用法:")
-        Console.WriteLine("TransEncoding <Pattern> <TargetEncoding> [<SourceEncoding>]")
+        Console.WriteLine("TransEncoding <Pattern> <TargetEncoding> [<SourceEncoding>] [/nobom]")
         Console.WriteLine("Pattern 文本的文件名模式，参考 MSDN - 正则表达式 [.NET Framework]")
         Console.WriteLine("TargetEncoding 目标编码，编码名称、代码页或者编码文件")
         Console.WriteLine("SourceEncoding 原始编码，编码名称、代码页或者编码文件，可不指定，默认为GB18030")
