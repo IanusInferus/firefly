@@ -3,7 +3,7 @@
 '  File:        Evaluator.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 求值器 - 用于执行自定义函数，并将文法树转为语义树
-'  Version:     2011.07.31.
+'  Version:     2012.07.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -21,6 +21,7 @@ Imports Firefly.Texting.TreeFormat.Syntax
 
 Namespace Texting.TreeFormat
     Public Interface ISyntaxMarker
+        ReadOnly Property Text As Text
         Function GetRange(ByVal Obj As Object) As TextRange
         Function GetFileRange(ByVal Obj As Object) As FileTextRange
         Function Mark(Of T)(ByVal Obj As T, ByVal Range As TextRange) As T
@@ -28,6 +29,7 @@ Namespace Texting.TreeFormat
     End Interface
 
     Public Interface ISemanticsNodeMaker
+        ReadOnly Property Text As Text
         Function GetRange(ByVal Obj As Object) As TextRange
         Function GetFileRange(ByVal Obj As Object) As FileTextRange
         Function MakeEmptyNode(ByVal Range As TextRange) As Semantics.Node
@@ -60,17 +62,23 @@ Namespace Texting.TreeFormat
             Me.Positions = New Dictionary(Of Object, TextRange)(pr.Positions)
         End Sub
 
+        ReadOnly Property Text As Text Implements ISyntaxMarker.Text, ISemanticsNodeMaker.Text
+            Get
+                Return pr.Text
+            End Get
+        End Property
+
         Public Function Evaluate() As TreeFormatResult
             Dim Nodes = EvaluateMultiNodesList(pr.Value.MultiNodesList)
             Dim F = Mark(New Semantics.Forest With {.Nodes = Nodes}, pr.Value)
-            Return New TreeFormatResult With {.Value = F, .Positions = Positions.ToDictionary(Function(p) p.Key, Function(p) New FileTextRange With {.Path = pr.Path, .Range = p.Value})}
+            Return New TreeFormatResult With {.Value = F, .Positions = Positions.ToDictionary(Function(p) p.Key, Function(p) New FileTextRange With {.Text = pr.Text, .Range = p.Value})}
         End Function
 
         Private Function GetRange(ByVal Obj As Object) As TextRange Implements ISyntaxMarker.GetRange, ISemanticsNodeMaker.GetRange
             Return Positions(Obj)
         End Function
         Private Function GetFileRange(ByVal Obj As Object) As FileTextRange Implements ISyntaxMarker.GetFileRange, ISemanticsNodeMaker.GetFileRange
-            Return New FileTextRange With {.Path = pr.Path, .Range = GetRange(Obj)}
+            Return New FileTextRange With {.Text = pr.Text, .Range = GetRange(Obj)}
         End Function
         Private Function Mark(Of T)(ByVal Obj As T, ByVal Range As TextRange) As T Implements ISyntaxMarker.Mark
             Positions.Add(Obj, Range)
@@ -132,7 +140,7 @@ Namespace Texting.TreeFormat
                         For Each c In tn.Children
                             If c.Nodes.Length = 0 Then Continue For
                             If c.Nodes.Length <> tn.ChildFields.Length Then
-                                Throw New InvalidEvaluationException("TableLineNodeCountNotMatchHead", New FileTextRange With {.Path = pr.Path, .Range = GetRange(c)}, c)
+                                Throw New InvalidEvaluationException("TableLineNodeCountNotMatchHead", New FileTextRange With {.Text = pr.Text, .Range = GetRange(c)}, c)
                             End If
                             Dim MakeField = Function(TableLineNode As TableLineNode, Field As SingleLineLiteral) MakeStemNode(Field.Text, {EvaluateTableLineNode(TableLineNode)}, TableLineNode)
                             Dim Fields = c.Nodes.Zip(tn.ChildFields, MakeField).ToArray()
@@ -141,9 +149,9 @@ Namespace Texting.TreeFormat
                         Next
                     Case MultiNodesTag.FunctionNodes
                         Dim fn = mn.FunctionNodes
-                        If Not pr.RawFunctionCalls.ContainsKey(fn) Then Throw New InvalidEvaluationException("FunctionCallNotFound", New FileTextRange With {.Path = pr.Path, .Range = GetRange(fn)}, fn)
+                        If Not pr.RawFunctionCalls.ContainsKey(fn) Then Throw New InvalidEvaluationException("FunctionCallNotFound", New FileTextRange With {.Text = pr.Text, .Range = GetRange(fn)}, fn)
                         Dim rfc = pr.RawFunctionCalls(fn)
-                        If rfc.ReturnValueMode <> FunctionCallReturnValueMode.MultipleNodes Then Throw New InvalidEvaluationException("FunctionCallReturnValueModeUnexpected", New FileTextRange With {.Path = pr.Path, .Range = GetRange(fn)}, fn)
+                        If rfc.ReturnValueMode <> FunctionCallReturnValueMode.MultipleNodes Then Throw New InvalidEvaluationException("FunctionCallReturnValueModeUnexpected", New FileTextRange With {.Text = pr.Text, .Range = GetRange(fn)}, fn)
                         l.AddRange(EvaluateFunction(rfc))
                     Case Else
                         Throw New ArgumentException
@@ -216,11 +224,11 @@ Namespace Texting.TreeFormat
 
         Private Function EvaluateSingleLineFunctionNode(ByVal SingleLineFunctionNode As SingleLineFunctionNode) As Semantics.Node
             Dim fn = SingleLineFunctionNode
-            If Not pr.RawFunctionCalls.ContainsKey(fn) Then Throw New InvalidEvaluationException("FunctionCallNotFound", New FileTextRange With {.Path = pr.Path, .Range = GetRange(fn)}, fn)
+            If Not pr.RawFunctionCalls.ContainsKey(fn) Then Throw New InvalidEvaluationException("FunctionCallNotFound", New FileTextRange With {.Text = pr.Text, .Range = GetRange(fn)}, fn)
             Dim rfc = pr.RawFunctionCalls(fn)
-            If rfc.ReturnValueMode <> FunctionCallReturnValueMode.SingleNode Then Throw New InvalidEvaluationException("FunctionCallReturnValueModeUnexpected", New FileTextRange With {.Path = pr.Path, .Range = GetRange(fn)}, fn)
+            If rfc.ReturnValueMode <> FunctionCallReturnValueMode.SingleNode Then Throw New InvalidEvaluationException("FunctionCallReturnValueModeUnexpected", New FileTextRange With {.Text = pr.Text, .Range = GetRange(fn)}, fn)
             Dim Nodes = EvaluateFunction(rfc)
-            If Nodes.Count <> 1 Then Throw New InvalidEvaluationException("FunctionCallNotReturnSingleNode", New FileTextRange With {.Path = pr.Path, .Range = GetRange(fn)}, fn)
+            If Nodes.Count <> 1 Then Throw New InvalidEvaluationException("FunctionCallNotReturnSingleNode", New FileTextRange With {.Text = pr.Text, .Range = GetRange(fn)}, fn)
             Return Nodes.Single
         End Function
 
@@ -228,7 +236,7 @@ Namespace Texting.TreeFormat
             Dim Parameters As Semantics.Node()
             Select Case rfc.Parameters._Tag
                 Case RawFunctionCallParametersTag.TokenParameters
-                    If TokenParameterEvaluator Is Nothing Then Throw New InvalidEvaluationException("TokenParameterEvaluatorIsNull", New FileTextRange With {.Path = pr.Path, .Range = GetRange(rfc)}, rfc)
+                    If TokenParameterEvaluator Is Nothing Then Throw New InvalidEvaluationException("TokenParameterEvaluatorIsNull", New FileTextRange With {.Text = pr.Text, .Range = GetRange(rfc)}, rfc)
                     Parameters = TokenParameterEvaluator(rfc, Me)
                 Case RawFunctionCallParametersTag.TreeParameter
                     Dim tp = rfc.Parameters.TreeParameter
@@ -263,7 +271,7 @@ Namespace Texting.TreeFormat
 
             Dim F = Mark(New FunctionCall With {.Name = rfc.Name, .ReturnValueMode = rfc.ReturnValueMode, .Parameters = Parameters, .Content = Content}, rfc)
 
-            If FunctionCallEvaluator Is Nothing Then Throw New InvalidEvaluationException("FunctionCallEvaluatorIsNull", New FileTextRange With {.Path = pr.Path, .Range = GetRange(rfc)}, rfc)
+            If FunctionCallEvaluator Is Nothing Then Throw New InvalidEvaluationException("FunctionCallEvaluatorIsNull", New FileTextRange With {.Text = pr.Text, .Range = GetRange(rfc)}, rfc)
             Return FunctionCallEvaluator(F, Me)
         End Function
     End Class

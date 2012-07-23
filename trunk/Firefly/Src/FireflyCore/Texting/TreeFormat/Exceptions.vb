@@ -3,7 +3,7 @@
 '  File:        Exceptions.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 异常定义
-'  Version:     2012.04.11.
+'  Version:     2012.07.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -13,7 +13,7 @@ Imports System.Collections.Generic
 
 Namespace Texting.TreeFormat.Syntax
     Public Class FileTextRange
-        Public Path As String = ""
+        Public Text As Text
         Public Range As Opt(Of Syntax.TextRange)
     End Class
 
@@ -48,7 +48,7 @@ Namespace Texting.TreeFormat.Syntax
 
         Protected Shared Function GetMessage(ByVal Message As String, ByVal Range As FileTextRange) As String
             Dim l As New List(Of String)
-            If Range.Path <> "" Then l.Add(Range.Path)
+            If Range.Text.Path <> "" Then l.Add(Range.Text.Path)
             If Range.Range.HasValue Then
                 l.Add(Range.Range.Value.ToString())
             End If

@@ -3,7 +3,7 @@
 '  File:        TokenParser.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 词法解析器
-'  Version:     2011.09.20.
+'  Version:     2012.07.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -22,11 +22,17 @@ Namespace Texting.TreeFormat
     End Class
 
     Public Class TreeFormatTokenParser
-        Private Path As String = ""
-        Private Text As Text
+        Private TextValue As Text
+        Public Property Text As Text
+            Get
+                Return TextValue
+            End Get
+            Private Set(ByVal Value As Text)
+                TextValue = Value
+            End Set
+        End Property
         Private Positions As New Dictionary(Of Object, TextRange)
-        Public Sub New(ByVal Path As String, ByVal Text As Text, ByVal Positions As Dictionary(Of Object, TextRange))
-            Me.Path = Path
+        Public Sub New(ByVal Text As Text, ByVal Positions As Dictionary(Of Object, TextRange))
             Me.Text = Text
             Me.Positions = Positions
         End Sub
@@ -183,14 +189,14 @@ Namespace Texting.TreeFormat
             Dim NullRemainingChars = Opt(Of TextRange).Empty
             Dim NullToken = Opt(Of Token).Empty
             Dim MakeTokenRange = Function(TokenStart As Integer, TokenEnd As Integer) New TextRange With {.Start = Text.Calc(RangeInLine.Start, TokenStart), .End = Text.Calc(RangeInLine.Start, TokenEnd)}
-            Dim MakeNextErrorTokenRange = Function(n As Integer) New FileTextRange With {.Path = Path, .Range = MakeTokenRange(Index, n)}
+            Dim MakeNextErrorTokenRange = Function(n As Integer) New FileTextRange With {.Text = Text, .Range = MakeTokenRange(Index, n)}
 
             Dim State = 0
             Dim Tag = TokenType.SingleLineLiteral
             Dim ParentheseStack As New Stack(Of ParentheseType)
 
             Dim StartIndex As Integer = 0
-            Dim MakeCurrentErrorTokenException = Function(Message As String) New InvalidTokenException(Message, New FileTextRange With {.Path = Path, .Range = MakeTokenRange(StartIndex, Index)}, Text.GetTextInLine(MakeTokenRange(StartIndex, Index)))
+            Dim MakeCurrentErrorTokenException = Function(Message As String) New InvalidTokenException(Message, New FileTextRange With {.Text = Text, .Range = MakeTokenRange(StartIndex, Index)}, Text.GetTextInLine(MakeTokenRange(StartIndex, Index)))
             Dim MakeNextCharErrorTokenException = Function(Message As String) New InvalidTokenException(Message, MakeNextErrorTokenRange(1), Peek(1))
             Dim MarkStart = Sub() StartIndex = Index
             Dim Output As New List(Of Char)
