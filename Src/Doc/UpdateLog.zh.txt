@@ -1,6 +1,8 @@
 ﻿2012.07.23
 Firefly.Core.Texting.TreeFormat:
 修改几个解析器，使得返回的信息中能够直接获得文本对象。
+Firefly.Core.Mapping.XmlText:
+增加默认字节列表转换。
 
 2012.07.12
 Firefly.RegexReplace,Firefly.TransEncoding:
