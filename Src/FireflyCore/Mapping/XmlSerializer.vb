@@ -3,7 +3,7 @@
 '  File:        XmlSerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Xml序列化类
-'  Version:     2012.04.18.
+'  Version:     2012.07.24.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -74,20 +74,26 @@ Namespace Mapping.XmlText
             WriterResolver = New XmlWriterResolver(WriterReference, ExternalTypes)
             WriterReference.Inner = WriterResolver.AsCached
         End Sub
-        Public Sub New(ByVal UseByteArrayTranslator As Boolean)
+        Public Sub New(ByVal UseByteArrayAndListTranslator As Boolean)
             MyClass.New(New Type() {})
-            If UseByteArrayTranslator Then
+            If UseByteArrayAndListTranslator Then
                 Dim bat As New ByteArrayTranslator
                 PutReaderTranslator(bat)
                 PutWriterTranslator(bat)
+                Dim blt As New ByteListTranslator
+                PutReaderTranslator(blt)
+                PutWriterTranslator(blt)
             End If
         End Sub
-        Public Sub New(ByVal ExternalTypes As IEnumerable(Of Type), ByVal UseByteArrayTranslator As Boolean)
+        Public Sub New(ByVal ExternalTypes As IEnumerable(Of Type), ByVal UseByteArrayAndListTranslator As Boolean)
             MyClass.New(ExternalTypes)
-            If UseByteArrayTranslator Then
+            If UseByteArrayAndListTranslator Then
                 Dim bat As New ByteArrayTranslator
                 PutReaderTranslator(bat)
                 PutWriterTranslator(bat)
+                Dim blt As New ByteListTranslator
+                PutReaderTranslator(blt)
+                PutWriterTranslator(blt)
             End If
         End Sub
 
@@ -816,6 +822,23 @@ Namespace Mapping.XmlText
         End Function
 
         Private Function TranslateProjectorToProjectorDomain(Of R)(ByVal Projector As Func(Of String, R)) As Func(Of Byte(), R) Implements IProjectorToProjectorDomainTranslator(Of Byte(), String).TranslateProjectorToProjectorDomain
+            Return Function(ba) Projector(String.Join(" ", (ba.Select(Function(b) b.ToString("X2")).ToArray)))
+        End Function
+    End Class
+
+    Public Class ByteListTranslator
+        Implements IProjectorToProjectorRangeTranslator(Of List(Of Byte), String) 'Reader
+        Implements IProjectorToProjectorDomainTranslator(Of List(Of Byte), String) 'Writer
+
+        Private Function TranslateProjectorToProjectorRange(Of D)(ByVal Projector As Func(Of D, String)) As Func(Of D, List(Of Byte)) Implements IProjectorToProjectorRangeTranslator(Of List(Of Byte), String).TranslateProjectorToProjectorRange
+            Return Function(k)
+                       Dim Trimmed = Projector(k).Trim(" \t\r\n".Descape.ToCharArray)
+                       If Trimmed = "" Then Return New List(Of Byte)()
+                       Return Regex.Split(Trimmed, "( |\t|\r|\n)+", RegexOptions.ExplicitCapture).Select(Function(s) Byte.Parse(s, Globalization.NumberStyles.HexNumber)).ToList()
+                   End Function
+        End Function
+
+        Private Function TranslateProjectorToProjectorDomain(Of R)(ByVal Projector As Func(Of String, R)) As Func(Of List(Of Byte), R) Implements IProjectorToProjectorDomainTranslator(Of List(Of Byte), String).TranslateProjectorToProjectorDomain
             Return Function(ba) Projector(String.Join(" ", (ba.Select(Function(b) b.ToString("X2")).ToArray)))
         End Function
     End Class
