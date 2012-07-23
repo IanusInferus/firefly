@@ -3,7 +3,7 @@
 '  File:        XmlInterop.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: XML互操作
-'  Version:     2011.07.31.
+'  Version:     2012.07.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -167,8 +167,8 @@ Namespace Texting.TreeFormat
                 If Positions Is Nothing Then Return Nothing
                 If Not Positions.ContainsKey(Obj) Then Return Nothing
                 Dim r = Positions(Obj)
-                If Not r.Range.HasValue Then Return New FileLocationInformation With {.Path = r.Path}
-                Return New FileLocationInformation With {.Path = r.Path, .LineNumber = r.Range.Value.Start.Row, .ColumnNumber = r.Range.Value.Start.Column}
+                If Not r.Range.HasValue Then Return New FileLocationInformation With {.Path = r.Text.Path}
+                Return New FileLocationInformation With {.Path = r.Text.Path, .LineNumber = r.Range.Value.Start.Row, .ColumnNumber = r.Range.Value.Start.Column}
             End Function
         End Class
 
@@ -295,7 +295,8 @@ Namespace Texting.TreeFormat
                 Dim i As IXmlLineInfo = x
                 If Not i.HasLineInfo() Then Return Opt(Of Syntax.FileTextRange).Empty
                 Dim Start As New Syntax.TextPosition With {.CharIndex = 1, .Row = i.LineNumber, .Column = i.LinePosition}
-                Return New Syntax.FileTextRange With {.Path = "", .Range = New Syntax.TextRange With {.Start = Start, .End = Start}}
+                Dim Range As New Syntax.TextRange With {.Start = Start, .End = Start}
+                Return New Syntax.FileTextRange With {.Text = New Syntax.Text With {.Path = "", .Lines = New Syntax.TextLine() {}}, .Range = Range}
             End Function
         End Class
     End Class
