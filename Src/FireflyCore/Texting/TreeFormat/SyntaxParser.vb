@@ -3,7 +3,7 @@
 '  File:        SyntaxParser.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 文法解析器 - 用于从符号转到文法树
-'  Version:     2012.04.11.
+'  Version:     2012.07.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -26,7 +26,7 @@ Namespace Texting.TreeFormat
 
     Public Class TreeFormatParseResult
         Public Value As Forest
-        Public Path As String
+        Public Text As Text
 
         ''' <summary>Token | SyntaxRule => Range</summary>
         Public Positions As Dictionary(Of Object, TextRange)
@@ -36,9 +36,15 @@ Namespace Texting.TreeFormat
     End Class
 
     Public Class TreeFormatSyntaxParser
-        Private RawText As String
-        Private Path As String = ""
-        Private Text As Text
+        Private TextValue As Text
+        Public Property Text As Text
+            Get
+                Return TextValue
+            End Get
+            Private Set(ByVal Value As Text)
+                TextValue = Value
+            End Set
+        End Property
         Private IsTreeParameterFunction As Func(Of String, Boolean) = Function(f) False
         Private IsTableParameterFunction As Func(Of String, Boolean) = Function(f) False
         Private IsTreeContentFunction As Func(Of String, Boolean) = Function(f) False
@@ -54,8 +60,7 @@ Namespace Texting.TreeFormat
             Me.New(New TreeFormatParseSetting, Text, Path)
         End Sub
         Public Sub New(ByVal Setting As TreeFormatParseSetting, ByVal Text As String, Optional ByVal Path As String = "")
-            Me.RawText = Text
-            Me.Path = Path
+            Me.Text = New Text With {.Path = Path, .Lines = GetLines(Text)}
             Me.IsTreeParameterFunction = Setting.IsTreeParameterFunction
             Me.IsTableParameterFunction = Setting.IsTableParameterFunction
             Me.IsTreeContentFunction = Setting.IsTreeContentFunction
@@ -63,12 +68,11 @@ Namespace Texting.TreeFormat
         End Sub
 
         Public Function Parse() As TreeFormatParseResult
-            Text = New Text With {.Path = Path, .Lines = GetLines(RawText)}
-            TokenParser = New TreeFormatTokenParser(Path, Text, Positions)
+            TokenParser = New TreeFormatTokenParser(Text, Positions)
             Dim Lines = New TextLineRange With {.StartRow = 1, .EndRow = Text.Lines.Length + 1}
             Dim MultiNodesList = ParseMultiNodesList(Lines, 0)
             Dim Forest = Mark(New Forest With {.MultiNodesList = MultiNodesList}, Lines)
-            Return New TreeFormatParseResult With {.Value = Forest, .Path = Path, .Positions = Positions, .RawFunctionCalls = RawFunctionCalls}
+            Return New TreeFormatParseResult With {.Value = Forest, .Text = Text, .Positions = Positions, .RawFunctionCalls = RawFunctionCalls}
         End Function
 
         Private Function GetRange(ByVal Obj As Object) As TextRange
@@ -76,7 +80,7 @@ Namespace Texting.TreeFormat
         End Function
         Private Function GetFileRange(ByVal Obj As Object) As FileTextRange
             If FilePositions.ContainsKey(Obj) Then Return FilePositions(Obj)
-            Dim fp = New FileTextRange With {.Path = Path, .Range = Positions(Obj)}
+            Dim fp = New FileTextRange With {.Text = Text, .Range = Positions(Obj)}
             FilePositions.Add(Obj, fp)
             Return fp
         End Function
@@ -104,7 +108,7 @@ Namespace Texting.TreeFormat
             Dim CurrentIndex = 0
             For Each m As Match In rLineSeparator.Matches(Text & "\r\n".Descape())
                 Dim t = Text.Substring(CurrentIndex, m.Index - CurrentIndex)
-                If rLineSeparators.Match(t).Success Then Throw New InvalidSyntaxException("IllegalLineSeparator", New FileTextRange With {.Path = Path, .Range = Opt(Of Syntax.TextRange).Empty})
+                If rLineSeparators.Match(t).Success Then Throw New InvalidSyntaxException("IllegalLineSeparator", New FileTextRange With {.Text = Me.Text, .Range = Opt(Of Syntax.TextRange).Empty})
                 Dim Start As New TextPosition With {.CharIndex = CurrentIndex, .Row = CurrentRow, .Column = 1}
                 Dim [End] As New TextPosition With {.CharIndex = m.Index, .Row = CurrentRow, .Column = Start.Column + t.Length}
                 Dim r = New TextRange With {.Start = Start, .End = [End]}
@@ -143,7 +147,7 @@ Namespace Texting.TreeFormat
             End While
 
             Dim FirstLine = Text.GetTextLine(FirstLineIndex)
-            If Not TokenParser.IsExactFitIndentLevel(FirstLine, IndentLevel) Then Throw New InvalidTokenException("InvaildIndentLevel", New FileTextRange With {.Path = Path, .Range = FirstLine.Range}, FirstLine.Text)
+            If Not TokenParser.IsExactFitIndentLevel(FirstLine, IndentLevel) Then Throw New InvalidTokenException("InvaildIndentLevel", New FileTextRange With {.Text = Text, .Range = FirstLine.Range}, FirstLine.Text)
 
             Dim ChildLines As Opt(Of TextLineRange) = Nothing
             Dim ChildStartLineIndex = FirstLineIndex + 1
@@ -164,7 +168,7 @@ Namespace Texting.TreeFormat
                         Exit While
                     End If
                     If Not TokenParser.IsFitIndentLevel(ChildCurrentLine, IndentLevel + 1) Then
-                        Throw New InvalidTokenException("InvaildIndentLevel", New FileTextRange With {.Path = Path, .Range = ChildCurrentLine.Range}, ChildCurrentLine.Text)
+                        Throw New InvalidTokenException("InvaildIndentLevel", New FileTextRange With {.Text = Text, .Range = ChildCurrentLine.Range}, ChildCurrentLine.Text)
                     End If
                 End If
                 ChildEndLineIndex += 1
@@ -710,11 +714,11 @@ Namespace Texting.TreeFormat
             Dim SecondToken = SecondTokenResult.Token.Value
             NodeEnd = GetRange(SecondToken).End
             Dim SingleLineNodeResult = ParseSingleLineNode(SecondToken, SecondTokenResult.RemainingChars)
-            If Not SingleLineNodeResult.RemainingChars.HasValue Then Throw New InvalidSyntaxRuleException("ParenthesesNotMatched", New FileTextRange With {.Path = Path, .Range = CreateRange()}, FirstToken)
+            If Not SingleLineNodeResult.RemainingChars.HasValue Then Throw New InvalidSyntaxRuleException("ParenthesesNotMatched", New FileTextRange With {.Text = Text, .Range = CreateRange()}, FirstToken)
             Dim SingleLineNode = SingleLineNodeResult.Value
             NodeEnd = GetRange(SingleLineNode).End
             Dim EndTokenResult = TokenParser.ReadToken(SingleLineNodeResult.RemainingChars.Value)
-            If Not EndTokenResult.Token.HasValue Then Throw New InvalidSyntaxRuleException("ParenthesesNotMatched", New FileTextRange With {.Path = Path, .Range = CreateRange()}, FirstToken)
+            If Not EndTokenResult.Token.HasValue Then Throw New InvalidSyntaxRuleException("ParenthesesNotMatched", New FileTextRange With {.Text = Text, .Range = CreateRange()}, FirstToken)
             Dim EndToken = EndTokenResult.Token.Value
             If Not EndToken.OnRightParentheses Then Throw New InvalidSyntaxRuleException("ParenthesesNotMatched", GetFileRange(EndToken), EndToken)
             NodeEnd = GetRange(EndToken).End
@@ -727,7 +731,7 @@ Namespace Texting.TreeFormat
             Dim TokenResult = TokenParser.ReadToken(RemainingChars.Value)
             If Not TokenResult.Token.HasValue Then Return Opt(Of SingleLineComment).Empty
 
-            If TokenResult.RemainingChars.HasValue Then Throw New InvalidTokenException("UnexpectedToken", New FileTextRange With {.Path = Path, .Range = TokenResult.RemainingChars.Value}, Text.GetTextInLine(TokenResult.RemainingChars.Value))
+            If TokenResult.RemainingChars.HasValue Then Throw New InvalidTokenException("UnexpectedToken", New FileTextRange With {.Text = Text, .Range = TokenResult.RemainingChars.Value}, Text.GetTextInLine(TokenResult.RemainingChars.Value))
 
             Dim Token = TokenResult.Token.Value
             If Not Token.OnSingleLineComment Then Throw New InvalidSyntaxRuleException("UnexpectedToken", GetFileRange(Token), Token)
