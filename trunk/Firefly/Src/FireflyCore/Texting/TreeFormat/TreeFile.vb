@@ -3,7 +3,7 @@
 '  File:        TreeFile.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: Tree文件格式 - 版本2
-'  Version:     2012.07.23.
+'  Version:     2012.07.24.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -43,6 +43,11 @@ Namespace Texting.TreeFormat
             Dim tfp As New TreeFormatSyntaxParser(ParseSetting, t)
             Return tfp.Parse()
         End Function
+        Public Shared Function ReadRaw(ByVal Reader As StreamReader, ByVal Path As String, ByVal ParseSetting As TreeFormatParseSetting) As TreeFormatParseResult
+            Dim t = Txt.ReadFile(Reader)
+            Dim tfp As New TreeFormatSyntaxParser(ParseSetting, t, Path)
+            Return tfp.Parse()
+        End Function
 
         Public Shared Function ReadDirect(ByVal Path As String, ByVal ParseSetting As TreeFormatParseSetting, ByVal EvaluateSetting As TreeFormatEvaluateSetting) As TreeFormatResult
             Return ReadDirect(Path, TextEncoding.Default, ParseSetting, EvaluateSetting)
@@ -54,6 +59,11 @@ Namespace Texting.TreeFormat
         End Function
         Public Shared Function ReadDirect(ByVal Reader As StreamReader, ByVal ParseSetting As TreeFormatParseSetting, ByVal EvaluateSetting As TreeFormatEvaluateSetting) As TreeFormatResult
             Dim pr = ReadRaw(Reader, ParseSetting)
+            Dim tfe As New TreeFormatEvaluator(EvaluateSetting, pr)
+            Return tfe.Evaluate()
+        End Function
+        Public Shared Function ReadDirect(ByVal Reader As StreamReader, ByVal Path As String, ByVal ParseSetting As TreeFormatParseSetting, ByVal EvaluateSetting As TreeFormatEvaluateSetting) As TreeFormatResult
+            Dim pr = ReadRaw(Reader, Path, ParseSetting)
             Dim tfe As New TreeFormatEvaluator(EvaluateSetting, pr)
             Return tfe.Evaluate()
         End Function
@@ -69,6 +79,10 @@ Namespace Texting.TreeFormat
             Dim er = ReadDirect(Reader, ParseSetting, EvaluateSetting)
             Return XmlInterop.TreeToXml(er)
         End Function
+        Public Shared Function ReadFile(ByVal Reader As StreamReader, ByVal Path As String, ByVal ParseSetting As TreeFormatParseSetting, ByVal EvaluateSetting As TreeFormatEvaluateSetting) As XElement
+            Dim er = ReadDirect(Reader, Path, ParseSetting, EvaluateSetting)
+            Return XmlInterop.TreeToXml(er)
+        End Function
 
         Public Shared Function ReadFile(ByVal Path As String) As XElement
             Return ReadFile(Path, TextEncoding.Default)
@@ -79,6 +93,10 @@ Namespace Texting.TreeFormat
         End Function
         Public Shared Function ReadFile(ByVal Reader As StreamReader) As XElement
             Dim er = ReadDirect(Reader, New TreeFormatParseSetting, New TreeFormatEvaluateSetting)
+            Return XmlInterop.TreeToXml(er)
+        End Function
+        Public Shared Function ReadFile(ByVal Reader As StreamReader, ByVal Path As String) As XElement
+            Dim er = ReadDirect(Reader, Path, New TreeFormatParseSetting, New TreeFormatEvaluateSetting)
             Return XmlInterop.TreeToXml(er)
         End Function
 
