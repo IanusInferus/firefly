@@ -3,7 +3,7 @@
 '  File:        XmlInterop.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: XML互操作
-'  Version:     2012.07.23.
+'  Version:     2012.07.25.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -175,6 +175,7 @@ Namespace Texting.TreeFormat
         Private Class XElementEx
             Inherits XElement
             Implements IXmlLineInfo
+            Implements IFileLocationInformationProvider
 
             Public Sub New(ByVal Name As XName)
                 MyBase.New(Name)
@@ -210,6 +211,16 @@ Namespace Texting.TreeFormat
             Public Sub SetLineInfo(ByVal i As FileLocationInformation)
                 Me.AddAnnotation(i)
             End Sub
+
+            Private ReadOnly Property FileLocationInformation As FileLocationInformation Implements IFileLocationInformationProvider.FileLocationInformation
+                Get
+                    Dim annotation = Me.Annotation(Of FileLocationInformation)()
+                    If (Not annotation Is Nothing) Then
+                        Return annotation
+                    End If
+                    Return New FileLocationInformation
+                End Get
+            End Property
         End Class
 
         Private Class XmlToTreeTranslator
@@ -292,9 +303,18 @@ Namespace Texting.TreeFormat
             End Function
 
             Private Function GetFileTextRange(ByVal x As XObject) As Opt(Of Syntax.FileTextRange)
-                Dim i As IXmlLineInfo = x
-                If Not i.HasLineInfo() Then Return Opt(Of Syntax.FileTextRange).Empty
-                Dim Start As New Syntax.TextPosition With {.CharIndex = 1, .Row = i.LineNumber, .Column = i.LinePosition}
+                Dim i As New FileLocationInformation
+                Dim flip = TryCast(x, IFileLocationInformationProvider)
+                If flip IsNot Nothing Then
+                    i = flip.FileLocationInformation
+                Else
+                    Dim li = DirectCast(x, IXmlLineInfo)
+                    If li.HasLineInfo() Then
+                        i.LineNumber = li.LineNumber
+                        i.ColumnNumber = li.LinePosition
+                    End If
+                End If
+                Dim Start As New Syntax.TextPosition With {.CharIndex = 1, .Row = i.LineNumber, .Column = i.ColumnNumber}
                 Dim Range As New Syntax.TextRange With {.Start = Start, .End = Start}
                 Return New Syntax.FileTextRange With {.Text = New Syntax.Text With {.Path = "", .Lines = New Syntax.TextLine() {}}, .Range = Range}
             End Function

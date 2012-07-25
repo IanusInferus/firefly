@@ -1,4 +1,8 @@
-﻿2012.07.24
+﻿2012.07.25
+Firefly.Core.Mapping,Firefly.Core.Texting:
+修正XML序列化出错信息中无法看到文件名的问题。
+
+2012.07.24
 Firefly.Core.Texting.TreeFormat:
 增加TreeFile使用流但是提供路径的打开方法，以获得完整的错误信息。
 
