@@ -1,6 +1,8 @@
 ﻿2012.07.25
 Firefly.Core.Mapping,Firefly.Core.Texting:
 修正XML序列化出错信息中无法看到文件名的问题。
+Firefly.Core.Texting.TreeFormat:
+修改读取出错时提示路径信息的异常包裹，使得仅在调试器没有连接的时候进行。
 
 2012.07.24
 Firefly.Core.Texting.TreeFormat:
