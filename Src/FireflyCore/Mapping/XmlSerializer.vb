@@ -3,7 +3,7 @@
 '  File:        XmlSerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Xml序列化类
-'  Version:     2012.07.24.
+'  Version:     2012.07.25.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -511,10 +511,15 @@ Namespace Mapping.XmlText
                     Dim d = s.Dict
                     If Not d.ContainsKey(Name) Then
                         Dim i As New FileLocationInformation
-                        Dim li = DirectCast(s.Parent, IXmlLineInfo)
-                        If li.HasLineInfo() Then
-                            i.LineNumber = li.LineNumber
-                            i.ColumnNumber = li.LinePosition
+                        Dim flip = TryCast(s.Parent, IFileLocationInformationProvider)
+                        If flip IsNot Nothing Then
+                            i = flip.FileLocationInformation
+                        Else
+                            Dim li = DirectCast(s.Parent, IXmlLineInfo)
+                            If li.HasLineInfo() Then
+                                i.LineNumber = li.LineNumber
+                                i.ColumnNumber = li.LinePosition
+                            End If
                         End If
                         Throw New InvalidTextFormatException("FieldNameNotFound: {0}".Formats(Name), i)
                     End If
@@ -682,10 +687,15 @@ Namespace Mapping.XmlText
                     Dim d = s.Dict
                     If Not d.ContainsKey(Name) Then
                         Dim i As New FileLocationInformation
-                        Dim li = DirectCast(s.Parent, IXmlLineInfo)
-                        If li.HasLineInfo() Then
-                            i.LineNumber = li.LineNumber
-                            i.ColumnNumber = li.LinePosition
+                        Dim flip = TryCast(s.Parent, IFileLocationInformationProvider)
+                        If flip IsNot Nothing Then
+                            i = flip.FileLocationInformation
+                        Else
+                            Dim li = DirectCast(s.Parent, IXmlLineInfo)
+                            If li.HasLineInfo() Then
+                                i.LineNumber = li.LineNumber
+                                i.ColumnNumber = li.LinePosition
+                            End If
                         End If
                         Throw New InvalidTextFormatException("AlternativeNameNotFound: {0}".Formats(Name), i)
                     End If
