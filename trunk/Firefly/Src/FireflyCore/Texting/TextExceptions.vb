@@ -3,7 +3,7 @@
 '  File:        TextExceptions.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: 文本异常
-'  Version:     2011.04.05.
+'  Version:     2012.07.25.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -18,6 +18,10 @@ Namespace Texting
         Public LineNumber As Integer = 0
         Public ColumnNumber As Integer = 0
     End Class
+
+    Public Interface IFileLocationInformationProvider
+        ReadOnly Property FileLocationInformation As FileLocationInformation
+    End Interface
 
     Public Class InvalidTextFormatException
         Inherits Exception
