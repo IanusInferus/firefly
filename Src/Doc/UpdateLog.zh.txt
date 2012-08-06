@@ -1,4 +1,6 @@
-﻿2012.07.25
+﻿2012.08.06.0
+
+2012.07.25
 Firefly.Core.Mapping,Firefly.Core.Texting:
 修正XML序列化出错信息中无法看到文件名的问题。
 Firefly.Core.Texting.TreeFormat:
