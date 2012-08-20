@@ -1,4 +1,8 @@
-﻿2012.08.06.0
+﻿2012.08.20
+Firefly.RegexReplace:
+增加替换模式转义，使得替换模式中可以表达换行等字符
+
+2012.08.06.0
 
 2012.07.25
 Firefly.Core.Mapping,Firefly.Core.Texting:

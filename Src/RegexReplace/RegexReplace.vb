@@ -3,7 +3,7 @@
 '  File:        RegexReplace.vb
 '  Location:    Firefly.RegexReplace <Visual Basic .Net>
 '  Description: 正则表达式字符串替换工具
-'  Version:     2012.07.12.
+'  Version:     2012.08.20.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -46,14 +46,20 @@ Public Module RegexRename
                 Dim FilePath = args(0)
                 Dim Encoding = Txt.GetEncoding(FilePath)
                 Dim Text = Txt.ReadFile(FilePath)
+                Dim EscapeReplacement = False
                 For Each opt In CmdLine.Options
                     Dim argv = opt.Arguments
                     Select Case opt.Name.ToLower
+                        Case "resc"
+                            EscapeReplacement = True
                         Case "replace"
                             Select Case argv.Length
                                 Case 2
                                     Dim Pattern = argv(0)
                                     Dim Replacement = argv(1)
+                                    If EscapeReplacement Then
+                                        Replacement = Replacement.Descape()
+                                    End If
                                     Text = Replace(Text, Pattern, Replacement)
                                 Case Else
                                     Throw New ArgumentException(opt.Name & ":" & String.Join(",", opt.Arguments))
@@ -77,8 +83,9 @@ Public Module RegexRename
         Console.WriteLine("F.R.C.")
         Console.WriteLine("")
         Console.WriteLine("用法:")
-        Console.WriteLine("RegexReplace <FilePath> Replace*")
+        Console.WriteLine("RegexReplace <FilePath> [/resc] Replace*")
         Console.WriteLine("FilePath 欲替换字符串的文件，注意替换时会直接覆盖原文件")
+        Console.WriteLine("/resc 转义替换模式，使得替换模式中可以表达换行等字符")
         Console.WriteLine("Replace ::= /replace:<Pattern>,<Replacement>")
         Console.WriteLine("Pattern 匹配模式，已打开多行模式，参考 MSDN - 正则表达式 [.NET Framework]")
         Console.WriteLine("Replacement 替换模式，参考 MSDN - 正则表达式 [.NET Framework]")
