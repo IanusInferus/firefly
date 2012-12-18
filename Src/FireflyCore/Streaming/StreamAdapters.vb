@@ -3,7 +3,7 @@
 '  File:        StreamAdapters.vb
 '  Location:    Firefly.Streaming <Visual Basic .Net>
 '  Description: 流适配器类
-'  Version:     2010.12.01.
+'  Version:     2012.12.18.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -37,7 +37,13 @@ Namespace Streaming
         ''' <summary>已重载。读取到字节数组。</summary>
         ''' <param name="Offset">Buffer 中的从零开始的字节偏移量，从此处开始存储从当前流中读取的数据。</param>
         Public Sub Read(ByVal Buffer As Byte(), ByVal Offset As Integer, ByVal Count As Integer) Implements IReadableStream.Read
-            Dim c As Integer = BaseStream.Read(Buffer, Offset, Count)
+            Dim c As Integer = 0
+            While c < Count
+                Dim k = BaseStream.Read(Buffer, Offset + c, Count - c)
+                If k < 0 Then Throw New EndOfStreamException
+                If k = 0 Then Exit While
+                c += k
+            End While
             If c <> Count Then Throw New EndOfStreamException
         End Sub
 
@@ -124,7 +130,13 @@ Namespace Streaming
         ''' <summary>已重载。读取到字节数组。</summary>
         ''' <param name="Offset">Buffer 中的从零开始的字节偏移量，从此处开始存储从当前流中读取的数据。</param>
         Public Sub Read(ByVal Buffer As Byte(), ByVal Offset As Integer, ByVal Count As Integer) Implements IReadableStream.Read
-            Dim c As Integer = BaseStream.Read(Buffer, Offset, Count)
+            Dim c As Integer = 0
+            While c < Count
+                Dim k = BaseStream.Read(Buffer, Offset + c, Count - c)
+                If k < 0 Then Throw New EndOfStreamException
+                If k = 0 Then Exit While
+                c += k
+            End While
             If c <> Count Then Throw New EndOfStreamException
         End Sub
 
@@ -227,7 +239,13 @@ Namespace Streaming
         ''' <summary>已重载。读取到字节数组。</summary>
         ''' <param name="Offset">Buffer 中的从零开始的字节偏移量，从此处开始存储从当前流中读取的数据。</param>
         Public Sub Read(ByVal Buffer As Byte(), ByVal Offset As Integer, ByVal Count As Integer) Implements IReadableStream.Read
-            Dim c As Integer = BaseStream.Read(Buffer, Offset, Count)
+            Dim c As Integer = 0
+            While c < Count
+                Dim k = BaseStream.Read(Buffer, Offset + c, Count - c)
+                If k < 0 Then Throw New EndOfStreamException
+                If k = 0 Then Exit While
+                c += k
+            End While
             If c <> Count Then Throw New EndOfStreamException
         End Sub
 
@@ -294,7 +312,13 @@ Namespace Streaming
         ''' <summary>已重载。读取到字节数组。</summary>
         ''' <param name="Offset">Buffer 中的从零开始的字节偏移量，从此处开始存储从当前流中读取的数据。</param>
         Public Sub Read(ByVal Buffer As Byte(), ByVal Offset As Integer, ByVal Count As Integer) Implements IReadableStream.Read
-            Dim c As Integer = BaseStream.Read(Buffer, Offset, Count)
+            Dim c As Integer = 0
+            While c < Count
+                Dim k = BaseStream.Read(Buffer, Offset + c, Count - c)
+                If k < 0 Then Throw New EndOfStreamException
+                If k = 0 Then Exit While
+                c += k
+            End While
             If c <> Count Then Throw New EndOfStreamException
         End Sub
 
