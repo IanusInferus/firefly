@@ -1,4 +1,6 @@
 ﻿2012.12.28.0
+删除Manual文件夹。
+更新Sandcastle文档生成项目。
 
 2012.12.18
 Firefly.Core.Streaming:
