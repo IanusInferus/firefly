@@ -3,7 +3,7 @@
 '  File:        XmlSerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Xml序列化类
-'  Version:     2012.07.25.
+'  Version:     2013.01.16.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -333,7 +333,7 @@ Namespace Mapping.XmlText
     Public Class ElementPackerState
         Public UseParent As Boolean
         Public Parent As XElement
-        Public List As List(Of XElement)
+        Public List As List(Of XNode)
         Public AttributeList As List(Of XAttribute)
     End Class
 
@@ -396,8 +396,11 @@ Namespace Mapping.XmlText
             Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(XElement))), Func(Of D, XElement))
             Dim F =
                 Sub(c As DCollection, Value As ElementPackerState)
+                    Dim k = 0
                     For Each v In c
+                        Value.List.Add(New XComment(k.ToInvariantString()))
                         Value.List.Add(Mapper(v))
+                        k += 1
                     Next
                 End Sub
             Return F
@@ -468,7 +471,7 @@ Namespace Mapping.XmlText
             Dim FriendlyName = GetTypeFriendlyName(GetType(D))
             Return Function(v)
                        Dim x As XElement
-                       Dim l As New List(Of XElement)
+                       Dim l As New List(Of XNode)
                        Dim al As New List(Of XAttribute)
                        If v IsNot Nothing Then
                            Dim s As New ElementPackerState With {.UseParent = False, .Parent = Nothing, .List = l, .AttributeList = al}

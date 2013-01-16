@@ -1,4 +1,8 @@
-﻿2012.12.28.0
+﻿2013.01.16
+Firefly.Core.Mapping,Firefly.Core.Texting:
+集合结构序列化为XML和Tree文件时，每项前面添加了索引注释。
+
+2012.12.28.0
 删除Manual文件夹。
 更新Sandcastle文档生成项目。
 
