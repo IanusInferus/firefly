@@ -3,7 +3,7 @@
 '  File:        XmlInterop.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: XML互操作
-'  Version:     2012.07.25.
+'  Version:     2013.01.16.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -13,8 +13,10 @@ Imports System.Collections.Generic
 Imports System.Linq
 Imports System.Xml
 Imports System.Xml.Linq
+Imports Firefly.TextEncoding
 Imports Firefly.Texting
 Imports Firefly.Texting.TreeFormat.Semantics
+Imports Syntax = Firefly.Texting.TreeFormat.Syntax
 
 Namespace Texting.TreeFormat
     Public NotInheritable Class XmlInterop
@@ -32,6 +34,11 @@ Namespace Texting.TreeFormat
 
         Public Shared Function XmlToTree(ByVal x As XElement) As TreeFormatResult
             Dim xtt As New XmlToTreeTranslator(x)
+            Return xtt.Translate()
+        End Function
+
+        Public Shared Function XmlToTreeRaw(ByVal x As XElement) As TreeFormatParseResult
+            Dim xtt As New XmlToTreeRawTranslator(x)
             Return xtt.Translate()
         End Function
 
@@ -299,6 +306,186 @@ Namespace Texting.TreeFormat
                 Dim Range = GetFileTextRange(x)
                 Dim s = Mark(New Stem With {.Name = Name, .Children = Children}, Range)
                 Dim n = Mark(Node.CreateStem(s), Range)
+                Return n
+            End Function
+
+            Private Function GetFileTextRange(ByVal x As XObject) As Opt(Of Syntax.FileTextRange)
+                Dim i As New FileLocationInformation
+                Dim flip = TryCast(x, IFileLocationInformationProvider)
+                If flip IsNot Nothing Then
+                    i = flip.FileLocationInformation
+                Else
+                    Dim li = DirectCast(x, IXmlLineInfo)
+                    If li.HasLineInfo() Then
+                        i.LineNumber = li.LineNumber
+                        i.ColumnNumber = li.LinePosition
+                    End If
+                End If
+                Dim Start As New Syntax.TextPosition With {.CharIndex = 1, .Row = i.LineNumber, .Column = i.ColumnNumber}
+                Dim Range As New Syntax.TextRange With {.Start = Start, .End = Start}
+                Return New Syntax.FileTextRange With {.Text = New Syntax.Text With {.Path = "", .Lines = New Syntax.TextLine() {}}, .Range = Range}
+            End Function
+        End Class
+
+        Private Class XmlToTreeRawTranslator
+            Private Value As XElement
+            Private Positions As Dictionary(Of Object, Syntax.TextRange)
+
+            Public Sub New(ByVal Value As XElement)
+                Me.Value = Value
+                Positions = New Dictionary(Of Object, Syntax.TextRange)
+            End Sub
+
+            Public Function Translate() As TreeFormatParseResult
+                Dim e = TranslateElement(Value)
+                Dim Range = GetFileTextRange(Value)
+                Return New TreeFormatParseResult With {.Value = New Syntax.Forest With {.MultiNodesList = {Mark(Syntax.MultiNodes.CreateNode(e), Range)}}, .Positions = Positions}
+            End Function
+
+            Private Function TranslateElement(ByVal xe As XElement) As Syntax.Node
+                Dim Attributes As New List(Of Syntax.Node)
+                Dim Elements As New List(Of Syntax.Node)
+                Dim Children As New List(Of Syntax.Node)
+
+                For Each a In xe.Attributes
+                    Dim ta = TranslateAttribute(a, xe)
+                    Attributes.Add(ta)
+                    Children.Add(ta)
+                Next
+
+                If xe.Attributes.Count = 0 AndAlso (Not xe.Nodes.Any(Function(n) n.NodeType = XmlNodeType.Comment)) AndAlso xe.Elements.Count > 1 Then
+                    If xe.Elements.All(Function(c) c.Attributes.Count = 0 AndAlso (Not c.Nodes.Any(Function(n) n.NodeType = XmlNodeType.Comment)) AndAlso (c.Elements.Count = 0 OrElse c.Elements.Count = 1)) Then
+                        Dim ChildNames = xe.Elements.Select(Function(c) c.Name.LocalName).Distinct.ToArray()
+                        If ChildNames.Length = 1 Then
+                            Dim ChildElements As New List(Of Syntax.Node)
+                            For Each n In xe.Nodes
+                                If n.NodeType = XmlNodeType.Element Then
+                                    Dim e = DirectCast(n, XElement)
+                                    Dim tce As Syntax.Node
+                                    If e.Elements.Count = 0 Then
+                                        If e.IsEmpty Then
+                                            tce = MakeEmptyNode(e)
+                                        Else
+                                            tce = MakeLeafNode(e.Value, e)
+                                        End If
+                                    Else
+                                        tce = TranslateElement(e.Elements.Single())
+                                    End If
+                                    ChildElements.Add(tce)
+                                End If
+                            Next
+                            Return MakeStemNodeOfList(GetNameString(xe), ChildNames.Single(), ChildElements.ToArray(), xe)
+                        End If
+                    End If
+                End If
+
+                For Each n In xe.Nodes
+                    If n.NodeType = XmlNodeType.Element Then
+                        Dim e = DirectCast(n, XElement)
+                        Dim te = TranslateElement(e)
+                        Elements.Add(te)
+                        Children.Add(te)
+                    ElseIf n.NodeType = XmlNodeType.Comment Then
+                        Dim c = DirectCast(n, XComment)
+                        Dim tc = TranslateComment(c)
+                        Children.Add(tc)
+                    End If
+                Next
+
+                If Elements.Count > 0 Then
+                    Return MakeStemNode(GetNameString(xe), Children.ToArray(), xe)
+                End If
+
+                If Attributes.Count > 0 Then
+                    If xe.IsEmpty Then
+                        Return MakeStemNode(GetNameString(xe), Attributes.Concat({MakeEmptyNode(xe)}).ToArray(), xe)
+                    Else
+                        Return MakeStemNode(GetNameString(xe), Attributes.Concat({MakeLeafNode(xe.Value, xe)}).ToArray(), xe)
+                    End If
+                End If
+
+                If xe.IsEmpty Then
+                    Return MakeStemNode(GetNameString(xe), {MakeEmptyNode(xe)}, xe)
+                Else
+                    Return MakeStemNode(GetNameString(xe), {MakeLeafNode(xe.Value, xe)}.ToArray(), xe)
+                End If
+            End Function
+
+            Private Function TranslateAttribute(ByVal xa As XAttribute, ByVal xe As XElement) As Syntax.Node
+                Return MakeStemNode("@" & GetNameString(xa.Name, xe), {MakeLeafNode(xa.Value, xa)}, xa)
+            End Function
+
+            Private Function TranslateComment(ByVal xc As XComment) As Syntax.Node
+                Dim Value = xc.Value
+                Dim Range = GetFileTextRange(xc)
+                Dim Literal = TreeFormatLiteralWriter.GetLiteral(Value, False, False)
+                If Literal.OnSingleLine Then
+                    Dim n = Mark(Syntax.Node.CreateSingleLineComment(Mark(New Syntax.SingleLineComment With {.Content = Mark(New Syntax.FreeContent With {.Text = Value}, Range)}, Range)), Range)
+                    Return n
+                ElseIf Literal.OnMultiLine Then
+                    Dim n = Mark(Syntax.Node.CreateMultiLineComment(Mark(New Syntax.MultiLineComment With {.Content = New Syntax.FreeContent With {.Text = Value}}, Range)), Range)
+                    Return n
+                Else
+                    Throw New InvalidOperationException
+                End If
+            End Function
+
+            Private Shared Function GetNameString(ByVal Name As XName, ByVal Node As XElement) As String
+                Dim NamespacePrefix = Node.GetPrefixOfNamespace(Name.Namespace)
+                If NamespacePrefix Is Nothing Then Return Name.LocalName
+                Return NamespacePrefix & ":" & Name.LocalName
+            End Function
+            Private Shared Function GetNameString(ByVal Node As XElement) As String
+                Return GetNameString(Node.Name, Node)
+            End Function
+
+            Private Function Mark(Of T)(ByVal Obj As T, ByVal Range As Opt(Of Syntax.FileTextRange)) As T
+                If Range.HasValue AndAlso Range.Value.Range.HasValue Then Positions.Add(Obj, Range.Value.Range.Value)
+                Return Obj
+            End Function
+            Private Function MakeEmptyNode(ByVal x As XObject) As Syntax.Node
+                Dim Range = GetFileTextRange(x)
+                Dim EmptyNode = Mark(Syntax.SingleLineNode.CreateEmptyNode(Mark(New Syntax.EmptyNode(), Range)), Range)
+                Dim n = Mark(Syntax.Node.CreateSingleLineNodeLine(Mark(New Syntax.SingleLineNodeLine With {.SingleLineNode = EmptyNode, .SingleLineComment = Opt(Of Syntax.SingleLineComment).Empty}, Range)), Range)
+                Return n
+            End Function
+            Private Function MakeLeafNode(ByVal Value As String, ByVal x As XObject) As Syntax.Node
+                Dim Range = GetFileTextRange(x)
+                Dim Literal = TreeFormatLiteralWriter.GetLiteral(Value, False, False)
+                If Literal.OnSingleLine Then
+                    Dim LeafNode = Mark(Syntax.SingleLineNode.CreateSingleLineLiteral(Mark(New Syntax.SingleLineLiteral With {.Text = Value}, Range)), Range)
+                    Dim n = Mark(Syntax.Node.CreateSingleLineNodeLine(Mark(New Syntax.SingleLineNodeLine With {.SingleLineNode = LeafNode, .SingleLineComment = Opt(Of Syntax.SingleLineComment).Empty}, Range)), Range)
+                    Return n
+                ElseIf Literal.OnMultiLine Then
+                    Dim n = Mark(Syntax.Node.CreateMultiLineLiteral(Mark(New Syntax.MultiLineLiteral With {.Content = New Syntax.FreeContent With {.Text = Value}}, Range)), Range)
+                    Return n
+                Else
+                    Throw New InvalidOperationException
+                End If
+            End Function
+            Private Function MakeStemNode(ByVal Name As String, ByVal Children As Syntax.Node(), ByVal x As XObject) As Syntax.Node
+                Dim Range = GetFileTextRange(x)
+                Dim NameLiteral = Mark(New Syntax.SingleLineLiteral With {.Text = Name}, Range)
+                If Children.Length = 0 Then
+                    Dim n = Mark(Syntax.Node.CreateMultiLineNode(Mark(New Syntax.MultiLineNode With {.Head = NameLiteral, .SingleLineComment = Opt(Of Syntax.SingleLineComment).Empty, .Children = New Syntax.MultiNodes() {}, .EndDirective = Mark(New Syntax.EndDirective With {.EndSingleLineComment = Opt(Of Syntax.SingleLineComment).Empty}, Range)}, Range)), Range)
+                    Return n
+                ElseIf Children.Length = 1 AndAlso Children.Single().OnSingleLineNodeLine Then
+                    Dim SingleLineNode = Mark(Syntax.SingleLineNode.CreateSingleLineNodeWithParameters(Mark(New Syntax.SingleLineNodeWithParameters With {.Head = NameLiteral, .Children = New Syntax.ParenthesesNode() {}, .LastChild = Children.Single().SingleLineNodeLine.SingleLineNode}, Range)), Range)
+                    Dim n = Mark(Syntax.Node.CreateSingleLineNodeLine(Mark(New Syntax.SingleLineNodeLine With {.SingleLineNode = SingleLineNode, .SingleLineComment = Opt(Of Syntax.SingleLineComment).Empty}, Range)), Range)
+                    Return n
+                Else
+                    Dim ChildrenNodes = Children.Select(Function(c) Mark(Syntax.MultiNodes.CreateNode(c), Range)).ToArray()
+                    Dim n = Mark(Syntax.Node.CreateMultiLineNode(Mark(New Syntax.MultiLineNode With {.Head = NameLiteral, .SingleLineComment = Opt(Of Syntax.SingleLineComment).Empty, .Children = ChildrenNodes, .EndDirective = Opt(Of Syntax.EndDirective).Empty}, Range)), Range)
+                    Return n
+                End If
+            End Function
+            Private Function MakeStemNodeOfList(ByVal Name As String, ByVal ListName As String, ByVal Children As Syntax.Node(), ByVal x As XObject) As Syntax.Node
+                Dim Range = GetFileTextRange(x)
+                Dim NameLiteral = Mark(New Syntax.SingleLineLiteral With {.Text = Name}, Range)
+                Dim ListNameLiteral = Mark(New Syntax.SingleLineLiteral With {.Text = ListName}, Range)
+                Dim ChildrenNodes = Children.Select(Function(c) Mark(Syntax.MultiNodes.CreateNode(c), Range)).ToArray()
+                Dim ListNode = Mark(Syntax.MultiNodes.CreateListNodes(Mark(New Syntax.ListNodes With {.ChildHead = ListNameLiteral, .SingleLineComment = Opt(Of Syntax.SingleLineComment).Empty, .Children = ChildrenNodes, .EndDirective = Opt(Of Syntax.EndDirective).Empty}, Range)), Range)
+                Dim n = Mark(Syntax.Node.CreateMultiLineNode(Mark(New Syntax.MultiLineNode With {.Head = NameLiteral, .SingleLineComment = Opt(Of Syntax.SingleLineComment).Empty, .Children = New Syntax.MultiNodes() {ListNode}, .EndDirective = Opt(Of Syntax.EndDirective).Empty}, Range)), Range)
                 Return n
             End Function
 
