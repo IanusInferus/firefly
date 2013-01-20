@@ -3,7 +3,7 @@
 '  File:        VBValidator.vb
 '  Location:    Firefly.VBValidator <Visual Basic .Net>
 '  Description: VB文本验证工具
-'  Version:     2011.03.20.
+'  Version:     2013.01.20.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -87,25 +87,34 @@ Public Module VBValidator
                                 If ParamsText = "" Then Return
                                 Dim l As New List(Of Char32)
                                 Dim Level = 0
+                                Dim Quote = False
                                 For Each c In (ParamsText & ",").ToUTF32
-                                    Select Case c
-                                        Case "("c
-                                            Level += 1
-                                        Case ")"c
-                                            Level -= 1
-                                        Case ","c
-                                            If Level = 0 Then
-                                                Dim Param = l.ToArray().ToUTF16B.Trim(" "c)
-                                                l.Clear()
-                                                If Param = "" Then Continue For
-                                                If Param.Contains("ByVal") OrElse Param.Contains("ByRef") Then Continue For
-                                                ErrorLines.Add(CreatePair(k, "ByValError"))
-                                                Line = Line.Replace(Param, "ByVal " & Param)
-                                                Changed = True
-                                                Continue For
-                                            End If
-                                        Case Else
-                                    End Select
+                                    If Quote Then
+                                        If c = """"c Then
+                                            Quote = False
+                                        End If
+                                    Else
+                                        Select Case c
+                                            Case """"c
+                                                Quote = True
+                                            Case "("c
+                                                Level += 1
+                                            Case ")"c
+                                                Level -= 1
+                                            Case ","c
+                                                If Level = 0 Then
+                                                    Dim Param = l.ToArray().ToUTF16B.Trim(" "c)
+                                                    l.Clear()
+                                                    If Param = "" Then Continue For
+                                                    If Param.Contains("ByVal") OrElse Param.Contains("ByRef") Then Continue For
+                                                    ErrorLines.Add(CreatePair(k, "ByValError"))
+                                                    Line = Line.Replace(Param, "ByVal " & Param)
+                                                    Changed = True
+                                                    Continue For
+                                                End If
+                                            Case Else
+                                        End Select
+                                    End If
                                     l.Add(c)
                                 Next
                             End Sub

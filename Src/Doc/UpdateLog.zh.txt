@@ -1,4 +1,8 @@
-﻿2013.01.16
+﻿2013.01.20
+Firefly.VBValidator:
+修正修复ByVal时遇到字符串字面量中存在","时出错的问题。
+
+2013.01.16
 Firefly.Core.Mapping,Firefly.Core.Texting:
 集合结构序列化为XML和Tree文件时，每项前面添加了索引注释。
 
