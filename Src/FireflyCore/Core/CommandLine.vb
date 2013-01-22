@@ -105,7 +105,7 @@ Public NotInheritable Class CommandLine
                     l.Add("""" & a.Substring(2).Replace("""", """""") & """")
                 ElseIf a.StartsWith("/") Then
                     l.Add(a)
-                ElseIf a.Contains("""") Then
+                ElseIf a.Contains("""") OrElse a.Contains(" ") Then
                     l.Add("""" & a.Replace("""", """""") & """")
                 ElseIf a = "" Then
                     l.Add("""""")
