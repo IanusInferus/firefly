@@ -3,7 +3,7 @@
 '  File:        CommandLine.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 控制台
-'  Version:     2010.04.26.
+'  Version:     2013.01.22.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -94,6 +94,27 @@ Public NotInheritable Class CommandLine
     End Function
 
     Public Shared Function GetCmdLine() As CommandLineArguments
-        Return ParseCmdLine(Environment.CommandLine, True)
+        If Environment.GetEnvironmentVariable("ComSpec") <> "" Then
+            Return ParseCmdLine(Environment.CommandLine, True)
+        Else
+            Dim Args = Environment.GetCommandLineArgs()
+            Dim l As New List(Of String)
+            l.Add("""""")
+            For Each a In Args.Skip(1)
+                If a.StartsWith("//") Then
+                    l.Add("""" & a.Substring(2).Replace("""", """""") & """")
+                ElseIf a.StartsWith("/") Then
+                    l.Add(a)
+                ElseIf a.Contains("""") Then
+                    l.Add("""" & a.Replace("""", """""") & """")
+                ElseIf a = "" Then
+                    l.Add("""""")
+                Else
+                    l.Add(a)
+                End If
+            Next
+            Dim CommandLine = String.Join(" ", l.ToArray())
+            Return ParseCmdLine(CommandLine, True)
+        End If
     End Function
 End Class
