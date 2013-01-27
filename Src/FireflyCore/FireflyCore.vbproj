@@ -62,6 +62,7 @@
     <Compile Include="Compressing\RLE.vb" />
     <Compile Include="Core\NumericStrings.vb" />
     <Compile Include="Glyphing\FdGlyphDescriptionFile.vb" />
+    <Compile Include="Imaging\AbstractBitmap.vb" />
     <Compile Include="Imaging\Bmp.vb" />
     <Compile Include="Mapping\BinarySerializer.vb" />
     <Compile Include="Mapping\DebuggerDisplayer.vb" />
