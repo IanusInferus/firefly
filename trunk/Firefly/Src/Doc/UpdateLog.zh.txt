@@ -1,4 +1,9 @@
-﻿2013.01.27
+﻿2013.02.12
+Firefly.Core.Mapping:
+去除XML序列化对继承的支持。
+修正XML序列化时字节数组无法支持序列化Nothing的问题。
+
+2013.01.27
 Firefly.Core.Imaging:
 增加抽象位图。
 

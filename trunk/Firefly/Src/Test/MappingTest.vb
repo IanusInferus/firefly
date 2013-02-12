@@ -326,18 +326,6 @@ Public Module MappingTest
         Dim ra = RoundTripped.ToArray()
         Assert(Enumerable.SequenceEqual(va, ra))
     End Sub
-    Public Sub XmlRoundTripInheritance(Of B, D As B)(ByVal v As D)
-        Dim xs As New XmlSerializer(New Type() {GetType(D)})
-        Dim xe = xs.Write(Of B)(v)
-        Dim RoundTripped = xs.Read(Of B)(xe)
-        Assert(Object.Equals(v, RoundTripped))
-    End Sub
-    Public Sub XmlRoundTripInheritance2(Of T)(ByVal v As T, ByVal ExternalTypes As IEnumerable(Of Type))
-        Dim xs As New XmlSerializer(ExternalTypes)
-        Dim xe = xs.Write(Of T)(v)
-        Dim RoundTripped = xs.Read(Of T)(xe)
-        Assert(Object.Equals(v, RoundTripped))
-    End Sub
     Public Sub TestXmlSerializer()
         Dim xs As New XmlSerializer
 
@@ -359,21 +347,18 @@ Public Module MappingTest
         XmlRoundTrip(Of Byte())(xs, Nothing)
         XmlRoundTripCollection(Of Byte, Byte())(xs, New Byte() {})
 
-        XmlRoundTripInheritance(Of XmlBaseObject, XmlDerivedObject)(New XmlDerivedObject)
-        XmlRoundTripInheritance2(New XmlInheritanceObjectContainer With {.b = New XmlDerivedObject}, New Type() {GetType(XmlDerivedObject)})
-
         Dim XmlRoundTripped As SerializerTestObject
 
         Using s = Streams.CreateMemoryStream
             Using ps = s.Partialize(0, Int64.MaxValue, 0, False)
                 Using sw = Txt.CreateTextWriter(ps.AsNewWriting, UTF16)
-                    Xml.WriteFile(sw, TestObject, New Type() {}, New Xml.IMapper() {New ByteArrayEncoder})
+                    Xml.WriteFile(sw, TestObject, New Xml.IMapper() {New ByteArrayEncoder})
                 End Using
             End Using
             s.Position = 0
             Using ps = s.Partialize(0, s.Length, False)
                 Using sr = Txt.CreateTextReader(ps.AsNewReading, UTF16)
-                    XmlRoundTripped = Xml.ReadFile(Of SerializerTestObject)(sr, New Type() {}, New Xml.IMapper() {New ByteArrayEncoder})
+                    XmlRoundTripped = Xml.ReadFile(Of SerializerTestObject)(sr, New Xml.IMapper() {New ByteArrayEncoder})
                 End Using
             End Using
         End Using
