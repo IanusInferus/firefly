@@ -3,7 +3,7 @@
 '  File:        Xml.vb
 '  Location:    Firefly.Setting <Visual Basic .Net>
 '  Description: Xml读写
-'  Version:     2011.07.31.
+'  Version:     2012.02.12.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -54,24 +54,18 @@ Namespace Setting
         End Sub
 
         Public Shared Function ReadFile(Of T)(ByVal Path As String) As T
-            Return ReadFile(Of T)(Path, New Type() {}, New IMapper() {})
+            Return ReadFile(Of T)(Path, New IMapper() {})
         End Function
         Public Shared Function ReadFile(Of T)(ByVal Reader As StreamReader) As T
-            Return ReadFile(Of T)(Reader, New Type() {}, New IMapper() {})
-        End Function
-        Public Shared Function ReadFile(Of T)(ByVal Path As String, ByVal ExternalTypes As IEnumerable(Of Type)) As T
-            Return ReadFile(Of T)(Path, ExternalTypes, New IMapper() {})
+            Return ReadFile(Of T)(Reader, New IMapper() {})
         End Function
         Public Shared Function ReadFile(Of T)(ByVal Path As String, ByVal Mappers As IEnumerable(Of IMapper)) As T
-            Return ReadFile(Of T)(Path, New Type() {}, Mappers)
-        End Function
-        Public Shared Function ReadFile(Of T)(ByVal Path As String, ByVal ExternalTypes As IEnumerable(Of Type), ByVal Mappers As IEnumerable(Of IMapper)) As T
             Using sr = Txt.CreateTextReader(Path)
-                Return ReadFile(Of T)(sr, ExternalTypes, Mappers)
+                Return ReadFile(Of T)(sr, Mappers)
             End Using
         End Function
-        Public Shared Function ReadFile(Of T)(ByVal Reader As StreamReader, ByVal ExternalTypes As IEnumerable(Of Type), ByVal Mappers As IEnumerable(Of IMapper)) As T
-            Dim xs As New XmlSerializer(ExternalTypes)
+        Public Shared Function ReadFile(Of T)(ByVal Reader As StreamReader, ByVal Mappers As IEnumerable(Of IMapper)) As T
+            Dim xs As New XmlSerializer
             For Each m In Mappers
                 Dim SourceType = m.SourceType
                 Dim TargetType = m.TargetType
@@ -99,27 +93,21 @@ Namespace Setting
         End Function
 
         Public Shared Sub WriteFile(Of T)(ByVal Path As String, ByVal Value As T)
-            WriteFile(Path, TextEncoding.WritingDefault, Value, New Type() {}, New IMapper() {})
+            WriteFile(Path, TextEncoding.WritingDefault, Value, New IMapper() {})
         End Sub
         Public Shared Sub WriteFile(Of T)(ByVal Writer As StreamWriter, ByVal Value As T)
-            WriteFile(Writer, Value, New Type() {}, New IMapper() {})
+            WriteFile(Writer, Value, New IMapper() {})
         End Sub
         Public Shared Sub WriteFile(Of T)(ByVal Path As String, ByVal Encoding As Encoding, ByVal Value As T)
-            WriteFile(Path, Encoding, Value, New Type() {}, New IMapper() {})
-        End Sub
-        Public Shared Sub WriteFile(Of T)(ByVal Path As String, ByVal Encoding As Encoding, ByVal Value As T, ByVal ExternalTypes As IEnumerable(Of Type))
-            WriteFile(Path, Encoding, Value, ExternalTypes, New IMapper() {})
+            WriteFile(Path, Encoding, Value, New IMapper() {})
         End Sub
         Public Shared Sub WriteFile(Of T)(ByVal Path As String, ByVal Encoding As Encoding, ByVal Value As T, ByVal Mappers As IEnumerable(Of IMapper))
-            WriteFile(Path, Encoding, Value, New Type() {}, Mappers)
-        End Sub
-        Public Shared Sub WriteFile(Of T)(ByVal Path As String, ByVal Encoding As Encoding, ByVal Value As T, ByVal ExternalTypes As IEnumerable(Of Type), ByVal Mappers As IEnumerable(Of IMapper))
             Using sw = Txt.CreateTextWriter(Path, Encoding)
-                WriteFile(sw, Value, ExternalTypes, Mappers)
+                WriteFile(sw, Value, Mappers)
             End Using
         End Sub
-        Public Shared Sub WriteFile(Of T)(ByVal Writer As StreamWriter, ByVal Value As T, ByVal ExternalTypes As IEnumerable(Of Type), ByVal Mappers As IEnumerable(Of IMapper))
-            Dim xs As New XmlSerializer(ExternalTypes)
+        Public Shared Sub WriteFile(Of T)(ByVal Writer As StreamWriter, ByVal Value As T, ByVal Mappers As IEnumerable(Of IMapper))
+            Dim xs As New XmlSerializer
             For Each m In Mappers
                 Dim SourceType = m.SourceType
                 Dim TargetType = m.TargetType

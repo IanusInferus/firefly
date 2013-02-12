@@ -3,7 +3,7 @@
 '  File:        XmlCompatibility.vb
 '  Location:    Firefly.Setting <Visual Basic .Net>
 '  Description: Xml读写兼容支持，用于兼容System.Xml.Serialization.XmlSerializer
-'  Version:     2011.07.31.
+'  Version:     2013.02.12.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -232,7 +232,7 @@ Namespace Setting
         Public Sub New()
             Dim ReaderReference As New ReferenceMapperResolver
             ReaderCache = ReaderReference
-            Dim ReaderResolver = New XmlReaderResolver(ReaderReference, New Type() {})
+            Dim ReaderResolver = New XmlReaderResolver(ReaderReference)
             ReaderResolver.PutReader(XmlCompatibility.Base64StringToByteArray)
             ReaderResolver.PutReader(XmlCompatibility.StringToDateTime)
             Dim ProjectorResolverList = New List(Of IProjectorResolver) From {
@@ -249,7 +249,7 @@ Namespace Setting
 
             Dim WriterReference As New ReferenceMapperResolver
             WriterCache = WriterReference
-            Dim WriterResolver = New XmlWriterResolver(WriterReference, New Type() {})
+            Dim WriterResolver = New XmlWriterResolver(WriterReference)
             WriterResolver.PutWriter(XmlCompatibility.BooleanToString)
             WriterResolver.PutWriter(XmlCompatibility.ByteArrayToBase64String)
             WriterResolver.PutWriter(XmlCompatibility.DateTimeToString)
