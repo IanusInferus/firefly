@@ -3,7 +3,7 @@
 '  File:        XmlSerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Xml序列化类
-'  Version:     2013.01.16.
+'  Version:     2013.02.12.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -61,32 +61,19 @@ Namespace Mapping.XmlText
         Private WriterCache As IMapperResolver
 
         Public Sub New()
-            MyClass.New(New Type() {})
+            MyClass.New(True)
         End Sub
-        Public Sub New(ByVal ExternalTypes As IEnumerable(Of Type))
+        Public Sub New(ByVal UseByteArrayAndListTranslator As Boolean)
             Dim ReaderReference As New ReferenceMapperResolver
             ReaderCache = ReaderReference
-            ReaderResolver = New XmlReaderResolver(ReaderReference, ExternalTypes)
+            ReaderResolver = New XmlReaderResolver(ReaderReference)
             ReaderReference.Inner = ReaderResolver.AsCached
 
             Dim WriterReference As New ReferenceMapperResolver
             WriterCache = WriterReference
-            WriterResolver = New XmlWriterResolver(WriterReference, ExternalTypes)
+            WriterResolver = New XmlWriterResolver(WriterReference)
             WriterReference.Inner = WriterResolver.AsCached
-        End Sub
-        Public Sub New(ByVal UseByteArrayAndListTranslator As Boolean)
-            MyClass.New(New Type() {})
-            If UseByteArrayAndListTranslator Then
-                Dim bat As New ByteArrayTranslator
-                PutReaderTranslator(bat)
-                PutWriterTranslator(bat)
-                Dim blt As New ByteListTranslator
-                PutReaderTranslator(blt)
-                PutWriterTranslator(blt)
-            End If
-        End Sub
-        Public Sub New(ByVal ExternalTypes As IEnumerable(Of Type), ByVal UseByteArrayAndListTranslator As Boolean)
-            MyClass.New(ExternalTypes)
+
             If UseByteArrayAndListTranslator Then
                 Dim bat As New ByteArrayTranslator
                 PutReaderTranslator(bat)
@@ -154,7 +141,7 @@ Namespace Mapping.XmlText
             Return Resolver.TryResolveAggregator(TypePair)
         End Function
 
-        Public Sub New(ByVal Root As IMapperResolver, ByVal ExternalTypes As IEnumerable(Of Type))
+        Public Sub New(ByVal Root As IMapperResolver)
             Me.Root = Root
 
             PrimitiveResolver = New PrimitiveResolver
@@ -180,7 +167,6 @@ Namespace Mapping.XmlText
             'XElementToStringDomainTranslator: (XElement proj R) <- (String proj R)
             'CollectionUnpacker: (XElement proj {R}) <- (XElement.SubElement proj R)
             'FieldOrPropertyProjectorResolver: (Dictionary(String, XElement) proj R) <- (XElement.SubElement proj R.Field)
-            'InheritanceResolver: (XElement proj R) <- (XElement proj R.Derived)
             'XElementProjectorToProjectorDomainTranslator: (XElement proj R) <- (Dictionary(String, XElement) proj R)
 
             ProjectorResolverList = New LinkedList(Of IProjectorResolver)({
@@ -195,7 +181,6 @@ Namespace Mapping.XmlText
                     New TaggedUnionAlternativeProjectorResolver(Root.AsRuntimeDomainNoncircular),
                     New TupleElementProjectorResolver(Root.AsRuntimeDomainNoncircular)
                 ),
-                New InheritanceResolver(Root.AsRuntimeDomainNoncircular, ExternalTypes),
                 TranslatorResolver.Create(Root.AsRuntimeDomainNoncircular, New XElementProjectorToProjectorDomainTranslator)
             })
             DebugResolver = New DebugReaderResolver(CreateMapper(ProjectorResolverList.Concatenated, EmptyAggregatorResolver))
@@ -238,7 +223,7 @@ Namespace Mapping.XmlText
             Return Resolver.TryResolveAggregator(TypePair)
         End Function
 
-        Public Sub New(ByVal Root As IMapperResolver, ByVal ExternalTypes As IEnumerable(Of Type))
+        Public Sub New(ByVal Root As IMapperResolver)
             Me.Root = Root
 
             PrimitiveResolver = New PrimitiveResolver
@@ -262,7 +247,6 @@ Namespace Mapping.XmlText
             'PrimitiveResolver: (Primitive proj String|XElement) <- null
             'EnumResolver: (Enum proj String) <- null
             'XElementToStringRangeTranslator: (D proj XElement) <- (D proj String)
-            'InheritanceResolver: (D proj XElement) <- (D.Derived proj XElement)
             'XElementAggregatorToProjectorRangeTranslator: (D proj XElement) <- (D aggr List(XElement))
             '
             'Writer
@@ -275,7 +259,6 @@ Namespace Mapping.XmlText
                 PrimitiveResolver,
                 New EnumResolver,
                 TranslatorResolver.Create(Root.AsRuntimeDomainNoncircular, New XElementToStringRangeTranslator),
-                New InheritanceResolver(Root.AsRuntimeDomainNoncircular, ExternalTypes),
                 TranslatorResolver.Create(Root.AsRuntimeDomainNoncircular, New XElementAggregatorToProjectorRangeTranslator)
             })
             AggregatorResolverList = New LinkedList(Of IAggregatorResolver)({
@@ -828,6 +811,7 @@ Namespace Mapping.XmlText
 
         Private Function TranslateProjectorToProjectorRange(Of D)(ByVal Projector As Func(Of D, String)) As Func(Of D, Byte()) Implements IProjectorToProjectorRangeTranslator(Of Byte(), String).TranslateProjectorToProjectorRange
             Return Function(k)
+                       If k Is Nothing Then Return Nothing
                        Dim Trimmed = Projector(k).Trim(" \t\r\n".Descape.ToCharArray)
                        If Trimmed = "" Then Return New Byte() {}
                        Return Regex.Split(Trimmed, "( |\t|\r|\n)+", RegexOptions.ExplicitCapture).Select(Function(s) Byte.Parse(s, Globalization.NumberStyles.HexNumber)).ToArray()
@@ -835,7 +819,10 @@ Namespace Mapping.XmlText
         End Function
 
         Private Function TranslateProjectorToProjectorDomain(Of R)(ByVal Projector As Func(Of String, R)) As Func(Of Byte(), R) Implements IProjectorToProjectorDomainTranslator(Of Byte(), String).TranslateProjectorToProjectorDomain
-            Return Function(ba) Projector(String.Join(" ", (ba.Select(Function(b) b.ToString("X2")).ToArray)))
+            Return Function(ba)
+                       If ba Is Nothing Then Return Nothing
+                       Return Projector(String.Join(" ", (ba.Select(Function(b) b.ToString("X2")).ToArray)))
+                   End Function
         End Function
     End Class
 
@@ -854,108 +841,6 @@ Namespace Mapping.XmlText
         Private Function TranslateProjectorToProjectorDomain(Of R)(ByVal Projector As Func(Of String, R)) As Func(Of List(Of Byte), R) Implements IProjectorToProjectorDomainTranslator(Of List(Of Byte), String).TranslateProjectorToProjectorDomain
             Return Function(ba) Projector(String.Join(" ", (ba.Select(Function(b) b.ToString("X2")).ToArray)))
         End Function
-    End Class
-
-    Public Class InheritanceResolver
-        Implements IProjectorResolver
-
-        Private Function ResolveRange(Of R)() As Func(Of XElement, R)
-            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(XElement), GetType(R))), Func(Of XElement, R))
-            Dim Dict As New Dictionary(Of Type, Func(Of XElement, R))
-            Dim F =
-                Function(k As XElement) As R
-                    If k.IsEmpty Then Return Mapper(k)
-                    If k.Attribute("Type") Is Nothing Then Return Mapper(k)
-                    Dim RealTypeName = k.Attribute("Type").Value
-                    If Not ExternalTypeDict.ContainsKey(RealTypeName) Then Throw New InvalidOperationException("ExternalTypeNotFound: {0}".Formats(RealTypeName))
-                    Dim RealType = ExternalTypeDict(RealTypeName)
-
-                    If Dict.ContainsKey(RealType) Then
-                        Dim DynamicMapper = Dict(RealType)
-                        Return DynamicMapper(k)
-                    End If
-
-                    Dim TypePair = CreatePair(GetType(XElement), RealType)
-                    ProjectorCache.Add(TypePair)
-                    Try
-                        Dim DynamicMapper = InnerResolver.ResolveProjector(TypePair).AdaptFunction(Of XElement, R)()
-                        Dict.Add(RealType, DynamicMapper)
-                        Return DynamicMapper(k)
-                    Finally
-                        ProjectorCache.Remove(TypePair)
-                    End Try
-                End Function
-            Return F
-        End Function
-        Private Function ResolveDomain(Of D)() As Func(Of D, XElement)
-            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(XElement))), Func(Of D, XElement))
-            Dim TypeName = GetTypeFriendlyName(GetType(D))
-            Dim Dict As New Dictionary(Of Type, Func(Of D, XElement))
-            Dim F =
-                Function(k As D) As XElement
-                    If k Is Nothing Then Return Mapper(k)
-                    Dim RealType = k.GetType()
-                    If RealType Is GetType(D) Then Return Mapper(k)
-                    Dim RealTypeName = GetTypeFriendlyName(RealType)
-                    If Not ExternalTypeDict.ContainsKey(RealTypeName) Then Throw New InvalidOperationException("ExternalTypeNotFound: {0}".Formats(RealTypeName))
-                    If ExternalTypeDict(RealTypeName) IsNot RealType Then Throw New InvalidOperationException("ExternalTypeMismatched: {0}".Formats(RealTypeName))
-
-                    If Dict.ContainsKey(RealType) Then
-                        Dim DynamicMapper = Dict(RealType)
-                        Return DynamicMapper(k)
-                    End If
-
-                    Dim TypePair = CreatePair(RealType, GetType(XElement))
-                    ProjectorCache.Add(TypePair)
-                    Try
-                        Dim DynamicMapper = InnerResolver.ResolveProjector(TypePair).AdaptFunction(Of D, XElement)()
-                        Dict.Add(RealType, DynamicMapper)
-                        Dim e = DynamicMapper(k)
-                        If e.Name = RealTypeName Then e.Name = TypeName
-                        e.SetAttributeValue("Type", RealTypeName)
-                        Return e
-                    Finally
-                        ProjectorCache.Remove(TypePair)
-                    End Try
-                End Function
-            Return F
-        End Function
-
-        Private ProjectorCache As New HashSet(Of KeyValuePair(Of Type, Type))
-        Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IProjectorResolver.TryResolveProjector
-            Dim DomainType = TypePair.Key
-            Dim RangeType = TypePair.Value
-            If DomainType Is GetType(XElement) AndAlso RangeType.IsClass Then
-                If ProjectorCache.Contains(TypePair) Then Return Nothing
-                ProjectorCache.Add(TypePair)
-                Try
-                    Dim DummyMethod = DirectCast(AddressOf ResolveRange(Of DummyType), Func(Of Func(Of XElement, DummyType)))
-                    Dim m = DummyMethod.MakeDelegateMethodFromDummy(RangeType)
-                    Return m.StaticDynamicInvoke(Of [Delegate])()
-                Finally
-                    ProjectorCache.Remove(TypePair)
-                End Try
-            End If
-            If RangeType Is GetType(XElement) AndAlso DomainType.IsClass Then
-                If ProjectorCache.Contains(TypePair) Then Return Nothing
-                ProjectorCache.Add(TypePair)
-                Try
-                    Dim DummyMethod = DirectCast(AddressOf ResolveDomain(Of DummyType), Func(Of Func(Of DummyType, XElement)))
-                    Dim m = DummyMethod.MakeDelegateMethodFromDummy(DomainType)
-                    Return m.StaticDynamicInvoke(Of [Delegate])()
-                Finally
-                    ProjectorCache.Remove(TypePair)
-                End Try
-            End If
-            Return Nothing
-        End Function
-
-        Private InnerResolver As IProjectorResolver
-        Private ExternalTypeDict As Dictionary(Of String, Type)
-        Public Sub New(ByVal Resolver As IProjectorResolver, ByVal ExternalTypes As IEnumerable(Of Type))
-            Me.InnerResolver = Resolver
-            Me.ExternalTypeDict = ExternalTypes.ToDictionary(Function(type) GetTypeFriendlyName(type), StringComparer.OrdinalIgnoreCase)
-        End Sub
     End Class
 
     Public Class DebugReaderResolver
