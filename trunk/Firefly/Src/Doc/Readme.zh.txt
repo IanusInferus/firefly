@@ -172,6 +172,6 @@ http://download.microsoft.com/download/3/1/8/318161B8-9874-48E4-BB38-9EB82C5D635
 
 若你使用C++编程，需要使用C++/CLI才能调用本框架的内容。
 
-如果发现了BUG，或者有什么意见或建议，请到以下网址与我联系。
-http://www.cnblogs.com/Rex/Contact.aspx?id=1
-常见的问题将在今后编制成Q&A。
+如果发现了BUG，或者有什么意见或建议，请通过以下邮件地址或网址与我联系。
+r_ex@163.com
+http://www.cnblogs.com/Rex/archive/2008/11/08/1329759.html
