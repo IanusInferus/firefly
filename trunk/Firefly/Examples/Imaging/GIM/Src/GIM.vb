@@ -3,7 +3,7 @@
 '  File:        GIM.vb
 '  Location:    Firefly.Examples <Visual Basic .Net>
 '  Description: PSP GIM图像格式
-'  Version:     2011.02.23.
+'  Version:     2013.02.26.
 '  Author:      F.R.C.
 '  Copyright(C) Public Domain
 '
@@ -207,7 +207,7 @@ Public Class GIM
         Inherits Block
 
         Public Indices As Integer()
-        Public BitmapData As New List(Of Int32(,))
+        Public BitmapData As New List(Of List(Of Int32(,)))
 
         Public Type As BitmapType
         Public Width As UInt16
@@ -217,6 +217,8 @@ Public Class GIM
         Public RectangleHeight As UInt16
 
         Private AddressStart As Int32
+
+        Public NumMipmap As UInt16 = 1
 
         Public ReadOnly Property NumFrame() As Integer
             Get
@@ -256,6 +258,9 @@ Public Class GIM
                 Dim BitmapStart = s.ReadInt32
                 Dim BitmapEnd = s.ReadInt32
 
+                s.Position = &H2A
+                NumMipmap = s.ReadUInt16
+
                 s.Position = &H2E
                 Dim NumFrame = s.ReadUInt16
 
@@ -263,6 +268,15 @@ Public Class GIM
                 Dim NumWidthBlock = (Width + RectanglePixelWidth - 1) \ RectanglePixelWidth
                 Dim NumHeightBlock = (Height + RectangleHeight - 1) \ RectangleHeight
                 Dim FrameSize = CInt(RectangleByteWidth) * CInt(RectangleHeight) * CInt(NumWidthBlock) * CInt(NumHeightBlock)
+                If NumMipmap > 1 Then
+                    Dim NumWidthBlockInMipmap = NumWidthBlock
+                    Dim NumHeightBlockInMipmap = NumHeightBlock
+                    For k = 1 To NumMipmap - 1
+                        NumWidthBlockInMipmap = (NumWidthBlockInMipmap + 1) \ 2
+                        NumHeightBlockInMipmap = (NumHeightBlockInMipmap + 1) \ 2
+                        FrameSize += CInt(RectangleByteWidth) * CInt(RectangleHeight) * CInt(NumWidthBlockInMipmap) * CInt(NumHeightBlockInMipmap)
+                    Next
+                End If
 
                 s.Position = AddressStart
                 Indices = New Int32(NumFrame - 1) {}
@@ -275,192 +289,204 @@ Public Class GIM
                     Indices(n) = Index
                 Next
 
-                s.Position = BitmapStart
                 For n = 0 To (BitmapEnd - BitmapStart) \ FrameSize - 1
-                    Dim Rectangle = New Int32(Width - 1, Height - 1) {}
-                    Select Case Type
-                        Case BitmapType.Index4
-                            For j = 0 To NumHeightBlock - 1
-                                For i = 0 To NumWidthBlock - 1
-                                    For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, Height - 1)
-                                        If i * RectanglePixelWidth + RectanglePixelWidth <= Width Then
-                                            For x = i * RectanglePixelWidth To i * RectanglePixelWidth + RectanglePixelWidth - 1 Step 2
-                                                Dim b = s.ReadByte()
-                                                Rectangle(x, y) = b.Bits(3, 0)
-                                                Rectangle(x + 1, y) = b.Bits(7, 4)
-                                            Next
-                                        Else
-                                            For x = i * RectanglePixelWidth To Width - 2 Step 2
-                                                Dim b = s.ReadByte()
-                                                Rectangle(x, y) = b.Bits(3, 0)
-                                                Rectangle(x + 1, y) = b.Bits(7, 4)
-                                            Next
-                                            If (Width And 1) <> 0 Then
-                                                Dim b = s.ReadByte()
-                                                Rectangle(Width - 1, y) = b.Bits(3, 0)
+                    s.Position = BitmapStart + FrameSize * n
+                    Dim Mipmaps = New List(Of Int32(,))
+                    Dim NumWidthBlockInMipmap = NumWidthBlock
+                    Dim NumHeightBlockInMipmap = NumHeightBlock
+                    Dim WidthInMipmap = Width
+                    Dim HeightInMipmap = Height
+                    For k = 0 To NumMipmap - 1
+                        Dim Rectangle = New Int32(WidthInMipmap - 1, HeightInMipmap - 1) {}
+                        Select Case Type
+                            Case BitmapType.Index4
+                                For j = 0 To NumHeightBlockInMipmap - 1
+                                    For i = 0 To NumWidthBlockInMipmap - 1
+                                        For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, HeightInMipmap - 1)
+                                            If i * RectanglePixelWidth + RectanglePixelWidth <= WidthInMipmap Then
+                                                For x = i * RectanglePixelWidth To i * RectanglePixelWidth + RectanglePixelWidth - 1 Step 2
+                                                    Dim b = s.ReadByte()
+                                                    Rectangle(x, y) = b.Bits(3, 0)
+                                                    Rectangle(x + 1, y) = b.Bits(7, 4)
+                                                Next
+                                            Else
+                                                For x = i * RectanglePixelWidth To WidthInMipmap - 2 Step 2
+                                                    Dim b = s.ReadByte()
+                                                    Rectangle(x, y) = b.Bits(3, 0)
+                                                    Rectangle(x + 1, y) = b.Bits(7, 4)
+                                                Next
+                                                If (WidthInMipmap And 1) <> 0 Then
+                                                    Dim b = s.ReadByte()
+                                                    Rectangle(WidthInMipmap - 1, y) = b.Bits(3, 0)
+                                                End If
+                                                For x = ((WidthInMipmap + 1) \ 2) * 2 To i * RectanglePixelWidth + RectanglePixelWidth - 1 Step 2
+                                                    s.ReadByte()
+                                                Next
                                             End If
-                                            For x = ((Width + 1) \ 2) * 2 To i * RectanglePixelWidth + RectanglePixelWidth - 1 Step 2
+                                        Next
+                                        For y = HeightInMipmap To j * RectangleHeight + RectangleHeight - 1
+                                            s.Read(RectangleByteWidth)
+                                        Next
+                                    Next
+                                Next
+                            Case BitmapType.Index8
+                                For j = 0 To NumHeightBlockInMipmap - 1
+                                    For i = 0 To NumWidthBlockInMipmap - 1
+                                        For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, HeightInMipmap - 1)
+                                            For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, WidthInMipmap - 1)
+                                                Rectangle(x, y) = s.ReadByte()
+                                            Next
+                                            For x = WidthInMipmap To i * RectanglePixelWidth + RectanglePixelWidth - 1
                                                 s.ReadByte()
                                             Next
-                                        End If
-                                    Next
-                                    For y = Height To j * RectangleHeight + RectangleHeight - 1
-                                        s.Read(RectangleByteWidth)
+                                        Next
+                                        For y = HeightInMipmap To j * RectangleHeight + RectangleHeight - 1
+                                            s.Read(RectangleByteWidth)
+                                        Next
                                     Next
                                 Next
-                            Next
-                        Case BitmapType.Index8
-                            For j = 0 To NumHeightBlock - 1
-                                For i = 0 To NumWidthBlock - 1
-                                    For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, Height - 1)
-                                        For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, Width - 1)
-                                            Rectangle(x, y) = s.ReadByte()
+                            Case BitmapType.Index16
+                                For j = 0 To NumHeightBlockInMipmap - 1
+                                    For i = 0 To NumWidthBlockInMipmap - 1
+                                        For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, HeightInMipmap - 1)
+                                            For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, WidthInMipmap - 1)
+                                                Rectangle(x, y) = s.ReadUInt16()
+                                            Next
+                                            For x = WidthInMipmap To i * RectanglePixelWidth + RectanglePixelWidth - 1
+                                                s.ReadUInt16()
+                                            Next
                                         Next
-                                        For x = Width To i * RectanglePixelWidth + RectanglePixelWidth - 1
-                                            s.ReadByte()
+                                        For y = HeightInMipmap To j * RectangleHeight + RectangleHeight - 1
+                                            s.Read(RectangleByteWidth)
                                         Next
-                                    Next
-                                    For y = Height To j * RectangleHeight + RectangleHeight - 1
-                                        s.Read(RectangleByteWidth)
                                     Next
                                 Next
-                            Next
-                        Case BitmapType.Index16
-                            For j = 0 To NumHeightBlock - 1
-                                For i = 0 To NumWidthBlock - 1
-                                    For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, Height - 1)
-                                        For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, Width - 1)
-                                            Rectangle(x, y) = s.ReadUInt16()
+                            Case BitmapType.Index32
+                                For j = 0 To NumHeightBlockInMipmap - 1
+                                    For i = 0 To NumWidthBlockInMipmap - 1
+                                        For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, HeightInMipmap - 1)
+                                            For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, WidthInMipmap - 1)
+                                                Rectangle(x, y) = s.ReadInt32()
+                                            Next
+                                            For x = WidthInMipmap To i * RectanglePixelWidth + RectanglePixelWidth - 1
+                                                s.ReadInt32()
+                                            Next
                                         Next
-                                        For x = Width To i * RectanglePixelWidth + RectanglePixelWidth - 1
-                                            s.ReadUInt16()
+                                        For y = HeightInMipmap To j * RectangleHeight + RectangleHeight - 1
+                                            s.Read(RectangleByteWidth)
                                         Next
-                                    Next
-                                    For y = Height To j * RectangleHeight + RectangleHeight - 1
-                                        s.Read(RectangleByteWidth)
                                     Next
                                 Next
-                            Next
-                        Case BitmapType.Index32
-                            For j = 0 To NumHeightBlock - 1
-                                For i = 0 To NumWidthBlock - 1
-                                    For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, Height - 1)
-                                        For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, Width - 1)
-                                            Rectangle(x, y) = s.ReadInt32()
+                            Case BitmapType.B5G6R5
+                                For j = 0 To NumHeightBlockInMipmap - 1
+                                    For i = 0 To NumWidthBlockInMipmap - 1
+                                        For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, HeightInMipmap - 1)
+                                            For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, WidthInMipmap - 1)
+                                                Dim ABGR = s.ReadUInt16()
+                                                Dim B As Byte
+                                                Dim G As Byte
+                                                Dim R As Byte
+                                                SplitBits(B, 5, G, 6, R, 5, ABGR)
+                                                B = ConcatBits(B, 5, B >> 2, 3)
+                                                G = ConcatBits(G, 6, G >> 4, 2)
+                                                R = ConcatBits(R, 5, R >> 2, 3)
+                                                Rectangle(x, y) = ConcatBits(&HFF, 8, R, 8, G, 8, B, 8)
+                                            Next
+                                            For x = WidthInMipmap To i * RectanglePixelWidth + RectanglePixelWidth - 1
+                                                s.ReadUInt16()
+                                            Next
                                         Next
-                                        For x = Width To i * RectanglePixelWidth + RectanglePixelWidth - 1
-                                            s.ReadInt32()
+                                        For y = HeightInMipmap To j * RectangleHeight + RectangleHeight - 1
+                                            s.Read(RectangleByteWidth)
                                         Next
-                                    Next
-                                    For y = Height To j * RectangleHeight + RectangleHeight - 1
-                                        s.Read(RectangleByteWidth)
                                     Next
                                 Next
-                            Next
-                        Case BitmapType.B5G6R5
-                            For j = 0 To NumHeightBlock - 1
-                                For i = 0 To NumWidthBlock - 1
-                                    For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, Height - 1)
-                                        For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, Width - 1)
-                                            Dim ABGR = s.ReadUInt16()
-                                            Dim B As Byte
-                                            Dim G As Byte
-                                            Dim R As Byte
-                                            SplitBits(B, 5, G, 6, R, 5, ABGR)
-                                            B = ConcatBits(B, 5, B >> 2, 3)
-                                            G = ConcatBits(G, 6, G >> 4, 2)
-                                            R = ConcatBits(R, 5, R >> 2, 3)
-                                            Rectangle(x, y) = ConcatBits(&HFF, 8, R, 8, G, 8, B, 8)
+                            Case BitmapType.A1B5G5R5
+                                For j = 0 To NumHeightBlockInMipmap - 1
+                                    For i = 0 To NumWidthBlockInMipmap - 1
+                                        For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, HeightInMipmap - 1)
+                                            For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, WidthInMipmap - 1)
+                                                Dim ABGR = s.ReadUInt16()
+                                                Dim A As Byte
+                                                Dim B As Byte
+                                                Dim G As Byte
+                                                Dim R As Byte
+                                                SplitBits(A, 1, B, 5, G, 5, R, 5, ABGR)
+                                                A = ConcatBits(A, 1, A, 1)
+                                                A = ConcatBits(A, 2, A, 2)
+                                                A = ConcatBits(A, 4, A, 4)
+                                                B = ConcatBits(B, 5, B >> 2, 3)
+                                                G = ConcatBits(G, 5, G >> 2, 3)
+                                                R = ConcatBits(R, 5, R >> 2, 3)
+                                                Rectangle(x, y) = ConcatBits(A, 8, R, 8, G, 8, B, 8)
+                                            Next
+                                            For x = WidthInMipmap To i * RectanglePixelWidth + RectanglePixelWidth - 1
+                                                s.ReadUInt16()
+                                            Next
                                         Next
-                                        For x = Width To i * RectanglePixelWidth + RectanglePixelWidth - 1
-                                            s.ReadUInt16()
+                                        For y = HeightInMipmap To j * RectangleHeight + RectangleHeight - 1
+                                            s.Read(RectangleByteWidth)
                                         Next
-                                    Next
-                                    For y = Height To j * RectangleHeight + RectangleHeight - 1
-                                        s.Read(RectangleByteWidth)
                                     Next
                                 Next
-                            Next
-                        Case BitmapType.A1B5G5R5
-                            For j = 0 To NumHeightBlock - 1
-                                For i = 0 To NumWidthBlock - 1
-                                    For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, Height - 1)
-                                        For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, Width - 1)
-                                            Dim ABGR = s.ReadUInt16()
-                                            Dim A As Byte
-                                            Dim B As Byte
-                                            Dim G As Byte
-                                            Dim R As Byte
-                                            SplitBits(A, 1, B, 5, G, 5, R, 5, ABGR)
-                                            A = ConcatBits(A, 1, A, 1)
-                                            A = ConcatBits(A, 2, A, 2)
-                                            A = ConcatBits(A, 4, A, 4)
-                                            B = ConcatBits(B, 5, B >> 2, 3)
-                                            G = ConcatBits(G, 5, G >> 2, 3)
-                                            R = ConcatBits(R, 5, R >> 2, 3)
-                                            Rectangle(x, y) = ConcatBits(A, 8, R, 8, G, 8, B, 8)
+                            Case BitmapType.A4B4G4R4
+                                For j = 0 To NumHeightBlockInMipmap - 1
+                                    For i = 0 To NumWidthBlockInMipmap - 1
+                                        For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, HeightInMipmap - 1)
+                                            For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, WidthInMipmap - 1)
+                                                Dim ABGR = s.ReadUInt16()
+                                                Dim A As Byte
+                                                Dim B As Byte
+                                                Dim G As Byte
+                                                Dim R As Byte
+                                                SplitBits(A, 4, B, 4, G, 4, R, 4, ABGR)
+                                                A = ConcatBits(A, 4, A, 4)
+                                                B = ConcatBits(B, 4, B, 4)
+                                                G = ConcatBits(G, 4, G, 4)
+                                                R = ConcatBits(R, 4, R, 4)
+                                                Rectangle(x, y) = ConcatBits(A, 8, R, 8, G, 8, B, 8)
+                                            Next
+                                            For x = WidthInMipmap To i * RectanglePixelWidth + RectanglePixelWidth - 1
+                                                s.ReadUInt16()
+                                            Next
                                         Next
-                                        For x = Width To i * RectanglePixelWidth + RectanglePixelWidth - 1
-                                            s.ReadUInt16()
+                                        For y = HeightInMipmap To j * RectangleHeight + RectangleHeight - 1
+                                            s.Read(RectangleByteWidth)
                                         Next
-                                    Next
-                                    For y = Height To j * RectangleHeight + RectangleHeight - 1
-                                        s.Read(RectangleByteWidth)
                                     Next
                                 Next
-                            Next
-                        Case BitmapType.A4B4G4R4
-                            For j = 0 To NumHeightBlock - 1
-                                For i = 0 To NumWidthBlock - 1
-                                    For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, Height - 1)
-                                        For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, Width - 1)
-                                            Dim ABGR = s.ReadUInt16()
-                                            Dim A As Byte
-                                            Dim B As Byte
-                                            Dim G As Byte
-                                            Dim R As Byte
-                                            SplitBits(A, 4, B, 4, G, 4, R, 4, ABGR)
-                                            A = ConcatBits(A, 4, A, 4)
-                                            B = ConcatBits(B, 4, B, 4)
-                                            G = ConcatBits(G, 4, G, 4)
-                                            R = ConcatBits(R, 4, R, 4)
-                                            Rectangle(x, y) = ConcatBits(A, 8, R, 8, G, 8, B, 8)
+                            Case BitmapType.A8B8G8R8
+                                For j = 0 To NumHeightBlockInMipmap - 1
+                                    For i = 0 To NumWidthBlockInMipmap - 1
+                                        For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, HeightInMipmap - 1)
+                                            For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, WidthInMipmap - 1)
+                                                Dim ABGR = s.ReadInt32()
+                                                Dim A As Byte
+                                                Dim B As Byte
+                                                Dim G As Byte
+                                                Dim R As Byte
+                                                SplitBits(A, 8, B, 8, G, 8, R, 8, ABGR)
+                                                Rectangle(x, y) = ConcatBits(A, 8, R, 8, G, 8, B, 8)
+                                            Next
+                                            For x = WidthInMipmap To i * RectanglePixelWidth + RectanglePixelWidth - 1
+                                                s.ReadInt32()
+                                            Next
                                         Next
-                                        For x = Width To i * RectanglePixelWidth + RectanglePixelWidth - 1
-                                            s.ReadUInt16()
+                                        For y = HeightInMipmap To j * RectangleHeight + RectangleHeight - 1
+                                            s.Read(RectangleByteWidth)
                                         Next
-                                    Next
-                                    For y = Height To j * RectangleHeight + RectangleHeight - 1
-                                        s.Read(RectangleByteWidth)
                                     Next
                                 Next
-                            Next
-                        Case BitmapType.A8B8G8R8
-                            For j = 0 To NumHeightBlock - 1
-                                For i = 0 To NumWidthBlock - 1
-                                    For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, Height - 1)
-                                        For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, Width - 1)
-                                            Dim ABGR = s.ReadInt32()
-                                            Dim A As Byte
-                                            Dim B As Byte
-                                            Dim G As Byte
-                                            Dim R As Byte
-                                            SplitBits(A, 8, B, 8, G, 8, R, 8, ABGR)
-                                            Rectangle(x, y) = ConcatBits(A, 8, R, 8, G, 8, B, 8)
-                                        Next
-                                        For x = Width To i * RectanglePixelWidth + RectanglePixelWidth - 1
-                                            s.ReadInt32()
-                                        Next
-                                    Next
-                                    For y = Height To j * RectangleHeight + RectangleHeight - 1
-                                        s.Read(RectangleByteWidth)
-                                    Next
-                                Next
-                            Next
-                        Case Else
-                            Throw New NotSupportedException("NotSupportedBitmapType:{0}".Formats(Type))
-                    End Select
-                    BitmapData.Add(Rectangle)
+                            Case Else
+                                Throw New NotSupportedException("NotSupportedBitmapType:{0}".Formats(Type))
+                        End Select
+                        Mipmaps.Add(Rectangle)
+                        NumWidthBlockInMipmap = (NumWidthBlockInMipmap + 1) \ 2
+                        NumHeightBlockInMipmap = (NumHeightBlockInMipmap + 1) \ 2
+                        WidthInMipmap = (WidthInMipmap + 1) \ 2
+                        HeightInMipmap = (HeightInMipmap + 1) \ 2
+                    Next
+                    BitmapData.Add(Mipmaps)
                 Next
             End Using
         End Sub
@@ -485,6 +511,15 @@ Public Class GIM
                 Dim NumWidthBlock = (Width + RectanglePixelWidth - 1) \ RectanglePixelWidth
                 Dim NumHeightBlock = (Height + RectangleHeight - 1) \ RectangleHeight
                 Dim FrameSize = CInt(RectangleByteWidth) * CInt(RectangleHeight) * CInt(NumWidthBlock) * CInt(NumHeightBlock)
+                If NumMipmap > 1 Then
+                    Dim NumWidthBlockInMipmap = NumWidthBlock
+                    Dim NumHeightBlockInMipmap = NumHeightBlock
+                    For k = 1 To NumMipmap - 1
+                        NumWidthBlockInMipmap = (NumWidthBlockInMipmap + 1) \ 2
+                        NumHeightBlockInMipmap = (NumHeightBlockInMipmap + 1) \ 2
+                        FrameSize += CInt(RectangleByteWidth) * CInt(RectangleHeight) * CInt(NumWidthBlockInMipmap) * CInt(NumHeightBlockInMipmap)
+                    Next
+                End If
 
                 Dim BitmapStart = AddressStart + GetSpace2(NumFrame * 4)
                 Dim BitmapEnd = BitmapStart + FrameSize * BitmapData.Count
@@ -494,6 +529,9 @@ Public Class GIM
                 s.WriteInt32(BitmapStart)
                 s.WriteInt32(BitmapEnd)
 
+                s.Position = &H2A
+                s.WriteUInt16(NumMipmap)
+
                 s.Position = &H2E
                 s.WriteUInt16(NumFrame)
 
@@ -502,178 +540,189 @@ Public Class GIM
                     s.WriteInt32(BitmapStart + FrameSize * Indices(n))
                 Next
 
-                s.Position = BitmapStart
                 For n = 0 To BitmapData.Count - 1
-                    Dim Rectangle = BitmapData(n)
-                    Select Case Type
-                        Case BitmapType.Index4
-                            For j = 0 To NumHeightBlock - 1
-                                For i = 0 To NumWidthBlock - 1
-                                    For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, Height - 1)
-                                        If i * RectanglePixelWidth + RectanglePixelWidth <= Width Then
-                                            For x = i * RectanglePixelWidth To i * RectanglePixelWidth + RectanglePixelWidth - 1 Step 2
-                                                s.WriteByte(ConcatBits(Rectangle(x + 1, y), 4, Rectangle(x, y), 4))
-                                            Next
-                                        Else
-                                            For x = i * RectanglePixelWidth To Width - 2 Step 2
-                                                s.WriteByte(ConcatBits(Rectangle(x + 1, y), 4, Rectangle(x, y), 4))
-                                            Next
-                                            If (Width And 1) <> 0 Then
-                                                s.WriteByte(ConcatBits(0, 4, Rectangle(Width - 1, y), 4))
+                    s.Position = BitmapStart + FrameSize * n
+                    Dim Mipmaps = BitmapData(n)
+                    Dim NumWidthBlockInMipmap = NumWidthBlock
+                    Dim NumHeightBlockInMipmap = NumHeightBlock
+                    Dim WidthInMipmap = Width
+                    Dim HeightInMipmap = Height
+                    For k = 0 To NumMipmap - 1
+                        Dim Rectangle = Mipmaps(k)
+                        Select Case Type
+                            Case BitmapType.Index4
+                                For j = 0 To NumHeightBlockInMipmap - 1
+                                    For i = 0 To NumWidthBlockInMipmap - 1
+                                        For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, HeightInMipmap - 1)
+                                            If i * RectanglePixelWidth + RectanglePixelWidth <= WidthInMipmap Then
+                                                For x = i * RectanglePixelWidth To i * RectanglePixelWidth + RectanglePixelWidth - 1 Step 2
+                                                    s.WriteByte(ConcatBits(Rectangle(x + 1, y), 4, Rectangle(x, y), 4))
+                                                Next
+                                            Else
+                                                For x = i * RectanglePixelWidth To WidthInMipmap - 2 Step 2
+                                                    s.WriteByte(ConcatBits(Rectangle(x + 1, y), 4, Rectangle(x, y), 4))
+                                                Next
+                                                If (WidthInMipmap And 1) <> 0 Then
+                                                    s.WriteByte(ConcatBits(0, 4, Rectangle(WidthInMipmap - 1, y), 4))
+                                                End If
+                                                For x = ((WidthInMipmap + 1) \ 2) * 2 To i * RectanglePixelWidth + RectanglePixelWidth - 1 Step 2
+                                                    s.WriteByte(0)
+                                                Next
                                             End If
-                                            For x = ((Width + 1) \ 2) * 2 To i * RectanglePixelWidth + RectanglePixelWidth - 1 Step 2
+                                        Next
+                                        For y = HeightInMipmap To j * RectangleHeight + RectangleHeight - 1
+                                            s.Write(New Byte(RectangleByteWidth - 1) {})
+                                        Next
+                                    Next
+                                Next
+                            Case BitmapType.Index8
+                                For j = 0 To NumHeightBlockInMipmap - 1
+                                    For i = 0 To NumWidthBlockInMipmap - 1
+                                        For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, HeightInMipmap - 1)
+                                            For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, WidthInMipmap - 1)
+                                                s.WriteByte(Rectangle(x, y))
+                                            Next
+                                            For x = WidthInMipmap To i * RectanglePixelWidth + RectanglePixelWidth - 1
                                                 s.WriteByte(0)
                                             Next
-                                        End If
-                                    Next
-                                    For y = Height To j * RectangleHeight + RectangleHeight - 1
-                                        s.Write(New Byte(RectangleByteWidth - 1) {})
+                                        Next
+                                        For y = HeightInMipmap To j * RectangleHeight + RectangleHeight - 1
+                                            s.Write(New Byte(RectangleByteWidth - 1) {})
+                                        Next
                                     Next
                                 Next
-                            Next
-                        Case BitmapType.Index8
-                            For j = 0 To NumHeightBlock - 1
-                                For i = 0 To NumWidthBlock - 1
-                                    For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, Height - 1)
-                                        For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, Width - 1)
-                                            s.WriteByte(Rectangle(x, y))
+                            Case BitmapType.Index16
+                                For j = 0 To NumHeightBlockInMipmap - 1
+                                    For i = 0 To NumWidthBlockInMipmap - 1
+                                        For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, HeightInMipmap - 1)
+                                            For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, WidthInMipmap - 1)
+                                                s.WriteUInt16(Rectangle(x, y))
+                                            Next
+                                            For x = WidthInMipmap To i * RectanglePixelWidth + RectanglePixelWidth - 1
+                                                s.WriteUInt16(0)
+                                            Next
                                         Next
-                                        For x = Width To i * RectanglePixelWidth + RectanglePixelWidth - 1
-                                            s.WriteByte(0)
+                                        For y = HeightInMipmap To j * RectangleHeight + RectangleHeight - 1
+                                            s.Write(New Byte(RectangleByteWidth - 1) {})
                                         Next
-                                    Next
-                                    For y = Height To j * RectangleHeight + RectangleHeight - 1
-                                        s.Write(New Byte(RectangleByteWidth - 1) {})
                                     Next
                                 Next
-                            Next
-                        Case BitmapType.Index16
-                            For j = 0 To NumHeightBlock - 1
-                                For i = 0 To NumWidthBlock - 1
-                                    For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, Height - 1)
-                                        For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, Width - 1)
-                                            s.WriteUInt16(Rectangle(x, y))
+                            Case BitmapType.Index32
+                                For j = 0 To NumHeightBlockInMipmap - 1
+                                    For i = 0 To NumWidthBlockInMipmap - 1
+                                        For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, HeightInMipmap - 1)
+                                            For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, WidthInMipmap - 1)
+                                                s.WriteInt32(Rectangle(x, y))
+                                            Next
+                                            For x = WidthInMipmap To i * RectanglePixelWidth + RectanglePixelWidth - 1
+                                                s.WriteInt32(0)
+                                            Next
                                         Next
-                                        For x = Width To i * RectanglePixelWidth + RectanglePixelWidth - 1
-                                            s.WriteUInt16(0)
+                                        For y = HeightInMipmap To j * RectangleHeight + RectangleHeight - 1
+                                            s.Write(New Byte(RectangleByteWidth - 1) {})
                                         Next
-                                    Next
-                                    For y = Height To j * RectangleHeight + RectangleHeight - 1
-                                        s.Write(New Byte(RectangleByteWidth - 1) {})
                                     Next
                                 Next
-                            Next
-                        Case BitmapType.Index32
-                            For j = 0 To NumHeightBlock - 1
-                                For i = 0 To NumWidthBlock - 1
-                                    For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, Height - 1)
-                                        For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, Width - 1)
-                                            s.WriteInt32(Rectangle(x, y))
+                            Case BitmapType.B5G6R5
+                                For j = 0 To NumHeightBlockInMipmap - 1
+                                    For i = 0 To NumWidthBlockInMipmap - 1
+                                        For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, HeightInMipmap - 1)
+                                            For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, WidthInMipmap - 1)
+                                                Dim ARGB = Rectangle(x, y)
+                                                Dim A As Byte
+                                                Dim B As Byte
+                                                Dim G As Byte
+                                                Dim R As Byte
+                                                SplitBits(A, 8, R, 8, G, 8, B, 8, ARGB)
+                                                Dim ABGR = ConcatBits(B >> 3, 5, G >> 2, 6, R >> 3, 5)
+                                                s.WriteUInt16(ABGR)
+                                            Next
+                                            For x = WidthInMipmap To i * RectanglePixelWidth + RectanglePixelWidth - 1
+                                                s.WriteUInt16(0)
+                                            Next
                                         Next
-                                        For x = Width To i * RectanglePixelWidth + RectanglePixelWidth - 1
-                                            s.WriteInt32(0)
+                                        For y = HeightInMipmap To j * RectangleHeight + RectangleHeight - 1
+                                            s.Write(New Byte(RectangleByteWidth - 1) {})
                                         Next
-                                    Next
-                                    For y = Height To j * RectangleHeight + RectangleHeight - 1
-                                        s.Write(New Byte(RectangleByteWidth - 1) {})
                                     Next
                                 Next
-                            Next
-                        Case BitmapType.B5G6R5
-                            For j = 0 To NumHeightBlock - 1
-                                For i = 0 To NumWidthBlock - 1
-                                    For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, Height - 1)
-                                        For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, Width - 1)
-                                            Dim ARGB = Rectangle(x, y)
-                                            Dim A As Byte
-                                            Dim B As Byte
-                                            Dim G As Byte
-                                            Dim R As Byte
-                                            SplitBits(A, 8, R, 8, G, 8, B, 8, ARGB)
-                                            Dim ABGR = ConcatBits(B >> 3, 5, G >> 2, 6, R >> 3, 5)
-                                            s.WriteUInt16(ABGR)
+                            Case BitmapType.A1B5G5R5
+                                For j = 0 To NumHeightBlockInMipmap - 1
+                                    For i = 0 To NumWidthBlockInMipmap - 1
+                                        For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, HeightInMipmap - 1)
+                                            For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, WidthInMipmap - 1)
+                                                Dim ARGB = Rectangle(x, y)
+                                                Dim A As Byte
+                                                Dim B As Byte
+                                                Dim G As Byte
+                                                Dim R As Byte
+                                                SplitBits(A, 8, R, 8, G, 8, B, 8, ARGB)
+                                                Dim ABGR = ConcatBits(A >> 7, 1, B >> 3, 5, G >> 3, 5, R >> 3, 5)
+                                                s.WriteUInt16(ABGR)
+                                            Next
+                                            For x = WidthInMipmap To i * RectanglePixelWidth + RectanglePixelWidth - 1
+                                                s.WriteUInt16(0)
+                                            Next
                                         Next
-                                        For x = Width To i * RectanglePixelWidth + RectanglePixelWidth - 1
-                                            s.WriteUInt16(0)
+                                        For y = HeightInMipmap To j * RectangleHeight + RectangleHeight - 1
+                                            s.Write(New Byte(RectangleByteWidth - 1) {})
                                         Next
-                                    Next
-                                    For y = Height To j * RectangleHeight + RectangleHeight - 1
-                                        s.Write(New Byte(RectangleByteWidth - 1) {})
                                     Next
                                 Next
-                            Next
-                        Case BitmapType.A1B5G5R5
-                            For j = 0 To NumHeightBlock - 1
-                                For i = 0 To NumWidthBlock - 1
-                                    For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, Height - 1)
-                                        For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, Width - 1)
-                                            Dim ARGB = Rectangle(x, y)
-                                            Dim A As Byte
-                                            Dim B As Byte
-                                            Dim G As Byte
-                                            Dim R As Byte
-                                            SplitBits(A, 8, R, 8, G, 8, B, 8, ARGB)
-                                            Dim ABGR = ConcatBits(A >> 7, 1, B >> 3, 5, G >> 3, 5, R >> 3, 5)
-                                            s.WriteUInt16(ABGR)
+                            Case BitmapType.A4B4G4R4
+                                For j = 0 To NumHeightBlockInMipmap - 1
+                                    For i = 0 To NumWidthBlockInMipmap - 1
+                                        For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, HeightInMipmap - 1)
+                                            For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, WidthInMipmap - 1)
+                                                Dim ARGB = Rectangle(x, y)
+                                                Dim A As Byte
+                                                Dim B As Byte
+                                                Dim G As Byte
+                                                Dim R As Byte
+                                                SplitBits(A, 8, R, 8, G, 8, B, 8, ARGB)
+                                                Dim ABGR = ConcatBits(A >> 4, 4, B >> 4, 4, G >> 4, 4, R >> 4, 4)
+                                                s.WriteUInt16(ABGR)
+                                            Next
+                                            For x = WidthInMipmap To i * RectanglePixelWidth + RectanglePixelWidth - 1
+                                                s.WriteUInt16(0)
+                                            Next
                                         Next
-                                        For x = Width To i * RectanglePixelWidth + RectanglePixelWidth - 1
-                                            s.WriteUInt16(0)
+                                        For y = HeightInMipmap To j * RectangleHeight + RectangleHeight - 1
+                                            s.Write(New Byte(RectangleByteWidth - 1) {})
                                         Next
-                                    Next
-                                    For y = Height To j * RectangleHeight + RectangleHeight - 1
-                                        s.Write(New Byte(RectangleByteWidth - 1) {})
                                     Next
                                 Next
-                            Next
-                        Case BitmapType.A4B4G4R4
-                            For j = 0 To NumHeightBlock - 1
-                                For i = 0 To NumWidthBlock - 1
-                                    For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, Height - 1)
-                                        For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, Width - 1)
-                                            Dim ARGB = Rectangle(x, y)
-                                            Dim A As Byte
-                                            Dim B As Byte
-                                            Dim G As Byte
-                                            Dim R As Byte
-                                            SplitBits(A, 8, R, 8, G, 8, B, 8, ARGB)
-                                            Dim ABGR = ConcatBits(A >> 4, 4, B >> 4, 4, G >> 4, 4, R >> 4, 4)
-                                            s.WriteUInt16(ABGR)
+                            Case BitmapType.A8B8G8R8
+                                For j = 0 To NumHeightBlockInMipmap - 1
+                                    For i = 0 To NumWidthBlockInMipmap - 1
+                                        For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, HeightInMipmap - 1)
+                                            For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, WidthInMipmap - 1)
+                                                Dim ARGB = Rectangle(x, y)
+                                                Dim A As Byte
+                                                Dim B As Byte
+                                                Dim G As Byte
+                                                Dim R As Byte
+                                                SplitBits(A, 8, R, 8, G, 8, B, 8, ARGB)
+                                                Dim ABGR = ConcatBits(A, 8, B, 8, G, 8, R, 8)
+                                                s.WriteInt32(ABGR)
+                                            Next
+                                            For x = WidthInMipmap To i * RectanglePixelWidth + RectanglePixelWidth - 1
+                                                s.WriteInt32(0)
+                                            Next
                                         Next
-                                        For x = Width To i * RectanglePixelWidth + RectanglePixelWidth - 1
-                                            s.WriteUInt16(0)
+                                        For y = HeightInMipmap To j * RectangleHeight + RectangleHeight - 1
+                                            s.Write(New Byte(RectangleByteWidth - 1) {})
                                         Next
-                                    Next
-                                    For y = Height To j * RectangleHeight + RectangleHeight - 1
-                                        s.Write(New Byte(RectangleByteWidth - 1) {})
                                     Next
                                 Next
-                            Next
-                        Case BitmapType.A8B8G8R8
-                            For j = 0 To NumHeightBlock - 1
-                                For i = 0 To NumWidthBlock - 1
-                                    For y = j * RectangleHeight To Min(j * RectangleHeight + RectangleHeight - 1, Height - 1)
-                                        For x = i * RectanglePixelWidth To Min(i * RectanglePixelWidth + RectanglePixelWidth - 1, Width - 1)
-                                            Dim ARGB = Rectangle(x, y)
-                                            Dim A As Byte
-                                            Dim B As Byte
-                                            Dim G As Byte
-                                            Dim R As Byte
-                                            SplitBits(A, 8, R, 8, G, 8, B, 8, ARGB)
-                                            Dim ABGR = ConcatBits(A, 8, B, 8, G, 8, R, 8)
-                                            s.WriteInt32(ABGR)
-                                        Next
-                                        For x = Width To i * RectanglePixelWidth + RectanglePixelWidth - 1
-                                            s.WriteInt32(0)
-                                        Next
-                                    Next
-                                    For y = Height To j * RectangleHeight + RectangleHeight - 1
-                                        s.Write(New Byte(RectangleByteWidth - 1) {})
-                                    Next
-                                Next
-                            Next
-                        Case Else
-                            Throw New NotSupportedException
-                    End Select
+                            Case Else
+                                Throw New NotSupportedException
+                        End Select
+                        NumWidthBlockInMipmap = (NumWidthBlockInMipmap + 1) \ 2
+                        NumHeightBlockInMipmap = (NumHeightBlockInMipmap + 1) \ 2
+                        WidthInMipmap = (WidthInMipmap + 1) \ 2
+                        HeightInMipmap = (HeightInMipmap + 1) \ 2
+                    Next
                 Next
 
                 s.Position = 0
@@ -686,12 +735,14 @@ Public Class GIM
         Inherits Block
 
         Public Indices As Integer()
-        Public PaletteData As New List(Of Int32())
+        Public PaletteData As New List(Of List(Of Int32()))
 
         Public Type As PaletteTypes
         Public NumColor As UInt16
 
         Private AddressStart As Int32
+
+        Public NumMipmap As UInt16 = 1
 
         Public ReadOnly Property NumFrame() As Integer
             Get
@@ -717,6 +768,9 @@ Public Class GIM
                 Dim PaletteStart = s.ReadInt32
                 Dim PaletteEnd = s.ReadInt32
 
+                s.Position = &H2A
+                NumMipmap = s.ReadUInt16
+
                 s.Position = &H2E
                 Dim NumFrame = s.ReadUInt16
 
@@ -724,7 +778,7 @@ Public Class GIM
 
                 Select Case Type
                     Case PaletteTypes.B5G6R5
-                        Dim FrameSize = NumColor * 2
+                        Dim FrameSize = NumColor * 2 * NumMipmap
 
                         Indices = New Int32(NumFrame - 1) {}
                         For n = 0 To NumFrame - 1
@@ -736,24 +790,28 @@ Public Class GIM
                             Indices(n) = Index
                         Next
 
-                        s.Position = PaletteStart
                         For n = 0 To (PaletteEnd - PaletteStart) \ FrameSize - 1
-                            Dim Palette = New Int32(NumColor - 1) {}
-                            For i = 0 To NumColor - 1
-                                Dim ABGR = s.ReadInt16
-                                Dim B As Byte
-                                Dim G As Byte
-                                Dim R As Byte
-                                SplitBits(B, 5, G, 6, R, 5, ABGR)
-                                B = ConcatBits(B, 5, B >> 2, 3)
-                                G = ConcatBits(G, 6, G >> 4, 2)
-                                R = ConcatBits(R, 5, R >> 2, 3)
-                                Palette(i) = ConcatBits(&HFF, 8, R, 8, G, 8, B, 8)
+                            s.Position = PaletteStart + FrameSize * n
+                            Dim Palettes = New List(Of Int32())
+                            For k = 0 To NumMipmap - 1
+                                Dim Palette = New Int32(NumColor - 1) {}
+                                For i = 0 To NumColor - 1
+                                    Dim ABGR = s.ReadInt16
+                                    Dim B As Byte
+                                    Dim G As Byte
+                                    Dim R As Byte
+                                    SplitBits(B, 5, G, 6, R, 5, ABGR)
+                                    B = ConcatBits(B, 5, B >> 2, 3)
+                                    G = ConcatBits(G, 6, G >> 4, 2)
+                                    R = ConcatBits(R, 5, R >> 2, 3)
+                                    Palette(i) = ConcatBits(&HFF, 8, R, 8, G, 8, B, 8)
+                                Next
+                                Palettes.Add(Palette)
                             Next
-                            PaletteData.Add(Palette)
+                            PaletteData.Add(Palettes)
                         Next
                     Case PaletteTypes.A1B5G5R5
-                        Dim FrameSize = NumColor * 2
+                        Dim FrameSize = NumColor * 2 * NumMipmap
 
                         Indices = New Int32(NumFrame - 1) {}
                         For n = 0 To NumFrame - 1
@@ -765,28 +823,32 @@ Public Class GIM
                             Indices(n) = Index
                         Next
 
-                        s.Position = PaletteStart
                         For n = 0 To (PaletteEnd - PaletteStart) \ FrameSize - 1
-                            Dim Palette = New Int32(NumColor - 1) {}
-                            For i = 0 To NumColor - 1
-                                Dim ABGR = s.ReadInt16
-                                Dim A As Byte
-                                Dim B As Byte
-                                Dim G As Byte
-                                Dim R As Byte
-                                SplitBits(A, 1, B, 5, G, 5, R, 5, ABGR)
-                                A = ConcatBits(A, 1, A, 1)
-                                A = ConcatBits(A, 2, A, 2)
-                                A = ConcatBits(A, 4, A, 4)
-                                B = ConcatBits(B, 5, B >> 2, 3)
-                                G = ConcatBits(G, 5, G >> 2, 3)
-                                R = ConcatBits(R, 5, R >> 2, 3)
-                                Palette(i) = ConcatBits(A, 8, R, 8, G, 8, B, 8)
+                            s.Position = PaletteStart + FrameSize * n
+                            Dim Palettes = New List(Of Int32())
+                            For k = 0 To NumMipmap - 1
+                                Dim Palette = New Int32(NumColor - 1) {}
+                                For i = 0 To NumColor - 1
+                                    Dim ABGR = s.ReadInt16
+                                    Dim A As Byte
+                                    Dim B As Byte
+                                    Dim G As Byte
+                                    Dim R As Byte
+                                    SplitBits(A, 1, B, 5, G, 5, R, 5, ABGR)
+                                    A = ConcatBits(A, 1, A, 1)
+                                    A = ConcatBits(A, 2, A, 2)
+                                    A = ConcatBits(A, 4, A, 4)
+                                    B = ConcatBits(B, 5, B >> 2, 3)
+                                    G = ConcatBits(G, 5, G >> 2, 3)
+                                    R = ConcatBits(R, 5, R >> 2, 3)
+                                    Palette(i) = ConcatBits(A, 8, R, 8, G, 8, B, 8)
+                                Next
+                                Palettes.Add(Palette)
                             Next
-                            PaletteData.Add(Palette)
+                            PaletteData.Add(Palettes)
                         Next
                     Case PaletteTypes.A4B4G4R4
-                        Dim FrameSize = NumColor * 2
+                        Dim FrameSize = NumColor * 2 * NumMipmap
 
                         Indices = New Int32(NumFrame - 1) {}
                         For n = 0 To NumFrame - 1
@@ -798,26 +860,30 @@ Public Class GIM
                             Indices(n) = Index
                         Next
 
-                        s.Position = PaletteStart
                         For n = 0 To (PaletteEnd - PaletteStart) \ FrameSize - 1
-                            Dim Palette = New Int32(NumColor - 1) {}
-                            For i = 0 To NumColor - 1
-                                Dim ABGR = s.ReadInt16
-                                Dim A As Byte
-                                Dim B As Byte
-                                Dim G As Byte
-                                Dim R As Byte
-                                SplitBits(A, 4, B, 4, G, 4, R, 4, ABGR)
-                                A = ConcatBits(A, 4, A, 4)
-                                B = ConcatBits(B, 4, B, 4)
-                                G = ConcatBits(G, 4, G, 4)
-                                R = ConcatBits(R, 4, R, 4)
-                                Palette(i) = ConcatBits(A, 8, R, 8, G, 8, B, 8)
+                            s.Position = PaletteStart + FrameSize * n
+                            Dim Palettes = New List(Of Int32())
+                            For k = 0 To NumMipmap - 1
+                                Dim Palette = New Int32(NumColor - 1) {}
+                                For i = 0 To NumColor - 1
+                                    Dim ABGR = s.ReadInt16
+                                    Dim A As Byte
+                                    Dim B As Byte
+                                    Dim G As Byte
+                                    Dim R As Byte
+                                    SplitBits(A, 4, B, 4, G, 4, R, 4, ABGR)
+                                    A = ConcatBits(A, 4, A, 4)
+                                    B = ConcatBits(B, 4, B, 4)
+                                    G = ConcatBits(G, 4, G, 4)
+                                    R = ConcatBits(R, 4, R, 4)
+                                    Palette(i) = ConcatBits(A, 8, R, 8, G, 8, B, 8)
+                                Next
+                                Palettes.Add(Palette)
                             Next
-                            PaletteData.Add(Palette)
+                            PaletteData.Add(Palettes)
                         Next
                     Case PaletteTypes.A8B8G8R8
-                        Dim FrameSize = NumColor * 4
+                        Dim FrameSize = NumColor * 4 * NumMipmap
 
                         Indices = New Int32(NumFrame - 1) {}
                         For n = 0 To NumFrame - 1
@@ -829,19 +895,23 @@ Public Class GIM
                             Indices(n) = Index
                         Next
 
-                        s.Position = PaletteStart
                         For n = 0 To (PaletteEnd - PaletteStart) \ FrameSize - 1
-                            Dim Palette = New Int32(NumColor - 1) {}
-                            For i = 0 To NumColor - 1
-                                Dim ABGR = s.ReadInt32
-                                Dim A As Byte
-                                Dim B As Byte
-                                Dim G As Byte
-                                Dim R As Byte
-                                SplitBits(A, 8, B, 8, G, 8, R, 8, ABGR)
-                                Palette(i) = ConcatBits(A, 8, R, 8, G, 8, B, 8)
+                            s.Position = PaletteStart + FrameSize * n
+                            Dim Palettes = New List(Of Int32())
+                            For k = 0 To NumMipmap - 1
+                                Dim Palette = New Int32(NumColor - 1) {}
+                                For i = 0 To NumColor - 1
+                                    Dim ABGR = s.ReadInt32
+                                    Dim A As Byte
+                                    Dim B As Byte
+                                    Dim G As Byte
+                                    Dim R As Byte
+                                    SplitBits(A, 8, B, 8, G, 8, R, 8, ABGR)
+                                    Palette(i) = ConcatBits(A, 8, R, 8, G, 8, B, 8)
+                                Next
+                                Palettes.Add(Palette)
                             Next
-                            PaletteData.Add(Palette)
+                            PaletteData.Add(Palettes)
                         Next
                     Case Else
                         Throw New NotSupportedException
@@ -872,12 +942,15 @@ Public Class GIM
                 End Select
 
                 Dim PaletteStart = AddressStart + GetSpace2(NumFrame * 4)
-                Dim PaletteEnd = PaletteStart + FrameSize * NumFrame
+                Dim PaletteEnd = PaletteStart + FrameSize * NumFrame * NumMipmap
 
                 s.Position = &H18
                 s.WriteInt32(AddressStart)
                 s.WriteInt32(PaletteStart)
                 s.WriteInt32(PaletteEnd)
+
+                s.Position = &H2A
+                s.WriteUInt16(NumMipmap)
 
                 s.Position = &H2E
                 s.WriteUInt16(NumFrame)
@@ -892,58 +965,70 @@ Public Class GIM
                 Select Case Type
                     Case PaletteTypes.B5G6R5
                         For n = 0 To PaletteData.Count - 1
-                            Dim Palette = PaletteData(n)
-                            For i = 0 To NumColor - 1
-                                Dim ARGB = Palette(i)
-                                Dim A As Byte
-                                Dim B As Byte
-                                Dim G As Byte
-                                Dim R As Byte
-                                SplitBits(A, 8, R, 8, G, 8, B, 8, ARGB)
-                                Dim BGR = CID(ConcatBits(B >> 3, 5, G >> 2, 6, R >> 3, 5))
-                                s.WriteInt16(BGR)
+                            Dim Palettes = PaletteData(n)
+                            For k = 0 To NumMipmap - 1
+                                Dim Palette = Palettes(n)
+                                For i = 0 To NumColor - 1
+                                    Dim ARGB = Palette(i)
+                                    Dim A As Byte
+                                    Dim B As Byte
+                                    Dim G As Byte
+                                    Dim R As Byte
+                                    SplitBits(A, 8, R, 8, G, 8, B, 8, ARGB)
+                                    Dim BGR = CID(ConcatBits(B >> 3, 5, G >> 2, 6, R >> 3, 5))
+                                    s.WriteInt16(BGR)
+                                Next
                             Next
                         Next
                     Case PaletteTypes.A1B5G5R5
                         For n = 0 To PaletteData.Count - 1
-                            Dim Palette = PaletteData(n)
-                            For i = 0 To NumColor - 1
-                                Dim ARGB = Palette(i)
-                                Dim A As Byte
-                                Dim B As Byte
-                                Dim G As Byte
-                                Dim R As Byte
-                                SplitBits(A, 8, R, 8, G, 8, B, 8, ARGB)
-                                Dim ABGR = CID(ConcatBits(A >> 7, 1, B >> 3, 5, G >> 3, 5, R >> 3, 5))
-                                s.WriteInt16(ABGR)
+                            Dim Palettes = PaletteData(n)
+                            For k = 0 To NumMipmap - 1
+                                Dim Palette = Palettes(n)
+                                For i = 0 To NumColor - 1
+                                    Dim ARGB = Palette(i)
+                                    Dim A As Byte
+                                    Dim B As Byte
+                                    Dim G As Byte
+                                    Dim R As Byte
+                                    SplitBits(A, 8, R, 8, G, 8, B, 8, ARGB)
+                                    Dim ABGR = CID(ConcatBits(A >> 7, 1, B >> 3, 5, G >> 3, 5, R >> 3, 5))
+                                    s.WriteInt16(ABGR)
+                                Next
                             Next
                         Next
                     Case PaletteTypes.A4B4G4R4
                         For n = 0 To PaletteData.Count - 1
-                            Dim Palette = PaletteData(n)
-                            For i = 0 To NumColor - 1
-                                Dim ARGB = Palette(i)
-                                Dim A As Byte
-                                Dim B As Byte
-                                Dim G As Byte
-                                Dim R As Byte
-                                SplitBits(A, 8, R, 8, G, 8, B, 8, ARGB)
-                                Dim ABGR = CID(ConcatBits(A >> 4, 4, B >> 4, 4, G >> 4, 4, R >> 4, 4))
-                                s.WriteInt16(ABGR)
+                            Dim Palettes = PaletteData(n)
+                            For k = 0 To NumMipmap - 1
+                                Dim Palette = Palettes(n)
+                                For i = 0 To NumColor - 1
+                                    Dim ARGB = Palette(i)
+                                    Dim A As Byte
+                                    Dim B As Byte
+                                    Dim G As Byte
+                                    Dim R As Byte
+                                    SplitBits(A, 8, R, 8, G, 8, B, 8, ARGB)
+                                    Dim ABGR = CID(ConcatBits(A >> 4, 4, B >> 4, 4, G >> 4, 4, R >> 4, 4))
+                                    s.WriteInt16(ABGR)
+                                Next
                             Next
                         Next
                     Case PaletteTypes.A8B8G8R8
                         For n = 0 To PaletteData.Count - 1
-                            Dim Palette = PaletteData(n)
-                            For i = 0 To NumColor - 1
-                                Dim ARGB = Palette(i)
-                                Dim A As Byte
-                                Dim B As Byte
-                                Dim G As Byte
-                                Dim R As Byte
-                                SplitBits(A, 8, R, 8, G, 8, B, 8, ARGB)
-                                Dim ABGR = ConcatBits(A, 8, B, 8, G, 8, R, 8)
-                                s.WriteInt32(ABGR)
+                            Dim Palettes = PaletteData(n)
+                            For k = 0 To NumMipmap - 1
+                                Dim Palette = Palettes(n)
+                                For i = 0 To NumColor - 1
+                                    Dim ARGB = Palette(i)
+                                    Dim A As Byte
+                                    Dim B As Byte
+                                    Dim G As Byte
+                                    Dim R As Byte
+                                    SplitBits(A, 8, R, 8, G, 8, B, 8, ARGB)
+                                    Dim ABGR = ConcatBits(A, 8, B, 8, G, 8, R, 8)
+                                    s.WriteInt32(ABGR)
+                                Next
                             Next
                         Next
                     Case Else
