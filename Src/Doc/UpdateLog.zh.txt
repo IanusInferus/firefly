@@ -1,4 +1,10 @@
-﻿2013.02.18
+﻿2013.02.27
+Examples\Packaging:
+修正F#示例在Visual Studio 2012下编译失败的问题。
+Examples\Imaging:
+增加GIM工具对Mipmap的支持。
+
+2013.02.18
 更新联系方式。
 
 2013.02.14.0
