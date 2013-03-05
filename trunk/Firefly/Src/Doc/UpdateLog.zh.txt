@@ -1,4 +1,8 @@
-﻿2013.02.27
+﻿2013.03.05
+Firefly.Core.Texting.TreeFormat:
+修正XML转换为Tree时部分record创建时没有填全参数的问题。
+
+2013.02.27
 Examples\Packaging:
 修正F#示例在Visual Studio 2012下编译失败的问题。
 Examples\Imaging:
