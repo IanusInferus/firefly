@@ -3,7 +3,7 @@
 '  File:        XmlInterop.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: XML互操作
-'  Version:     2013.01.16.
+'  Version:     2013.03.05.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -423,7 +423,7 @@ Namespace Texting.TreeFormat
                     Dim n = Mark(Syntax.Node.CreateSingleLineComment(Mark(New Syntax.SingleLineComment With {.Content = Mark(New Syntax.FreeContent With {.Text = Value}, Range)}, Range)), Range)
                     Return n
                 ElseIf Literal.OnMultiLine Then
-                    Dim n = Mark(Syntax.Node.CreateMultiLineComment(Mark(New Syntax.MultiLineComment With {.Content = New Syntax.FreeContent With {.Text = Value}}, Range)), Range)
+                    Dim n = Mark(Syntax.Node.CreateMultiLineComment(Mark(New Syntax.MultiLineComment With {.SingleLineComment = Opt(Of Syntax.SingleLineComment).Empty, .Content = New Syntax.FreeContent With {.Text = Value}, .EndDirective = Opt(Of Syntax.EndDirective).Empty}, Range)), Range)
                     Return n
                 Else
                     Throw New InvalidOperationException
@@ -457,7 +457,7 @@ Namespace Texting.TreeFormat
                     Dim n = Mark(Syntax.Node.CreateSingleLineNodeLine(Mark(New Syntax.SingleLineNodeLine With {.SingleLineNode = LeafNode, .SingleLineComment = Opt(Of Syntax.SingleLineComment).Empty}, Range)), Range)
                     Return n
                 ElseIf Literal.OnMultiLine Then
-                    Dim n = Mark(Syntax.Node.CreateMultiLineLiteral(Mark(New Syntax.MultiLineLiteral With {.Content = New Syntax.FreeContent With {.Text = Value}}, Range)), Range)
+                    Dim n = Mark(Syntax.Node.CreateMultiLineLiteral(Mark(New Syntax.MultiLineLiteral With {.SingleLineComment = Opt(Of Syntax.SingleLineComment).Empty, .Content = New Syntax.FreeContent With {.Text = Value}, .EndDirective = Opt(Of Syntax.EndDirective).Empty}, Range)), Range)
                     Return n
                 Else
                     Throw New InvalidOperationException
