@@ -1,4 +1,8 @@
-﻿2013.03.05
+﻿2013.03.10
+Firefly.Core.Texting.TreeFormat:
+将Opt类改为结构，并增加一些运算符重载和函数。
+
+2013.03.05
 Firefly.Core.Texting.TreeFormat:
 修正XML转换为Tree时部分record创建时没有填全参数的问题。
 
