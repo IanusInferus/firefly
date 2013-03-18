@@ -1,4 +1,9 @@
-﻿2013.03.10
+﻿2013.03.18
+Firefly.Core.TextEncoding, Firefly.Core.Texting, Firefly.TransEncoding:
+TransEncoding增加使用多种编码猜测的功能。
+内置编码使用严格的编码时异常模型。
+
+2013.03.10
 Firefly.Core.Texting.TreeFormat:
 将Opt类改为结构，并增加一些运算符重载和函数。
 

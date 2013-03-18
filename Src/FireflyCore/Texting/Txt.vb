@@ -3,7 +3,7 @@
 '  File:        Txt.vb
 '  Location:    Firefly.Texting <Visual Basic .Net>
 '  Description: 文本文件格式
-'  Version:     2012.07.06.
+'  Version:     2013.03.18.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -123,24 +123,24 @@ Namespace Texting
         Public Shared Function CreateTextWriter(ByVal sp As NewWritingStreamPasser, ByVal Encoding As Encoding, Optional ByVal WithByteOrderMarks As Boolean = True) As StreamWriter
             Dim s = sp.GetStream
             If WithByteOrderMarks Then
-                If Encoding Is UTF16 Then
+                If IsSameIntrinsic(Encoding, UTF16) Then
                     s.WriteByte(&HFF)
                     s.WriteByte(&HFE)
-                ElseIf GB18030Available AndAlso Encoding Is GB18030 Then
+                ElseIf GB18030Available AndAlso IsSameIntrinsic(Encoding, GB18030) Then
                     s.WriteInt32B(&H84319533)
-                ElseIf Encoding Is UTF8 Then
+                ElseIf IsSameIntrinsic(Encoding, UTF8) Then
                     s.WriteByte(&HEF)
                     s.WriteByte(&HBB)
                     s.WriteByte(&HBF)
-                ElseIf Encoding Is UTF32 Then
+                ElseIf IsSameIntrinsic(Encoding, UTF32) Then
                     s.WriteByte(&HFF)
                     s.WriteByte(&HFE)
                     s.WriteByte(0)
                     s.WriteByte(0)
-                ElseIf Encoding Is UTF16B Then
+                ElseIf IsSameIntrinsic(Encoding, UTF16B) Then
                     s.WriteByte(&HFE)
                     s.WriteByte(&HFF)
-                ElseIf Encoding Is UTF32B Then
+                ElseIf IsSameIntrinsic(Encoding, UTF32B) Then
                     s.WriteByte(0)
                     s.WriteByte(0)
                     s.WriteByte(&HFE)
