@@ -2,6 +2,8 @@
 Firefly.Core.TextEncoding, Firefly.Core.Texting, Firefly.TransEncoding:
 TransEncoding增加使用多种编码猜测的功能。
 内置编码使用严格的编码时异常模型。
+Firefly.TransEncoding:
+修正编码比较的错误。
 
 2013.03.10
 Firefly.Core.Texting.TreeFormat:
