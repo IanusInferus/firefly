@@ -138,7 +138,7 @@ Public Module TransEncoding
                 If t Is Nothing Then
                     Console.WriteLine("编码无法识别: {0}".Formats(f))
                     SkipCount += 1
-                ElseIf DetectedEncoding IsNot TargetEncoding OrElse HasBOM <> NeedBOM Then
+                ElseIf (Not IsSameIntrinsic(DetectedEncoding, TargetEncoding)) OrElse HasBOM <> NeedBOM Then
                     Dim Bytes As Byte() = Nothing
                     Try
                         Using ms = Streams.CreateMemoryStream()
