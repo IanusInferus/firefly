@@ -3,7 +3,7 @@
 '  File:        Encoding.vb
 '  Location:    Firefly.TextEncoding <Visual Basic .Net>
 '  Description: 编码
-'  Version:     2012.07.06.
+'  Version:     2013.03.18.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -192,6 +192,14 @@ Namespace TextEncoding
             End Set
         End Property
 
+        Public Function IsSameIntrinsic(ByVal Left As Encoding, ByVal Right As Encoding) As Boolean
+            If Left Is Right Then Return True
+            If Left Is Nothing OrElse Right Is Nothing Then Return False
+            If Left.WebName = Right.WebName Then Return True
+            If Left.CodePage = Right.CodePage Then Return True
+            Return False
+        End Function
+
         Public ReadOnly Property ASCII() As Encoding
             Get
                 Static e As Encoding = Nothing
@@ -203,7 +211,7 @@ Namespace TextEncoding
         Public ReadOnly Property UTF8() As Encoding
             Get
                 Static e As Encoding = Nothing
-                If e Is Nothing Then e = Encoding.GetEncoding("UTF-8") '65001
+                If e Is Nothing Then e = Encoding.GetEncoding("UTF-8", New EncoderExceptionFallback(), New DecoderExceptionFallback()) '65001
                 Return e
             End Get
         End Property
@@ -211,7 +219,7 @@ Namespace TextEncoding
         Public ReadOnly Property UTF16() As Encoding
             Get
                 Static e As Encoding = Nothing
-                If e Is Nothing Then e = Encoding.GetEncoding("UTF-16") '1200
+                If e Is Nothing Then e = Encoding.GetEncoding("UTF-16", New EncoderExceptionFallback(), New DecoderExceptionFallback()) '1200
                 Return e
             End Get
         End Property
@@ -219,7 +227,7 @@ Namespace TextEncoding
         Public ReadOnly Property UTF16B() As Encoding
             Get
                 Static e As Encoding = Nothing
-                If e Is Nothing Then e = Encoding.GetEncoding("UTF-16BE") '1201
+                If e Is Nothing Then e = Encoding.GetEncoding("UTF-16BE", New EncoderExceptionFallback(), New DecoderExceptionFallback()) '1201
                 Return e
             End Get
         End Property
@@ -227,7 +235,7 @@ Namespace TextEncoding
         Public ReadOnly Property UTF32() As Encoding
             Get
                 Static e As Encoding = Nothing
-                If e Is Nothing Then e = Encoding.GetEncoding("UTF-32") '12000
+                If e Is Nothing Then e = Encoding.GetEncoding("UTF-32", New EncoderExceptionFallback(), New DecoderExceptionFallback()) '12000
                 Return e
             End Get
         End Property
@@ -235,7 +243,7 @@ Namespace TextEncoding
         Public ReadOnly Property UTF32B() As Encoding
             Get
                 Static e As Encoding = Nothing
-                If e Is Nothing Then e = Encoding.GetEncoding("UTF-32BE") '12001
+                If e Is Nothing Then e = Encoding.GetEncoding("UTF-32BE", New EncoderExceptionFallback(), New DecoderExceptionFallback()) '12001
                 Return e
             End Get
         End Property
@@ -243,7 +251,7 @@ Namespace TextEncoding
         Public ReadOnly Property GB18030() As Encoding
             Get
                 Static e As Encoding = Nothing
-                If e Is Nothing Then e = Encoding.GetEncoding("GB18030") '54936
+                If e Is Nothing Then e = Encoding.GetEncoding("GB18030", New EncoderExceptionFallback(), New DecoderExceptionFallback()) '54936
                 Return e
             End Get
         End Property
@@ -253,7 +261,7 @@ Namespace TextEncoding
                 Static b As Boolean? = Nothing
                 If b Is Nothing Then
                     Try
-                        Encoding.GetEncoding("GB18030") '54936
+                        Encoding.GetEncoding("GB18030", New EncoderExceptionFallback(), New DecoderExceptionFallback()) '54936
                         b = True
                     Catch
                         b = False
@@ -266,7 +274,7 @@ Namespace TextEncoding
         Public ReadOnly Property GB2312() As Encoding
             Get
                 Static e As Encoding = Nothing
-                If e Is Nothing Then e = Encoding.GetEncoding("GB2312") '936
+                If e Is Nothing Then e = Encoding.GetEncoding("GB2312", New EncoderExceptionFallback(), New DecoderExceptionFallback()) '936
                 Return e
             End Get
         End Property
@@ -274,7 +282,7 @@ Namespace TextEncoding
         Public ReadOnly Property Big5() As Encoding
             Get
                 Static e As Encoding = Nothing
-                If e Is Nothing Then e = Encoding.GetEncoding("Big5") '950
+                If e Is Nothing Then e = Encoding.GetEncoding("Big5", New EncoderExceptionFallback(), New DecoderExceptionFallback()) '950
                 Return e
             End Get
         End Property
@@ -282,7 +290,7 @@ Namespace TextEncoding
         Public ReadOnly Property ShiftJIS() As Encoding
             Get
                 Static e As Encoding = Nothing
-                If e Is Nothing Then e = Encoding.GetEncoding("Shift-JIS") '932
+                If e Is Nothing Then e = Encoding.GetEncoding("Shift-JIS", New EncoderExceptionFallback(), New DecoderExceptionFallback()) '932
                 Return e
             End Get
         End Property
@@ -290,7 +298,7 @@ Namespace TextEncoding
         Public ReadOnly Property ISO8859_1() As Encoding
             Get
                 Static e As Encoding = Nothing
-                If e Is Nothing Then e = Encoding.GetEncoding("ISO-8859-1") '28591
+                If e Is Nothing Then e = Encoding.GetEncoding("ISO-8859-1", New EncoderExceptionFallback(), New DecoderExceptionFallback()) '28591
                 Return e
             End Get
         End Property
@@ -298,7 +306,7 @@ Namespace TextEncoding
         Public ReadOnly Property Windows1252() As Encoding
             Get
                 Static e As Encoding = Nothing
-                If e Is Nothing Then e = Encoding.GetEncoding("Windows-1252") '1252
+                If e Is Nothing Then e = Encoding.GetEncoding("Windows-1252", New EncoderExceptionFallback(), New DecoderExceptionFallback()) '1252
                 Return e
             End Get
         End Property
