@@ -3,7 +3,7 @@
 '  File:        TransEncoding.vb
 '  Location:    Firefly.TransEncoding <Visual Basic .Net>
 '  Description: 编码转换器
-'  Version:     2013.03.18.
+'  Version:     2013.03.22.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -164,6 +164,8 @@ Public Module TransEncoding
                         End Try
                         WrittenCount += 1
                     End If
+                Else
+                    SkipCount += 1
                 End If
                 Count += 1
             End If
