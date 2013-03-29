@@ -3,7 +3,7 @@
 '  File:        SyntaxParser.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 文法解析器 - 用于从符号转到文法树
-'  Version:     2012.07.23.
+'  Version:     2013.03.28.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -108,7 +108,12 @@ Namespace Texting.TreeFormat
             Dim CurrentIndex = 0
             For Each m As Match In rLineSeparator.Matches(Text & "\r\n".Descape())
                 Dim t = Text.Substring(CurrentIndex, m.Index - CurrentIndex)
-                If rLineSeparators.Match(t).Success Then Throw New InvalidSyntaxException("IllegalLineSeparator", New FileTextRange With {.Text = Me.Text, .Range = Opt(Of Syntax.TextRange).Empty})
+                Dim mm = rLineSeparators.Match(t)
+                If mm.Success Then
+                    Dim SeparatorStart = New TextPosition With {.CharIndex = CurrentIndex + mm.Index, .Row = CurrentRow, .Column = mm.Index + 1}
+                    Dim SeparatorEnd = New TextPosition With {.CharIndex = CurrentIndex + mm.Index + mm.Length, .Row = CurrentRow + 1, .Column = 1}
+                    Throw New InvalidSyntaxException("IllegalLineSeparator", New FileTextRange With {.Text = Me.Text, .Range = New TextRange With {.Start = SeparatorStart, .End = SeparatorEnd}})
+                End If
                 Dim Start As New TextPosition With {.CharIndex = CurrentIndex, .Row = CurrentRow, .Column = 1}
                 Dim [End] As New TextPosition With {.CharIndex = m.Index, .Row = CurrentRow, .Column = Start.Column + t.Length}
                 Dim r = New TextRange With {.Start = Start, .End = [End]}
