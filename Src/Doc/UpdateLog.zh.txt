@@ -1,4 +1,9 @@
-﻿2013.03.22
+﻿2013.03.28
+Firefly.Core.Texting.TreeFormat:
+修正异常处理的一处错误。
+修正换行出错时的错误信息没有包含行号的问题。
+
+2013.03.22
 Firefly.TransEncoding:
 修正跳过文件数显示错误的问题。
 
