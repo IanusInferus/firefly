@@ -3,7 +3,7 @@
 '  File:        SyntaxWriter.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 文本输出类
-'  Version:     2011.08.30.
+'  Version:     2013.05.03.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -91,7 +91,7 @@ Namespace Texting.TreeFormat
             Else
                 WriteRaw(IndentLevel, Table, ChildHeadLiteral, ChildFields)
             End If
-            Dim NumColumn = tn.Children.Select(Function(c) c.Nodes.Length).Max() + 1
+            Dim NumColumn = (New Integer() {0}).Concat(tn.Children.Select(Function(c) c.Nodes.Length)).Max() + 1
             Dim DataTable As New List(Of String())
             For Each tl In tn.Children
                 Dim l As New List(Of String)
@@ -118,7 +118,7 @@ Namespace Texting.TreeFormat
             Dim Table = DataTable.Select(Function(Row) Row.Select(Function(Column) Escape(Column)).ToArray()).ToArray()
 
             Dim NumColumn = Table.Select(Function(Row) Row.Length).Distinct().Single()
-            Dim ColumnLength = Enumerable.Range(0, NumColumn).Select(Function(i) (Table.Select(Function(Row) CalculateCharWidth(Row(i))).Max() + 1).CeilToMultipleOf(4) + 4).ToArray()
+            Dim ColumnLength = Enumerable.Range(0, NumColumn).Select(Function(i) ((New Integer() {0}).Concat(Table.Select(Function(Row) CalculateCharWidth(Row(i)))).Max() + 1).CeilToMultipleOf(4) + 4).ToArray()
 
             Dim NodeLines = New List(Of String)()
             For Each Row In Table
