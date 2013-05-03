@@ -1,6 +1,8 @@
 ﻿2013.05.03
 Firefly.Core.Texting.TreeFormat:
 修正保存TableNodes且一行数据都没有时出错的问题。
+Firefly.Core.Imaging:
+修正抽象位图的命名空间。
 
 2013.04.04.0
 
