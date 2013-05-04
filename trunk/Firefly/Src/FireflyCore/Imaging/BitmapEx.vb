@@ -3,7 +3,7 @@
 '  File:        BitmapEx.vb
 '  Location:    Firefly.Imaging <Visual Basic .Net>
 '  Description: Bitmap扩展函数
-'  Version:     2010.09.14.
+'  Version:     2013.05.04.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -32,38 +32,17 @@ Namespace Imaging
             If Bitmap.PixelFormat <> PixelFormat.Format32bppArgb Then Throw New NotSupportedException
 
             If w < 0 OrElse h < 0 Then Return Nothing
-            Dim a As Int32(,) = New Int32(w - 1, h - 1) {}
+            Dim a = New Int32(w - 1, h - 1) {}
             If w = 0 Then Return a
             If h = 0 Then Return a
-            Dim ox, oy As Integer
-            If y < 0 Then
-                h = h + y
-                oy = 0
-            Else
-                oy = y
-            End If
-            If oy + h > Bitmap.Height Then
-                h = Bitmap.Height - oy
-            End If
-            If x < 0 Then
-                ox = 0
-            Else
-                ox = x
-            End If
-            If ox + w > Bitmap.Width Then
-                w = Bitmap.Width - ox
-            End If
-            Dim xl As Integer = ox - x
-            Dim xu As Integer
-            If x >= 0 Then
-                xu = w + ox - x - 1
-            Else
-                xu = w - 1
-            End If
+            Dim jb = Max(0, -y)
+            Dim je = Min(y + h, Bitmap.Height) - y
+            Dim ib = Max(0, -x)
+            Dim ie = Min(x + w, Bitmap.Width) - x
 
-            If h <= 0 Then Return a
+            If je - jb <= 0 Then Return a
 
-            Dim Rect As New Rectangle(0, oy, Bitmap.Width, h)
+            Dim Rect As New Rectangle(0, jb, Bitmap.Width, je - jb)
 
             Dim BitmapPixelFormat = Bitmap.PixelFormat
             Dim BitmapWidth = Bitmap.Width
@@ -76,7 +55,7 @@ Namespace Imaging
                 If BitmapData.Stride <> BitmapWidth * 4 Then Throw New NotSupportedException
 
                 Dim Ptr As IntPtr = BitmapData.Scan0
-                Dim NumPixels As Integer = (BitmapData.Stride * h) \ 4
+                Dim NumPixels As Integer = (BitmapData.Stride * (je - jb)) \ 4
                 Pixels = New Int32(NumPixels - 1) {}
                 Marshal.Copy(Ptr, Pixels, 0, NumPixels)
             Finally
@@ -84,10 +63,9 @@ Namespace Imaging
                 CodeAccessPermission.RevertAssert()
             End Try
 
-            Dim o = oy - y
-            For m As Integer = 0 To h - 1
-                For n As Integer = xl To xu
-                    a(n, o + m) = Pixels(ox + n + m * BitmapWidth)
+            For j = jb To je - 1
+                For i = ib To ie - 1
+                    a(i, j) = Pixels(x + i + (j - jb) * BitmapWidth)
                 Next
             Next
 
@@ -102,39 +80,18 @@ Namespace Imaging
             If Bitmap.PixelFormat <> PixelFormat.Format32bppArgb Then Throw New NotSupportedException
 
             If a Is Nothing Then Return
-            Dim w As Integer = a.GetLength(0)
-            Dim h As Integer = a.GetLength(1)
+            Dim w = a.GetLength(0)
+            Dim h = a.GetLength(1)
             If w <= 0 Then Return
             If h <= 0 Then Return
-            Dim ox, oy As Integer
-            If y < 0 Then
-                h = h + y
-                oy = 0
-            Else
-                oy = y
-            End If
-            If oy + h > Bitmap.Height Then
-                h = Bitmap.Height - oy
-            End If
-            If x < 0 Then
-                ox = 0
-            Else
-                ox = x
-            End If
-            If ox + w > Bitmap.Width Then
-                w = Bitmap.Width - ox
-            End If
-            Dim xl As Integer = ox - x
-            Dim xu As Integer
-            If x >= 0 Then
-                xu = w + ox - x - 1
-            Else
-                xu = w - 1
-            End If
+            Dim jb = Max(0, -y)
+            Dim je = Min(y + h, Bitmap.Height) - y
+            Dim ib = Max(0, -x)
+            Dim ie = Min(x + w, Bitmap.Width) - x
 
-            If h <= 0 Then Return
+            If je - jb <= 0 Then Return
 
-            Dim Rect As New Rectangle(0, oy, Bitmap.Width, h)
+            Dim Rect As New Rectangle(0, jb, Bitmap.Width, je - jb)
 
             Dim BitmapPixelFormat = Bitmap.PixelFormat
             Dim BitmapWidth = Bitmap.Width
@@ -146,14 +103,13 @@ Namespace Imaging
                 If BitmapData.Stride <> BitmapWidth * 4 Then Throw New NotSupportedException
 
                 Dim Ptr As IntPtr = BitmapData.Scan0
-                Dim NumPixels As Integer = (BitmapData.Stride * h) \ 4
+                Dim NumPixels As Integer = (BitmapData.Stride * (je - jb)) \ 4
                 Dim Pixels As Int32() = New Int32(NumPixels - 1) {}
                 Marshal.Copy(Ptr, Pixels, 0, NumPixels)
 
-                Dim o = oy - y
-                For m As Integer = 0 To h - 1
-                    For n As Integer = xl To xu
-                        Pixels(ox + n + m * BitmapWidth) = a(n, o + m)
+                For j = jb To je - 1
+                    For i = ib To ie - 1
+                        Pixels(x + i + (j - jb) * BitmapWidth) = a(i, j)
                     Next
                 Next
 

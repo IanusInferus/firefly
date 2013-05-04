@@ -1,4 +1,8 @@
-﻿2013.05.03
+﻿2013.05.04
+Firefly.Core.Imaging:
+修正读写图片某个区域时，x, y从顶部超出边界时位置计算错误的问题。
+
+2013.05.03
 Firefly.Core.Texting.TreeFormat:
 修正保存TableNodes且一行数据都没有时出错的问题。
 Firefly.Core.Imaging:
