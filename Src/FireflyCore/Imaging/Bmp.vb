@@ -3,7 +3,7 @@
 '  File:        Bmp.vb
 '  Location:    Firefly.Imaging <Visual Basic .Net>
 '  Description: 基本Bmp文件流类
-'  Version:     2011.02.23.
+'  Version:     2013.05.04.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -370,79 +370,58 @@ Namespace Imaging
         ''' <summary>获取矩形。</summary>
         Public Function GetRectangle(ByVal x As Int32, ByVal y As Int32, ByVal w As Int32, ByVal h As Int32) As Int32(,)
             If w < 0 OrElse h < 0 Then Return Nothing
-            Dim a As Int32(,) = New Int32(w - 1, h - 1) {}
-            Dim ox, oy As Integer
-            If y < 0 Then
-                h = h + y
-                oy = 0
-            Else
-                oy = y
-            End If
-            If oy + h > PicHeight Then
-                h = PicHeight - oy
-            End If
-            If x < 0 Then
-                ox = 0
-            Else
-                ox = x
-            End If
-            If ox + w > PicWidth Then
-                w = PicWidth - ox
-            End If
-            Dim xl As Integer = ox - x
-            Dim xu As Integer
-            If x >= 0 Then
-                xu = w + ox - x - 1
-            Else
-                xu = w - 1
-            End If
-
-            For m As Integer = oy + h - y - 1 To oy - y Step -1
-                Readable.Position = BitmapDataOffset + Pos(ox, oy + m)
+            Dim a = New Int32(w - 1, h - 1) {}
+            Dim jb = Max(0, -y)
+            Dim je = Min(y + h, PicHeight) - y
+            Dim ib = Max(0, -x)
+            Dim ie = Min(x + w, PicWidth) - x
+            For j As Integer = je - 1 To jb Step -1
+                Readable.Position = BitmapDataOffset + Pos(x + ib, y + j)
                 Select Case PicBitsPerPixel
                     Case 1
                         Dim t As Byte
-                        If (ox And 7) <> 0 Then
+                        If ((x + ib) And 7) <> 0 Then
                             t = Readable.ReadByte
-                            t = t << (ox And 7)
+                            t = t << ((x + ib) And 7)
                         End If
-                        For n As Integer = xl To xu
-                            If (n And 7) = 0 Then
+                        For i = ib To ie - 1
+                            If (i And 7) = 0 Then
                                 t = Readable.ReadByte
                             End If
-                            a(n, m) = (t And 128) >> 7
+                            a(i, j) = (t And 128) >> 7
                             t = t << 1
                         Next
                     Case 4
                         Dim t As Byte
-                        If (ox And 1) = 1 Then
+                        If ((x + ib) And 1) = 1 Then
                             t = Readable.ReadByte
                         End If
-                        For n As Integer = xl To xu
-                            If (n And 1) = 0 Then
+                        For i = ib To ie - 1
+                            If (i And 1) = 0 Then
                                 t = Readable.ReadByte
-                                a(n, m) = t >> 4
+                                a(i, j) = t >> 4
                             Else
-                                a(n, m) = t And 15
+                                a(i, j) = t And 15
                             End If
                         Next
                     Case 8
-                        For n As Integer = xl To xu
-                            a(n, m) = Readable.ReadByte
+                        For i = ib To ie - 1
+                            a(i, j) = Readable.ReadByte
                         Next
                     Case 16
-                        For n As Integer = xl To xu
-                            a(n, m) = EID(Readable.ReadInt16)
+                        For i = ib To ie - 1
+                            a(i, j) = EID(Readable.ReadInt16)
                         Next
                     Case 24
-                        For n As Integer = xl To xu
-                            a(n, m) = EID(Readable.ReadInt16)
-                            a(n, m) = a(n, m) Or (CInt(Readable.ReadByte) << 16)
-                            a(n, m) = &HFF000000 Or a(n, m)
+                        For i = ib To ie - 1
+                            Dim c = EID(Readable.ReadInt16)
+                            c = c Or (CInt(Readable.ReadByte) << 16)
+                            c = &HFF000000 Or c
+                            a(i, j) = c
                         Next
                     Case 32
-                        For n As Integer = xl To xu
-                            a(n, m) = Readable.ReadInt32
+                        For i = ib To ie - 1
+                            a(i, j) = Readable.ReadInt32
                         Next
                 End Select
             Next
@@ -451,65 +430,43 @@ Namespace Imaging
         ''' <summary>获取矩形。表示为字节。仅供8位及以下图片使用。</summary>
         Public Function GetRectangleBytes(ByVal x As Int32, ByVal y As Int32, ByVal w As Int32, ByVal h As Int32) As Byte(,)
             If w < 0 OrElse h < 0 Then Return Nothing
-            Dim a As Byte(,) = New Byte(w - 1, h - 1) {}
-            Dim ox, oy As Integer
-            If y < 0 Then
-                h = h + y
-                oy = 0
-            Else
-                oy = y
-            End If
-            If oy + h > PicHeight Then
-                h = PicHeight - oy
-            End If
-            If x < 0 Then
-                ox = 0
-            Else
-                ox = x
-            End If
-            If ox + w > PicWidth Then
-                w = PicWidth - ox
-            End If
-            Dim xl As Integer = ox - x
-            Dim xu As Integer
-            If x >= 0 Then
-                xu = w + ox - x - 1
-            Else
-                xu = w - 1
-            End If
-
-            For m As Integer = oy + h - y - 1 To oy - y Step -1
-                Readable.Position = BitmapDataOffset + Pos(ox, oy + m)
+            Dim a = New Byte(w - 1, h - 1) {}
+            Dim jb = Max(0, -y)
+            Dim je = Min(y + h, PicHeight) - y
+            Dim ib = Max(0, -x)
+            Dim ie = Min(x + w, PicWidth) - x
+            For j As Integer = je - 1 To jb Step -1
+                Readable.Position = BitmapDataOffset + Pos(x + ib, y + j)
                 Select Case PicBitsPerPixel
                     Case 1
                         Dim t As Byte
-                        If (ox And 7) <> 0 Then
+                        If ((x + ib) And 7) <> 0 Then
                             t = Readable.ReadByte
-                            t = t << (ox And 7)
+                            t = t << ((x + ib) And 7)
                         End If
-                        For n As Integer = xl To xu
-                            If (n And 7) = 0 Then
+                        For i = ib To ie - 1
+                            If (i And 7) = 0 Then
                                 t = Readable.ReadByte
                             End If
-                            a(n, m) = CByte((t And 128) >> 7)
+                            a(i, j) = CByte((t And 128) >> 7)
                             t = t << 1
                         Next
                     Case 4
                         Dim t As Byte
-                        If (ox And 1) = 1 Then
+                        If ((x + ib) And 1) = 1 Then
                             t = Readable.ReadByte
                         End If
-                        For n As Integer = xl To xu
-                            If (n And 1) = 0 Then
+                        For i = ib To ie - 1
+                            If (i And 1) = 0 Then
                                 t = Readable.ReadByte
-                                a(n, m) = t >> 4
+                                a(i, j) = t >> 4
                             Else
-                                a(n, m) = CByte(t And 15)
+                                a(i, j) = CByte(t And 15)
                             End If
                         Next
                     Case 8
-                        For n As Integer = xl To xu
-                            a(n, m) = Readable.ReadByte
+                        For i = ib To ie - 1
+                            a(i, j) = Readable.ReadByte
                         Next
                     Case 16, 24, 32
                         Throw New InvalidOperationException
@@ -520,89 +477,66 @@ Namespace Imaging
         ''' <summary>已重载。设置矩形。</summary>
         Public Sub SetRectangle(ByVal x As Int32, ByVal y As Int32, ByVal a As Int32(,))
             If a Is Nothing Then Return
-            Dim w As Integer = a.GetLength(0)
-            Dim h As Integer = a.GetLength(1)
-            Dim ox, oy As Integer
-            If y < 0 Then
-                h = h + y
-                oy = 0
-            Else
-                oy = y
-            End If
-            If oy + h > PicHeight Then
-                h = PicHeight - oy
-            End If
-            If x < 0 Then
-                ox = 0
-            Else
-                ox = x
-            End If
-            If ox + w > PicWidth Then
-                w = PicWidth - ox
-            End If
-            Dim xl As Integer = ox - x
-            Dim xu As Integer
-            If x >= 0 Then
-                xu = w + ox - x - 1
-            Else
-                xu = w - 1
-            End If
-
-            For m As Integer = oy + h - y - 1 To oy - y Step -1
-                Writable.Position = BitmapDataOffset + Pos(ox, oy + m)
+            Dim w = a.GetLength(0)
+            Dim h = a.GetLength(1)
+            Dim jb = Max(0, -y)
+            Dim je = Min(y + h, PicHeight) - y
+            Dim ib = Max(0, -x)
+            Dim ie = Min(x + w, PicWidth) - x
+            For j As Integer = je - 1 To jb Step -1
+                Writable.Position = BitmapDataOffset + Pos(x + ib, y + j)
                 Select Case PicBitsPerPixel
                     Case 1
                         Dim t As Byte
-                        If (ox And 7) <> 0 Then
-                            t = Writable.ReadByte >> (8 - ox And 7)
+                        If ((x + ib) And 7) <> 0 Then
+                            t = Writable.ReadByte >> (8 - ((x + ib) And 7))
                             Writable.Position -= 1
                         End If
-                        Dim n As Integer
-                        For n = xl To xu
+                        For i = ib To ie - 1
                             t = t << 1
-                            If a(n, m) <> 0 Then t = t Or CByte(1)
-                            If (n And 7) = 7 Then
+                            If a(i, j) <> 0 Then t = t Or CByte(1)
+                            If (i And 7) = 7 Then
                                 Writable.WriteByte(t)
                             End If
                         Next
-                        If (n And 7) <> 0 Then
-                            t = t << (7 - n And 7)
+                        If ((x + ie - 1) And 7) <> 0 Then
+                            t = t << (7 - ((x + ie - 1) And 7))
                             Writable.WriteByte(t)
                         End If
                     Case 4
                         Dim t As Byte
-                        If (ox And 1) <> 0 Then
-                            t = Writable.ReadByte >> (4 * (2 - ox And 1))
+                        If ((x + ib) And 1) <> 0 Then
+                            t = Writable.ReadByte >> (4 * (2 - ((x + ib) And 1)))
                             Writable.Position -= 1
                         End If
-                        Dim n As Integer
-                        For n = xl To xu
+                        For i = ib To ie - 1
                             t = t << 4
-                            t = t Or CByte(a(n, m) And 15)
-                            If (n And 1) = 1 Then
+                            t = t Or CByte(a(i, j) And 15)
+                            If (i And 1) = 1 Then
                                 Writable.WriteByte(t)
                             End If
                         Next
-                        If (n And 1) <> 0 Then
+                        If ((x + ie - 1) And 1) <> 0 Then
                             t = t << 4
                             Writable.WriteByte(t)
                         End If
                     Case 8
-                        For n As Integer = xl To xu
-                            Writable.WriteByte(CByte(a(n, m) And &HFF))
+                        For i = ib To ie - 1
+                            Writable.WriteByte(CByte(a(i, j) And &HFF))
                         Next
                     Case 16
-                        For n As Integer = xl To xu
-                            Writable.WriteInt16(CID(a(n, m) And &HFFFF))
+                        For i = ib To ie - 1
+                            Writable.WriteInt16(CID(a(i, j) And &HFFFF))
                         Next
                     Case 24
-                        For n As Integer = xl To xu
-                            Writable.WriteInt16(CID(a(n, m) And &HFFFF))
-                            Writable.WriteByte(CByte((a(n, m) >> 16) And &HFF))
+                        For i = ib To ie - 1
+                            Dim c = a(i, j)
+                            Writable.WriteInt16(CID(c And &HFFFF))
+                            Writable.WriteByte(CByte((c >> 16) And &HFF))
                         Next
                     Case 32
-                        For n As Integer = xl To xu
-                            Writable.WriteInt32(a(n, m))
+                        For i = ib To ie - 1
+                            Writable.WriteInt32(a(i, j))
                         Next
                 End Select
             Next
@@ -610,102 +544,78 @@ Namespace Imaging
         ''' <summary>已重载。设置矩形。</summary>
         Public Sub SetRectangle(ByVal x As Int32, ByVal y As Int32, ByVal a As Byte(,))
             If a Is Nothing Then Return
-            Dim w As Integer = a.GetLength(0)
-            Dim h As Integer = a.GetLength(1)
-            Dim ox, oy As Integer
-            If y < 0 Then
-                h = h + y
-                oy = 0
-            Else
-                oy = y
-            End If
-            If oy + h > PicHeight Then
-                h = PicHeight - oy
-            End If
-            If x < 0 Then
-                ox = 0
-            Else
-                ox = x
-            End If
-            If ox + w > PicWidth Then
-                w = PicWidth - ox
-            End If
-            Dim xl As Integer = ox - x
-            Dim xu As Integer
-            If x >= 0 Then
-                xu = w + ox - x - 1
-            Else
-                xu = w - 1
-            End If
-
-            For m As Integer = oy + h - y - 1 To oy - y Step -1
-                Writable.Position = BitmapDataOffset + Pos(ox, oy + m)
+            Dim w = a.GetLength(0)
+            Dim h = a.GetLength(1)
+            Dim jb = Max(0, -y)
+            Dim je = Min(y + h, PicHeight) - y
+            Dim ib = Max(0, -x)
+            Dim ie = Min(x + w, PicWidth) - x
+            For j As Integer = je - 1 To jb Step -1
+                Writable.Position = BitmapDataOffset + Pos(x + ib, y + j)
                 Select Case PicBitsPerPixel
                     Case 1
                         Dim t As Byte
-                        If (ox And 7) <> 0 Then
-                            t = Writable.ReadByte >> (8 - ox And 7)
+                        If ((x + ib) And 7) <> 0 Then
+                            t = Writable.ReadByte >> (8 - ((x + ib) And 7))
                             Writable.Position -= 1
                         End If
-                        Dim n As Integer
-                        For n = xl To xu
+                        For i = ib To ie - 1
                             t = t << 1
-                            If a(n, m) <> 0 Then t = t Or CByte(1)
-                            If (n And 7) = 7 Then
+                            If a(i, j) <> 0 Then t = t Or CByte(1)
+                            If (i And 7) = 7 Then
                                 Writable.WriteByte(t)
                             End If
                         Next
-                        If (n And 7) <> 0 Then
-                            t = t << (7 - n And 7)
+                        If ((x + ie - 1) And 7) <> 0 Then
+                            t = t << (7 - ((x + ie - 1) And 7))
                             Writable.WriteByte(t)
                         End If
                     Case 4
                         Dim t As Byte
-                        If (ox And 1) <> 0 Then
-                            t = Writable.ReadByte >> (4 * (2 - ox And 1))
+                        If ((x + ib) And 1) <> 0 Then
+                            t = Writable.ReadByte >> (4 * (2 - ((x + ib) And 1)))
                             Writable.Position -= 1
                         End If
-                        Dim n As Integer
-                        For n = xl To xu
+                        For i = ib To ie - 1
                             t = t << 4
-                            t = t Or CByte(a(n, m) And 15)
-                            If (n And 1) = 1 Then
+                            t = t Or CByte(a(i, j) And 15)
+                            If (i And 1) = 1 Then
                                 Writable.WriteByte(t)
                             End If
                         Next
-                        If (n And 1) <> 0 Then
+                        If ((x + ie - 1) And 1) <> 0 Then
                             t = t << 4
                             Writable.WriteByte(t)
                         End If
                     Case 8
-                        For n As Integer = xl To xu
-                            Writable.WriteByte(CByte(a(n, m) And &HFF))
+                        For i = ib To ie - 1
+                            Writable.WriteByte(CByte(a(i, j) And &HFF))
                         Next
                     Case 16, 24, 32
                         Throw New InvalidOperationException
                 End Select
-            Next
+                Next
         End Sub
         ''' <summary>获取矩形为ARGB整数。对非24、32位位图会进行转换。</summary>
         Public Function GetRectangleAsARGB(ByVal x As Int32, ByVal y As Int32, ByVal w As Int32, ByVal h As Int32) As Int32(,)
-            Dim a As Int32(,) = GetRectangle(x, y, w, h)
+            Dim a = GetRectangle(x, y, w, h)
             Select Case PicBitsPerPixel
                 Case 1, 4, 8
-                    For py As Integer = 0 To h - 1
-                        For px As Integer = 0 To w - 1
+                    For py = 0 To h - 1
+                        For px = 0 To w - 1
                             a(px, py) = PicPalette(a(px, py))
                         Next
                     Next
                 Case 16
                     If r5g6b5 Then
-                        For py As Integer = 0 To h - 1
-                            For px As Integer = 0 To w - 1
+                        For py = 0 To h - 1
+                            For px = 0 To w - 1
                                 a(px, py) = ColorSpace.RGB16To32(CID(a(px, py)))
                             Next
                         Next
                     Else
-                        For py As Integer = 0 To h - 1
-                            For px As Integer = 0 To w - 1
+                        For py = 0 To h - 1
+                            For px = 0 To w - 1
                                 a(px, py) = ColorSpace.RGB15To32(CID(a(px, py)))
                             Next
                         Next
@@ -717,95 +627,72 @@ Namespace Imaging
         ''' <summary>从ARGB整数设置矩形。对非24、32位位图会进行转换。使用自定义的量化器。</summary>
         Public Sub SetRectangleFromARGB(ByVal x As Int32, ByVal y As Int32, ByVal a As Int32(,), ByVal Quantize As Func(Of Int32, Byte))
             If a Is Nothing Then Return
-            Dim w As Integer = a.GetLength(0)
-            Dim h As Integer = a.GetLength(1)
-            Dim ox, oy As Integer
-            If y < 0 Then
-                h = h + y
-                oy = 0
-            Else
-                oy = y
-            End If
-            If oy + h > PicHeight Then
-                h = PicHeight - oy
-            End If
-            If x < 0 Then
-                ox = 0
-            Else
-                ox = x
-            End If
-            If ox + w > PicWidth Then
-                w = PicWidth - ox
-            End If
-            Dim xl As Integer = ox - x
-            Dim xu As Integer
-            If x >= 0 Then
-                xu = w + ox - x - 1
-            Else
-                xu = w - 1
-            End If
-
-            For m As Integer = oy + h - y - 1 To oy - y Step -1
-                Writable.Position = BitmapDataOffset + Pos(ox, oy + m)
+            Dim w = a.GetLength(0)
+            Dim h = a.GetLength(1)
+            Dim jb = Max(0, -y)
+            Dim je = Min(y + h, PicHeight) - y
+            Dim ib = Max(0, -x)
+            Dim ie = Min(x + w, PicWidth) - x
+            For j As Integer = je - 1 To jb Step -1
+                Writable.Position = BitmapDataOffset + Pos(x + ib, y + j)
                 Select Case PicBitsPerPixel
                     Case 1
                         Dim t As Byte
-                        If (ox And 7) <> 0 Then
-                            t = Writable.ReadByte >> (8 - ox And 7)
+                        If ((x + ib) And 7) <> 0 Then
+                            t = Writable.ReadByte >> (8 - ((x + ib) And 7))
                             Writable.Position -= 1
                         End If
-                        Dim n As Integer
-                        For n = xl To xu
+                        For i = ib To ie - 1
                             t = t << 1
-                            If Quantize(a(n, m)) <> 0 Then t = t Or CByte(1)
-                            If (n And 7) = 7 Then
+                            If Quantize(a(i, j)) <> 0 Then t = t Or CByte(1)
+                            If (i And 7) = 7 Then
                                 Writable.WriteByte(t)
                             End If
                         Next
-                        If (n And 7) <> 0 Then
-                            t = t << (7 - n And 7)
+                        If ((x + ie - 1) And 7) <> 0 Then
+                            t = t << (7 - ((x + ie - 1) And 7))
                             Writable.WriteByte(t)
                         End If
                     Case 4
                         Dim t As Byte
-                        If (ox And 1) <> 0 Then
-                            t = Writable.ReadByte >> (4 * (2 - ox And 1))
+                        If ((x + ib) And 1) <> 0 Then
+                            t = Writable.ReadByte >> (4 * (2 - ((x + ib) And 1)))
                             Writable.Position -= 1
                         End If
-                        Dim n As Integer
-                        For n = xl To xu
+                        For i = ib To ie - 1
                             t = t << 4
-                            t = t Or CByte(Quantize(a(n, m)) And 15)
-                            If (n And 1) = 1 Then
+                            t = t Or CByte(Quantize(a(i, j)) And 15)
+                            If (i And 1) = 1 Then
                                 Writable.WriteByte(t)
                             End If
                         Next
-                        If (n And 1) <> 0 Then
+                        If ((x + ie - 1) And 1) <> 0 Then
                             t = t << 4
                             Writable.WriteByte(t)
                         End If
                     Case 8
-                        For n As Integer = xl To xu
-                            Writable.WriteByte(CByte(Quantize(a(n, m)) And &HFF))
+                        For i = ib To ie - 1
+                            Writable.WriteByte(CByte(Quantize(a(i, j)) And &HFF))
                         Next
                     Case 16
                         If r5g6b5 Then
-                            For n As Integer = xl To xu
-                                Writable.WriteInt16(CID(ColorSpace.RGB32To16(a(n, m)) And &HFFFF))
+                            For i = ib To ie - 1
+                                Writable.WriteInt16(CID(ColorSpace.RGB32To16(a(i, j)) And &HFFFF))
                             Next
                         Else
-                            For n As Integer = xl To xu
-                                Writable.WriteInt16(CID(ColorSpace.RGB32To15(a(n, m)) And &HFFFF))
+                            For i = ib To ie - 1
+                                Writable.WriteInt16(CID(ColorSpace.RGB32To15(a(i, j)) And &HFFFF))
                             Next
                         End If
                     Case 24
-                        For n As Integer = xl To xu
-                            Writable.WriteInt16(CID(a(n, m) And &HFFFF))
-                            Writable.WriteByte(CByte((a(n, m) >> 16) And &HFF))
+                        For i = ib To ie - 1
+                            Dim c = a(i, j)
+                            Writable.WriteInt16(CID(c And &HFFFF))
+                            Writable.WriteByte(CByte((c >> 16) And &HFF))
                         Next
                     Case 32
-                        For n As Integer = xl To xu
-                            Writable.WriteInt32(a(n, m))
+                        For i = ib To ie - 1
+                            Writable.WriteInt32(a(i, j))
                         Next
                 End Select
             Next
