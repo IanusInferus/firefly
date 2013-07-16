@@ -3,7 +3,7 @@
 '  File:        SyntaxWriter.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 文本输出类
-'  Version:     2013.05.03.
+'  Version:     2013.07.16.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -115,13 +115,11 @@ Namespace Texting.TreeFormat
         Private Function GetDataLines(ByVal DataTable As String()()) As String()
             If DataTable.Length = 0 Then Return New String() {}
 
-            Dim Table = DataTable.Select(Function(Row) Row.Select(Function(Column) Escape(Column)).ToArray()).ToArray()
-
-            Dim NumColumn = Table.Select(Function(Row) Row.Length).Distinct().Single()
-            Dim ColumnLength = Enumerable.Range(0, NumColumn).Select(Function(i) ((New Integer() {0}).Concat(Table.Select(Function(Row) CalculateCharWidth(Row(i)))).Max() + 1).CeilToMultipleOf(4) + 4).ToArray()
+            Dim NumColumn = DataTable.Select(Function(Row) Row.Length).Distinct().Single()
+            Dim ColumnLength = Enumerable.Range(0, NumColumn).Select(Function(i) ((New Integer() {0}).Concat(DataTable.Select(Function(Row) CalculateCharWidth(Row(i)))).Max() + 1).CeilToMultipleOf(4) + 4).ToArray()
 
             Dim NodeLines = New List(Of String)()
-            For Each Row In Table
+            For Each Row In DataTable
                 NodeLines.Add(String.Join("", Row.Zip(ColumnLength, Function(v, l) v + New String(" "c, l - CalculateCharWidth(v))).ToArray()))
             Next
             Return NodeLines.Select(Function(Line) Line.TrimEnd(" "c)).ToArray()

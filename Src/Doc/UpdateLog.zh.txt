@@ -1,4 +1,8 @@
-﻿2013.06.23.0
+﻿2013.07.16
+Firefly.Core.Texting.TreeFormat:
+修正包含换行的文本中\n变成\\n的问题。
+
+2013.06.23.0
 
 2013.05.04
 Firefly.Core.Imaging:
