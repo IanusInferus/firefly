@@ -1,4 +1,8 @@
-﻿2013.07.16
+﻿2013.12.13
+Firefly.Core.Texting.TreeFormat:
+修正字面量写入时，括号中包含空格时仍然输出双引号的问题。
+
+2013.07.16
 Firefly.Core.Texting.TreeFormat:
 修正包含换行的文本中\n变成\\n的问题。
 
