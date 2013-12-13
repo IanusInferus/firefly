@@ -3,7 +3,7 @@
 '  File:        LiteralWriter.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 字面量输出类
-'  Version:     2011.08.30.
+'  Version:     2013.12.13.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -107,7 +107,9 @@ Namespace Texting.TreeFormat
                 Dim cs = New String(c, 1)
                 Select Case cs
                     Case """", " "
-                        Return CreateQuotationLiteral()
+                        If ParentheseStack.Count = 0 Then
+                            Return CreateQuotationLiteral()
+                        End If
                     Case "<"
                         ParentheseStack.Push(ParentheseType.Angle)
                     Case "["
