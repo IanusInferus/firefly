@@ -1,6 +1,8 @@
 rd "My Project" /S /Q
 rd obj /S /Q
 attrib -H GimTran.suo
+attrib -H GimTran.v11.suo
+attrib -H GimTran.v12.suo
 del *.user /F /Q
 del *.suo /F /Q
 del *.cache /F /Q

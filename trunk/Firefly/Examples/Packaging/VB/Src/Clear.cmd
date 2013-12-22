@@ -9,6 +9,8 @@ del *.user /F /Q
 cd..
 cd Src
 attrib -H PackageManager.suo
+attrib -H PackageManager.v11.suo
+attrib -H PackageManager.v12.suo
 del *.suo /F /Q
 del *.cache /F /Q
 pause
