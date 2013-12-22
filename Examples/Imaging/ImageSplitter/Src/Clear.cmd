@@ -1,6 +1,8 @@
 rd "My Project" /S /Q
 rd obj /S /Q
 attrib -H ImageSplitter.suo
+attrib -H ImageSplitter.v11.suo
+attrib -H ImageSplitter.v12.suo
 del *.suo /F /Q
 del *.cache /F /Q
 cd..
