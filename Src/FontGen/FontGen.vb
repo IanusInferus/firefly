@@ -421,10 +421,11 @@ Public Class FontGen
                 Dim AnchorLeft As Boolean = CheckBox_AnchorLeft.Checked
                 Dim ChannelPatterns As ChannelPattern() = {ChannelPattern.One, ChannelPattern.Draw, ChannelPattern.Draw, ChannelPattern.Draw}
                 Dim gg As IGlyphProvider
+                Dim FontName = ComboBox_FontName.Text
                 If EnableDoubleSample Then
-                    gg = New GlyphGeneratorDoubleSample(ComboBox_FontName.Text, Style, NumericUpDown_Size.Value, PhysicalWidth, PhysicalHeight, NumericUpDown_DrawOffsetX.Value, NumericUpDown_DrawOffsetY.Value, NumericUpDown_VirtualOffsetX.Value, NumericUpDown_VirtualOffsetY.Value, NumericUpDown_VirtualDeltaWidth.Value, NumericUpDown_VirtualDeltaHeight.Value, AnchorLeft, ChannelPatterns)
+                    gg = New GlyphGeneratorDoubleSample(FontName, Style, NumericUpDown_Size.Value, PhysicalWidth, PhysicalHeight, NumericUpDown_DrawOffsetX.Value, NumericUpDown_DrawOffsetY.Value, NumericUpDown_VirtualOffsetX.Value, NumericUpDown_VirtualOffsetY.Value, NumericUpDown_VirtualDeltaWidth.Value, NumericUpDown_VirtualDeltaHeight.Value, AnchorLeft, ChannelPatterns)
                 Else
-                    gg = New GlyphGenerator(ComboBox_FontName.Text, Style, NumericUpDown_Size.Value, PhysicalWidth, PhysicalHeight, NumericUpDown_DrawOffsetX.Value, NumericUpDown_DrawOffsetY.Value, NumericUpDown_VirtualOffsetX.Value, NumericUpDown_VirtualOffsetY.Value, NumericUpDown_VirtualDeltaWidth.Value, NumericUpDown_VirtualDeltaHeight.Value, AnchorLeft, ChannelPatterns)
+                    gg = New GlyphGenerator(FontName, Style, NumericUpDown_Size.Value, PhysicalWidth, PhysicalHeight, NumericUpDown_DrawOffsetX.Value, NumericUpDown_DrawOffsetY.Value, NumericUpDown_VirtualOffsetX.Value, NumericUpDown_VirtualOffsetY.Value, NumericUpDown_VirtualDeltaWidth.Value, NumericUpDown_VirtualDeltaHeight.Value, AnchorLeft, ChannelPatterns)
                 End If
 
                 Using gg
@@ -493,7 +494,22 @@ Public Class FontGen
         ComboBox_FontName.Items.AddRange((From f In FontFamily.Families Select f.Name).ToArray)
         ReDraw()
     End Sub
-    Private Sub ComboBox_FontName_TextChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles ComboBox_FontName.TextChanged
+
+    Private Sub ComboBox_FontName_SelectedValueChanged(ByVal sender As Object, ByVal e As EventArgs) Handles ComboBox_FontName.SelectedValueChanged
+        ReDraw()
+    End Sub
+    Private Sub ComboBox_FontName_KeyDown(ByVal sender As Object, ByVal e As KeyEventArgs) Handles ComboBox_FontName.KeyDown
+        If e.KeyData = Keys.Enter Then
+            Try
+                ReDraw()
+            Catch ex As Exception
+                ExceptionHandler.PopupException(ex)
+            End Try
+            e.SuppressKeyPress = True
+            e.Handled = True
+        End If
+    End Sub
+    Private Sub ComboBox_FontName_Leave(ByVal sender As Object, ByVal e As EventArgs) Handles ComboBox_FontName.Leave
         ReDraw()
     End Sub
     Private Sub NumericUpDown_Size_ValueChanged(ByVal sender As Object, ByVal e As System.EventArgs) Handles NumericUpDown_Size.ValueChanged
