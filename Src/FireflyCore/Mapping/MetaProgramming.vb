@@ -3,7 +3,7 @@
 '  File:        MetaProgramming.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 元编程
-'  Version:     2011.07.31.
+'  Version:     2014.09.17.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -22,6 +22,10 @@ Namespace Mapping.MetaProgramming
     Public Class DummyType
     End Class
 
+    Public Class VariableInfo
+        Public Name As String
+        Public Type As Type
+    End Class
     Public Class FieldOrPropertyInfo
         Public Member As MemberInfo
         Public Type As Type
@@ -288,33 +292,34 @@ Namespace Mapping.MetaProgramming
         End Function
 
         ''' <summary>获得委托的参数</summary>
-        <Extension()> Public Function GetParameters(ByVal d As [Delegate]) As ParameterInfo()
+        <Extension()> Public Function GetParameters(ByVal d As [Delegate]) As VariableInfo()
             Dim m = d.Method
             Dim Parameters = d.Method.GetParameters()
             If d.Target Is Nothing Then
                 If d.Method.IsStatic Then
-                    Return Parameters
+                    Return Parameters.Select(Function(p) New VariableInfo With {.Name = p.Name, .Type = p.ParameterType}).ToArray()
                 Else
-                    Throw New ArgumentException
+                    '此时应添加第一个参数
+                    Return (New VariableInfo() {New VariableInfo With {.Name = "_This", .Type = d.Method.DeclaringType}}).Concat(Parameters.Select(Function(p) New VariableInfo With {.Name = p.Name, .Type = p.ParameterType})).ToArray()
                 End If
             Else
                 If d.Method.IsStatic Then
                     'A static method and a target object assignable to the first parameter of the method. The delegate is said to be closed over its first argument.
                     '此时应抛弃第一个参数
-                    Return Parameters.Skip(1).ToArray()
+                    Return Parameters.Skip(1).Select(Function(p) New VariableInfo With {.Name = p.Name, .Type = p.ParameterType}).ToArray()
                 Else
-                    Return Parameters
+                    Return Parameters.Select(Function(p) New VariableInfo With {.Name = p.Name, .Type = p.ParameterType}).ToArray()
                 End If
             End If
-            Return Parameters
+            Return Parameters.Select(Function(p) New VariableInfo With {.Name = p.Name, .Type = p.ParameterType}).ToArray()
         End Function
         <Extension()> Public Function ReturnType(ByVal d As [Delegate]) As Type
             Return d.Method.ReturnType
         End Function
         <Extension()> Public Function Compose(ByVal InnerFunction As [Delegate], ByVal OuterMethod As [Delegate]) As [Delegate]
-            Dim D = InnerFunction.GetParameters.Single.ParameterType
+            Dim D = InnerFunction.GetParameters.Single.Type
             Dim MI = InnerFunction.ReturnType
-            Dim MO = OuterMethod.GetParameters.Single.ParameterType
+            Dim MO = OuterMethod.GetParameters.Single.Type
 
             Dim iParam = Expression.Parameter(InnerFunction.GetType(), "<>_i")
             Dim oParam = Expression.Parameter(OuterMethod.GetType(), "<>_o")
@@ -331,8 +336,8 @@ Namespace Mapping.MetaProgramming
             Return OuterDelegate.StaticDynamicInvoke(Of [Delegate], [Delegate], [Delegate])(InnerFunction, OuterMethod)
         End Function
         <Extension()> Public Function Curry(ByVal Method As [Delegate], ByVal ParamArray Parameters As Object()) As [Delegate]
-            Dim ProvidedParameters = Method.GetParameters().Take(Parameters.Length).Select(Function(p) Expression.Parameter(p.ParameterType, p.Name)).ToArray()
-            Dim NotProvidedParameters = Method.GetParameters().Skip(Parameters.Length).Select(Function(p) Expression.Parameter(p.ParameterType, p.Name)).ToArray()
+            Dim ProvidedParameters = Method.GetParameters().Take(Parameters.Length).Select(Function(p) Expression.Parameter(p.Type, p.Name)).ToArray()
+            Dim NotProvidedParameters = Method.GetParameters().Skip(Parameters.Length).Select(Function(p) Expression.Parameter(p.Type, p.Name)).ToArray()
             Dim AllParameters = ProvidedParameters.Concat(NotProvidedParameters).ToArray()
             Dim mParam = Expression.Parameter(Method.GetType(), "<>_m")
             Dim OuterLambdaParameters = (New ParameterExpression() {mParam}).Concat(ProvidedParameters).ToArray()
@@ -343,7 +348,7 @@ Namespace Mapping.MetaProgramming
             Return OuterDelegate.StaticDynamicInvokeWithObjects(Of [Delegate])(ParamObjects)
         End Function
         <Extension()> Public Function AdaptFunction(ByVal Method As [Delegate], ByVal ReturnType As Type, ByVal ParamArray RequiredParameterTypes As Type()) As [Delegate]
-            Dim Parameters = Method.GetParameters().ZipStrict(RequiredParameterTypes, Function(p, r) New With {.InnerType = p.ParameterType, .OuterType = r, .OuterParamExpr = Expression.Parameter(r, p.Name)}).ToArray
+            Dim Parameters = Method.GetParameters().ZipStrict(RequiredParameterTypes, Function(p, r) New With {.InnerType = p.Type, .OuterType = r, .OuterParamExpr = Expression.Parameter(r, p.Name)}).ToArray
 
             Dim ClosureParam As ParameterExpression = Nothing
             ClosureParam = Expression.Parameter(GetType([Delegate]), "<>_Closure")
@@ -374,7 +379,7 @@ Namespace Mapping.MetaProgramming
             Return DirectCast(AdaptFunction(Method, GetType(TReturn), GetType(T1), GetType(T2), GetType(T3)), Func(Of T1, T2, T3, T4, TReturn))
         End Function
         <Extension()> Public Function AdaptFunctionWithObjects(ByVal Method As [Delegate], ByVal ReturnType As Type) As [Delegate]
-            Dim Parameters = Method.GetParameters().Select(Function(p) New With {.InnerType = p.ParameterType}).ToArray
+            Dim Parameters = Method.GetParameters().Select(Function(p) New With {.InnerType = p.Type}).ToArray
 
             Dim ClosureParam As ParameterExpression = Nothing
             ClosureParam = Expression.Parameter(GetType([Delegate]), "<>_Closure")
