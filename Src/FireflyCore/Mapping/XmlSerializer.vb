@@ -3,7 +3,7 @@
 '  File:        XmlSerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Xml序列化类
-'  Version:     2013.02.12.
+'  Version:     2014.09.17.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -866,7 +866,7 @@ Namespace Mapping.XmlText
             If TypePair.Key IsNot GetType(XElement) Then Return m
             If m Is Nothing Then Return Nothing
 
-            Dim Parameters = m.GetParameters().Select(Function(p) Expression.Parameter(p.ParameterType, p.Name)).ToArray()
+            Dim Parameters = m.GetParameters().Select(Function(p) Expression.Parameter(p.Type, p.Name)).ToArray()
             Dim DebugDelegate = DirectCast(DirectCast(AddressOf Me.SetCurrentXElement, Action(Of XElement)), [Delegate])
             Dim DebugCall = CreatePair(DebugDelegate, New Expression() {Parameters.First})
             Dim OriginalCall = CreatePair(m, Parameters.Select(Function(p) DirectCast(p, Expression)).ToArray())
@@ -881,7 +881,7 @@ Namespace Mapping.XmlText
             If TypePair.Key IsNot GetType(XElement) Then Return m
             If m Is Nothing Then Return Nothing
 
-            Dim Parameters = m.GetParameters().Select(Function(p) Expression.Parameter(p.ParameterType, p.Name)).ToArray()
+            Dim Parameters = m.GetParameters().Select(Function(p) Expression.Parameter(p.Type, p.Name)).ToArray()
             Dim DebugDelegate = DirectCast(DirectCast(AddressOf Me.SetCurrentXElement, Action(Of XElement)), [Delegate])
             Dim DebugCall = CreatePair(DebugDelegate, New Expression() {Parameters.First})
             Dim OriginalCall = CreatePair(m, Parameters.Select(Function(p) DirectCast(p, Expression)).ToArray())
