@@ -3,7 +3,7 @@
 '  File:        SyntaxParser.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 文法解析器 - 用于从符号转到文法树
-'  Version:     2013.03.28.
+'  Version:     2014.11.12.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -808,6 +808,12 @@ Namespace Texting.TreeFormat.Syntax
             Return Line.Text.Substring(Range.Start.Column - Line.Range.Start.Column, Range.End.Column - Range.Start.Column)
         End Function
         Public Function Calc(ByVal p As TextPosition, ByVal Offset As Integer) As TextPosition
+            Dim Line = Lines(p.Row - 1)
+            Dim CharIndex = p.CharIndex + Offset
+            If CharIndex >= Line.Range.Start.CharIndex And CharIndex <= Line.Range.End.CharIndex Then
+                Dim ColumnIndex = p.CharIndex + Offset - Line.Range.Start.CharIndex
+                Return New TextPosition With {.CharIndex = CharIndex, .Row = Line.Range.Start.Row, .Column = Line.Range.Start.Column + ColumnIndex}
+            End If
             Return GetPosition(p.CharIndex + Offset)
         End Function
         Public Function GetLines(ByVal Range As TextLineRange) As IEnumerable(Of TextLine)
