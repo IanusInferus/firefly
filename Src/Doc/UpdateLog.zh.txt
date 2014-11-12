@@ -1,4 +1,8 @@
-﻿2014.09.17
+﻿2014.11.12
+Firefly.Core.Texting.TreeFormat:
+提升TREE格式读取的性能。
+
+2014.09.17
 Firefly.Core.Mapping:
 增加对实例方法作为静态方法调用的支持。
 

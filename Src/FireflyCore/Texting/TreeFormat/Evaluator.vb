@@ -3,7 +3,7 @@
 '  File:        Evaluator.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 求值器 - 用于执行自定义函数，并将文法树转为语义树
-'  Version:     2012.07.23.
+'  Version:     2014.11.12.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -53,13 +53,13 @@ Namespace Texting.TreeFormat
         Private TokenParameterEvaluator As Func(Of RawFunctionCall, ISyntaxMarker, Semantics.Node())
         Private FunctionCallEvaluator As Func(Of FunctionCall, ISemanticsNodeMaker, Semantics.Node())
 
-        Private Positions As Dictionary(Of Object, TextRange)
+        Private Positions As Dictionary(Of Object, FileTextRange)
 
         Public Sub New(ByVal Setting As TreeFormatEvaluateSetting, ByVal pr As TreeFormatParseResult)
             Me.pr = pr
             Me.TokenParameterEvaluator = Setting.TokenParameterEvaluator
             Me.FunctionCallEvaluator = Setting.FunctionCallEvaluator
-            Me.Positions = New Dictionary(Of Object, TextRange)(pr.Positions)
+            Me.Positions = New Dictionary(Of Object, FileTextRange)(pr.Positions.ToDictionary(Function(p) p.Key, Function(p) New FileTextRange With {.Text = pr.Text, .Range = p.Value}))
         End Sub
 
         ReadOnly Property Text As Text Implements ISyntaxMarker.Text, ISemanticsNodeMaker.Text
@@ -71,22 +71,22 @@ Namespace Texting.TreeFormat
         Public Function Evaluate() As TreeFormatResult
             Dim Nodes = EvaluateMultiNodesList(pr.Value.MultiNodesList)
             Dim F = Mark(New Semantics.Forest With {.Nodes = Nodes}, pr.Value)
-            Return New TreeFormatResult With {.Value = F, .Positions = Positions.ToDictionary(Function(p) p.Key, Function(p) New FileTextRange With {.Text = pr.Text, .Range = p.Value})}
+            Return New TreeFormatResult With {.Value = F, .Positions = Positions}
         End Function
 
         Private Function GetRange(ByVal Obj As Object) As TextRange Implements ISyntaxMarker.GetRange, ISemanticsNodeMaker.GetRange
-            Return Positions(Obj)
+            Return Positions(Obj).Range.Value
         End Function
         Private Function GetFileRange(ByVal Obj As Object) As FileTextRange Implements ISyntaxMarker.GetFileRange, ISemanticsNodeMaker.GetFileRange
             Return New FileTextRange With {.Text = pr.Text, .Range = GetRange(Obj)}
         End Function
         Private Function Mark(Of T)(ByVal Obj As T, ByVal Range As TextRange) As T Implements ISyntaxMarker.Mark
-            Positions.Add(Obj, Range)
+            Positions.Add(Obj, New FileTextRange With {.Text = pr.Text, .Range = Range})
             Return Obj
         End Function
         Private Function Mark(Of T)(ByVal Obj As T, ByVal SyntaxRule As Object) As T Implements ISyntaxMarker.Mark
             Dim Range = GetRange(SyntaxRule)
-            Positions.Add(Obj, Range)
+            Positions.Add(Obj, New FileTextRange With {.Text = pr.Text, .Range = Range})
             Return Obj
         End Function
         Private Function MakeEmptyNode(ByVal Range As TextRange) As Semantics.Node Implements ISemanticsNodeMaker.MakeEmptyNode

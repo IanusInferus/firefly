@@ -3,7 +3,7 @@
 '  File:        TokenParser.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 词法解析器
-'  Version:     2012.07.23.
+'  Version:     2014.11.12.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -39,16 +39,13 @@ Namespace Texting.TreeFormat
 
         Public Function IsBlankLine(ByVal Line As TextLine) As Boolean
             Dim t = Line.Text
-            Dim IndentChars = t.Distinct
-            If IndentChars.Count > 1 OrElse (IndentChars.Count = 1 AndAlso IndentChars.Single <> " "c) Then Return False
-            Return True
+            Return t.All(Function(c) c = " "c)
         End Function
         Public Function IsExactFitIndentLevel(ByVal Line As TextLine, ByVal IndentLevel As Integer) As Boolean
             Dim t = Line.Text
             Dim IndentCount = IndentLevel * 4
             If t.Length < IndentCount Then Return False
-            Dim IndentChars = t.Substring(0, IndentCount).Distinct
-            If IndentChars.Count > 1 OrElse (IndentChars.Count = 1 AndAlso IndentChars.Single <> " "c) Then Return False
+            If Not t.Take(IndentCount).All(Function(c) c = " "c) Then Return False
             If t.Length = IndentCount Then Return True
             If t(IndentCount) = " "c Then Return False
             Return True
@@ -57,8 +54,7 @@ Namespace Texting.TreeFormat
             Dim t = Line.Text
             Dim IndentCount = IndentLevel * 4
             If t.Length < IndentCount Then Return False
-            Dim IndentChars = t.Substring(0, IndentCount).Distinct
-            If IndentChars.Count > 1 OrElse (IndentChars.Count = 1 AndAlso IndentChars.Single <> " "c) Then Return False
+            If Not t.Take(IndentCount).All(Function(c) c = " "c) Then Return False
             Return True
         End Function
 
@@ -72,11 +68,18 @@ Namespace Texting.TreeFormat
             PreprocessDirective
             FunctionDirective
         End Enum
-        Private rForbiddenWhitespaces As New Regex("^[\f\t\v]$", RegexOptions.ExplicitCapture)
-        Private rForbiddenHeadChars As New Regex("^[!%&;=?\^`|~]$", RegexOptions.ExplicitCapture)
-        Private rHex2 As New Regex("^[0-9A-Fa-f]{2}$", RegexOptions.ExplicitCapture)
-        Private rHex4 As New Regex("^[0-9A-Fa-f]{4}$", RegexOptions.ExplicitCapture)
-        Private rHex5 As New Regex("^[0-9A-Fa-f]{5}$", RegexOptions.ExplicitCapture)
+        Private Shared ForbiddenWhitespaces As Dictionary(Of Char, Integer) = "\f\t\v".Descape().ToCharArray().ToDictionary(Function(c) c, Function(c) 0)
+        Private Function IsForbiddenWhitespaces(ByVal c As Char) As Boolean
+            Return ForbiddenWhitespaces.ContainsKey(c)
+        End Function
+        Private Shared ForbiddenHeadChars As Dictionary(Of Char, Integer) = "!%&;=?^`|~".ToCharArray().ToDictionary(Function(c) c, Function(c) 0)
+        Private Function IsForbiddenHeadChars(ByVal c As Char) As Boolean
+            Return ForbiddenHeadChars.ContainsKey(c)
+        End Function
+        Private Shared HexChars As Dictionary(Of Char, Integer) = "0123456789ABCDEFabcdef".ToCharArray().ToDictionary(Function(c) c, Function(c) 0)
+        Private Function IsHex(ByVal s As String, ByVal n As Integer) As Boolean
+            Return s.Length = n AndAlso s.ToCharArray().All(Function(c) HexChars.ContainsKey(c))
+        End Function
         Public Function ReadToken(ByVal RangeInLine As TextRange) As TreeFormatTokenParseResult
             'State 0    Whitespace空格
             'State 1    普通Token
@@ -181,6 +184,7 @@ Namespace Texting.TreeFormat
             Dim Index As Integer = 0
 
             Dim EndOfLine = Function() Index >= s.Length
+            Dim Peek1 = Function() s(Index)
             Dim Peek = Function(n As Integer) s.Substring(Index, Math.Min(n, s.Length - Index))
             Dim Proceed = Sub() Index += 1
             Dim ProceedMultiple = Sub(n As Integer) Index += n
@@ -200,7 +204,8 @@ Namespace Texting.TreeFormat
             Dim MakeNextCharErrorTokenException = Function(Message As String) New InvalidTokenException(Message, MakeNextErrorTokenRange(1), Peek(1))
             Dim MarkStart = Sub() StartIndex = Index
             Dim Output As New List(Of Char)
-            Dim Write = Sub(cs As String) Output.AddRange(cs)
+            Dim Write = Sub(c As Char) Output.Add(c)
+            Dim WriteString = Sub(cs As String) Output.AddRange(cs)
             Dim MakeToken =
                 Function() As Opt(Of Token)
                     Dim Range = MakeTokenRange(StartIndex, Index)
@@ -247,55 +252,55 @@ Namespace Texting.TreeFormat
                 Select Case State
                     Case 0
                         If EndOfLine() Then Return New TreeFormatTokenParseResult With {.Token = NullToken, .RemainingChars = NullRemainingChars}
-                        Dim c = Peek(1)
-                        If rForbiddenWhitespaces.Match(c).Success Then Throw MakeNextCharErrorTokenException("InvalidWhitespace")
-                        If rForbiddenHeadChars.Match(c).Success Then Throw MakeNextCharErrorTokenException("InvalidHeadChar")
+                        Dim c = Peek1()
+                        If IsForbiddenWhitespaces(c) Then Throw MakeNextCharErrorTokenException("InvalidWhitespace")
+                        If IsForbiddenHeadChars(c) Then Throw MakeNextCharErrorTokenException("InvalidHeadChar")
                         Select Case c
-                            Case " "
+                            Case " "c
                                 Proceed()
-                            Case """"
+                            Case """"c
                                 State = 2
                                 Proceed()
-                            Case "("
+                            Case "("c
                                 MarkStart()
                                 Proceed()
                                 Return New TreeFormatTokenParseResult With {.Token = MakeLeftParenthesesToken(), .RemainingChars = MakeRemainingChars()}
-                            Case ")"
+                            Case ")"c
                                 MarkStart()
                                 Proceed()
                                 Return New TreeFormatTokenParseResult With {.Token = MakeRightParenthesesToken(), .RemainingChars = MakeRemainingChars()}
-                            Case "/"
+                            Case "/"c
                                 If Peek(2) = "//" Then
                                     MarkStart()
                                     Proceed()
                                     Proceed()
                                     While Not EndOfLine()
-                                        Write(Peek(1))
+                                        Write(Peek1())
                                         Proceed()
                                     End While
                                     Return New TreeFormatTokenParseResult With {.Token = MakeSingleLineCommentToken(), .RemainingChars = NullRemainingChars}
                                 End If
                                 Throw MakeNextCharErrorTokenException("InvalidChar")
-                            Case "<"
+                            Case "<"c
                                 ParentheseStack.Push(ParentheseType.Angle)
                                 Write(c)
                                 State = 1
                                 Proceed()
-                            Case "["
+                            Case "["c
                                 ParentheseStack.Push(ParentheseType.Bracket)
                                 Write(c)
                                 State = 1
                                 Proceed()
-                            Case "{"
+                            Case "{"c
                                 ParentheseStack.Push(ParentheseType.Brace)
                                 Write(c)
                                 State = 1
                                 Proceed()
-                            Case "$"
+                            Case "$"c
                                 Tag = TokenType.PreprocessDirective
                                 State = 1
                                 Proceed()
-                            Case "#"
+                            Case "#"c
                                 Tag = TokenType.FunctionDirective
                                 State = 1
                                 Proceed()
@@ -309,45 +314,45 @@ Namespace Texting.TreeFormat
                             If ParentheseStack.Count <> 0 Then Throw MakeCurrentErrorTokenException("InvalidParentheses")
                             Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = NullRemainingChars}
                         End If
-                        Dim c = Peek(1)
-                        If rForbiddenWhitespaces.Match(c).Success Then Throw MakeNextCharErrorTokenException("InvalidWhitespace")
+                        Dim c = Peek1()
+                        If IsForbiddenWhitespaces(c) Then Throw MakeNextCharErrorTokenException("InvalidWhitespace")
                         Select Case c
-                            Case " "
+                            Case " "c
                                 If ParentheseStack.Count = 0 Then Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
                                 Write(c)
                                 Proceed()
-                            Case """"
+                            Case """"c
                                 If ParentheseStack.Count = 0 Then Throw MakeNextCharErrorTokenException("InvalidChar")
                                 Write(c)
                                 Proceed()
-                            Case "(", ")"
+                            Case "("c, ")"c
                                 If ParentheseStack.Count <> 0 Then Throw MakeCurrentErrorTokenException("InvalidParentheses")
                                 Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
-                            Case "<"
+                            Case "<"c
                                 ParentheseStack.Push(ParentheseType.Angle)
                                 Write(c)
                                 Proceed()
-                            Case "["
+                            Case "["c
                                 ParentheseStack.Push(ParentheseType.Bracket)
                                 Write(c)
                                 Proceed()
-                            Case "{"
+                            Case "{"c
                                 ParentheseStack.Push(ParentheseType.Brace)
                                 Write(c)
                                 Proceed()
-                            Case ">"
+                            Case ">"c
                                 Proceed()
                                 If ParentheseStack.Count = 0 Then Throw MakeCurrentErrorTokenException("InvalidParentheses")
                                 If ParentheseStack.Peek <> ParentheseType.Angle Then Throw MakeCurrentErrorTokenException("InvalidParentheses")
                                 ParentheseStack.Pop()
                                 Write(c)
-                            Case "]"
+                            Case "]"c
                                 Proceed()
                                 If ParentheseStack.Count = 0 Then Throw MakeCurrentErrorTokenException("InvalidParentheses")
                                 If ParentheseStack.Peek <> ParentheseType.Bracket Then Throw MakeCurrentErrorTokenException("InvalidParentheses")
                                 ParentheseStack.Pop()
                                 Write(c)
-                            Case "}"
+                            Case "}"c
                                 Proceed()
                                 If ParentheseStack.Count = 0 Then Throw MakeCurrentErrorTokenException("InvalidParentheses")
                                 If ParentheseStack.Peek <> ParentheseType.Brace Then Throw MakeCurrentErrorTokenException("InvalidParentheses")
@@ -359,8 +364,8 @@ Namespace Texting.TreeFormat
                         End Select
                     Case 2
                         If EndOfLine() Then Throw MakeCurrentErrorTokenException("InvalidQuotationMarks")
-                        Dim c = Peek(1)
-                        If c = """" Then
+                        Dim c = Peek1()
+                        If c = """"c Then
                             State = 21
                             Proceed()
                         Else
@@ -370,15 +375,15 @@ Namespace Texting.TreeFormat
                         End If
                     Case 21
                         If EndOfLine() Then Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = NullRemainingChars}
-                        Dim c = Peek(1)
+                        Dim c = Peek1()
                         Select Case c
-                            Case " "
+                            Case " "c
                                 Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
-                            Case """"
+                            Case """"c
                                 Write(c)
                                 State = 22
                                 Proceed()
-                            Case "\"
+                            Case "\"c
                                 State = 31
                                 Proceed()
                             Case Else
@@ -388,8 +393,8 @@ Namespace Texting.TreeFormat
                         End Select
                     Case 22
                         If EndOfLine() Then Throw MakeCurrentErrorTokenException("InvalidQuotationMarks")
-                        Dim c = Peek(1)
-                        If c = """" Then
+                        Dim c = Peek1()
+                        If c = """"c Then
                             State = 23
                             Proceed()
                         Else
@@ -398,17 +403,17 @@ Namespace Texting.TreeFormat
                         End If
                     Case 23
                         If EndOfLine() Then Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = NullRemainingChars}
-                        Dim c = Peek(1)
-                        If rForbiddenWhitespaces.Match(c).Success Then Throw MakeNextCharErrorTokenException("InvalidWhitespace")
+                        Dim c = Peek1()
+                        If IsForbiddenWhitespaces(c) Then Throw MakeNextCharErrorTokenException("InvalidWhitespace")
                         Select Case c
-                            Case " "
+                            Case " "c
                                 If ParentheseStack.Count <> 0 Then Throw New InvalidOperationException
                                 Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
-                            Case """"
+                            Case """"c
                                 Write(c)
                                 State = 22
                                 Proceed()
-                            Case "(", ")"
+                            Case "("c, ")"c
                                 If ParentheseStack.Count <> 0 Then Throw New InvalidOperationException
                                 Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
                             Case Else
@@ -416,9 +421,9 @@ Namespace Texting.TreeFormat
                         End Select
                     Case 3
                         If EndOfLine() Then Throw MakeCurrentErrorTokenException("InvalidQuotationMarks")
-                        Dim c = Peek(1)
+                        Dim c = Peek1()
                         Select Case c
-                            Case """"
+                            Case """"c
                                 If Peek(2) = """""" Then
                                     If ParentheseStack.Count <> 0 Then Throw New InvalidOperationException
                                     Proceed()
@@ -426,7 +431,7 @@ Namespace Texting.TreeFormat
                                     Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
                                 End If
                                 Throw MakeNextCharErrorTokenException("InvalidQuotationMarks")
-                            Case "\"
+                            Case "\"c
                                 State = 31
                                 Proceed()
                             Case Else
@@ -435,66 +440,66 @@ Namespace Texting.TreeFormat
                         End Select
                     Case 31
                         If EndOfLine() Then Throw MakeCurrentErrorTokenException("InvalidQuotationMarks")
-                        Dim c = Peek(1)
+                        Dim c = Peek1()
                         Select Case c
-                            Case "0"
+                            Case "0"c
                                 Write(ChrW(&H0))
                                 State = 3
                                 Proceed()
-                            Case "a"
+                            Case "a"c
                                 Write(ChrW(&H7))
                                 State = 3
                                 Proceed()
-                            Case "b"
+                            Case "b"c
                                 Write(ChrW(&H8))
                                 State = 3
                                 Proceed()
-                            Case "f"
+                            Case "f"c
                                 Write(ChrW(&HC))
                                 State = 3
                                 Proceed()
-                            Case "n"
+                            Case "n"c
                                 Write(ChrW(&HA))
                                 State = 3
                                 Proceed()
-                            Case "r"
+                            Case "r"c
                                 Write(ChrW(&HD))
                                 State = 3
                                 Proceed()
-                            Case "t"
+                            Case "t"c
                                 Write(ChrW(&H9))
                                 State = 3
                                 Proceed()
-                            Case "v"
+                            Case "v"c
                                 Write(ChrW(&HB))
                                 State = 3
                                 Proceed()
-                            Case "x"
+                            Case "x"c
                                 Proceed()
                                 Dim Hex = Peek(2)
                                 ProceedMultiple(Hex.Length)
-                                If Not rHex2.Match(Hex).Success Then
+                                If Not IsHex(Hex, 2) Then
                                     Throw MakeCurrentErrorTokenException("InvalidEscapeSequence")
                                 End If
                                 Write(ChrW(Integer.Parse(Hex, Globalization.NumberStyles.HexNumber)))
                                 State = 3
-                            Case "u"
+                            Case "u"c
                                 Proceed()
                                 Dim Hex = Peek(4)
                                 ProceedMultiple(Hex.Length)
-                                If Not rHex4.Match(Hex).Success Then
+                                If Not IsHex(Hex, 4) Then
                                     Throw MakeCurrentErrorTokenException("InvalidEscapeSequence")
                                 End If
                                 Write(ChrW(Integer.Parse(Hex, Globalization.NumberStyles.HexNumber)))
                                 State = 3
-                            Case "U"
+                            Case "U"c
                                 Proceed()
                                 Dim Hex = Peek(5)
                                 ProceedMultiple(Hex.Length)
-                                If Not rHex5.Match(Hex).Success Then
+                                If Not IsHex(Hex, 5) Then
                                     Throw MakeCurrentErrorTokenException("InvalidEscapeSequence")
                                 End If
-                                Write(ChrQ(Integer.Parse(Hex, Globalization.NumberStyles.HexNumber)).ToString().ToCharArray())
+                                WriteString(ChrQ(Integer.Parse(Hex, Globalization.NumberStyles.HexNumber)).ToString())
                                 State = 3
                             Case Else
                                 Write(c)
