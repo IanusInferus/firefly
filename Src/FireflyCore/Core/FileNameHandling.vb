@@ -3,7 +3,7 @@
 '  File:        FileNameHandling.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 文件名操作函数模块
-'  Version:     2010.10.01.
+'  Version:     2014.11.26.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -124,7 +124,6 @@ Public Module FileNameHandling
     ''' <summary>获得绝对路径</summary>
     Public Function GetAbsolutePath(ByVal FilePath As String, ByVal BaseDirectory As String) As String
         BaseDirectory = GetDirectoryPathWithoutTailingSeparator(BaseDirectory)
-        If FilePath <> "" Then FilePath = FilePath.TrimStart("\"c).TrimStart("/"c)
         Dim s As New Stack(Of String)
         If BaseDirectory <> "" Then
             For Each d In Regex.Split(BaseDirectory, "\\|/")
@@ -146,6 +145,7 @@ Public Module FileNameHandling
             Next
         End If
         If FilePath <> "" Then
+            If FilePath.StartsWith("\") OrElse FilePath.StartsWith("/") Then s.Clear()
             For Each d In Regex.Split(FilePath, "\\|/")
                 If d = "." Then Continue For
                 If d = ".." Then
