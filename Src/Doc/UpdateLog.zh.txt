@@ -1,4 +1,8 @@
-﻿2014.11.26
+﻿2014.11.28
+Firefly.Core:
+从Eddy.DifferenceHighlighter项目取得串比较代码StringDiff.vb。
+
+2014.11.26
 Firefly.Core:
 修正获得绝对路径函数对Linux路径支持不正确的问题。
 

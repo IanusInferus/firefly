@@ -136,6 +136,7 @@
     <Compile Include="Texting\HanziVariantTableGen.vb" />
     <Compile Include="Texting\LOC.vb" />
     <Compile Include="Texting\Plain.vb" />
+    <Compile Include="Texting\StringDiff.vb" />
     <Compile Include="Texting\TextExceptions.vb" />
     <Compile Include="Texting\TreeFormat\Evaluator.vb" />
     <Compile Include="Texting\TreeFormat\Exceptions.vb" />
