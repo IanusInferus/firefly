@@ -3,7 +3,7 @@
 '  File:        FileNameHandling.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 文件名操作函数模块
-'  Version:     2014.11.26.
+'  Version:     2014.12.11.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -73,7 +73,7 @@ Public Module FileNameHandling
         d = PopFirstDir(b)
         If c <> d Then Return FilePath
         While c = d
-            If c = "" Then Return "."
+            If c = "" AndAlso a = "" AndAlso b = "" Then Return "."
             c = PopFirstDir(a)
             d = PopFirstDir(b)
         End While
