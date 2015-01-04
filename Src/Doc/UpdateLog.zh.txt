@@ -1,4 +1,8 @@
-﻿2014.12.11
+﻿2014.01.04
+Firefly.Core:
+增加ExceptionInfo获得信息时对mono中ExceptionDispatchInfo捕捉的调用栈的兼容。
+
+2014.12.11
 Firefly.Core:
 修正获得相对路径函数对Linux路径支持不正确的问题。
 
