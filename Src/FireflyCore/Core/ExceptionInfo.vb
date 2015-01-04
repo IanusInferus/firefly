@@ -3,7 +3,7 @@
 '  File:        ExceptionInfo.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 异常信息
-'  Version:     2010.11.16.
+'  Version:     2015.01.04.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -11,6 +11,7 @@
 Option Strict On
 Imports System
 Imports System.Collections.Generic
+Imports System.Linq
 Imports System.Text
 Imports System.Diagnostics
 Imports System.Reflection
@@ -125,7 +126,7 @@ Public NotInheritable Class ExceptionInfo
         End If
         msg.AppendLine(String.Format("{0}:" & System.Environment.NewLine & "{1}", ex.GetType.FullName, ex.Message))
         msg.AppendLine()
-        msg.Append(GetStackTrace(New StackTrace(ex, True)))
+        msg.Append(GetStackTrace(ex))
     End Sub
     Public Shared Function GetExceptionInfo(ByVal ex As Exception) As String
         Return GetExceptionInfo(ex, New StackTrace(2, True))
@@ -136,8 +137,20 @@ Public NotInheritable Class ExceptionInfo
         If ParentTrace IsNot Nothing Then msg.AppendLine(GetStackTrace(ParentTrace))
         Return msg.ToString
     End Function
-    Public Shared Function GetStackTrace(ByVal ex As Exception, Optional ByVal ParentTrace As StackTrace = Nothing) As String
-        Return GetStackTrace(New StackTrace(ex, True)) & GetStackTrace(ParentTrace)
+    Public Shared Function GetStackTrace(ByVal ex As Exception, ByVal ParentTrace As StackTrace) As String
+        Return GetStackTrace(ex) & GetStackTrace(ParentTrace)
+    End Function
+    Public Shared Function GetStackTrace(ByVal ex As Exception) As String
+        'mono中ExceptionDispatchInfo捕捉到的调用栈都存储在captured_traces中
+        Dim f = GetType(Exception).GetField("captured_traces", BindingFlags.NonPublic Or BindingFlags.Instance)
+        If f IsNot Nothing Then
+            Dim captured_traces = TryCast(f.GetValue(ex), StackTrace())
+            If captured_traces IsNot Nothing Then
+                Return String.Join(New String("-"c, 20) & System.Environment.NewLine, captured_traces.Concat(New StackTrace() {New StackTrace(ex, True)}).Select(Function(s) GetStackTrace(s)))
+            End If
+        End If
+
+        Return GetStackTrace(New StackTrace(ex, True))
     End Function
     Public Shared Function GetStackTrace(ByVal Trace As StackTrace) As String
         If Trace Is Nothing Then Return Nothing
