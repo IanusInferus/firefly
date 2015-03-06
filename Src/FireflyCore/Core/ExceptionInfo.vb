@@ -3,7 +3,7 @@
 '  File:        ExceptionInfo.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 异常信息
-'  Version:     2015.01.04.
+'  Version:     2015.03.06.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -162,9 +162,10 @@ Public NotInheritable Class ExceptionInfo
         Return sb.ToString()
     End Function
     Public Shared Function StackFrameToString(ByVal Frame As StackFrame) As String
-        Dim mi As MemberInfo = Frame.GetMethod()
+        Dim mi = Frame.GetMethod()
+        If mi Is Nothing Then Return "<unknown method>"
         Dim Params As New List(Of String)
-        For Each param In DirectCast(mi, MethodBase).GetParameters()
+        For Each param In mi.GetParameters()
             If param.Name = "" Then
                 Params.Add(param.ParameterType.Name)
             Else
