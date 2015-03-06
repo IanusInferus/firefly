@@ -1,4 +1,8 @@
-﻿2014.01.04
+﻿2014.03.06
+Firefly.Core:
+增加ExceptionInfo输出信息时对信息未知的Frame的判断。
+
+2014.01.04
 Firefly.Core:
 增加ExceptionInfo获得信息时对mono中ExceptionDispatchInfo捕捉的调用栈的兼容。
 
