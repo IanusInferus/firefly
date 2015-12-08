@@ -3,7 +3,7 @@
 '  File:        RegexReplace.vb
 '  Location:    Firefly.RegexReplace <Visual Basic .Net>
 '  Description: 正则表达式字符串替换工具
-'  Version:     2012.08.20.
+'  Version:     2015.12.08.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -91,7 +91,7 @@ Public Module RegexRename
         Console.WriteLine("Replacement 替换模式，参考 MSDN - 正则表达式 [.NET Framework]")
         Console.WriteLine("")
         Console.WriteLine("示例:")
-        Console.WriteLine("RegexRename Test.txt /replace:""a+"",""""")
+        Console.WriteLine("RegexReplace Test.txt /replace:""a+"",""""")
         Console.WriteLine("将Test.txt中的所有aa...a去除掉。")
     End Sub
 
