@@ -3,7 +3,7 @@
 '  File:        CommandLine.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 控制台
-'  Version:     2013.01.22.
+'  Version:     2016.04.11.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -12,7 +12,6 @@ Option Strict On
 Imports System
 Imports System.Collections.Generic
 Imports System.Linq
-Imports System.Text.RegularExpressions
 Imports Firefly.TextEncoding
 
 Public NotInheritable Class CommandLine
@@ -29,8 +28,8 @@ Public NotInheritable Class CommandLine
         Public Options As CommandLineOption()
     End Class
 
-    Private Shared Function DescapeQuota(ByVal s As String) As String
-        If s = "" Then Return ""
+    Private Shared Function DescapeQuote(ByVal s As String) As String
+        If s.Length < 2 Then Return s
         If s.StartsWith("""") AndAlso s.EndsWith("""") Then
             Return s.Substring(1, s.Length - 2).Replace("""""", """")
         Else
@@ -38,35 +37,48 @@ Public NotInheritable Class CommandLine
         End If
     End Function
 
-    Private Shared Function SplitCmdLineWithChar(ByVal CmdLine As String, ByVal r As Regex, ByVal c As Char32, ByVal SuppressFirst As Boolean) As IEnumerable(Of String)
-        Dim argv As New List(Of String)
-        Dim SuppressedFirst As Boolean = Not SuppressFirst
-        Dim NextStart = 0
-        For Each arg As Match In r.Matches(CmdLine)
-            If arg.Index <> NextStart Then
-                If Not CmdLine.Substring(NextStart, arg.Index - NextStart).ToUTF32.All(Function(ch) ch = c) Then Throw New InvalidOperationException
-            End If
-            NextStart = arg.Index + arg.Length
-            If Not SuppressedFirst Then
-                SuppressedFirst = True
+    Private Shared Function SplitCmdLineWithSpace(ByVal CmdLine As String) As List(Of String)
+        Dim l As New List(Of String)
+        Dim a As New List(Of Char32)
+        Dim InQuote = False
+        For Each c In CmdLine.ToUTF32()
+            If c = " "c AndAlso Not InQuote Then
+                If a.Count = 0 Then Continue For
+                l.Add(DescapeQuote(a.ToUTF16B()))
+                a.Clear()
                 Continue For
             End If
-            If arg.Success Then
-                Dim m = arg.Value
-                argv.Add(DescapeQuota(m))
-            Else
-                Throw New InvalidOperationException
+            If c = """"c Then
+                InQuote = Not InQuote
             End If
+            a.Add(c)
         Next
-        If CmdLine.Length <> NextStart Then
-            If Not CmdLine.Substring(NextStart, CmdLine.Length - NextStart).ToUTF32.All(Function(ch) ch = c) Then Throw New InvalidOperationException
+        If a.Count <> 0 Then
+            l.Add(DescapeQuote(a.ToUTF16B()))
         End If
-
-        Return argv
+        Return l
+    End Function
+    Private Shared Function SplitCmdLineWithChar(ByVal CmdLine As String, ByVal Splitter As Char32) As List(Of String)
+        Dim l As New List(Of String)
+        Dim a As New List(Of Char32)
+        Dim InQuote = False
+        For Each c In CmdLine.ToUTF32()
+            If c = Splitter AndAlso Not InQuote Then
+                l.Add(DescapeQuote(a.ToUTF16B()))
+                a.Clear()
+                Continue For
+            End If
+            If c = """"c Then
+                InQuote = Not InQuote
+            End If
+            a.Add(c)
+        Next
+        l.Add(DescapeQuote(a.ToUTF16B()))
+        Return l
     End Function
 
     Public Shared Function ParseCmdLine(ByVal CmdLine As String, ByVal SuppressFirst As Boolean) As CommandLineArguments
-        Dim argv = SplitCmdLineWithChar(CmdLine, New Regex("(""[^""]*""|([^"" ])+)+", RegexOptions.ExplicitCapture), " "c, SuppressFirst)
+        Dim argv = SplitCmdLineWithSpace(CmdLine).Skip(1).ToList()
 
         Dim Arguments As New List(Of String)
         Dim Options As New List(Of CommandLineOption)
@@ -78,13 +90,13 @@ Public NotInheritable Class CommandLine
                 Dim ParameterLine As String
                 Dim Index = OptionLine.IndexOf(":")
                 If Index >= 0 Then
-                    Name = DescapeQuota(OptionLine.Substring(0, Index))
+                    Name = DescapeQuote(OptionLine.Substring(0, Index))
                     ParameterLine = OptionLine.Substring(Index + 1)
                 Else
-                    Name = DescapeQuota(OptionLine)
+                    Name = DescapeQuote(OptionLine)
                     ParameterLine = ""
                 End If
-                Options.Add(New CommandLineOption With {.Name = Name, .Arguments = SplitCmdLineWithChar(ParameterLine, New Regex("(""[^""]*""|([^"",])+)+", RegexOptions.ExplicitCapture), ","c, False).ToArray})
+                Options.Add(New CommandLineOption With {.Name = Name, .Arguments = SplitCmdLineWithChar(ParameterLine, ","c).ToArray})
             Else
                 Arguments.Add(arg)
             End If
