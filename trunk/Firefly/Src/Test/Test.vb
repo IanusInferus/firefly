@@ -123,16 +123,19 @@ Public Module Test
     End Sub
 
     Public Sub TestCommandLine()
-        Dim CmdLine = CommandLine.ParseCmdLine("  test.exe  ""1 ,"" /t123:123,"", "",234  ", True)
+        Dim CmdLine = CommandLine.ParseCmdLine("  test.exe  ""1 ,"" /t123:,123,,"", "",234,  ", True)
 
         Assert(CmdLine.Arguments.Length = 1)
         Assert(CmdLine.Arguments(0) = "1 ,")
         Assert(CmdLine.Options.Length = 1)
         Assert(CmdLine.Options(0).Name = "t123")
-        Assert(CmdLine.Options(0).Arguments.Length = 3)
-        Assert(CmdLine.Options(0).Arguments(0) = "123")
-        Assert(CmdLine.Options(0).Arguments(1) = ", ")
-        Assert(CmdLine.Options(0).Arguments(2) = "234")
+        Assert(CmdLine.Options(0).Arguments.Length = 6)
+        Assert(CmdLine.Options(0).Arguments(0) = "")
+        Assert(CmdLine.Options(0).Arguments(1) = "123")
+        Assert(CmdLine.Options(0).Arguments(2) = "")
+        Assert(CmdLine.Options(0).Arguments(3) = ", ")
+        Assert(CmdLine.Options(0).Arguments(4) = "234")
+        Assert(CmdLine.Options(0).Arguments(5) = "")
     End Sub
 
     Public Sub TestUI()
