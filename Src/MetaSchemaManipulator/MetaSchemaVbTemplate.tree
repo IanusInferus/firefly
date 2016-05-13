@@ -1,9 +1,9 @@
-$Comment
+ï»¿$Comment
     ==========================================================================
 
       File:        MetaSchemaVbTemplate.tree
       Location:    Firefly.MetaSchemaManipulator <Tree>
-      Description: ÔªÀàĞÍ½á¹¹VBÄ£°åÊı¾İ
+      Description: å…ƒç±»å‹ç»“æ„VBæ¨¡æ¿æ•°æ®
       Version:     2011.09.24.
       Copyright(C) F.R.C.
 
@@ -215,6 +215,7 @@ MetaSchemaTemplate
                     '==========================================================================
 
                     Imports System
+                    Imports System.Collections.Generic
                     Imports System.Diagnostics
                     Imports Firefly
                     Imports Firefly.Mapping

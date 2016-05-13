@@ -140,7 +140,7 @@
     <Compile Include="Texting\TextExceptions.vb" />
     <Compile Include="Texting\TreeFormat\Evaluator.vb" />
     <Compile Include="Texting\TreeFormat\Exceptions.vb" />
-    <Compile Include="Texting\TreeFormat\Opt.vb" />
+    <Compile Include="Texting\TreeFormat\Optional.vb" />
     <Compile Include="Texting\TreeFormat\Result.vb" />
     <Compile Include="Texting\TreeFormat\Semantics.vb" />
     <Compile Include="Texting\TreeFormat\Syntax.vb" />

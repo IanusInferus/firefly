@@ -3,7 +3,7 @@
 '  File:        MetaSchemaVbCodeGenerator.vb
 '  Location:    Firefly.MetaSchemaManipulator <Visual Basic .Net>
 '  Description: 元类型结构VB代码生成器
-'  Version:     2011.07.31.
+'  Version:     2016.05.13.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -122,7 +122,7 @@ Public Module MetaSchemaVbCodeGenerator
                 Case ConceptSpecTag.ConceptRef
                     Return Type.ConceptRef.Value
                 Case ConceptSpecTag.List
-                    Return GetEscapedIdentifier(GetTypeString(Type.List.ElementType)) & "()"
+                    Return "List(Of " & GetEscapedIdentifier(GetTypeString(Type.List.ElementType)) & ")"
                 Case ConceptSpecTag.Tuple
                     Return GetTypeFriendlyName(Type)
                 Case Else

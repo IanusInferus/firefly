@@ -3,7 +3,7 @@
 '  File:        Evaluator.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 求值器 - 用于执行自定义函数，并将文法树转为语义树
-'  Version:     2014.11.12.
+'  Version:     2016.05.13.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -160,16 +160,16 @@ Namespace Texting.TreeFormat
             Return l.ToArray()
         End Function
 
-        Private Function EvaluateNode(ByVal Node As Node) As Opt(Of Semantics.Node)
+        Private Function EvaluateNode(ByVal Node As Node) As [Optional](Of Semantics.Node)
             Select Case Node._Tag
                 Case NodeTag.SingleLineNodeLine
                     Return EvaluateSingleLineNode(Node.SingleLineNodeLine.SingleLineNode)
                 Case NodeTag.MultiLineLiteral
                     Return MakeLeafNode(Node.MultiLineLiteral.Content.Text, Node)
                 Case NodeTag.SingleLineComment
-                    Return Opt(Of Semantics.Node).Empty
+                    Return [Optional](Of Semantics.Node).Empty
                 Case NodeTag.MultiLineComment
-                    Return Opt(Of Semantics.Node).Empty
+                    Return [Optional](Of Semantics.Node).Empty
                 Case NodeTag.MultiLineNode
                     Dim mln = Node.MultiLineNode
                     Dim Children = EvaluateMultiNodesList(mln.Children)
@@ -252,7 +252,7 @@ Namespace Texting.TreeFormat
                     Throw New ArgumentException
             End Select
 
-            Dim Content = Opt(Of FunctionCallContent).Empty
+            Dim Content = [Optional](Of FunctionCallContent).Empty
             If rfc.Content.HasValue Then
                 Dim rfcc = rfc.Content.Value
                 Select Case rfcc._Tag

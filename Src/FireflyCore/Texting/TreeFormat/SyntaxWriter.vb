@@ -3,7 +3,7 @@
 '  File:        SyntaxWriter.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 文本输出类
-'  Version:     2013.07.16.
+'  Version:     2016.05.13.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -300,7 +300,7 @@ Namespace Texting.TreeFormat
             Return GetSingleLineComment(slc.Content.Text)
         End Function
 
-        Private Sub WriteEndDirective(ByVal IndentLevel As Integer, ByVal ed As Opt(Of EndDirective))
+        Private Sub WriteEndDirective(ByVal IndentLevel As Integer, ByVal ed As [Optional](Of EndDirective))
             If ed.HasValue Then
                 If ed.Value.EndSingleLineComment.HasValue Then
                     Dim eslc = GetSingleLineComment(ed.Value.EndSingleLineComment.Value)

@@ -3,7 +3,7 @@
 '  File:        TokenParser.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 词法解析器
-'  Version:     2014.11.12.
+'  Version:     2016.05.13.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -17,8 +17,8 @@ Imports Firefly.Texting.TreeFormat.Syntax
 
 Namespace Texting.TreeFormat
     Public Class TreeFormatTokenParseResult
-        Public Token As Opt(Of Token)
-        Public RemainingChars As Opt(Of TextRange)
+        Public Token As [Optional](Of Token)
+        Public RemainingChars As [Optional](Of TextRange)
     End Class
 
     Public Class TreeFormatTokenParser
@@ -189,9 +189,9 @@ Namespace Texting.TreeFormat
             Dim Proceed = Sub() Index += 1
             Dim ProceedMultiple = Sub(n As Integer) Index += n
 
-            Dim MakeRemainingChars = Function() CType(New TextRange With {.Start = Text.Calc(RangeInLine.Start, Index), .End = RangeInLine.End}, Opt(Of TextRange))
-            Dim NullRemainingChars = Opt(Of TextRange).Empty
-            Dim NullToken = Opt(Of Token).Empty
+            Dim MakeRemainingChars = Function() CType(New TextRange With {.Start = Text.Calc(RangeInLine.Start, Index), .End = RangeInLine.End}, [Optional](Of TextRange))
+            Dim NullRemainingChars = [Optional](Of TextRange).Empty
+            Dim NullToken = [Optional](Of Token).Empty
             Dim MakeTokenRange = Function(TokenStart As Integer, TokenEnd As Integer) New TextRange With {.Start = Text.Calc(RangeInLine.Start, TokenStart), .End = Text.Calc(RangeInLine.Start, TokenEnd)}
             Dim MakeNextErrorTokenRange = Function(n As Integer) New FileTextRange With {.Text = Text, .Range = MakeTokenRange(Index, n)}
 
@@ -207,7 +207,7 @@ Namespace Texting.TreeFormat
             Dim Write = Sub(c As Char) Output.Add(c)
             Dim WriteString = Sub(cs As String) Output.AddRange(cs)
             Dim MakeToken =
-                Function() As Opt(Of Token)
+                Function() As [Optional](Of Token)
                     Dim Range = MakeTokenRange(StartIndex, Index)
                     Select Case Tag
                         Case TokenType.SingleLineLiteral
@@ -227,21 +227,21 @@ Namespace Texting.TreeFormat
                     End Select
                 End Function
             Dim MakeLeftParenthesesToken =
-                Function() As Opt(Of Token)
+                Function() As [Optional](Of Token)
                     Dim Range = MakeTokenRange(StartIndex, Index)
                     Dim t = Token.CreateLeftParentheses()
                     Positions.Add(t, Range)
                     Return t
                 End Function
             Dim MakeRightParenthesesToken =
-                Function() As Opt(Of Token)
+                Function() As [Optional](Of Token)
                     Dim Range = MakeTokenRange(StartIndex, Index)
                     Dim t = Token.CreateRightParentheses()
                     Positions.Add(t, Range)
                     Return t
                 End Function
             Dim MakeSingleLineCommentToken =
-                Function() As Opt(Of Token)
+                Function() As [Optional](Of Token)
                     Dim Range = MakeTokenRange(StartIndex, Index)
                     Dim t = Token.CreateSingleLineComment(New String(Output.ToArray()))
                     Positions.Add(t, Range)

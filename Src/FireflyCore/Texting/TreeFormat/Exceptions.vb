@@ -3,7 +3,7 @@
 '  File:        Exceptions.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 异常定义
-'  Version:     2013.03.28.
+'  Version:     2016.05.13.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -14,7 +14,7 @@ Imports System.Collections.Generic
 Namespace Texting.TreeFormat.Syntax
     Public Class FileTextRange
         Public Text As Text
-        Public Range As Opt(Of Syntax.TextRange)
+        Public Range As [Optional](Of Syntax.TextRange)
     End Class
 
     Public Class InvalidSyntaxException

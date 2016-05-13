@@ -3,7 +3,7 @@
 '  File:        Opt.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 可选值
-'  Version:     2013.03.10.
+'  Version:     2016.05.13.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -14,15 +14,15 @@ Imports Firefly.Mapping.MetaSchema
 
 Namespace Texting.TreeFormat
     <Record(), DebuggerDisplay("{ToString()}")>
-    Public Structure Opt(Of T)
+    Public Structure [Optional](Of T)
         Public Property HasValue As Boolean
         Public Property Value As T
 
-        Public Shared Function CreateNotHasValue() As Opt(Of T)
-            Return New Opt(Of T) With {.HasValue = False}
+        Public Shared Function CreateNotHasValue() As [Optional](Of T)
+            Return New [Optional](Of T) With {.HasValue = False}
         End Function
-        Public Shared Function CreateHasValue(ByVal Value As T) As Opt(Of T)
-            Return New Opt(Of T) With {.HasValue = True, .Value = Value}
+        Public Shared Function CreateHasValue(ByVal Value As T) As [Optional](Of T)
+            Return New [Optional](Of T) With {.HasValue = True, .Value = Value}
         End Function
 
         Public ReadOnly Property OnNotHasValue As Boolean
@@ -36,34 +36,34 @@ Namespace Texting.TreeFormat
             End Get
         End Property
 
-        Public Shared ReadOnly Property Empty As Opt(Of T)
+        Public Shared ReadOnly Property Empty As [Optional](Of T)
             Get
                 Return CreateNotHasValue()
             End Get
         End Property
-        Public Shared Widening Operator CType(ByVal v As T) As Opt(Of T)
+        Public Shared Widening Operator CType(ByVal v As T) As [Optional](Of T)
             If v Is Nothing Then
                 Return CreateNotHasValue()
             Else
                 Return CreateHasValue(v)
             End If
         End Operator
-        Public Shared Narrowing Operator CType(ByVal v As Opt(Of T)) As T
+        Public Shared Narrowing Operator CType(ByVal v As [Optional](Of T)) As T
             If Not v.HasValue Then
                 Throw New InvalidOperationException
             End If
             Return v.Value
         End Operator
-        Public Shared Operator =(ByVal Left As Opt(Of T), ByVal Right As Opt(Of T)) As Boolean
+        Public Shared Operator =(ByVal Left As [Optional](Of T), ByVal Right As [Optional](Of T)) As Boolean
             Return Equals(Left, Right)
         End Operator
-        Public Shared Operator <>(ByVal Left As Opt(Of T), ByVal Right As Opt(Of T)) As Boolean
+        Public Shared Operator <>(ByVal Left As [Optional](Of T), ByVal Right As [Optional](Of T)) As Boolean
             Return Not Equals(Left, Right)
         End Operator
-        Public Shared Operator =(ByVal Left As Opt(Of T)?, ByVal Right As Opt(Of T)?) As Boolean
+        Public Shared Operator =(ByVal Left As [Optional](Of T) ?, ByVal Right As [Optional](Of T) ?) As Boolean
             Return Equals(Left, Right)
         End Operator
-        Public Shared Operator <>(ByVal Left As Opt(Of T)?, ByVal Right As Opt(Of T)?) As Boolean
+        Public Shared Operator <>(ByVal Left As [Optional](Of T) ?, ByVal Right As [Optional](Of T) ?) As Boolean
             Return Not Equals(Left, Right)
         End Operator
         Public Overrides Function Equals(ByVal Obj As Object) As Boolean
@@ -74,7 +74,7 @@ Namespace Texting.TreeFormat
             Return Value.GetHashCode()
         End Function
 
-        Private Overloads Shared Function Equals(ByVal Left As Opt(Of T), ByVal Right As Opt(Of T)) As Boolean
+        Private Overloads Shared Function Equals(ByVal Left As [Optional](Of T), ByVal Right As [Optional](Of T)) As Boolean
             If Left.OnNotHasValue AndAlso Right.OnNotHasValue Then
                 Return True
             End If
@@ -83,7 +83,7 @@ Namespace Texting.TreeFormat
             End If
             Return Left.Value.Equals(Right.Value)
         End Function
-        Private Overloads Shared Function Equals(ByVal Left As Opt(Of T)?, ByVal Right As Opt(Of T)?) As Boolean
+        Private Overloads Shared Function Equals(ByVal Left As [Optional](Of T) ?, ByVal Right As [Optional](Of T) ?) As Boolean
             If (Not Left.HasValue OrElse Left.Value.OnNotHasValue) AndAlso (Not Right.HasValue OrElse Right.Value.OnNotHasValue) Then
                 Return True
             End If
