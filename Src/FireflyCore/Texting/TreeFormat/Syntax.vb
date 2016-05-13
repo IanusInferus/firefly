@@ -3,7 +3,7 @@
 '  File:        Syntax.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 文法对象定义
-'  Version:     2011.07.31.
+'  Version:     2016.05.13.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -193,7 +193,7 @@ Namespace Texting.TreeFormat.Syntax
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class SingleLineNodeLine
         Public Property SingleLineNode As SingleLineNode
-        Public Property SingleLineComment As Opt(Of SingleLineComment)
+        Public Property SingleLineComment As [Optional](Of SingleLineComment)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -267,7 +267,7 @@ Namespace Texting.TreeFormat.Syntax
     Public Class SingleLineNodeWithParameters
         Public Property Head As SingleLineLiteral
         Public Property Children As ParenthesesNode()
-        Public Property LastChild As Opt(Of SingleLineNode)
+        Public Property LastChild As [Optional](Of SingleLineNode)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -277,9 +277,9 @@ Namespace Texting.TreeFormat.Syntax
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class MultiLineNode
         Public Property Head As SingleLineLiteral
-        Public Property SingleLineComment As Opt(Of SingleLineComment)
+        Public Property SingleLineComment As [Optional](Of SingleLineComment)
         Public Property Children As MultiNodes()
-        Public Property EndDirective As Opt(Of EndDirective)
+        Public Property EndDirective As [Optional](Of EndDirective)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -306,9 +306,9 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class MultiLineComment
-        Public Property SingleLineComment As Opt(Of SingleLineComment)
+        Public Property SingleLineComment As [Optional](Of SingleLineComment)
         Public Property Content As FreeContent
-        Public Property EndDirective As Opt(Of EndDirective)
+        Public Property EndDirective As [Optional](Of EndDirective)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -334,9 +334,9 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class MultiLineLiteral
-        Public Property SingleLineComment As Opt(Of SingleLineComment)
+        Public Property SingleLineComment As [Optional](Of SingleLineComment)
         Public Property Content As FreeContent
-        Public Property EndDirective As Opt(Of EndDirective)
+        Public Property EndDirective As [Optional](Of EndDirective)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -346,9 +346,9 @@ Namespace Texting.TreeFormat.Syntax
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class ListNodes
         Public Property ChildHead As SingleLineLiteral
-        Public Property SingleLineComment As Opt(Of SingleLineComment)
+        Public Property SingleLineComment As [Optional](Of SingleLineComment)
         Public Property Children As MultiNodes()
-        Public Property EndDirective As Opt(Of EndDirective)
+        Public Property EndDirective As [Optional](Of EndDirective)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -359,9 +359,9 @@ Namespace Texting.TreeFormat.Syntax
     Public Class TableNodes
         Public Property ChildHead As SingleLineLiteral
         Public Property ChildFields As SingleLineLiteral()
-        Public Property SingleLineComment As Opt(Of SingleLineComment)
+        Public Property SingleLineComment As [Optional](Of SingleLineComment)
         Public Property Children As TableLine()
-        Public Property EndDirective As Opt(Of EndDirective)
+        Public Property EndDirective As [Optional](Of EndDirective)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -371,7 +371,7 @@ Namespace Texting.TreeFormat.Syntax
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class TableLine
         Public Property Nodes As TableLineNode()
-        Public Property SingleLineComment As Opt(Of SingleLineComment)
+        Public Property SingleLineComment As [Optional](Of SingleLineComment)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -435,9 +435,9 @@ Namespace Texting.TreeFormat.Syntax
     Public Class FunctionNodes
         Public Property FunctionDirective As FunctionDirective
         Public Property Parameters As Token()
-        Public Property SingleLineComment As Opt(Of SingleLineComment)
+        Public Property SingleLineComment As [Optional](Of SingleLineComment)
         Public Property Content As FunctionContent
-        Public Property EndDirective As Opt(Of EndDirective)
+        Public Property EndDirective As [Optional](Of EndDirective)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -446,7 +446,7 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class EndDirective
-        Public Property EndSingleLineComment As Opt(Of SingleLineComment)
+        Public Property EndSingleLineComment As [Optional](Of SingleLineComment)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -583,7 +583,7 @@ Namespace Texting.TreeFormat.Syntax
         Public Property Name As FunctionDirective
         Public Property ReturnValueMode As FunctionCallReturnValueMode
         Public Property Parameters As RawFunctionCallParameters
-        Public Property Content As Opt(Of RawFunctionCallContent)
+        Public Property Content As [Optional](Of RawFunctionCallContent)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -599,13 +599,13 @@ Namespace Texting.TreeFormat.Syntax
     Public Class RawFunctionCallParameters
         <Tag()> Public Property _Tag As RawFunctionCallParametersTag
         Public Property TokenParameters As Token()
-        Public Property TreeParameter As Opt(Of SingleLineNode)
+        Public Property TreeParameter As [Optional](Of SingleLineNode)
         Public Property TableParameters As TableLineNode()
 
         Public Shared Function CreateTokenParameters(ByVal Value As Token()) As RawFunctionCallParameters
             Return New RawFunctionCallParameters With {._Tag = RawFunctionCallParametersTag.TokenParameters, .TokenParameters = Value}
         End Function
-        Public Shared Function CreateTreeParameter(ByVal Value As Opt(Of SingleLineNode)) As RawFunctionCallParameters
+        Public Shared Function CreateTreeParameter(ByVal Value As [Optional](Of SingleLineNode)) As RawFunctionCallParameters
             Return New RawFunctionCallParameters With {._Tag = RawFunctionCallParametersTag.TreeParameter, .TreeParameter = Value}
         End Function
         Public Shared Function CreateTableParameters(ByVal Value As TableLineNode()) As RawFunctionCallParameters
@@ -686,7 +686,7 @@ Namespace Texting.TreeFormat.Syntax
         Public Property Name As FunctionDirective
         Public Property ReturnValueMode As FunctionCallReturnValueMode
         Public Property Parameters As Semantics.Node()
-        Public Property Content As Opt(Of FunctionCallContent)
+        Public Property Content As [Optional](Of FunctionCallContent)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)

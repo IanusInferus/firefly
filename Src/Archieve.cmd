@@ -11,7 +11,7 @@
 @cd ..
 @del %PackName%Src.rar
 @del %PackName%Bin.rar
-@rar a -av- -m5 -md4096 -tsm -tsc -s -k -t %PackName%Src.rar -x*\.svn -x*\.svn\* -x*.user -x*.suo Src
-@rar a -av- -m5 -md4096 -tsm -tsc -s -k -t %PackName%Bin.rar -x*\.svn -x*\.svn\* -x*.user -x*.suo Bin
+@rar a -av- -m5 -md4096 -tsm -tsc -s -k -t %PackName%Src.rar -x*\.vs -x*\.svn -x*\.svn\* -x*.user -x*.suo Src
+@rar a -av- -m5 -md4096 -tsm -tsc -s -k -t %PackName%Bin.rar -x*\.vs -x*\.svn -x*\.svn\* -x*.user -x*.suo Bin
 @if not exist Versions\ md Versions\
 @copy %PackName%Src.rar Versions\

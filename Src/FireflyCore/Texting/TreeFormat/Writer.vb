@@ -3,7 +3,7 @@
 '  File:        Writer.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 文本输出类
-'  Version:     2011.08.30.
+'  Version:     2016.05.13.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -77,7 +77,7 @@ Namespace Texting.TreeFormat
             End Select
         End Sub
 
-        Private Shared Function TryGetNodeAsSingleLineString(ByVal Node As Node) As Opt(Of String)
+        Private Shared Function TryGetNodeAsSingleLineString(ByVal Node As Node) As [Optional](Of String)
             Dim l As New List(Of String)
 
             Dim n = Node
@@ -88,15 +88,15 @@ Namespace Texting.TreeFormat
                         Exit While
                     Case NodeTag.Leaf
                         Dim s = GetLiteral(n.Leaf, False)
-                        If s.OnMultiLine Then Return Opt(Of String).Empty
+                        If s.OnMultiLine Then Return [Optional](Of String).Empty
                         If Not s.OnSingleLine Then Throw New InvalidOperationException
                         l.Add(s.SingleLine)
                         Exit While
                     Case NodeTag.Stem
                         Dim ns = n.Stem
-                        If ns.Children.Length <> 1 Then Return Opt(Of String).Empty
+                        If ns.Children.Length <> 1 Then Return [Optional](Of String).Empty
                         Dim s = GetLiteral(ns.Name, False)
-                        If s.OnMultiLine Then Return Opt(Of String).Empty
+                        If s.OnMultiLine Then Return [Optional](Of String).Empty
                         If Not s.OnSingleLine Then Throw New InvalidOperationException
                         l.Add(s.SingleLine)
                         n = ns.Children.Single()
