@@ -3,7 +3,7 @@
 '  File:        XmlInterop.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: XML互操作
-'  Version:     2013.03.05.
+'  Version:     2016.05.13.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -288,7 +288,7 @@ Namespace Texting.TreeFormat
                 Return GetNameString(Node.Name, Node)
             End Function
 
-            Private Function Mark(Of T)(ByVal Obj As T, ByVal Range As Opt(Of Syntax.FileTextRange)) As T
+            Private Function Mark(Of T)(ByVal Obj As T, ByVal Range As [Optional](Of Syntax.FileTextRange)) As T
                 If Range.HasValue Then Positions.Add(Obj, Range.Value)
                 Return Obj
             End Function
@@ -309,7 +309,7 @@ Namespace Texting.TreeFormat
                 Return n
             End Function
 
-            Private Function GetFileTextRange(ByVal x As XObject) As Opt(Of Syntax.FileTextRange)
+            Private Function GetFileTextRange(ByVal x As XObject) As [Optional](Of Syntax.FileTextRange)
                 Dim i As New FileLocationInformation
                 Dim flip = TryCast(x, IFileLocationInformationProvider)
                 If flip IsNot Nothing Then
@@ -423,7 +423,7 @@ Namespace Texting.TreeFormat
                     Dim n = Mark(Syntax.Node.CreateSingleLineComment(Mark(New Syntax.SingleLineComment With {.Content = Mark(New Syntax.FreeContent With {.Text = Value}, Range)}, Range)), Range)
                     Return n
                 ElseIf Literal.OnMultiLine Then
-                    Dim n = Mark(Syntax.Node.CreateMultiLineComment(Mark(New Syntax.MultiLineComment With {.SingleLineComment = Opt(Of Syntax.SingleLineComment).Empty, .Content = New Syntax.FreeContent With {.Text = Value}, .EndDirective = Opt(Of Syntax.EndDirective).Empty}, Range)), Range)
+                    Dim n = Mark(Syntax.Node.CreateMultiLineComment(Mark(New Syntax.MultiLineComment With {.SingleLineComment = [Optional](Of Syntax.SingleLineComment).Empty, .Content = New Syntax.FreeContent With {.Text = Value}, .EndDirective = [Optional](Of Syntax.EndDirective).Empty}, Range)), Range)
                     Return n
                 Else
                     Throw New InvalidOperationException
@@ -439,14 +439,14 @@ Namespace Texting.TreeFormat
                 Return GetNameString(Node.Name, Node)
             End Function
 
-            Private Function Mark(Of T)(ByVal Obj As T, ByVal Range As Opt(Of Syntax.FileTextRange)) As T
+            Private Function Mark(Of T)(ByVal Obj As T, ByVal Range As [Optional](Of Syntax.FileTextRange)) As T
                 If Range.HasValue AndAlso Range.Value.Range.HasValue Then Positions.Add(Obj, Range.Value.Range.Value)
                 Return Obj
             End Function
             Private Function MakeEmptyNode(ByVal x As XObject) As Syntax.Node
                 Dim Range = GetFileTextRange(x)
                 Dim EmptyNode = Mark(Syntax.SingleLineNode.CreateEmptyNode(Mark(New Syntax.EmptyNode(), Range)), Range)
-                Dim n = Mark(Syntax.Node.CreateSingleLineNodeLine(Mark(New Syntax.SingleLineNodeLine With {.SingleLineNode = EmptyNode, .SingleLineComment = Opt(Of Syntax.SingleLineComment).Empty}, Range)), Range)
+                Dim n = Mark(Syntax.Node.CreateSingleLineNodeLine(Mark(New Syntax.SingleLineNodeLine With {.SingleLineNode = EmptyNode, .SingleLineComment = [Optional](Of Syntax.SingleLineComment).Empty}, Range)), Range)
                 Return n
             End Function
             Private Function MakeLeafNode(ByVal Value As String, ByVal x As XObject) As Syntax.Node
@@ -454,10 +454,10 @@ Namespace Texting.TreeFormat
                 Dim Literal = TreeFormatLiteralWriter.GetLiteral(Value, False, False)
                 If Literal.OnSingleLine Then
                     Dim LeafNode = Mark(Syntax.SingleLineNode.CreateSingleLineLiteral(Mark(New Syntax.SingleLineLiteral With {.Text = Value}, Range)), Range)
-                    Dim n = Mark(Syntax.Node.CreateSingleLineNodeLine(Mark(New Syntax.SingleLineNodeLine With {.SingleLineNode = LeafNode, .SingleLineComment = Opt(Of Syntax.SingleLineComment).Empty}, Range)), Range)
+                    Dim n = Mark(Syntax.Node.CreateSingleLineNodeLine(Mark(New Syntax.SingleLineNodeLine With {.SingleLineNode = LeafNode, .SingleLineComment = [Optional](Of Syntax.SingleLineComment).Empty}, Range)), Range)
                     Return n
                 ElseIf Literal.OnMultiLine Then
-                    Dim n = Mark(Syntax.Node.CreateMultiLineLiteral(Mark(New Syntax.MultiLineLiteral With {.SingleLineComment = Opt(Of Syntax.SingleLineComment).Empty, .Content = New Syntax.FreeContent With {.Text = Value}, .EndDirective = Opt(Of Syntax.EndDirective).Empty}, Range)), Range)
+                    Dim n = Mark(Syntax.Node.CreateMultiLineLiteral(Mark(New Syntax.MultiLineLiteral With {.SingleLineComment = [Optional](Of Syntax.SingleLineComment).Empty, .Content = New Syntax.FreeContent With {.Text = Value}, .EndDirective = [Optional](Of Syntax.EndDirective).Empty}, Range)), Range)
                     Return n
                 Else
                     Throw New InvalidOperationException
@@ -467,15 +467,15 @@ Namespace Texting.TreeFormat
                 Dim Range = GetFileTextRange(x)
                 Dim NameLiteral = Mark(New Syntax.SingleLineLiteral With {.Text = Name}, Range)
                 If Children.Length = 0 Then
-                    Dim n = Mark(Syntax.Node.CreateMultiLineNode(Mark(New Syntax.MultiLineNode With {.Head = NameLiteral, .SingleLineComment = Opt(Of Syntax.SingleLineComment).Empty, .Children = New Syntax.MultiNodes() {}, .EndDirective = Mark(New Syntax.EndDirective With {.EndSingleLineComment = Opt(Of Syntax.SingleLineComment).Empty}, Range)}, Range)), Range)
+                    Dim n = Mark(Syntax.Node.CreateMultiLineNode(Mark(New Syntax.MultiLineNode With {.Head = NameLiteral, .SingleLineComment = [Optional](Of Syntax.SingleLineComment).Empty, .Children = New Syntax.MultiNodes() {}, .EndDirective = Mark(New Syntax.EndDirective With {.EndSingleLineComment = [Optional](Of Syntax.SingleLineComment).Empty}, Range)}, Range)), Range)
                     Return n
                 ElseIf Children.Length = 1 AndAlso Children.Single().OnSingleLineNodeLine Then
                     Dim SingleLineNode = Mark(Syntax.SingleLineNode.CreateSingleLineNodeWithParameters(Mark(New Syntax.SingleLineNodeWithParameters With {.Head = NameLiteral, .Children = New Syntax.ParenthesesNode() {}, .LastChild = Children.Single().SingleLineNodeLine.SingleLineNode}, Range)), Range)
-                    Dim n = Mark(Syntax.Node.CreateSingleLineNodeLine(Mark(New Syntax.SingleLineNodeLine With {.SingleLineNode = SingleLineNode, .SingleLineComment = Opt(Of Syntax.SingleLineComment).Empty}, Range)), Range)
+                    Dim n = Mark(Syntax.Node.CreateSingleLineNodeLine(Mark(New Syntax.SingleLineNodeLine With {.SingleLineNode = SingleLineNode, .SingleLineComment = [Optional](Of Syntax.SingleLineComment).Empty}, Range)), Range)
                     Return n
                 Else
                     Dim ChildrenNodes = Children.Select(Function(c) Mark(Syntax.MultiNodes.CreateNode(c), Range)).ToArray()
-                    Dim n = Mark(Syntax.Node.CreateMultiLineNode(Mark(New Syntax.MultiLineNode With {.Head = NameLiteral, .SingleLineComment = Opt(Of Syntax.SingleLineComment).Empty, .Children = ChildrenNodes, .EndDirective = Opt(Of Syntax.EndDirective).Empty}, Range)), Range)
+                    Dim n = Mark(Syntax.Node.CreateMultiLineNode(Mark(New Syntax.MultiLineNode With {.Head = NameLiteral, .SingleLineComment = [Optional](Of Syntax.SingleLineComment).Empty, .Children = ChildrenNodes, .EndDirective = [Optional](Of Syntax.EndDirective).Empty}, Range)), Range)
                     Return n
                 End If
             End Function
@@ -484,12 +484,12 @@ Namespace Texting.TreeFormat
                 Dim NameLiteral = Mark(New Syntax.SingleLineLiteral With {.Text = Name}, Range)
                 Dim ListNameLiteral = Mark(New Syntax.SingleLineLiteral With {.Text = ListName}, Range)
                 Dim ChildrenNodes = Children.Select(Function(c) Mark(Syntax.MultiNodes.CreateNode(c), Range)).ToArray()
-                Dim ListNode = Mark(Syntax.MultiNodes.CreateListNodes(Mark(New Syntax.ListNodes With {.ChildHead = ListNameLiteral, .SingleLineComment = Opt(Of Syntax.SingleLineComment).Empty, .Children = ChildrenNodes, .EndDirective = Opt(Of Syntax.EndDirective).Empty}, Range)), Range)
-                Dim n = Mark(Syntax.Node.CreateMultiLineNode(Mark(New Syntax.MultiLineNode With {.Head = NameLiteral, .SingleLineComment = Opt(Of Syntax.SingleLineComment).Empty, .Children = New Syntax.MultiNodes() {ListNode}, .EndDirective = Opt(Of Syntax.EndDirective).Empty}, Range)), Range)
+                Dim ListNode = Mark(Syntax.MultiNodes.CreateListNodes(Mark(New Syntax.ListNodes With {.ChildHead = ListNameLiteral, .SingleLineComment = [Optional](Of Syntax.SingleLineComment).Empty, .Children = ChildrenNodes, .EndDirective = [Optional](Of Syntax.EndDirective).Empty}, Range)), Range)
+                Dim n = Mark(Syntax.Node.CreateMultiLineNode(Mark(New Syntax.MultiLineNode With {.Head = NameLiteral, .SingleLineComment = [Optional](Of Syntax.SingleLineComment).Empty, .Children = New Syntax.MultiNodes() {ListNode}, .EndDirective = [Optional](Of Syntax.EndDirective).Empty}, Range)), Range)
                 Return n
             End Function
 
-            Private Function GetFileTextRange(ByVal x As XObject) As Opt(Of Syntax.FileTextRange)
+            Private Function GetFileTextRange(ByVal x As XObject) As [Optional](Of Syntax.FileTextRange)
                 Dim i As New FileLocationInformation
                 Dim flip = TryCast(x, IFileLocationInformationProvider)
                 If flip IsNot Nothing Then

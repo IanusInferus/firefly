@@ -1,9 +1,9 @@
-$Comment
+ï»¿$Comment
     ==========================================================================
 
       File:        MetaSchemaCsTemplate.tree
       Location:    Firefly.MetaSchemaManipulator <Tree>
-      Description: ÔªÀàĞÍ½á¹¹C#Ä£°åÊı¾İ
+      Description: å…ƒç±»å‹ç»“æ„C#æ¨¡æ¿æ•°æ®
       Version:     2011.09.24.
       Copyright(C) F.R.C.
 
@@ -147,6 +147,7 @@ MetaSchemaTemplate
                     //==========================================================================
 
                     using System;
+                    using System.Collections.Generic;
                     using System.Diagnostics;
                     using Firefly;
                     using Firefly.Mapping;

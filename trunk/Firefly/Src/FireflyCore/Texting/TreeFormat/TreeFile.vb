@@ -3,7 +3,7 @@
 '  File:        TreeFile.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: Tree文件格式 - 版本2
-'  Version:     2013.01.16.
+'  Version:     2016.05.13.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -37,7 +37,7 @@ Namespace Texting.TreeFormat
                     Try
                         Return tfp.Parse()
                     Catch ex As InvalidOperationException
-                        Throw New Syntax.InvalidSyntaxException("", New Syntax.FileTextRange With {.Text = tfp.Text, .Range = Opt(Of Syntax.TextRange).Empty}, ex)
+                        Throw New Syntax.InvalidSyntaxException("", New Syntax.FileTextRange With {.Text = tfp.Text, .Range = [Optional](Of Syntax.TextRange).Empty}, ex)
                     End Try
                 End If
             End Using

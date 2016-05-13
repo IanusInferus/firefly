@@ -1,4 +1,10 @@
-﻿2016.04.11
+﻿2016.05.13
+Firefly.Core.Texting.TreeFormat:
+将Opt类型改为Optional类型。
+Firefly.MetaSchemaManipulator:
+将VB和C#代码生成中的数组都改为List。
+
+2016.04.11
 Firefly.Core:
 修正命令行解析时两个相邻的逗号不能表达空参数的问题。
 
