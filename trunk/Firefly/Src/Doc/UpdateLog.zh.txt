@@ -3,6 +3,8 @@ Firefly.Core.Texting.TreeFormat:
 将Opt类型改为Optional类型。
 Firefly.MetaSchemaManipulator:
 将VB和C#代码生成中的数组都改为List。
+*:
+增加排除文件。
 
 2016.04.11
 Firefly.Core:
