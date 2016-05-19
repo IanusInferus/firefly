@@ -3,7 +3,7 @@
 '  File:        LiteralWriter.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 字面量输出类
-'  Version:     2013.12.13.
+'  Version:     2016.05.19.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -57,7 +57,7 @@ Namespace Texting.TreeFormat
         End Sub
 
         Private Shared ReadOnly Empty As String = "$Empty"
-        Private Enum ParentheseType
+        Private Enum ParenthesisType
             Angle
             Bracket
             Brace
@@ -102,40 +102,40 @@ Namespace Texting.TreeFormat
                 Return CreateQuotationLiteral()
             End If
 
-            Dim ParentheseStack As New Stack(Of ParentheseType)
+            Dim Stack As New Stack(Of ParenthesisType)
             For Each c In Value
                 Dim cs = New String(c, 1)
                 Select Case cs
                     Case """", " "
-                        If ParentheseStack.Count = 0 Then
+                        If Stack.Count = 0 Then
                             Return CreateQuotationLiteral()
                         End If
                     Case "<"
-                        ParentheseStack.Push(ParentheseType.Angle)
+                        Stack.Push(ParenthesisType.Angle)
                     Case "["
-                        ParentheseStack.Push(ParentheseType.Bracket)
+                        Stack.Push(ParenthesisType.Bracket)
                     Case "{"
-                        ParentheseStack.Push(ParentheseType.Brace)
+                        Stack.Push(ParenthesisType.Brace)
                     Case ">"
-                        If ParentheseStack.Count = 0 OrElse ParentheseStack.Peek <> ParentheseType.Angle Then
+                        If Stack.Count = 0 OrElse Stack.Peek <> ParenthesisType.Angle Then
                             Return CreateQuotationLiteral()
                         End If
-                        ParentheseStack.Pop()
+                        Stack.Pop()
                     Case "]"
-                        If ParentheseStack.Count = 0 OrElse ParentheseStack.Peek <> ParentheseType.Bracket Then
+                        If Stack.Count = 0 OrElse Stack.Peek <> ParenthesisType.Bracket Then
                             Return CreateQuotationLiteral()
                         End If
-                        ParentheseStack.Pop()
+                        Stack.Pop()
                     Case "}"
-                        If ParentheseStack.Count = 0 OrElse ParentheseStack.Peek <> ParentheseType.Brace Then
+                        If Stack.Count = 0 OrElse Stack.Peek <> ParenthesisType.Brace Then
                             Return CreateQuotationLiteral()
                         End If
-                        ParentheseStack.Pop()
+                        Stack.Pop()
                     Case Else
 
                 End Select
             Next
-            If ParentheseStack.Count <> 0 Then Return CreateQuotationLiteral()
+            If Stack.Count <> 0 Then Return CreateQuotationLiteral()
 
             Return Literal.CreateSingleLine(Value)
         End Function

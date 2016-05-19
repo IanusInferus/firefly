@@ -3,7 +3,7 @@
 '  File:        Evaluator.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 求值器 - 用于执行自定义函数，并将文法树转为语义树
-'  Version:     2016.05.13.
+'  Version:     2016.05.19.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -188,8 +188,8 @@ Namespace Texting.TreeFormat
                 Case SingleLineNodeTag.SingleLineLiteral
                     Dim sll = SingleLineNode.SingleLineLiteral
                     Return MakeLeafNode(sll.Text, sll)
-                Case SingleLineNodeTag.ParenthesesNode
-                    Return EvaluateSingleLineNode(SingleLineNode.ParenthesesNode.SingleLineNode)
+                Case SingleLineNodeTag.ParenthesisNode
+                    Return EvaluateSingleLineNode(SingleLineNode.ParenthesisNode.SingleLineNode)
                 Case SingleLineNodeTag.SingleLineNodeWithParameters
                     Dim slnwp = SingleLineNode.SingleLineNodeWithParameters
                     Dim Children As New List(Of Semantics.Node)
@@ -215,8 +215,8 @@ Namespace Texting.TreeFormat
                 Case TableLineNodeTag.SingleLineLiteral
                     Dim sll = TableLineNode.SingleLineLiteral
                     Return MakeLeafNode(sll.Text, sll)
-                Case TableLineNodeTag.ParenthesesNode
-                    Return EvaluateSingleLineNode(TableLineNode.ParenthesesNode.SingleLineNode)
+                Case TableLineNodeTag.ParenthesisNode
+                    Return EvaluateSingleLineNode(TableLineNode.ParenthesisNode.SingleLineNode)
                 Case Else
                     Throw New ArgumentException
             End Select

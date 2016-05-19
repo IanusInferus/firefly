@@ -3,7 +3,7 @@
 '  File:        XmlInterop.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: XML互操作
-'  Version:     2016.05.13.
+'  Version:     2016.05.19.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -470,7 +470,7 @@ Namespace Texting.TreeFormat
                     Dim n = Mark(Syntax.Node.CreateMultiLineNode(Mark(New Syntax.MultiLineNode With {.Head = NameLiteral, .SingleLineComment = [Optional](Of Syntax.SingleLineComment).Empty, .Children = New Syntax.MultiNodes() {}, .EndDirective = Mark(New Syntax.EndDirective With {.EndSingleLineComment = [Optional](Of Syntax.SingleLineComment).Empty}, Range)}, Range)), Range)
                     Return n
                 ElseIf Children.Length = 1 AndAlso Children.Single().OnSingleLineNodeLine Then
-                    Dim SingleLineNode = Mark(Syntax.SingleLineNode.CreateSingleLineNodeWithParameters(Mark(New Syntax.SingleLineNodeWithParameters With {.Head = NameLiteral, .Children = New Syntax.ParenthesesNode() {}, .LastChild = Children.Single().SingleLineNodeLine.SingleLineNode}, Range)), Range)
+                    Dim SingleLineNode = Mark(Syntax.SingleLineNode.CreateSingleLineNodeWithParameters(Mark(New Syntax.SingleLineNodeWithParameters With {.Head = NameLiteral, .Children = New Syntax.ParenthesisNode() {}, .LastChild = Children.Single().SingleLineNodeLine.SingleLineNode}, Range)), Range)
                     Dim n = Mark(Syntax.Node.CreateSingleLineNodeLine(Mark(New Syntax.SingleLineNodeLine With {.SingleLineNode = SingleLineNode, .SingleLineComment = [Optional](Of Syntax.SingleLineComment).Empty}, Range)), Range)
                     Return n
                 Else

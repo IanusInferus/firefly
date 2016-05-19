@@ -3,7 +3,7 @@
 '  File:        SyntaxParser.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 文法解析器 - 用于从符号转到文法树
-'  Version:     2016.05.13.
+'  Version:     2016.05.19.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -216,7 +216,7 @@ Namespace Texting.TreeFormat
             Dim RemainingChars = FirstTokenResult.RemainingChars
 
             Select Case FirstToken._Tag
-                Case TokenTag.SingleLineLiteral, TokenTag.LeftParentheses, TokenTag.RightParentheses, TokenTag.SingleLineComment
+                Case TokenTag.SingleLineLiteral, TokenTag.LeftParenthesis, TokenTag.RightParenthesis, TokenTag.SingleLineComment
                     Dim Node = ParseNode(Lines, FirstLine, ChildLines, EndLine, IndentLevel, FirstToken, RemainingChars)
                     Return Mark(MultiNodes.CreateNode(Node), Lines)
                 Case TokenTag.PreprocessDirective
@@ -249,7 +249,7 @@ Namespace Texting.TreeFormat
                         Return Mark(Node.CreateSingleLineNodeLine(ParseSingleLineNodeLine(FirstLine, FirstToken, RemainingChars)), FirstLine.Range)
                     End If
                     Return Mark(Node.CreateMultiLineNode(ParseMultiLineNode(Lines, FirstLine, ChildLines, EndLine, IndentLevel, FirstToken, RemainingChars)), Lines)
-                Case TokenTag.LeftParentheses, TokenTag.RightParentheses
+                Case TokenTag.LeftParenthesis, TokenTag.RightParenthesis
                     Return Mark(Node.CreateSingleLineNodeLine(ParseSingleLineNodeLine(FirstLine, FirstToken, RemainingChars)), FirstLine.Range)
                 Case TokenTag.PreprocessDirective
                     Select Case FirstToken.PreprocessDirective
@@ -350,11 +350,11 @@ Namespace Texting.TreeFormat
                     Case TokenTag.SingleLineLiteral, TokenTag.PreprocessDirective, TokenTag.FunctionDirective
                         l.Add(Token)
                         ParameterEnd = GetRange(Token).End
-                    Case TokenTag.LeftParentheses
+                    Case TokenTag.LeftParenthesis
                         Level += 1
                         l.Add(Token)
                         ParameterEnd = GetRange(Token).End
-                    Case TokenTag.RightParentheses
+                    Case TokenTag.RightParenthesis
                         If Level = 0 Then Exit While
                         Level -= 1
                         l.Add(Token)
@@ -517,7 +517,7 @@ Namespace Texting.TreeFormat
                         Return New SyntaxParseResult(Of SingleLineNode) With {.Value = Mark(SingleLineNode.CreateSingleLineLiteral(Head), CreateRange()), .RemainingChars = RemainingChars}
                     End If
                     Dim CurrentRemainingChars As [Optional](Of TextRange) = RemainingChars
-                    Dim l As New List(Of ParenthesesNode)
+                    Dim l As New List(Of ParenthesisNode)
                     While True
                         If Not CurrentRemainingChars.HasValue Then
                             If l.Count = 0 Then
@@ -544,13 +544,13 @@ Namespace Texting.TreeFormat
                                 NodeEnd = GetRange(FollowingToken).End
                                 Dim Node = Mark(New SingleLineNodeWithParameters With {.Head = Head, .Children = l.ToArray(), .LastChild = Child}, CreateRange())
                                 Return New SyntaxParseResult(Of SingleLineNode) With {.Value = Mark(SingleLineNode.CreateSingleLineNodeWithParameters(Node), CreateRange()), .RemainingChars = ChildResult.RemainingChars}
-                            Case TokenTag.LeftParentheses
-                                Dim ChildResult = ParseParenthesesNode(FollowingToken, FollowingTokenResult.RemainingChars)
+                            Case TokenTag.LeftParenthesis
+                                Dim ChildResult = ParseParenthesisNode(FollowingToken, FollowingTokenResult.RemainingChars)
                                 Dim Child = ChildResult.Value
                                 l.Add(Child)
                                 CurrentRemainingChars = ChildResult.RemainingChars
                                 NodeEnd = GetRange(FollowingToken).End
-                            Case TokenTag.RightParentheses, TokenTag.SingleLineComment
+                            Case TokenTag.RightParenthesis, TokenTag.SingleLineComment
                                 If l.Count = 0 Then
                                     Return New SyntaxParseResult(Of SingleLineNode) With {.Value = Mark(SingleLineNode.CreateSingleLineLiteral(Head), CreateRange()), .RemainingChars = CurrentRemainingChars}
                                 Else
@@ -562,12 +562,12 @@ Namespace Texting.TreeFormat
                         End Select
                     End While
                     Throw New InvalidOperationException
-                Case TokenTag.LeftParentheses
-                    Dim ParenthesesNodeResult = ParseParenthesesNode(FirstToken, RemainingChars)
-                    Dim ParenthesesNode = ParenthesesNodeResult.Value
-                    NodeEnd = GetRange(ParenthesesNode).End
-                    Return New SyntaxParseResult(Of SingleLineNode) With {.Value = Mark(SingleLineNode.CreateParenthesesNode(ParenthesesNode), CreateRange()), .RemainingChars = ParenthesesNodeResult.RemainingChars}
-                Case TokenTag.RightParentheses
+                Case TokenTag.LeftParenthesis
+                    Dim ParenthesisNodeResult = ParseParenthesisNode(FirstToken, RemainingChars)
+                    Dim ParenthesisNode = ParenthesisNodeResult.Value
+                    NodeEnd = GetRange(ParenthesisNode).End
+                    Return New SyntaxParseResult(Of SingleLineNode) With {.Value = Mark(SingleLineNode.CreateParenthesisNode(ParenthesisNode), CreateRange()), .RemainingChars = ParenthesisNodeResult.RemainingChars}
+                Case TokenTag.RightParenthesis
                     Throw New InvalidSyntaxRuleException("UnexpectedToken", GetFileRange(FirstToken), FirstToken)
                 Case TokenTag.PreprocessDirective
                     If FirstToken.PreprocessDirective = "Empty" Then
@@ -597,11 +597,11 @@ Namespace Texting.TreeFormat
                 Case TokenTag.SingleLineLiteral
                     Dim Head = Mark(New SingleLineLiteral With {.Text = FirstToken.SingleLineLiteral}, GetRange(FirstToken))
                     Return New SyntaxParseResult(Of TableLineNode) With {.Value = Mark(TableLineNode.CreateSingleLineLiteral(Head), CreateRange()), .RemainingChars = RemainingChars}
-                Case TokenTag.LeftParentheses
-                    Dim ParenthesesNodeResult = ParseParenthesesNode(FirstToken, RemainingChars)
-                    Dim ParenthesesNode = ParenthesesNodeResult.Value
-                    Return New SyntaxParseResult(Of TableLineNode) With {.Value = Mark(TableLineNode.CreateParenthesesNode(ParenthesesNode), CreateRange()), .RemainingChars = ParenthesesNodeResult.RemainingChars}
-                Case TokenTag.RightParentheses
+                Case TokenTag.LeftParenthesis
+                    Dim ParenthesisNodeResult = ParseParenthesisNode(FirstToken, RemainingChars)
+                    Dim ParenthesisNode = ParenthesisNodeResult.Value
+                    Return New SyntaxParseResult(Of TableLineNode) With {.Value = Mark(TableLineNode.CreateParenthesisNode(ParenthesisNode), CreateRange()), .RemainingChars = ParenthesisNodeResult.RemainingChars}
+                Case TokenTag.RightParenthesis
                     Throw New InvalidSyntaxRuleException("UnexpectedToken", GetFileRange(FirstToken), FirstToken)
                 Case TokenTag.PreprocessDirective
                     If FirstToken.PreprocessDirective = "Empty" Then
@@ -648,11 +648,11 @@ Namespace Texting.TreeFormat
                     Case TokenTag.SingleLineLiteral, TokenTag.PreprocessDirective, TokenTag.FunctionDirective
                         l.Add(Token)
                         ParameterEnd = GetRange(Token).End
-                    Case TokenTag.LeftParentheses
+                    Case TokenTag.LeftParenthesis
                         Level += 1
                         l.Add(Token)
                         ParameterEnd = GetRange(Token).End
-                    Case TokenTag.RightParentheses
+                    Case TokenTag.RightParenthesis
                         If Level = 0 Then Exit While
                         Level -= 1
                         l.Add(Token)
@@ -707,27 +707,27 @@ Namespace Texting.TreeFormat
             Return New SyntaxParseResult(Of SingleLineFunctionNode) With {.Value = F, .RemainingChars = CurrentRemainingChars}
         End Function
 
-        Private Function ParseParenthesesNode(ByVal FirstToken As Token, ByVal RemainingChars As [Optional](Of TextRange)) As SyntaxParseResult(Of ParenthesesNode)
+        Private Function ParseParenthesisNode(ByVal FirstToken As Token, ByVal RemainingChars As [Optional](Of TextRange)) As SyntaxParseResult(Of ParenthesisNode)
             Dim FirstTokenRange = GetRange(FirstToken)
             Dim NodeStart = FirstTokenRange.Start
             Dim NodeEnd = FirstTokenRange.End
             Dim CreateRange = Function() New TextRange With {.Start = NodeStart, .End = NodeEnd}
 
-            If Not RemainingChars.HasValue Then Throw New InvalidSyntaxRuleException("ParenthesesNotMatched", GetFileRange(FirstToken), FirstToken)
+            If Not RemainingChars.HasValue Then Throw New InvalidSyntaxRuleException("ParenthesisNotMatched", GetFileRange(FirstToken), FirstToken)
             Dim SecondTokenResult = TokenParser.ReadToken(RemainingChars.Value)
-            If Not SecondTokenResult.Token.HasValue Then Throw New InvalidSyntaxRuleException("ParenthesesNotMatched", GetFileRange(FirstToken), FirstToken)
+            If Not SecondTokenResult.Token.HasValue Then Throw New InvalidSyntaxRuleException("ParenthesisNotMatched", GetFileRange(FirstToken), FirstToken)
             Dim SecondToken = SecondTokenResult.Token.Value
             NodeEnd = GetRange(SecondToken).End
             Dim SingleLineNodeResult = ParseSingleLineNode(SecondToken, SecondTokenResult.RemainingChars)
-            If Not SingleLineNodeResult.RemainingChars.HasValue Then Throw New InvalidSyntaxRuleException("ParenthesesNotMatched", New FileTextRange With {.Text = Text, .Range = CreateRange()}, FirstToken)
+            If Not SingleLineNodeResult.RemainingChars.HasValue Then Throw New InvalidSyntaxRuleException("ParenthesisNotMatched", New FileTextRange With {.Text = Text, .Range = CreateRange()}, FirstToken)
             Dim SingleLineNode = SingleLineNodeResult.Value
             NodeEnd = GetRange(SingleLineNode).End
             Dim EndTokenResult = TokenParser.ReadToken(SingleLineNodeResult.RemainingChars.Value)
-            If Not EndTokenResult.Token.HasValue Then Throw New InvalidSyntaxRuleException("ParenthesesNotMatched", New FileTextRange With {.Text = Text, .Range = CreateRange()}, FirstToken)
+            If Not EndTokenResult.Token.HasValue Then Throw New InvalidSyntaxRuleException("ParenthesisNotMatched", New FileTextRange With {.Text = Text, .Range = CreateRange()}, FirstToken)
             Dim EndToken = EndTokenResult.Token.Value
-            If Not EndToken.OnRightParentheses Then Throw New InvalidSyntaxRuleException("ParenthesesNotMatched", GetFileRange(EndToken), EndToken)
+            If Not EndToken.OnRightParenthesis Then Throw New InvalidSyntaxRuleException("ParenthesisNotMatched", GetFileRange(EndToken), EndToken)
             NodeEnd = GetRange(EndToken).End
-            Return New SyntaxParseResult(Of ParenthesesNode) With {.Value = Mark(New ParenthesesNode With {.SingleLineNode = SingleLineNode}, CreateRange()), .RemainingChars = EndTokenResult.RemainingChars}
+            Return New SyntaxParseResult(Of ParenthesisNode) With {.Value = Mark(New ParenthesisNode With {.SingleLineNode = SingleLineNode}, CreateRange()), .RemainingChars = EndTokenResult.RemainingChars}
         End Function
 
         Private Function ParseSingleLineComment(ByVal RemainingChars As [Optional](Of TextRange)) As [Optional](Of SingleLineComment)
