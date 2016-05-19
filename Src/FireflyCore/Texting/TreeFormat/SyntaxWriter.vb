@@ -3,7 +3,7 @@
 '  File:        SyntaxWriter.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 文本输出类
-'  Version:     2016.05.13.
+'  Version:     2016.05.19.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -205,8 +205,8 @@ Namespace Texting.TreeFormat
                     Return GetSingleLineFunctionNode(sln.SingleLineFunctionNode)
                 Case SingleLineNodeTag.SingleLineLiteral
                     Return GetSingleLineLiteral(sln.SingleLineLiteral)
-                Case SingleLineNodeTag.ParenthesesNode
-                    Return GetParenthesesNode(sln.ParenthesesNode)
+                Case SingleLineNodeTag.ParenthesisNode
+                    Return GetParenthesisNode(sln.ParenthesisNode)
                 Case SingleLineNodeTag.SingleLineNodeWithParameters
                     Return GetSingleLineNodeWithParameters(sln.SingleLineNodeWithParameters)
                 Case Else
@@ -221,8 +221,8 @@ Namespace Texting.TreeFormat
                     Return GetSingleLineFunctionNode(tln.SingleLineFunctionNode)
                 Case TableLineNodeTag.SingleLineLiteral
                     Return GetSingleLineLiteral(tln.SingleLineLiteral)
-                Case TableLineNodeTag.ParenthesesNode
-                    Return GetParenthesesNode(tln.ParenthesesNode)
+                Case TableLineNodeTag.ParenthesisNode
+                    Return GetParenthesisNode(tln.ParenthesisNode)
                 Case Else
                     Throw New InvalidOperationException
             End Select
@@ -235,13 +235,13 @@ Namespace Texting.TreeFormat
             Dim Tokens = CombineTokens(slfn.Parameters.Select(Function(t) GetToken(t)).ToArray())
             Return Combine(GetFunctionDirective(slfn.FunctionDirective), Tokens)
         End Function
-        Private Function GetParenthesesNode(ByVal pn As ParenthesesNode) As String
+        Private Function GetParenthesisNode(ByVal pn As ParenthesisNode) As String
             Return "(" & GetSingleLineNode(pn.SingleLineNode) & ")"
         End Function
         Private Function GetSingleLineNodeWithParameters(ByVal slnp As SingleLineNodeWithParameters) As String
             Dim l As New List(Of String)
             For Each c In slnp.Children
-                l.Add(GetParenthesesNode(c))
+                l.Add(GetParenthesisNode(c))
             Next
             If slnp.LastChild.HasValue Then
                 l.Add(GetSingleLineNode(slnp.LastChild.Value))
@@ -253,9 +253,9 @@ Namespace Texting.TreeFormat
             Select Case t._Tag
                 Case TokenTag.SingleLineLiteral
                     Return GetSingleLineLiteral(t.SingleLineLiteral)
-                Case TokenTag.LeftParentheses
+                Case TokenTag.LeftParenthesis
                     Return "("
-                Case TokenTag.RightParentheses
+                Case TokenTag.RightParenthesis
                     Return ")"
                 Case TokenTag.PreprocessDirective
                     Return GetPreprocessDirective(t.PreprocessDirective)
