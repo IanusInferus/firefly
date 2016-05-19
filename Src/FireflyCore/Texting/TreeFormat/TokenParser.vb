@@ -3,7 +3,7 @@
 '  File:        TokenParser.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 词法解析器
-'  Version:     2016.05.13.
+'  Version:     2016.05.19.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -58,7 +58,7 @@ Namespace Texting.TreeFormat
             Return True
         End Function
 
-        Private Enum ParentheseType
+        Private Enum ParenthesisType
             Angle
             Bracket
             Brace
@@ -93,20 +93,20 @@ Namespace Texting.TreeFormat
             'State 3    转义双双引号Token
             'State 31   转义双双引号Token转义符
             'Tag TokenType 单行字面量、预处理指令、自定义指令
-            'Stack<ParentheseType> 括号栈
+            'Stack<ParenthesisType> 括号栈
 
             '初值
             'State <- 0
             'Tag TokenType <- 单行字面量
-            'Stack<Integer> <- 空
+            'Stack<ParenthesisType> <- 空
 
             'State 0
             '    EndOfLine -> 返回空Token，RemainingChars为空
-            '    空格 -> 保持，前进
+            '    Space -> 保持，前进
             '    \f\t\v -> 失败
             '    " -> 标记符号开始，State 2，前进
-            '    ( -> 标记符号开始，前进，返回LeftParenthesesToken
-            '    ) -> 标记符号开始，前进，返回RightParentheses
+            '    ( -> 标记符号开始，前进，返回LeftParenthesis
+            '    ) -> 标记符号开始，前进，返回RightParenthesis
             '    // -> 标记符号开始，前进到底，返回SingleLineComment，RemainingChars为空
             '    / -> 失败
             '    < -> 压栈，加入Output，State 1，前进
@@ -115,11 +115,11 @@ Namespace Texting.TreeFormat
             '    $ -> 标记符号开始，Tag TokenType <- 预处理指令，State 1，前进
             '    # -> 标记符号开始，Tag TokenType <- 自定义指令，State 1，前进
             '    [!@%&;=?\^`|~] -> 失败
-            '    . -> 标记符号开始，加入Output，State 1，前进
+            '    Any -> 标记符号开始，加入Output，State 1，前进
 
             'State 1
             '    EndOfLine -> 检查栈，失败或返回(Tag 0 => SingleLineLiteral | PreprocessDirective | FunctionDirective)，RemainingChars为空
-            '    空格 -> 检查栈，(加入Output，保持，前进)或返回(Tag 0 => SingleLineLiteral | PreprocessDirective | FunctionDirective)
+            '    Space -> 检查栈，(加入Output，保持，前进)或返回(Tag 0 => SingleLineLiteral | PreprocessDirective | FunctionDirective)
             '    \f\t\v -> 失败
             '    " -> 检查栈，(加入Output，保持，前进)或失败
             '    ( -> 检查栈，失败或返回(Tag 0 => SingleLineLiteral | PreprocessDirective | FunctionDirective)
@@ -130,40 +130,40 @@ Namespace Texting.TreeFormat
             '    > -> 前进，检查并退栈，加入Output，保持
             '    ] -> 前进，检查并退栈，加入Output，保持
             '    } -> 前进，检查并退栈，加入Output，保持
-            '    . -> 加入Output，保持，前进
+            '    Any -> 加入Output，保持，前进
 
             'State 2
             '    EndOfLine -> 失败
             '    " -> State 21，前进
-            '    . -> 加入Output，State 22，前进
+            '    Any -> 加入Output，State 22，前进
 
             'State 21
             '    EndOfLine -> 返回SingleLineLiteral，RemainingChars为空
-            '    空格 -> 返回SingleLineLiteral
+            '    Space -> 返回SingleLineLiteral
             '    " -> 加入Output，State 22，前进
             '    \ -> State 31，前进
-            '    . -> 加入Output，State 3，前进
+            '    Any -> 加入Output，State 3，前进
 
             'State 22
             '    EndOfLine -> 失败
             '    " -> State 23，前进
-            '    . -> 加入Output，保持，前进
+            '    Any -> 加入Output，保持，前进
 
             'State 23
             '    EndOfLine -> 返回SingleLineLiteral，RemainingChars为空
-            '    空格 -> 返回SingleLineLiteral
+            '    Space -> 返回SingleLineLiteral
             '    \f\t\v -> 失败
             '    " -> 加入Output，State 22，前进
             '    ( -> 返回SingleLineLiteral
             '    ) -> 返回SingleLineLiteral
-            '    . -> 失败
+            '    Any -> 失败
 
             'State 3
             '    EndOfLine -> 失败
             '    "" -> 前进，前进，返回SingleLineLiteral
             '    " -> 失败
             '    \ -> State 31，前进
-            '    . -> 加入Output，保持，前进
+            '    Any -> 加入Output，保持，前进
 
             'State 31
             '    EndOfLine -> 失败
@@ -178,7 +178,10 @@ Namespace Texting.TreeFormat
             '    x[0-9A-Fa-f]{2} -> 加入U+00..到Output，State 3，前进3
             '    u[0-9A-Fa-f]{4} -> 加入U+....到Output，State 3，前进5
             '    U[0-9A-Fa-f]{5} -> 加入U+.....到Output，State 3，前进6
-            '    . -> 加入Output，State 3，前进
+            '    x -> 失败
+            '    u -> 失败
+            '    U -> 失败
+            '    Any -> 加入Output，State 3，前进
 
             Dim s = Text.GetTextInLine(RangeInLine)
             Dim Index As Integer = 0
@@ -197,7 +200,7 @@ Namespace Texting.TreeFormat
 
             Dim State = 0
             Dim Tag = TokenType.SingleLineLiteral
-            Dim ParentheseStack As New Stack(Of ParentheseType)
+            Dim Stack As New Stack(Of ParenthesisType)
 
             Dim StartIndex As Integer = 0
             Dim MakeCurrentErrorTokenException = Function(Message As String) New InvalidTokenException(Message, New FileTextRange With {.Text = Text, .Range = MakeTokenRange(StartIndex, Index)}, Text.GetTextInLine(MakeTokenRange(StartIndex, Index)))
@@ -226,17 +229,17 @@ Namespace Texting.TreeFormat
                             Throw New InvalidOperationException
                     End Select
                 End Function
-            Dim MakeLeftParenthesesToken =
+            Dim MakeLeftParenthesisToken =
                 Function() As [Optional](Of Token)
                     Dim Range = MakeTokenRange(StartIndex, Index)
-                    Dim t = Token.CreateLeftParentheses()
+                    Dim t = Token.CreateLeftParenthesis()
                     Positions.Add(t, Range)
                     Return t
                 End Function
-            Dim MakeRightParenthesesToken =
+            Dim MakeRightParenthesisToken =
                 Function() As [Optional](Of Token)
                     Dim Range = MakeTokenRange(StartIndex, Index)
-                    Dim t = Token.CreateRightParentheses()
+                    Dim t = Token.CreateRightParenthesis()
                     Positions.Add(t, Range)
                     Return t
                 End Function
@@ -264,11 +267,11 @@ Namespace Texting.TreeFormat
                             Case "("c
                                 MarkStart()
                                 Proceed()
-                                Return New TreeFormatTokenParseResult With {.Token = MakeLeftParenthesesToken(), .RemainingChars = MakeRemainingChars()}
+                                Return New TreeFormatTokenParseResult With {.Token = MakeLeftParenthesisToken(), .RemainingChars = MakeRemainingChars()}
                             Case ")"c
                                 MarkStart()
                                 Proceed()
-                                Return New TreeFormatTokenParseResult With {.Token = MakeRightParenthesesToken(), .RemainingChars = MakeRemainingChars()}
+                                Return New TreeFormatTokenParseResult With {.Token = MakeRightParenthesisToken(), .RemainingChars = MakeRemainingChars()}
                             Case "/"c
                                 If Peek(2) = "//" Then
                                     MarkStart()
@@ -282,17 +285,17 @@ Namespace Texting.TreeFormat
                                 End If
                                 Throw MakeNextCharErrorTokenException("InvalidChar")
                             Case "<"c
-                                ParentheseStack.Push(ParentheseType.Angle)
+                                Stack.Push(ParenthesisType.Angle)
                                 Write(c)
                                 State = 1
                                 Proceed()
                             Case "["c
-                                ParentheseStack.Push(ParentheseType.Bracket)
+                                Stack.Push(ParenthesisType.Bracket)
                                 Write(c)
                                 State = 1
                                 Proceed()
                             Case "{"c
-                                ParentheseStack.Push(ParentheseType.Brace)
+                                Stack.Push(ParenthesisType.Brace)
                                 Write(c)
                                 State = 1
                                 Proceed()
@@ -311,52 +314,52 @@ Namespace Texting.TreeFormat
                         End Select
                     Case 1
                         If EndOfLine() Then
-                            If ParentheseStack.Count <> 0 Then Throw MakeCurrentErrorTokenException("InvalidParentheses")
+                            If Stack.Count <> 0 Then Throw MakeCurrentErrorTokenException("InvalidParenthesis")
                             Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = NullRemainingChars}
                         End If
                         Dim c = Peek1()
                         If IsForbiddenWhitespaces(c) Then Throw MakeNextCharErrorTokenException("InvalidWhitespace")
                         Select Case c
                             Case " "c
-                                If ParentheseStack.Count = 0 Then Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
+                                If Stack.Count = 0 Then Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
                                 Write(c)
                                 Proceed()
                             Case """"c
-                                If ParentheseStack.Count = 0 Then Throw MakeNextCharErrorTokenException("InvalidChar")
+                                If Stack.Count = 0 Then Throw MakeNextCharErrorTokenException("InvalidChar")
                                 Write(c)
                                 Proceed()
                             Case "("c, ")"c
-                                If ParentheseStack.Count <> 0 Then Throw MakeCurrentErrorTokenException("InvalidParentheses")
+                                If Stack.Count <> 0 Then Throw MakeCurrentErrorTokenException("InvalidParenthesis")
                                 Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
                             Case "<"c
-                                ParentheseStack.Push(ParentheseType.Angle)
+                                Stack.Push(ParenthesisType.Angle)
                                 Write(c)
                                 Proceed()
                             Case "["c
-                                ParentheseStack.Push(ParentheseType.Bracket)
+                                Stack.Push(ParenthesisType.Bracket)
                                 Write(c)
                                 Proceed()
                             Case "{"c
-                                ParentheseStack.Push(ParentheseType.Brace)
+                                Stack.Push(ParenthesisType.Brace)
                                 Write(c)
                                 Proceed()
                             Case ">"c
                                 Proceed()
-                                If ParentheseStack.Count = 0 Then Throw MakeCurrentErrorTokenException("InvalidParentheses")
-                                If ParentheseStack.Peek <> ParentheseType.Angle Then Throw MakeCurrentErrorTokenException("InvalidParentheses")
-                                ParentheseStack.Pop()
+                                If Stack.Count = 0 Then Throw MakeCurrentErrorTokenException("InvalidParenthesis")
+                                If Stack.Peek <> ParenthesisType.Angle Then Throw MakeCurrentErrorTokenException("InvalidParenthesis")
+                                Stack.Pop()
                                 Write(c)
                             Case "]"c
                                 Proceed()
-                                If ParentheseStack.Count = 0 Then Throw MakeCurrentErrorTokenException("InvalidParentheses")
-                                If ParentheseStack.Peek <> ParentheseType.Bracket Then Throw MakeCurrentErrorTokenException("InvalidParentheses")
-                                ParentheseStack.Pop()
+                                If Stack.Count = 0 Then Throw MakeCurrentErrorTokenException("InvalidParenthesis")
+                                If Stack.Peek <> ParenthesisType.Bracket Then Throw MakeCurrentErrorTokenException("InvalidParenthesis")
+                                Stack.Pop()
                                 Write(c)
                             Case "}"c
                                 Proceed()
-                                If ParentheseStack.Count = 0 Then Throw MakeCurrentErrorTokenException("InvalidParentheses")
-                                If ParentheseStack.Peek <> ParentheseType.Brace Then Throw MakeCurrentErrorTokenException("InvalidParentheses")
-                                ParentheseStack.Pop()
+                                If Stack.Count = 0 Then Throw MakeCurrentErrorTokenException("InvalidParenthesis")
+                                If Stack.Peek <> ParenthesisType.Brace Then Throw MakeCurrentErrorTokenException("InvalidParenthesis")
+                                Stack.Pop()
                                 Write(c)
                             Case Else
                                 Write(c)
@@ -407,14 +410,14 @@ Namespace Texting.TreeFormat
                         If IsForbiddenWhitespaces(c) Then Throw MakeNextCharErrorTokenException("InvalidWhitespace")
                         Select Case c
                             Case " "c
-                                If ParentheseStack.Count <> 0 Then Throw New InvalidOperationException
+                                If Stack.Count <> 0 Then Throw New InvalidOperationException
                                 Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
                             Case """"c
                                 Write(c)
                                 State = 22
                                 Proceed()
                             Case "("c, ")"c
-                                If ParentheseStack.Count <> 0 Then Throw New InvalidOperationException
+                                If Stack.Count <> 0 Then Throw New InvalidOperationException
                                 Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}
                             Case Else
                                 Throw MakeNextCharErrorTokenException("InvalidChar")
@@ -425,7 +428,7 @@ Namespace Texting.TreeFormat
                         Select Case c
                             Case """"c
                                 If Peek(2) = """""" Then
-                                    If ParentheseStack.Count <> 0 Then Throw New InvalidOperationException
+                                    If Stack.Count <> 0 Then Throw New InvalidOperationException
                                     Proceed()
                                     Proceed()
                                     Return New TreeFormatTokenParseResult With {.Token = MakeToken(), .RemainingChars = MakeRemainingChars()}

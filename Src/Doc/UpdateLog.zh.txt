@@ -1,4 +1,9 @@
-﻿2016.05.13
+﻿2016.05.19
+Firefly.Core.Texting.TreeFormat:
+修正拼写错误。
+修正文档。
+
+2016.05.13
 Firefly.Core.Texting.TreeFormat:
 将Opt类型改为Optional类型。
 Firefly.MetaSchemaManipulator:

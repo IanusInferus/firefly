@@ -3,7 +3,7 @@
 '  File:        Syntax.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 文法对象定义
-'  Version:     2016.05.13.
+'  Version:     2016.05.19.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -204,7 +204,7 @@ Namespace Texting.TreeFormat.Syntax
         EmptyNode
         SingleLineFunctionNode
         SingleLineLiteral
-        ParenthesesNode
+        ParenthesisNode
         SingleLineNodeWithParameters
     End Enum
     <TaggedUnion(), DebuggerDisplay("{ToString()}")>
@@ -213,7 +213,7 @@ Namespace Texting.TreeFormat.Syntax
         Public Property EmptyNode As EmptyNode
         Public Property SingleLineFunctionNode As SingleLineFunctionNode
         Public Property SingleLineLiteral As SingleLineLiteral
-        Public Property ParenthesesNode As ParenthesesNode
+        Public Property ParenthesisNode As ParenthesisNode
         Public Property SingleLineNodeWithParameters As SingleLineNodeWithParameters
 
         Public Shared Function CreateEmptyNode(ByVal Value As EmptyNode) As SingleLineNode
@@ -225,8 +225,8 @@ Namespace Texting.TreeFormat.Syntax
         Public Shared Function CreateSingleLineLiteral(ByVal Value As SingleLineLiteral) As SingleLineNode
             Return New SingleLineNode With {._Tag = SingleLineNodeTag.SingleLineLiteral, .SingleLineLiteral = Value}
         End Function
-        Public Shared Function CreateParenthesesNode(ByVal Value As ParenthesesNode) As SingleLineNode
-            Return New SingleLineNode With {._Tag = SingleLineNodeTag.ParenthesesNode, .ParenthesesNode = Value}
+        Public Shared Function CreateParenthesisNode(ByVal Value As ParenthesisNode) As SingleLineNode
+            Return New SingleLineNode With {._Tag = SingleLineNodeTag.ParenthesisNode, .ParenthesisNode = Value}
         End Function
         Public Shared Function CreateSingleLineNodeWithParameters(ByVal Value As SingleLineNodeWithParameters) As SingleLineNode
             Return New SingleLineNode With {._Tag = SingleLineNodeTag.SingleLineNodeWithParameters, .SingleLineNodeWithParameters = Value}
@@ -247,9 +247,9 @@ Namespace Texting.TreeFormat.Syntax
                 Return _Tag = SingleLineNodeTag.SingleLineLiteral
             End Get
         End Property
-        Public ReadOnly Property OnParenthesesNode() As Boolean
+        Public ReadOnly Property OnParenthesisNode() As Boolean
             Get
-                Return _Tag = SingleLineNodeTag.ParenthesesNode
+                Return _Tag = SingleLineNodeTag.ParenthesisNode
             End Get
         End Property
         Public ReadOnly Property OnSingleLineNodeWithParameters() As Boolean
@@ -266,7 +266,7 @@ Namespace Texting.TreeFormat.Syntax
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class SingleLineNodeWithParameters
         Public Property Head As SingleLineLiteral
-        Public Property Children As ParenthesesNode()
+        Public Property Children As ParenthesisNode()
         Public Property LastChild As [Optional](Of SingleLineNode)
 
         Public Overrides Function ToString() As String
@@ -287,7 +287,7 @@ Namespace Texting.TreeFormat.Syntax
     End Class
 
     <Record(), DebuggerDisplay("{ToString()}")>
-    Public Class ParenthesesNode
+    Public Class ParenthesisNode
         Public Property SingleLineNode As SingleLineNode
 
         Public Overrides Function ToString() As String
@@ -382,7 +382,7 @@ Namespace Texting.TreeFormat.Syntax
         EmptyNode
         SingleLineFunctionNode
         SingleLineLiteral
-        ParenthesesNode
+        ParenthesisNode
     End Enum
     <TaggedUnion(), DebuggerDisplay("{ToString()}")>
     Public Class TableLineNode
@@ -390,7 +390,7 @@ Namespace Texting.TreeFormat.Syntax
         Public Property EmptyNode As EmptyNode
         Public Property SingleLineFunctionNode As SingleLineFunctionNode
         Public Property SingleLineLiteral As SingleLineLiteral
-        Public Property ParenthesesNode As ParenthesesNode
+        Public Property ParenthesisNode As ParenthesisNode
 
         Public Shared Function CreateEmptyNode(ByVal Value As EmptyNode) As TableLineNode
             Return New TableLineNode With {._Tag = TableLineNodeTag.EmptyNode, .EmptyNode = Value}
@@ -401,8 +401,8 @@ Namespace Texting.TreeFormat.Syntax
         Public Shared Function CreateSingleLineLiteral(ByVal Value As SingleLineLiteral) As TableLineNode
             Return New TableLineNode With {._Tag = TableLineNodeTag.SingleLineLiteral, .SingleLineLiteral = Value}
         End Function
-        Public Shared Function CreateParenthesesNode(ByVal Value As ParenthesesNode) As TableLineNode
-            Return New TableLineNode With {._Tag = TableLineNodeTag.ParenthesesNode, .ParenthesesNode = Value}
+        Public Shared Function CreateParenthesisNode(ByVal Value As ParenthesisNode) As TableLineNode
+            Return New TableLineNode With {._Tag = TableLineNodeTag.ParenthesisNode, .ParenthesisNode = Value}
         End Function
 
         Public ReadOnly Property OnEmptyNode() As Boolean
@@ -420,9 +420,9 @@ Namespace Texting.TreeFormat.Syntax
                 Return _Tag = TableLineNodeTag.SingleLineLiteral
             End Get
         End Property
-        Public ReadOnly Property OnParenthesesNode() As Boolean
+        Public ReadOnly Property OnParenthesisNode() As Boolean
             Get
-                Return _Tag = TableLineNodeTag.ParenthesesNode
+                Return _Tag = TableLineNodeTag.ParenthesisNode
             End Get
         End Property
 
@@ -464,8 +464,8 @@ Namespace Texting.TreeFormat.Syntax
 
     Public Enum TokenTag
         SingleLineLiteral
-        LeftParentheses
-        RightParentheses
+        LeftParenthesis
+        RightParenthesis
         PreprocessDirective
         FunctionDirective
         SingleLineComment
@@ -474,8 +474,8 @@ Namespace Texting.TreeFormat.Syntax
     Public Class Token
         <Tag()> Public Property _Tag As TokenTag
         Public Property SingleLineLiteral As String
-        Public Property LeftParentheses As Unit
-        Public Property RightParentheses As Unit
+        Public Property LeftParenthesis As Unit
+        Public Property RightParenthesis As Unit
         Public Property PreprocessDirective As String
         Public Property FunctionDirective As String
         Public Property SingleLineComment As String
@@ -483,11 +483,11 @@ Namespace Texting.TreeFormat.Syntax
         Public Shared Function CreateSingleLineLiteral(ByVal Value As String) As Token
             Return New Token With {._Tag = TokenTag.SingleLineLiteral, .SingleLineLiteral = Value}
         End Function
-        Public Shared Function CreateLeftParentheses() As Token
-            Return New Token With {._Tag = TokenTag.LeftParentheses, .LeftParentheses = New Unit()}
+        Public Shared Function CreateLeftParenthesis() As Token
+            Return New Token With {._Tag = TokenTag.LeftParenthesis, .LeftParenthesis = New Unit()}
         End Function
-        Public Shared Function CreateRightParentheses() As Token
-            Return New Token With {._Tag = TokenTag.RightParentheses, .RightParentheses = New Unit()}
+        Public Shared Function CreateRightParenthesis() As Token
+            Return New Token With {._Tag = TokenTag.RightParenthesis, .RightParenthesis = New Unit()}
         End Function
         Public Shared Function CreatePreprocessDirective(ByVal Value As String) As Token
             Return New Token With {._Tag = TokenTag.PreprocessDirective, .PreprocessDirective = Value}
@@ -504,14 +504,14 @@ Namespace Texting.TreeFormat.Syntax
                 Return _Tag = TokenTag.SingleLineLiteral
             End Get
         End Property
-        Public ReadOnly Property OnLeftParentheses() As Boolean
+        Public ReadOnly Property OnLeftParenthesis() As Boolean
             Get
-                Return _Tag = TokenTag.LeftParentheses
+                Return _Tag = TokenTag.LeftParenthesis
             End Get
         End Property
-        Public ReadOnly Property OnRightParentheses() As Boolean
+        Public ReadOnly Property OnRightParenthesis() As Boolean
             Get
-                Return _Tag = TokenTag.RightParentheses
+                Return _Tag = TokenTag.RightParenthesis
             End Get
         End Property
         Public ReadOnly Property OnPreprocessDirective() As Boolean
@@ -534,9 +534,9 @@ Namespace Texting.TreeFormat.Syntax
             Select Case _Tag
                 Case TokenTag.SingleLineLiteral
                     Return SingleLineLiteral
-                Case TokenTag.LeftParentheses
+                Case TokenTag.LeftParenthesis
                     Return "("
-                Case TokenTag.RightParentheses
+                Case TokenTag.RightParenthesis
                     Return ")"
                 Case TokenTag.PreprocessDirective
                     Return PreprocessDirective
