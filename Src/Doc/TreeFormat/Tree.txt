@@ -354,9 +354,9 @@ State 0
     ) -> 标记符号开始，前进，返回RightParenthesis
     // -> 标记符号开始，加入Output和前进到底，返回SingleLineComment
     / -> 失败
-    < -> 压栈，State 1，前进
-    [ -> 压栈，State 1，前进
-    { -> 压栈，State 1，前进
+    < -> 标记符号开始，压栈，State 1，前进
+    [ -> 标记符号开始，压栈，State 1，前进
+    { -> 标记符号开始，压栈，State 1，前进
     [!@%&;=?\^`|~] -> 失败
     Any -> 标记符号开始，State 1，前进
 
