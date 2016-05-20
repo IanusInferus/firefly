@@ -162,15 +162,18 @@ Namespace Texting.TreeFormat
                                 End If
                                 Throw MakeNextCharErrorTokenException("InvalidChar")
                             Case "<"c
+                                MarkStart()
                                 Stack.Push(ParenthesisType.Angle)
                                 Output.Add(c)
                                 State = 1
                                 Proceed()
                             Case "["c
+                                MarkStart()
                                 Stack.Push(ParenthesisType.Bracket)
                                 State = 1
                                 Proceed()
                             Case "{"c
+                                MarkStart()
                                 Stack.Push(ParenthesisType.Brace)
                                 State = 1
                                 Proceed()
