@@ -1,4 +1,11 @@
-﻿2016.05.19
+﻿2016.05.20
+Firefly.Core.Texting.TreeFormat:
+修正双引号词文本起始位置不对的问题。
+简化代码。
+Firefly.Core.Mapping:
+修正编译器不同导致的lambda表达式无法作为静态函数使用的问题。
+
+2016.05.19
 Firefly.Core.Texting.TreeFormat:
 修正拼写错误。
 修正文档。

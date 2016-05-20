@@ -3,7 +3,7 @@
 '  File:        TokenParser.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 词法解析器
-'  Version:     2016.05.19.
+'  Version:     2016.05.20.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -102,7 +102,7 @@ Namespace Texting.TreeFormat
 
             'State 0
             '    EndOfLine -> 返回空Token，RemainingChars为空
-            '    Space -> 保持，前进
+            '    Space -> 前进
             '    \f\t\v -> 失败
             '    " -> 标记符号开始，State 2，前进
             '    ( -> 标记符号开始，前进，返回LeftParenthesis
@@ -119,18 +119,18 @@ Namespace Texting.TreeFormat
 
             'State 1
             '    EndOfLine -> 检查栈，失败或返回(Tag 0 => SingleLineLiteral | PreprocessDirective | FunctionDirective)，RemainingChars为空
-            '    Space -> 检查栈，(加入Output，保持，前进)或返回(Tag 0 => SingleLineLiteral | PreprocessDirective | FunctionDirective)
+            '    Space -> 检查栈，(加入Output，前进)或返回(Tag 0 => SingleLineLiteral | PreprocessDirective | FunctionDirective)
             '    \f\t\v -> 失败
-            '    " -> 检查栈，(加入Output，保持，前进)或失败
+            '    " -> 检查栈，(加入Output，前进)或失败
             '    ( -> 检查栈，失败或返回(Tag 0 => SingleLineLiteral | PreprocessDirective | FunctionDirective)
             '    ) -> 检查栈，失败或返回(Tag 0 => SingleLineLiteral | PreprocessDirective | FunctionDirective)
-            '    < -> 压栈，加入Output，保持，前进
-            '    [ -> 压栈，加入Output，保持，前进
-            '    { -> 压栈，加入Output，保持，前进
+            '    < -> 压栈，加入Output，前进
+            '    [ -> 压栈，加入Output，前进
+            '    { -> 压栈，加入Output，前进
             '    > -> 前进，检查并退栈，加入Output，保持
             '    ] -> 前进，检查并退栈，加入Output，保持
             '    } -> 前进，检查并退栈，加入Output，保持
-            '    Any -> 加入Output，保持，前进
+            '    Any -> 加入Output，前进
 
             'State 2
             '    EndOfLine -> 失败
@@ -147,7 +147,7 @@ Namespace Texting.TreeFormat
             'State 22
             '    EndOfLine -> 失败
             '    " -> State 23，前进
-            '    Any -> 加入Output，保持，前进
+            '    Any -> 加入Output，前进
 
             'State 23
             '    EndOfLine -> 返回SingleLineLiteral，RemainingChars为空
@@ -163,7 +163,7 @@ Namespace Texting.TreeFormat
             '    "" -> 前进，前进，返回SingleLineLiteral
             '    " -> 失败
             '    \ -> State 31，前进
-            '    Any -> 加入Output，保持，前进
+            '    Any -> 加入Output，前进
 
             'State 31
             '    EndOfLine -> 失败
@@ -196,7 +196,6 @@ Namespace Texting.TreeFormat
             Dim NullRemainingChars = [Optional](Of TextRange).Empty
             Dim NullToken = [Optional](Of Token).Empty
             Dim MakeTokenRange = Function(TokenStart As Integer, TokenEnd As Integer) New TextRange With {.Start = Text.Calc(RangeInLine.Start, TokenStart), .End = Text.Calc(RangeInLine.Start, TokenEnd)}
-            Dim MakeNextErrorTokenRange = Function(n As Integer) New FileTextRange With {.Text = Text, .Range = MakeTokenRange(Index, n)}
 
             Dim State = 0
             Dim Tag = TokenType.SingleLineLiteral
@@ -209,46 +208,24 @@ Namespace Texting.TreeFormat
             Dim Output As New List(Of Char)
             Dim Write = Sub(c As Char) Output.Add(c)
             Dim WriteString = Sub(cs As String) Output.AddRange(cs)
+            Dim MarkToken =
+                Function(t As Token) As Token
+                    Dim Range = MakeTokenRange(StartIndex, Index)
+                    Positions.Add(t, Range)
+                    Return t
+                End Function
             Dim MakeToken =
                 Function() As [Optional](Of Token)
-                    Dim Range = MakeTokenRange(StartIndex, Index)
                     Select Case Tag
                         Case TokenType.SingleLineLiteral
-                            Dim t = Token.CreateSingleLineLiteral(New String(Output.ToArray()))
-                            Positions.Add(t, Range)
-                            Return t
+                            Return MarkToken(Token.CreateSingleLineLiteral(New String(Output.ToArray())))
                         Case TokenType.PreprocessDirective
-                            Dim t = Token.CreatePreprocessDirective(New String(Output.ToArray()))
-                            Positions.Add(t, Range)
-                            Return t
+                            Return MarkToken(Token.CreatePreprocessDirective(New String(Output.ToArray())))
                         Case TokenType.FunctionDirective
-                            Dim t = Token.CreateFunctionDirective(New String(Output.ToArray()))
-                            Positions.Add(t, Range)
-                            Return t
+                            Return MarkToken(Token.CreateFunctionDirective(New String(Output.ToArray())))
                         Case Else
                             Throw New InvalidOperationException
                     End Select
-                End Function
-            Dim MakeLeftParenthesisToken =
-                Function() As [Optional](Of Token)
-                    Dim Range = MakeTokenRange(StartIndex, Index)
-                    Dim t = Token.CreateLeftParenthesis()
-                    Positions.Add(t, Range)
-                    Return t
-                End Function
-            Dim MakeRightParenthesisToken =
-                Function() As [Optional](Of Token)
-                    Dim Range = MakeTokenRange(StartIndex, Index)
-                    Dim t = Token.CreateRightParenthesis()
-                    Positions.Add(t, Range)
-                    Return t
-                End Function
-            Dim MakeSingleLineCommentToken =
-                Function() As [Optional](Of Token)
-                    Dim Range = MakeTokenRange(StartIndex, Index)
-                    Dim t = Token.CreateSingleLineComment(New String(Output.ToArray()))
-                    Positions.Add(t, Range)
-                    Return t
                 End Function
 
             While True
@@ -262,16 +239,17 @@ Namespace Texting.TreeFormat
                             Case " "c
                                 Proceed()
                             Case """"c
+                                MarkStart()
                                 State = 2
                                 Proceed()
                             Case "("c
                                 MarkStart()
                                 Proceed()
-                                Return New TreeFormatTokenParseResult With {.Token = MakeLeftParenthesisToken(), .RemainingChars = MakeRemainingChars()}
+                                Return New TreeFormatTokenParseResult With {.Token = MarkToken(Token.CreateLeftParenthesis()), .RemainingChars = MakeRemainingChars()}
                             Case ")"c
                                 MarkStart()
                                 Proceed()
-                                Return New TreeFormatTokenParseResult With {.Token = MakeRightParenthesisToken(), .RemainingChars = MakeRemainingChars()}
+                                Return New TreeFormatTokenParseResult With {.Token = MarkToken(Token.CreateRightParenthesis()), .RemainingChars = MakeRemainingChars()}
                             Case "/"c
                                 If Peek(2) = "//" Then
                                     MarkStart()
@@ -281,7 +259,7 @@ Namespace Texting.TreeFormat
                                         Write(Peek1())
                                         Proceed()
                                     End While
-                                    Return New TreeFormatTokenParseResult With {.Token = MakeSingleLineCommentToken(), .RemainingChars = NullRemainingChars}
+                                    Return New TreeFormatTokenParseResult With {.Token = MarkToken(Token.CreateSingleLineComment(New String(Output.ToArray()))), .RemainingChars = NullRemainingChars}
                                 End If
                                 Throw MakeNextCharErrorTokenException("InvalidChar")
                             Case "<"c
