@@ -2,6 +2,7 @@
 Firefly.Core.Texting.TreeFormat:
 修正双引号词文本起始位置不对的问题。
 简化代码。
+修正单字符错误时显示的词终止位置不对的问题。
 Firefly.Core.Mapping:
 修正编译器不同导致的lambda表达式无法作为静态函数使用的问题。
 
