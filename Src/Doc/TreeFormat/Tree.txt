@@ -322,7 +322,111 @@ Tree = Element
 树能够与XML互相转换。
 
 
-3 文法定义
+4 词法分析
+
+词法分析可以使用自动机完成，步骤如下
+
+State 0    Whitespace空格
+State 1    普通Token
+State 1-n  普通Token<中
+State 1-n  普通Token[中
+State 1-n  普通Token{中
+State 2    双引号开始
+State 21   双双引号开始
+State 22   普通双引号Token确定
+State 23   普通双引号Token结束双引号/转义双引号
+State 3    转义双双引号Token
+State 31   转义双双引号Token转义符
+Tag TokenType 单行字面量、预处理指令、自定义指令
+Stack<ParenthesisType> 括号栈
+
+初值
+State <- 0
+Tag TokenType <- 单行字面量
+Stack<ParenthesisType> <- 空
+
+State 0
+    EndOfLine -> 返回空Token
+    Space -> 前进
+    [\f\t\v] -> 失败
+    " -> 标记符号开始，State 2，前进
+    ( -> 标记符号开始，前进，返回LeftParenthesis
+    ) -> 标记符号开始，前进，返回RightParenthesis
+    // -> 标记符号开始，加入Output和前进到底，返回SingleLineComment
+    / -> 失败
+    < -> 压栈，State 1，前进
+    [ -> 压栈，State 1，前进
+    { -> 压栈，State 1，前进
+    [!@%&;=?\^`|~] -> 失败
+    Any -> 标记符号开始，State 1，前进
+
+State 1
+    EndOfLine -> 如果栈空，判定词形式（SingleLineLiteral、PreprocessDirective、FunctionDirective）返回，否则失败
+    Space -> 如果栈空，判定词形式（SingleLineLiteral、PreprocessDirective、FunctionDirective）返回，前进
+    [\f\t\v] -> 失败
+    " -> 如果栈空，失败，否则前进
+    [()] -> 如果栈空，判定词形式（Operator、PreprocessDirective、Direct）返回，否则失败
+    < -> 压栈，前进
+    [ -> 压栈，前进
+    { -> 压栈，前进
+    > -> 前进，如果栈空或者栈顶不匹配，失败，否则退栈
+    ] -> 前进，如果栈空或者栈顶不匹配，失败，否则退栈
+    } -> 前进，如果栈空或者栈顶不匹配，失败，否则退栈
+    Any -> 前进
+
+State 2
+    EndOfLine -> 失败
+    " -> State 21，前进
+    Any -> 加入Output，State 22，前进
+
+State 21
+    EndOfLine -> 返回SingleLineLiteral
+    Space -> 返回SingleLineLiteral
+    " -> 加入Output，State 22，前进
+    \ -> State 31，前进
+    Any -> 加入Output，State 3，前进
+
+State 22
+    EndOfLine -> 失败
+    " -> State 23，前进
+    Any -> 加入Output，前进
+
+State 23
+    EndOfLine -> 返回SingleLineLiteral
+    Space -> 返回SingleLineLiteral
+    [\f\t\v] -> 失败
+    " -> 加入Output，State 22，前进
+    ( -> 返回SingleLineLiteral
+    ) -> 返回SingleLineLiteral
+    Any -> 失败
+
+State 3
+    EndOfLine -> 失败
+    "" -> 前进，前进，返回SingleLineLiteral
+    " -> 失败
+    \ -> State 31，前进
+    Any -> 加入Output，前进
+
+State 31
+    EndOfLine -> 失败
+    0 -> 加入U+0000到Output，State 3，前进
+    a -> 加入U+0007到Output，State 3，前进
+    b -> 加入U+0008到Output，State 3，前进
+    f -> 加入U+000C到Output，State 3，前进
+    n -> 加入U+000A到Output，State 3，前进
+    r -> 加入U+000D到Output，State 3，前进
+    t -> 加入U+0009到Output，State 3，前进
+    v -> 加入U+000B到Output，State 3，前进
+    x[0-9A-Fa-f]{2} -> 加入U+00..到Output，State 3，前进3
+    u[0-9A-Fa-f]{4} -> 加入U+....到Output，State 3，前进5
+    U[0-9A-Fa-f]{5} -> 加入U+.....到Output，State 3，前进6
+    x -> 失败
+    u -> 失败
+    U -> 失败
+    Any -> 加入Output，State 3，前进
+
+
+5 文法定义
 
 这个定义在文法上不是很严格，缩进的地方主要是示意。
 
@@ -409,7 +513,7 @@ Token ::=
     | SingleLineComment
 
 
-4 语义定义
+6 语义定义
 
 Forest = Node*
 

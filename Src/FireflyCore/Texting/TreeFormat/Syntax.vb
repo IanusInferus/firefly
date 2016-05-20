@@ -3,7 +3,7 @@
 '  File:        Syntax.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 文法对象定义
-'  Version:     2016.05.19.
+'  Version:     2016.05.20.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -539,7 +539,7 @@ Namespace Texting.TreeFormat.Syntax
                 Case TokenTag.RightParenthesis
                     Return ")"
                 Case TokenTag.PreprocessDirective
-                    Return PreprocessDirective
+                    Return "$" & PreprocessDirective
                 Case TokenTag.FunctionDirective
                     Return "#" & FunctionDirective
                 Case TokenTag.SingleLineComment
