@@ -50,8 +50,6 @@ Namespace Texting.TreeFormat
         Private IsTreeContentFunction As Func(Of String, Boolean) = Function(f) False
         Private IsTableContentFunction As Func(Of String, Boolean) = Function(f) False
 
-        Private TokenParser As TreeFormatTokenParser
-
         Private Positions As New Dictionary(Of Object, TextRange)
         Private FilePositions As New Dictionary(Of Object, FileTextRange)
         Private RawFunctionCalls As New Dictionary(Of Object, RawFunctionCall)
@@ -60,7 +58,7 @@ Namespace Texting.TreeFormat
             Me.New(New TreeFormatParseSetting, Text, Path)
         End Sub
         Public Sub New(ByVal Setting As TreeFormatParseSetting, ByVal Text As String, Optional ByVal Path As String = "")
-            Me.Text = New Text With {.Path = Path, .Lines = GetLines(Text)}
+            Me.Text = TreeFormatTokenParser.BuildText(Text, Path)
             Me.IsTreeParameterFunction = Setting.IsTreeParameterFunction
             Me.IsTableParameterFunction = Setting.IsTableParameterFunction
             Me.IsTreeContentFunction = Setting.IsTreeContentFunction
@@ -68,7 +66,6 @@ Namespace Texting.TreeFormat
         End Sub
 
         Public Function Parse() As TreeFormatParseResult
-            TokenParser = New TreeFormatTokenParser(Text, Positions)
             Dim Lines = New TextLineRange With {.StartRow = 1, .EndRow = Text.Lines.Length + 1}
             Dim MultiNodesList = ParseMultiNodesList(Lines, 0)
             Dim Forest = Mark(New Forest With {.MultiNodesList = MultiNodesList}, Lines)
@@ -99,32 +96,6 @@ Namespace Texting.TreeFormat
             Return Mark(Obj, New TextRange With {.Start = Start, .End = [End]})
         End Function
 
-        Private Shared rLineSeparator As New Regex("\r\n|\n", RegexOptions.ExplicitCapture)
-        Private Shared rLineSeparators As New Regex("\r|\n", RegexOptions.ExplicitCapture)
-        Private Function GetLines(ByVal Text As String) As TextLine()
-            Dim l As New List(Of TextLine)
-
-            Dim CurrentRow = 1
-            Dim CurrentIndex = 0
-            For Each m As Match In rLineSeparator.Matches(Text & "\r\n".Descape())
-                Dim t = Text.Substring(CurrentIndex, m.Index - CurrentIndex)
-                Dim mm = rLineSeparators.Match(t)
-                If mm.Success Then
-                    Dim SeparatorStart = New TextPosition With {.CharIndex = CurrentIndex + mm.Index, .Row = CurrentRow, .Column = mm.Index + 1}
-                    Dim SeparatorEnd = New TextPosition With {.CharIndex = CurrentIndex + mm.Index + mm.Length, .Row = CurrentRow + 1, .Column = 1}
-                    Throw New InvalidSyntaxException("IllegalLineSeparator", New FileTextRange With {.Text = Me.Text, .Range = New TextRange With {.Start = SeparatorStart, .End = SeparatorEnd}})
-                End If
-                Dim Start As New TextPosition With {.CharIndex = CurrentIndex, .Row = CurrentRow, .Column = 1}
-                Dim [End] As New TextPosition With {.CharIndex = m.Index, .Row = CurrentRow, .Column = Start.Column + t.Length}
-                Dim r = New TextRange With {.Start = Start, .End = [End]}
-                l.Add(New TextLine With {.Text = t, .Range = r})
-                CurrentIndex = m.Index + m.Length
-                CurrentRow += 1
-            Next
-
-            Return l.ToArray()
-        End Function
-
         Private Function ParseMultiNodesList(ByVal Lines As TextLineRange, ByVal IndentLevel As Integer) As MultiNodes()
             Dim l As New List(Of MultiNodes)
             Dim RemainingLines As [Optional](Of TextLineRange) = Lines
@@ -147,12 +118,12 @@ Namespace Texting.TreeFormat
             Dim FirstLineIndex = Lines.StartRow
             While True
                 If FirstLineIndex >= Lines.EndRow Then Return New MultiNodesParseResult With {.MultiNodes = NullNode, .RemainingLines = NullRemainingLines}
-                If Not TokenParser.IsBlankLine(Text.GetTextLine(FirstLineIndex)) Then Exit While
+                If Not TreeFormatTokenParser.IsBlankLine(Text.GetTextLine(FirstLineIndex)) Then Exit While
                 FirstLineIndex += 1
             End While
 
             Dim FirstLine = Text.GetTextLine(FirstLineIndex)
-            If Not TokenParser.IsExactFitIndentLevel(FirstLine, IndentLevel) Then Throw New InvalidTokenException("InvaildIndentLevel", New FileTextRange With {.Text = Text, .Range = FirstLine.Range}, FirstLine.Text)
+            If Not TreeFormatTokenParser.IsExactFitIndentLevel(FirstLine, IndentLevel) Then Throw New InvalidTokenException("InvaildIndentLevel", New FileTextRange With {.Text = Text, .Range = FirstLine.Range}, FirstLine.Text)
 
             Dim ChildLines As [Optional](Of TextLineRange) = Nothing
             Dim ChildStartLineIndex = FirstLineIndex + 1
@@ -167,12 +138,12 @@ Namespace Texting.TreeFormat
                     Exit While
                 End If
                 Dim ChildCurrentLine = Text.GetTextLine(ChildEndLineIndex)
-                If Not TokenParser.IsBlankLine(ChildCurrentLine) Then
-                    If TokenParser.IsExactFitIndentLevel(ChildCurrentLine, IndentLevel) Then
+                If Not TreeFormatTokenParser.IsBlankLine(ChildCurrentLine) Then
+                    If TreeFormatTokenParser.IsExactFitIndentLevel(ChildCurrentLine, IndentLevel) Then
                         ChildLines = New TextLineRange With {.StartRow = ChildStartLineIndex, .EndRow = ChildEndLineIndex}
                         Exit While
                     End If
-                    If Not TokenParser.IsFitIndentLevel(ChildCurrentLine, IndentLevel + 1) Then
+                    If Not TreeFormatTokenParser.IsFitIndentLevel(ChildCurrentLine, IndentLevel + 1) Then
                         Throw New InvalidTokenException("InvaildIndentLevel", New FileTextRange With {.Text = Text, .Range = ChildCurrentLine.Range}, ChildCurrentLine.Text)
                     End If
                 End If
@@ -186,7 +157,7 @@ Namespace Texting.TreeFormat
             '如果最后有$End预处理指令，则将其包含到
             If ChildEndLineIndex < Lines.EndRow Then
                 Dim CurrentLine = Text.GetTextLine(ChildEndLineIndex)
-                Dim FirstToken = TokenParser.ReadToken(CurrentLine.Range)
+                Dim FirstToken = TreeFormatTokenParser.ReadToken(Text, Positions, CurrentLine.Range)
                 If FirstToken.Token.HasValue Then
                     If FirstToken.Token.Value.OnPreprocessDirective Then
                         If FirstToken.Token.Value.PreprocessDirective = "End" Then
@@ -210,7 +181,7 @@ Namespace Texting.TreeFormat
             Return New MultiNodesParseResult With {.MultiNodes = MultiNodes, .RemainingLines = RemainingLines}
         End Function
         Private Function ParseMultiNodes(ByVal Lines As TextLineRange, ByVal FirstLine As TextLine, ByVal ChildLines As TextLineRange, ByVal EndLine As [Optional](Of TextLine), ByVal IndentLevel As Integer) As MultiNodes
-            Dim FirstTokenResult = TokenParser.ReadToken(FirstLine.Range)
+            Dim FirstTokenResult = TreeFormatTokenParser.ReadToken(Text, Positions, FirstLine.Range)
             If Not FirstTokenResult.Token.HasValue Then Throw New InvalidOperationException
             Dim FirstToken = FirstTokenResult.Token.Value
             Dim RemainingChars = FirstTokenResult.RemainingChars
@@ -239,13 +210,13 @@ Namespace Texting.TreeFormat
             End Select
         End Function
         Private Function ParseNode(ByVal Lines As TextLineRange, ByVal FirstLine As TextLine, ByVal ChildLines As TextLineRange, ByVal EndLine As [Optional](Of TextLine), ByVal IndentLevel As Integer, ByVal FirstToken As Token, ByVal RemainingChars As [Optional](Of TextRange)) As Node
-            Dim FirstTokenResult = TokenParser.ReadToken(FirstLine.Range)
+            Dim FirstTokenResult = TreeFormatTokenParser.ReadToken(Text, Positions, FirstLine.Range)
             If Not FirstTokenResult.Token.HasValue Then Throw New InvalidOperationException
             Dim FirstTokenRange = GetRange(FirstToken)
 
             Select Case FirstToken._Tag
                 Case TokenTag.SingleLineLiteral
-                    If Not EndLine.HasValue AndAlso (ChildLines.StartRow >= ChildLines.EndRow OrElse Text.GetLines(ChildLines).All(Function(Line) TokenParser.IsBlankLine(Line))) Then
+                    If Not EndLine.HasValue AndAlso (ChildLines.StartRow >= ChildLines.EndRow OrElse Text.GetLines(ChildLines).All(Function(Line) TreeFormatTokenParser.IsBlankLine(Line))) Then
                         Return Mark(Node.CreateSingleLineNodeLine(ParseSingleLineNodeLine(FirstLine, FirstToken, RemainingChars)), FirstLine.Range)
                     End If
                     Return Mark(Node.CreateMultiLineNode(ParseMultiLineNode(Lines, FirstLine, ChildLines, EndLine, IndentLevel, FirstToken, RemainingChars)), Lines)
@@ -258,7 +229,7 @@ Namespace Texting.TreeFormat
                         Case "Comment"
                             Return Mark(Node.CreateMultiLineComment(ParseMultiLineComment(Lines, FirstLine, ChildLines, EndLine, IndentLevel, FirstToken, RemainingChars)), Lines)
                         Case "Empty"
-                            If EndLine.HasValue OrElse (ChildLines.StartRow < ChildLines.EndRow AndAlso Text.GetLines(ChildLines).Any(Function(Line) Not TokenParser.IsBlankLine(Line))) Then
+                            If EndLine.HasValue OrElse (ChildLines.StartRow < ChildLines.EndRow AndAlso Text.GetLines(ChildLines).Any(Function(Line) Not TreeFormatTokenParser.IsBlankLine(Line))) Then
                                 Throw New InvalidSyntaxRuleException("InvalidEmptyDirective", GetFileRange(FirstToken), FirstToken)
                             End If
                             Return Mark(Node.CreateSingleLineNodeLine(ParseSingleLineNodeLine(FirstLine, FirstToken, RemainingChars)), FirstLine.Range)
@@ -278,7 +249,7 @@ Namespace Texting.TreeFormat
         End Function
         Private Function ParseListNodes(ByVal Lines As TextLineRange, ByVal FirstLine As TextLine, ByVal ChildLines As TextLineRange, ByVal EndLine As [Optional](Of TextLine), ByVal IndentLevel As Integer, ByVal FirstToken As Token, ByVal RemainingChars As [Optional](Of TextRange)) As ListNodes
             If Not RemainingChars.HasValue Then Throw New InvalidSyntaxRuleException("ListChildHeadNotExist", GetFileRange(FirstToken), FirstToken)
-            Dim SecondTokenResult = TokenParser.ReadToken(RemainingChars.Value)
+            Dim SecondTokenResult = TreeFormatTokenParser.ReadToken(Text, Positions, RemainingChars.Value)
             If Not SecondTokenResult.Token.HasValue Then Throw New InvalidSyntaxRuleException("ListChildHeadNotExist", GetFileRange(FirstToken), FirstToken)
             Dim SecondToken = SecondTokenResult.Token.Value
             If Not SecondToken.OnSingleLineLiteral Then Throw New InvalidSyntaxRuleException("ListChildHeadExpected", GetFileRange(SecondToken), SecondToken)
@@ -290,7 +261,7 @@ Namespace Texting.TreeFormat
         End Function
         Private Function ParseTableNodes(ByVal Lines As TextLineRange, ByVal FirstLine As TextLine, ByVal ChildLines As TextLineRange, ByVal EndLine As [Optional](Of TextLine), ByVal IndentLevel As Integer, ByVal FirstToken As Token, ByVal RemainingChars As [Optional](Of TextRange)) As TableNodes
             If Not RemainingChars.HasValue Then Throw New InvalidSyntaxRuleException("TableChildHeadNotExist", GetFileRange(FirstToken), FirstToken)
-            Dim SecondTokenResult = TokenParser.ReadToken(RemainingChars.Value)
+            Dim SecondTokenResult = TreeFormatTokenParser.ReadToken(Text, Positions, RemainingChars.Value)
             If Not SecondTokenResult.Token.HasValue Then Throw New InvalidSyntaxRuleException("TableChildHeadNotExist", GetFileRange(FirstToken), FirstToken)
             Dim SecondToken = SecondTokenResult.Token.Value
             If Not SecondToken.OnSingleLineLiteral Then Throw New InvalidSyntaxRuleException("TableChildHeadExpected", GetFileRange(SecondToken), SecondToken)
@@ -299,7 +270,7 @@ Namespace Texting.TreeFormat
             Dim CurrentRemainingChars As [Optional](Of TextRange) = SecondTokenResult.RemainingChars
             Dim l As New List(Of SingleLineLiteral)
             While CurrentRemainingChars.HasValue
-                Dim ChildHeadResult = TokenParser.ReadToken(CurrentRemainingChars.Value)
+                Dim ChildHeadResult = TreeFormatTokenParser.ReadToken(Text, Positions, CurrentRemainingChars.Value)
                 If Not ChildHeadResult.Token.HasValue Then
                     CurrentRemainingChars = ChildHeadResult.RemainingChars
                     Exit While
@@ -340,7 +311,7 @@ Namespace Texting.TreeFormat
             Dim CurrentRemainingChars As [Optional](Of TextRange) = RemainingChars
             Dim Level = 0
             While CurrentRemainingChars.HasValue
-                Dim TokenResult = TokenParser.ReadToken(CurrentRemainingChars.Value)
+                Dim TokenResult = TreeFormatTokenParser.ReadToken(Text, Positions, CurrentRemainingChars.Value)
                 If Not TokenResult.Token.HasValue Then
                     CurrentRemainingChars = TokenResult.RemainingChars
                     Exit While
@@ -388,7 +359,7 @@ Namespace Texting.TreeFormat
                 If Not RemainingChars.HasValue Then
                     RawFunctionCallParameters = Mark(RawFunctionCallParameters.CreateTreeParameter([Optional](Of SingleLineNode).Empty), ParameterRange)
                 Else
-                    Dim SecondTokenResult = TokenParser.ReadToken(RemainingChars.Value)
+                    Dim SecondTokenResult = TreeFormatTokenParser.ReadToken(Text, Positions, RemainingChars.Value)
                     If Not SecondTokenResult.Token.HasValue Then
                         RawFunctionCallParameters = Mark(RawFunctionCallParameters.CreateTreeParameter([Optional](Of SingleLineNode).Empty), ParameterRange)
                     Else
@@ -402,7 +373,7 @@ Namespace Texting.TreeFormat
                 Dim Nodes As New List(Of TableLineNode)
                 Dim CurrentRemainingCharsInTable As [Optional](Of TextRange) = RemainingChars
                 While CurrentRemainingCharsInTable.HasValue
-                    Dim TokenResult = TokenParser.ReadToken(CurrentRemainingCharsInTable.Value)
+                    Dim TokenResult = TreeFormatTokenParser.ReadToken(Text, Positions, CurrentRemainingCharsInTable.Value)
                     If Not TokenResult.Token.HasValue Then Exit While
                     Dim Token = TokenResult.Token.Value
                     If Token.OnSingleLineComment Then
@@ -474,12 +445,12 @@ Namespace Texting.TreeFormat
         End Function
 
         Private Function ParseTableLine(ByVal Line As TextLine) As [Optional](Of TableLine)
-            If TokenParser.IsBlankLine(Line) Then Return [Optional](Of TableLine).Empty
+            If TreeFormatTokenParser.IsBlankLine(Line) Then Return [Optional](Of TableLine).Empty
             Dim Nodes As New List(Of TableLineNode)
             Dim SingleLineComment = [Optional](Of SingleLineComment).Empty
             Dim CurrentRemainingChars As [Optional](Of TextRange) = Line.Range
             While CurrentRemainingChars.HasValue
-                Dim TokenResult = TokenParser.ReadToken(CurrentRemainingChars.Value)
+                Dim TokenResult = TreeFormatTokenParser.ReadToken(Text, Positions, CurrentRemainingChars.Value)
                 If Not TokenResult.Token.HasValue Then Exit While
                 Dim Token = TokenResult.Token.Value
                 If Token.OnSingleLineComment Then
@@ -527,7 +498,7 @@ Namespace Texting.TreeFormat
                                 Return New SyntaxParseResult(Of SingleLineNode) With {.Value = Mark(SingleLineNode.CreateSingleLineNodeWithParameters(Node), CreateRange()), .RemainingChars = CurrentRemainingChars}
                             End If
                         End If
-                        Dim FollowingTokenResult = TokenParser.ReadToken(CurrentRemainingChars.Value)
+                        Dim FollowingTokenResult = TreeFormatTokenParser.ReadToken(Text, Positions, CurrentRemainingChars.Value)
                         If Not FollowingTokenResult.Token.HasValue Then
                             If l.Count = 0 Then
                                 Return New SyntaxParseResult(Of SingleLineNode) With {.Value = Mark(SingleLineNode.CreateSingleLineLiteral(Head), CreateRange()), .RemainingChars = FollowingTokenResult.RemainingChars}
@@ -638,7 +609,7 @@ Namespace Texting.TreeFormat
             Dim CurrentRemainingChars As [Optional](Of TextRange) = RemainingChars
             Dim Level = 0
             While CurrentRemainingChars.HasValue
-                Dim TokenResult = TokenParser.ReadToken(CurrentRemainingChars.Value)
+                Dim TokenResult = TreeFormatTokenParser.ReadToken(Text, Positions, CurrentRemainingChars.Value)
                 If Not TokenResult.Token.HasValue Then
                     CurrentRemainingChars = TokenResult.RemainingChars
                     Exit While
@@ -673,7 +644,7 @@ Namespace Texting.TreeFormat
                 If Not RemainingChars.HasValue Then
                     RawFunctionCallParameters = Mark(RawFunctionCallParameters.CreateTreeParameter([Optional](Of SingleLineNode).Empty), ParameterRange)
                 Else
-                    Dim SecondTokenResult = TokenParser.ReadToken(RemainingChars.Value)
+                    Dim SecondTokenResult = TreeFormatTokenParser.ReadToken(Text, Positions, RemainingChars.Value)
                     If Not SecondTokenResult.Token.HasValue Then
                         RawFunctionCallParameters = Mark(RawFunctionCallParameters.CreateTreeParameter([Optional](Of SingleLineNode).Empty), ParameterRange)
                     Else
@@ -687,7 +658,7 @@ Namespace Texting.TreeFormat
                 Dim Nodes As New List(Of TableLineNode)
                 Dim CurrentRemainingCharsInTable As [Optional](Of TextRange) = RemainingChars
                 While CurrentRemainingCharsInTable.HasValue
-                    Dim TokenResult = TokenParser.ReadToken(CurrentRemainingCharsInTable.Value)
+                    Dim TokenResult = TreeFormatTokenParser.ReadToken(Text, Positions, CurrentRemainingCharsInTable.Value)
                     If Not TokenResult.Token.HasValue Then Exit While
                     Dim Token = TokenResult.Token.Value
                     If Token.OnSingleLineComment Then
@@ -714,7 +685,7 @@ Namespace Texting.TreeFormat
             Dim CreateRange = Function() New TextRange With {.Start = NodeStart, .End = NodeEnd}
 
             If Not RemainingChars.HasValue Then Throw New InvalidSyntaxRuleException("ParenthesisNotMatched", GetFileRange(FirstToken), FirstToken)
-            Dim SecondTokenResult = TokenParser.ReadToken(RemainingChars.Value)
+            Dim SecondTokenResult = TreeFormatTokenParser.ReadToken(Text, Positions, RemainingChars.Value)
             If Not SecondTokenResult.Token.HasValue Then Throw New InvalidSyntaxRuleException("ParenthesisNotMatched", GetFileRange(FirstToken), FirstToken)
             Dim SecondToken = SecondTokenResult.Token.Value
             NodeEnd = GetRange(SecondToken).End
@@ -722,7 +693,7 @@ Namespace Texting.TreeFormat
             If Not SingleLineNodeResult.RemainingChars.HasValue Then Throw New InvalidSyntaxRuleException("ParenthesisNotMatched", New FileTextRange With {.Text = Text, .Range = CreateRange()}, FirstToken)
             Dim SingleLineNode = SingleLineNodeResult.Value
             NodeEnd = GetRange(SingleLineNode).End
-            Dim EndTokenResult = TokenParser.ReadToken(SingleLineNodeResult.RemainingChars.Value)
+            Dim EndTokenResult = TreeFormatTokenParser.ReadToken(Text, Positions, SingleLineNodeResult.RemainingChars.Value)
             If Not EndTokenResult.Token.HasValue Then Throw New InvalidSyntaxRuleException("ParenthesisNotMatched", New FileTextRange With {.Text = Text, .Range = CreateRange()}, FirstToken)
             Dim EndToken = EndTokenResult.Token.Value
             If Not EndToken.OnRightParenthesis Then Throw New InvalidSyntaxRuleException("ParenthesisNotMatched", GetFileRange(EndToken), EndToken)
@@ -733,7 +704,7 @@ Namespace Texting.TreeFormat
         Private Function ParseSingleLineComment(ByVal RemainingChars As [Optional](Of TextRange)) As [Optional](Of SingleLineComment)
             If Not RemainingChars.HasValue Then Return [Optional](Of SingleLineComment).Empty
 
-            Dim TokenResult = TokenParser.ReadToken(RemainingChars.Value)
+            Dim TokenResult = TreeFormatTokenParser.ReadToken(Text, Positions, RemainingChars.Value)
             If Not TokenResult.Token.HasValue Then Return [Optional](Of SingleLineComment).Empty
 
             If TokenResult.RemainingChars.HasValue Then Throw New InvalidTokenException("UnexpectedToken", New FileTextRange With {.Text = Text, .Range = TokenResult.RemainingChars.Value}, Text.GetTextInLine(TokenResult.RemainingChars.Value))
@@ -746,7 +717,7 @@ Namespace Texting.TreeFormat
         Private Function ParseEndDirective(ByVal Line As [Optional](Of TextLine)) As [Optional](Of EndDirective)
             If Not Line.HasValue Then Return [Optional](Of EndDirective).Empty
             Dim LineValue = Line.Value
-            Dim EndTokenResult = TokenParser.ReadToken(LineValue.Range)
+            Dim EndTokenResult = TreeFormatTokenParser.ReadToken(Text, Positions, LineValue.Range)
             If Not EndTokenResult.Token.HasValue Then Throw New InvalidOperationException
             If Not EndTokenResult.Token.Value.OnPreprocessDirective Then Throw New InvalidOperationException
             If EndTokenResult.Token.Value.PreprocessDirective <> "End" Then Throw New InvalidOperationException
