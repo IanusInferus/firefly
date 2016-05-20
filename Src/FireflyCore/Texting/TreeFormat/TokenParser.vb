@@ -21,27 +21,45 @@ Namespace Texting.TreeFormat
         Public RemainingChars As [Optional](Of TextRange)
     End Class
 
-    Public Class TreeFormatTokenParser
-        Private TextValue As Text
-        Public Property Text As Text
-            Get
-                Return TextValue
-            End Get
-            Private Set(ByVal Value As Text)
-                TextValue = Value
-            End Set
-        End Property
-        Private Positions As New Dictionary(Of Object, TextRange)
-        Public Sub New(ByVal Text As Text, ByVal Positions As Dictionary(Of Object, TextRange))
-            Me.Text = Text
-            Me.Positions = Positions
+    Public NotInheritable Class TreeFormatTokenParser
+        Private Sub New()
         End Sub
 
-        Public Function IsBlankLine(ByVal Line As TextLine) As Boolean
+        Public Shared Function BuildText(ByVal Text As String, ByVal Path As String) As Text
+            Return New Text With {.Path = Path, .Lines = GetLines(Text, Path)}
+        End Function
+
+        Private Shared rLineSeparator As New Regex("\r\n|\n", RegexOptions.ExplicitCapture)
+        Private Shared rLineSeparators As New Regex("\r|\n", RegexOptions.ExplicitCapture)
+        Private Shared Function GetLines(ByVal Text As String, ByVal Path As String) As TextLine()
+            Dim l As New List(Of TextLine)
+
+            Dim CurrentRow = 1
+            Dim CurrentIndex = 0
+            For Each m As Match In rLineSeparator.Matches(Text & "\r\n".Descape())
+                Dim t = Text.Substring(CurrentIndex, m.Index - CurrentIndex)
+                Dim Start As New TextPosition With {.CharIndex = CurrentIndex, .Row = CurrentRow, .Column = 1}
+                Dim [End] As New TextPosition With {.CharIndex = m.Index, .Row = CurrentRow, .Column = Start.Column + t.Length}
+                Dim r = New TextRange With {.Start = Start, .End = [End]}
+                l.Add(New TextLine With {.Text = t, .Range = r})
+                Dim mm = rLineSeparators.Match(t)
+                If mm.Success Then
+                    Dim SeparatorStart = New TextPosition With {.CharIndex = CurrentIndex + mm.Index, .Row = CurrentRow, .Column = mm.Index + 1}
+                    Dim SeparatorEnd = New TextPosition With {.CharIndex = CurrentIndex + mm.Index + mm.Length, .Row = CurrentRow + 1, .Column = 1}
+                    Throw New InvalidSyntaxException("IllegalLineSeparator", New FileTextRange With {.Text = New Text With {.Path = Path, .Lines = l.ToArray()}, .Range = New TextRange With {.Start = SeparatorStart, .End = SeparatorEnd}})
+                End If
+                CurrentIndex = m.Index + m.Length
+                CurrentRow += 1
+            Next
+
+            Return l.ToArray()
+        End Function
+
+        Public Shared Function IsBlankLine(ByVal Line As TextLine) As Boolean
             Dim t = Line.Text
             Return t.All(Function(c) c = " "c)
         End Function
-        Public Function IsExactFitIndentLevel(ByVal Line As TextLine, ByVal IndentLevel As Integer) As Boolean
+        Public Shared Function IsExactFitIndentLevel(ByVal Line As TextLine, ByVal IndentLevel As Integer) As Boolean
             Dim t = Line.Text
             Dim IndentCount = IndentLevel * 4
             If t.Length < IndentCount Then Return False
@@ -50,7 +68,7 @@ Namespace Texting.TreeFormat
             If t(IndentCount) = " "c Then Return False
             Return True
         End Function
-        Public Function IsFitIndentLevel(ByVal Line As TextLine, ByVal IndentLevel As Integer) As Boolean
+        Public Shared Function IsFitIndentLevel(ByVal Line As TextLine, ByVal IndentLevel As Integer) As Boolean
             Dim t = Line.Text
             Dim IndentCount = IndentLevel * 4
             If t.Length < IndentCount Then Return False
@@ -63,24 +81,8 @@ Namespace Texting.TreeFormat
             Bracket
             Brace
         End Enum
-        Private Enum TokenType
-            SingleLineLiteral
-            PreprocessDirective
-            FunctionDirective
-        End Enum
-        Private Shared ForbiddenWhitespaces As Dictionary(Of Char, Integer) = "\f\t\v".Descape().ToCharArray().ToDictionary(Function(c) c, Function(c) 0)
-        Private Function IsForbiddenWhitespaces(ByVal c As Char) As Boolean
-            Return ForbiddenWhitespaces.ContainsKey(c)
-        End Function
-        Private Shared ForbiddenHeadChars As Dictionary(Of Char, Integer) = "!%&;=?^`|~".ToCharArray().ToDictionary(Function(c) c, Function(c) 0)
-        Private Function IsForbiddenHeadChars(ByVal c As Char) As Boolean
-            Return ForbiddenHeadChars.ContainsKey(c)
-        End Function
-        Private Shared HexChars As Dictionary(Of Char, Integer) = "0123456789ABCDEFabcdef".ToCharArray().ToDictionary(Function(c) c, Function(c) 0)
-        Private Function IsHex(ByVal s As String, ByVal n As Integer) As Boolean
-            Return s.Length = n AndAlso s.ToCharArray().All(Function(c) HexChars.ContainsKey(c))
-        End Function
-        Public Function ReadToken(ByVal RangeInLine As TextRange) As TreeFormatTokenParseResult
+        Private Shared ForbiddenWhitespaces As Char() = "\f\t\v".Descape().ToCharArray()
+        Public Shared Function ReadToken(ByVal Text As Text, ByVal Positions As Dictionary(Of Object, TextRange), ByVal RangeInLine As TextRange) As TreeFormatTokenParseResult
             Dim s = Text.GetTextInLine(RangeInLine)
             Dim Index As Integer = 0
 
@@ -93,6 +95,9 @@ Namespace Texting.TreeFormat
             Dim MakeRemainingChars = Function() CType(New TextRange With {.Start = Text.Calc(RangeInLine.Start, Index), .End = RangeInLine.End}, [Optional](Of TextRange))
             Dim MakeTokenRange = Function(TokenStart As Integer, TokenEnd As Integer) New TextRange With {.Start = Text.Calc(RangeInLine.Start, TokenStart), .End = Text.Calc(RangeInLine.Start, TokenEnd)}
             Dim MakeNextErrorTokenRange = Function(n As Integer) New FileTextRange With {.Text = Text, .Range = MakeTokenRange(Index, Index + n)}
+            Dim IsForbiddenWhitespaces = Function(ByVal c As Char) ForbiddenWhitespaces.Contains(c)
+            Dim IsForbiddenHeadChars = Function(ByVal c As Char) "!%&;=?^`|~".Contains(c)
+            Dim IsHex = Function(ByVal h As String, ByVal n As Integer) h.Length = n AndAlso h.ToCharArray().All(Function(c) "0123456789ABCDEFabcdef".Contains(c))
 
             Dim State = 0
             Dim Stack As New Stack(Of ParenthesisType)
