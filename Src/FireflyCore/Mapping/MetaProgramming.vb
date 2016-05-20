@@ -3,7 +3,7 @@
 '  File:        MetaProgramming.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 元编程
-'  Version:     2014.09.17.
+'  Version:     2016.05.20.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -88,8 +88,7 @@ Namespace Mapping.MetaProgramming
             If ClosureObjects.Count > 0 Then
                 Closure = ClosureObjects.ToArray
                 ClosureParam = Expression.Parameter(GetType(Object()), "<>_Closure")
-                Dim ArrayIndex = Function(cl As Object(), i As Integer) cl(i)
-                AccessClosure = Function(n) Expression.Call(ArrayIndex.Method, ClosureParam, Expression.Constant(n))
+                AccessClosure = Function(n) Expression.ArrayIndex(ClosureParam, Expression.Constant(n))
             End If
             Dim DelegateExpressions As New List(Of Expression)
             With Nothing
