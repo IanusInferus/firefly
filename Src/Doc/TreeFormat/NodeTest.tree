@@ -1,19 +1,19 @@
-SingleLineNode
-SingleLineNode //×¢ÊÍ
+ï»¿SingleLineNode
+SingleLineNode //æ³¨é‡Š
 
-$String      //×¢ÊÍ
-    ÄÚÈÝ
+$String      //æ³¨é‡Š
+    å†…å®¹
      
     
    
-    ÄÚÈÝ
-    ÄÚÈÝ
+    å†…å®¹
+    å†…å®¹
 
 $String
-    ÄÚÈÝ
+    å†…å®¹
 
-    ÄÚÈÝ
-    ÄÚÈÝ
+    å†…å®¹
+    å†…å®¹
 
 $End
 
@@ -22,29 +22,29 @@ $End
 
 $String
 
-//×¢ÊÍ
+//æ³¨é‡Š
 
 $Comment
-    ×¢ÊÍ
+    æ³¨é‡Š
 
-$Comment //×¢ÊÍ
-    ×¢ÊÍ
+$Comment //æ³¨é‡Š
+    æ³¨é‡Š
 $End
 
 $Comment
 
-MultiLineNode //×¢ÊÍ
+MultiLineNode //æ³¨é‡Š
     $String
-        ÄÚÈÝ
+        å†…å®¹
 
-    SingleLineNode Öµ
+    SingleLineNode å€¼
 
-$List Value //×¢ÊÍ
+$List Value //æ³¨é‡Š
     Int 0
     Double 1.1
     String ABC
     HexInt 0x123445
-    $Table IntList Int //×¢ÊÍ
+    $Table IntList Int //æ³¨é‡Š
         0
         1
         2
@@ -58,33 +58,33 @@ Node
 
 Node1 (Node2 (Node3) ((Node4))) (Node5 Node6) Node7
 
-$Table IntList Key Value Description //×¢ÊÍ
+$Table IntList Key Value Description //æ³¨é‡Š
     Name0 0 Test
     Name1 1 "123"
     Name2 2 """"
 
-MultiLineNode //×¢ÊÍ
+MultiLineNode //æ³¨é‡Š
     $String
-        ÄÚÈÝ
+        å†…å®¹
 
-    $Table IntList Int //×¢ÊÍ
+    $Table IntList Int //æ³¨é‡Š
         0
         1
         2
 
-#Function //×¢ÊÍ
+#Function //æ³¨é‡Š
     <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
 $End
 
 #Function
 
-#Function (12) (((32)) "123") //×¢ÊÍ
+#Function (12) (((32)) "123") //æ³¨é‡Š
 
-Single #Function (12) (((32)) "123") //×¢ÊÍ
+Single #Function (12) (((32)) "123") //æ³¨é‡Š
 
-#TreeParameterFunction 1 2 3 //×¢ÊÍ
+#TreeParameterFunction 1 2 3 //æ³¨é‡Š
 #TreeParameterFunction 1 2 3
-#TableParameterFunction 1 2 3 //×¢ÊÍ
+#TableParameterFunction 1 2 3 //æ³¨é‡Š
 #TableParameterFunction 1 2 3
 
 #TreeContentFunction

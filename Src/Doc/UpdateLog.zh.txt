@@ -1,6 +1,7 @@
 ﻿2016.05.21
 *:
 修正文档。
+修正文档编码。
 
 2016.05.20
 Firefly.Core.Texting.TreeFormat:
