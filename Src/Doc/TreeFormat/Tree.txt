@@ -452,10 +452,10 @@ SingleLineNode ::=
     | EmptyNode
     | SingleLineFunctionNode
     | SingleLineLiteral
-    | ParenthesesNode
-    | SingleLineLiteral (ParenthesesNode | ParenthesesNode* SingleLineNode)
+    | ParenthesisNode
+    | SingleLineLiteral (ParenthesisNode | ParenthesisNode* SingleLineNode)
 
-ParenthesesNode := "(" SingleLineNode ")"
+ParenthesisNode := "(" SingleLineNode ")"
 
 SingleLineComment ::=
     "//" .*
@@ -492,7 +492,7 @@ TableLineNode ::=
     | EmptyNode
     | SingleLineFunctionNode
     | SingleLineLiteral
-    | ParenthesesNode
+    | ParenthesisNode
 
 FunctionNodes ::=
     FunctionDirective Token*?<"(" ")"Matched> SingleLineComment?
