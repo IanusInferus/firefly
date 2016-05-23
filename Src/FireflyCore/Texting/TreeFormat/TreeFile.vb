@@ -3,7 +3,7 @@
 '  File:        TreeFile.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: Tree文件格式 - 版本2
-'  Version:     2016.05.13.
+'  Version:     2016.05.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -30,7 +30,8 @@ Namespace Texting.TreeFormat
         Public Shared Function ReadRaw(ByVal Path As String, ByVal Encoding As Encoding, ByVal ParseSetting As TreeFormatParseSetting) As TreeFormatParseResult
             Using sr = Txt.CreateTextReader(Path, Encoding)
                 Dim t = Txt.ReadFile(sr)
-                Dim tfp As New TreeFormatSyntaxParser(ParseSetting, t, Path)
+                Dim Text = TreeFormatTokenParser.BuildText(t, Path)
+                Dim tfp As New TreeFormatSyntaxParser(ParseSetting, Text)
                 If Debugger.IsAttached Then
                     Return tfp.Parse()
                 Else
@@ -44,12 +45,14 @@ Namespace Texting.TreeFormat
         End Function
         Public Shared Function ReadRaw(ByVal Reader As StreamReader, ByVal ParseSetting As TreeFormatParseSetting) As TreeFormatParseResult
             Dim t = Txt.ReadFile(Reader)
-            Dim tfp As New TreeFormatSyntaxParser(ParseSetting, t)
+            Dim Text = TreeFormatTokenParser.BuildText(t, "")
+            Dim tfp As New TreeFormatSyntaxParser(ParseSetting, Text)
             Return tfp.Parse()
         End Function
         Public Shared Function ReadRaw(ByVal Reader As StreamReader, ByVal Path As String, ByVal ParseSetting As TreeFormatParseSetting) As TreeFormatParseResult
             Dim t = Txt.ReadFile(Reader)
-            Dim tfp As New TreeFormatSyntaxParser(ParseSetting, t, Path)
+            Dim Text = TreeFormatTokenParser.BuildText(t, Path)
+            Dim tfp As New TreeFormatSyntaxParser(ParseSetting, Text)
             Return tfp.Parse()
         End Function
 

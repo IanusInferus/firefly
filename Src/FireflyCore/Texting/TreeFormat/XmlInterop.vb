@@ -3,7 +3,7 @@
 '  File:        XmlInterop.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: XML互操作
-'  Version:     2016.05.19.
+'  Version:     2016.05.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -174,7 +174,7 @@ Namespace Texting.TreeFormat
                 If Positions Is Nothing Then Return Nothing
                 If Not Positions.ContainsKey(Obj) Then Return Nothing
                 Dim r = Positions(Obj)
-                If Not r.Range.HasValue Then Return New FileLocationInformation With {.Path = r.Text.Path}
+                If Not r.Range.OnHasValue Then Return New FileLocationInformation With {.Path = r.Text.Path}
                 Return New FileLocationInformation With {.Path = r.Text.Path, .LineNumber = r.Range.Value.Start.Row, .ColumnNumber = r.Range.Value.Start.Column}
             End Function
         End Class
@@ -289,7 +289,7 @@ Namespace Texting.TreeFormat
             End Function
 
             Private Function Mark(Of T)(ByVal Obj As T, ByVal Range As [Optional](Of Syntax.FileTextRange)) As T
-                If Range.HasValue Then Positions.Add(Obj, Range.Value)
+                If Range.OnHasValue Then Positions.Add(Obj, Range.Value)
                 Return Obj
             End Function
             Private Function MakeEmptyNode(ByVal x As XObject) As Node
@@ -440,7 +440,7 @@ Namespace Texting.TreeFormat
             End Function
 
             Private Function Mark(Of T)(ByVal Obj As T, ByVal Range As [Optional](Of Syntax.FileTextRange)) As T
-                If Range.HasValue AndAlso Range.Value.Range.HasValue Then Positions.Add(Obj, Range.Value.Range.Value)
+                If Range.OnHasValue AndAlso Range.Value.Range.OnHasValue Then Positions.Add(Obj, Range.Value.Range.Value)
                 Return Obj
             End Function
             Private Function MakeEmptyNode(ByVal x As XObject) As Syntax.Node

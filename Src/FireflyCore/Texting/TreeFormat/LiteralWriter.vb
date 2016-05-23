@@ -3,7 +3,7 @@
 '  File:        LiteralWriter.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 字面量输出类
-'  Version:     2016.05.19.
+'  Version:     2016.05.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -25,9 +25,9 @@ Namespace Texting.TreeFormat
     End Enum
     <TaggedUnion(), DebuggerDisplay("{ToString()}")>
     Public Class Literal
-        <Tag()> Public Property _Tag As LiteralTag
-        Public Property SingleLine As String
-        Public Property MultiLine As String()
+        <Tag()> Public _Tag As LiteralTag
+        Public SingleLine As String
+        Public MultiLine As String()
 
         Public Shared Function CreateSingleLine(ByVal Value As String) As Literal
             Return New Literal With {._Tag = LiteralTag.SingleLine, .SingleLine = Value}
