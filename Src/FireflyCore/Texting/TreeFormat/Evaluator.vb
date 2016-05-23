@@ -22,19 +22,19 @@ Imports Firefly.Texting.TreeFormat.Syntax
 Namespace Texting.TreeFormat
     Public Interface ISyntaxMarker
         ReadOnly Property Text As Text
-        Function GetRange(ByVal Obj As Object) As TextRange
-        Function GetFileRange(ByVal Obj As Object) As FileTextRange
-        Function Mark(Of T)(ByVal Obj As T, ByVal Range As TextRange) As T
+        Function GetRange(ByVal Obj As Object) As [Optional](Of TextRange)
+        Function GetFileRange(ByVal Obj As Object) As [Optional](Of FileTextRange)
+        Function Mark(Of T)(ByVal Obj As T, ByVal Range As [Optional](Of TextRange)) As T
         Function Mark(Of T)(ByVal Obj As T, ByVal SyntaxRule As Object) As T
     End Interface
 
     Public Interface ISemanticsNodeMaker
         ReadOnly Property Text As Text
-        Function GetRange(ByVal Obj As Object) As TextRange
-        Function GetFileRange(ByVal Obj As Object) As FileTextRange
-        Function MakeEmptyNode(ByVal Range As TextRange) As Semantics.Node
-        Function MakeLeafNode(ByVal Value As String, ByVal Range As TextRange) As Semantics.Node
-        Function MakeStemNode(ByVal Name As String, ByVal Children As Semantics.Node(), ByVal Range As TextRange) As Semantics.Node
+        Function GetRange(ByVal Obj As Object) As [Optional](Of TextRange)
+        Function GetFileRange(ByVal Obj As Object) As [Optional](Of FileTextRange)
+        Function MakeEmptyNode(ByVal Range As [Optional](Of TextRange)) As Semantics.Node
+        Function MakeLeafNode(ByVal Value As String, ByVal Range As [Optional](Of TextRange)) As Semantics.Node
+        Function MakeStemNode(ByVal Name As String, ByVal Children As Semantics.Node(), ByVal Range As [Optional](Of TextRange)) As Semantics.Node
         Function MakeEmptyNode(ByVal SyntaxRule As Object) As Semantics.Node
         Function MakeLeafNode(ByVal Value As String, ByVal SyntaxRule As Object) As Semantics.Node
         Function MakeStemNode(ByVal Name As String, ByVal Children As Semantics.Node(), ByVal SyntaxRule As Object) As Semantics.Node
@@ -74,30 +74,36 @@ Namespace Texting.TreeFormat
             Return New TreeFormatResult With {.Value = F, .Positions = Positions}
         End Function
 
-        Private Function GetRange(ByVal Obj As Object) As TextRange Implements ISyntaxMarker.GetRange, ISemanticsNodeMaker.GetRange
+        Private Function GetRange(ByVal Obj As Object) As [Optional](Of TextRange) Implements ISyntaxMarker.GetRange, ISemanticsNodeMaker.GetRange
+            If Not Positions.ContainsKey(Obj) Then Return [Optional](Of TextRange).Empty
             Return Positions(Obj).Range.Value
         End Function
-        Private Function GetFileRange(ByVal Obj As Object) As FileTextRange Implements ISyntaxMarker.GetFileRange, ISemanticsNodeMaker.GetFileRange
+        Private Function GetFileRange(ByVal Obj As Object) As [Optional](Of FileTextRange) Implements ISyntaxMarker.GetFileRange, ISemanticsNodeMaker.GetFileRange
+            If Not Positions.ContainsKey(Obj) Then Return [Optional](Of FileTextRange).Empty
             Return New FileTextRange With {.Text = pr.Text, .Range = GetRange(Obj)}
         End Function
-        Private Function Mark(Of T)(ByVal Obj As T, ByVal Range As TextRange) As T Implements ISyntaxMarker.Mark
-            Positions.Add(Obj, New FileTextRange With {.Text = pr.Text, .Range = Range})
+        Private Function Mark(Of T)(ByVal Obj As T, ByVal Range As [Optional](Of TextRange)) As T Implements ISyntaxMarker.Mark
+            If Range.OnHasValue Then
+                Positions.Add(Obj, New FileTextRange With {.Text = pr.Text, .Range = Range})
+            End If
             Return Obj
         End Function
         Private Function Mark(Of T)(ByVal Obj As T, ByVal SyntaxRule As Object) As T Implements ISyntaxMarker.Mark
             Dim Range = GetRange(SyntaxRule)
-            Positions.Add(Obj, New FileTextRange With {.Text = pr.Text, .Range = Range})
+            If Range.OnHasValue Then
+                Positions.Add(Obj, New FileTextRange With {.Text = pr.Text, .Range = Range})
+            End If
             Return Obj
         End Function
-        Private Function MakeEmptyNode(ByVal Range As TextRange) As Semantics.Node Implements ISemanticsNodeMaker.MakeEmptyNode
+        Private Function MakeEmptyNode(ByVal Range As [Optional](Of TextRange)) As Semantics.Node Implements ISemanticsNodeMaker.MakeEmptyNode
             Dim n = Mark(Semantics.Node.CreateEmpty(), Range)
             Return n
         End Function
-        Private Function MakeLeafNode(ByVal Value As String, ByVal Range As TextRange) As Semantics.Node Implements ISemanticsNodeMaker.MakeLeafNode
+        Private Function MakeLeafNode(ByVal Value As String, ByVal Range As [Optional](Of TextRange)) As Semantics.Node Implements ISemanticsNodeMaker.MakeLeafNode
             Dim n = Mark(Semantics.Node.CreateLeaf(Value), Range)
             Return n
         End Function
-        Private Function MakeStemNode(ByVal Name As String, ByVal Children As Semantics.Node(), ByVal Range As TextRange) As Semantics.Node Implements ISemanticsNodeMaker.MakeStemNode
+        Private Function MakeStemNode(ByVal Name As String, ByVal Children As Semantics.Node(), ByVal Range As [Optional](Of TextRange)) As Semantics.Node Implements ISemanticsNodeMaker.MakeStemNode
             Dim s = Mark(New Semantics.Stem With {.Name = Name, .Children = Children}, Range)
             Dim n = Mark(Semantics.Node.CreateStem(s), Range)
             Return n
