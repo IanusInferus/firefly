@@ -29,34 +29,37 @@ Namespace Texting.TreeFormat.Syntax
         Public Sub New(ByVal Message As String, ByVal InnerException As Exception)
             MyBase.New(Message, InnerException)
         End Sub
-        Public Sub New(ByVal Message As String, ByVal Range As FileTextRange)
+        Public Sub New(ByVal Message As String, ByVal Range As [Optional](Of FileTextRange))
             MyBase.New(GetMessage(Message, Range))
             RangeValue = Range
         End Sub
-        Public Sub New(ByVal Message As String, ByVal Range As FileTextRange, ByVal InnerException As Exception)
+        Public Sub New(ByVal Message As String, ByVal Range As [Optional](Of FileTextRange), ByVal InnerException As Exception)
             MyBase.New(GetMessage(Message, Range), InnerException)
             RangeValue = Range
         End Sub
 
-        Private RangeValue As FileTextRange
+        Private RangeValue As [Optional](Of FileTextRange)
 
-        Public ReadOnly Property Range As FileTextRange
+        Public ReadOnly Property Range As [Optional](Of FileTextRange)
             Get
                 Return RangeValue
             End Get
         End Property
 
-        Protected Shared Function GetMessage(ByVal Message As String, ByVal Range As FileTextRange) As String
+        Protected Shared Function GetMessage(ByVal Message As String, ByVal Range As [Optional](Of FileTextRange)) As String
             Dim l As New List(Of String)
-            If Range.Text IsNot Nothing AndAlso Range.Text.Path <> "" Then l.Add(Range.Text.Path)
-            If Range.Range.OnHasValue Then
-                l.Add(Range.Range.Value.ToString())
-            End If
-            If Message <> "" Then
-                If l.Count > 0 Then
-                    l.Add(" : {0}".Formats(Message))
-                Else
-                    l.Add(Message)
+            If Range.OnHasValue Then
+                Dim RangeValue = Range.Value
+                If RangeValue.Text IsNot Nothing AndAlso RangeValue.Text.Path <> "" Then l.Add(RangeValue.Text.Path)
+                If RangeValue.Range.OnHasValue Then
+                    l.Add(RangeValue.Range.Value.ToString())
+                End If
+                If Message <> "" Then
+                    If l.Count > 0 Then
+                        l.Add(" : {0}".Formats(Message))
+                    Else
+                        l.Add(Message)
+                    End If
                 End If
             End If
             Return String.Join("", l.ToArray())
@@ -75,11 +78,11 @@ Namespace Texting.TreeFormat.Syntax
         Public Sub New(ByVal Message As String, ByVal InnerException As Exception)
             MyBase.New(Message, InnerException)
         End Sub
-        Public Sub New(ByVal Message As String, ByVal Range As FileTextRange, ByVal Token As String)
+        Public Sub New(ByVal Message As String, ByVal Range As [Optional](Of FileTextRange), ByVal Token As String)
             MyBase.New(GetTokenMessage(Message, Range, Token))
             TokenValue = Token
         End Sub
-        Public Sub New(ByVal Message As String, ByVal Range As FileTextRange, ByVal Token As String, ByVal InnerException As Exception)
+        Public Sub New(ByVal Message As String, ByVal Range As [Optional](Of FileTextRange), ByVal Token As String, ByVal InnerException As Exception)
             MyBase.New(GetTokenMessage(Message, Range, Token), InnerException)
             TokenValue = Token
         End Sub
@@ -92,7 +95,7 @@ Namespace Texting.TreeFormat.Syntax
             End Get
         End Property
 
-        Private Shared Function GetTokenMessage(ByVal Message As String, ByVal Range As FileTextRange, ByVal Token As String) As String
+        Private Shared Function GetTokenMessage(ByVal Message As String, ByVal Range As [Optional](Of FileTextRange), ByVal Token As String) As String
             If Message = "" Then
                 Return GetMessage("'{0}' : InvalidToken".Formats(Token), Range)
             End If
@@ -112,11 +115,11 @@ Namespace Texting.TreeFormat.Syntax
         Public Sub New(ByVal Message As String, ByVal InnerException As Exception)
             MyBase.New(Message, InnerException)
         End Sub
-        Public Sub New(ByVal Message As String, ByVal Range As FileTextRange, ByVal Token As Token)
+        Public Sub New(ByVal Message As String, ByVal Range As [Optional](Of FileTextRange), ByVal Token As Token)
             MyBase.New(GetTokenMessage(Message, Range, Token))
             TokenValue = Token
         End Sub
-        Public Sub New(ByVal Message As String, ByVal Range As FileTextRange, ByVal Token As Token, ByVal InnerException As Exception)
+        Public Sub New(ByVal Message As String, ByVal Range As [Optional](Of FileTextRange), ByVal Token As Token, ByVal InnerException As Exception)
             MyBase.New(GetTokenMessage(Message, Range, Token), InnerException)
             TokenValue = Token
         End Sub
@@ -129,7 +132,7 @@ Namespace Texting.TreeFormat.Syntax
             End Get
         End Property
 
-        Private Shared Function GetTokenMessage(ByVal Message As String, ByVal Range As FileTextRange, ByVal Token As Token) As String
+        Private Shared Function GetTokenMessage(ByVal Message As String, ByVal Range As [Optional](Of FileTextRange), ByVal Token As Token) As String
             If Message = "" Then
                 Return GetMessage("'{0}' : InvalidSyntaxAtToken".Formats(Token.ToString()), Range)
             End If
@@ -149,11 +152,11 @@ Namespace Texting.TreeFormat.Syntax
         Public Sub New(ByVal Message As String, ByVal InnerException As Exception)
             MyBase.New(Message, InnerException)
         End Sub
-        Public Sub New(ByVal Message As String, ByVal Range As FileTextRange, ByVal SyntaxRule As Object)
+        Public Sub New(ByVal Message As String, ByVal Range As [Optional](Of FileTextRange), ByVal SyntaxRule As Object)
             MyBase.New(GetTokenMessage(Message, Range))
             SyntaxRuleValue = SyntaxRule
         End Sub
-        Public Sub New(ByVal Message As String, ByVal Range As FileTextRange, ByVal SyntaxRule As Object, ByVal InnerException As Exception)
+        Public Sub New(ByVal Message As String, ByVal Range As [Optional](Of FileTextRange), ByVal SyntaxRule As Object, ByVal InnerException As Exception)
             MyBase.New(GetTokenMessage(Message, Range), InnerException)
             SyntaxRuleValue = SyntaxRule
         End Sub
@@ -166,7 +169,7 @@ Namespace Texting.TreeFormat.Syntax
             End Get
         End Property
 
-        Private Shared Function GetTokenMessage(ByVal Message As String, ByVal Range As FileTextRange) As String
+        Private Shared Function GetTokenMessage(ByVal Message As String, ByVal Range As [Optional](Of FileTextRange)) As String
             If Message = "" Then
                 Return GetMessage("InvalidSyntaxRule", Range)
             End If
