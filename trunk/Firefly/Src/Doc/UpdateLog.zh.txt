@@ -3,6 +3,8 @@ Firefly.Core.Texting.TreeFormat:
 使得SyntaxParser可以在Text上使用。
 去除所有的结构代码中的属性，改为字段，防止调试信息中重复出现。
 修正Optional。
+Firefly.Core.Mapping:
+增加Tree文件序列化器。
 
 2016.05.21
 *:

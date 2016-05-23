@@ -67,6 +67,7 @@
     <Compile Include="Mapping\BinarySerializer.vb" />
     <Compile Include="Mapping\DebuggerDisplayer.vb" />
     <Compile Include="Mapping\MetaSchema.vb" />
+    <Compile Include="Mapping\TreeSerializer.vb" />
     <Compile Include="Streaming\BitStream.vb" />
     <Compile Include="Core\CommandLine.vb" />
     <Compile Include="Core\Counter.vb" />
