@@ -17,7 +17,7 @@ Imports Firefly.Texting.TreeFormat.Syntax
 
 Namespace Texting.TreeFormat
     Public Class TreeFormatTokenParseResult
-        Public Token As [Optional](Of Token)
+        Public Token As Token
         Public RemainingChars As [Optional](Of TextRange)
     End Class
 
@@ -82,7 +82,7 @@ Namespace Texting.TreeFormat
             Brace
         End Enum
         Private Shared ForbiddenWhitespaces As Char() = "\f\t\v".Descape().ToCharArray()
-        Public Shared Function ReadToken(ByVal Text As Text, ByVal Positions As Dictionary(Of Object, TextRange), ByVal RangeInLine As TextRange) As TreeFormatTokenParseResult
+        Public Shared Function ReadToken(ByVal Text As Text, ByVal Positions As Dictionary(Of Object, TextRange), ByVal RangeInLine As TextRange) As [Optional](Of TreeFormatTokenParseResult)
             Dim s = Text.GetTextInLine(RangeInLine)
             Dim Index As Integer = 0
 
@@ -107,7 +107,7 @@ Namespace Texting.TreeFormat
             Dim MakeNextCharErrorTokenException = Function(Message As String) New InvalidTokenException(Message, MakeNextErrorTokenRange(1), Peek(1))
             Dim MarkStart = Sub() StartIndex = Index
             Dim Output As New List(Of Char)
-            Dim MakeNullResult = Function() New TreeFormatTokenParseResult With {.Token = [Optional](Of Token).Empty, .RemainingChars = [Optional](Of TextRange).Empty}
+            Dim MakeNullResult = Function() [Optional](Of TreeFormatTokenParseResult).Empty
             Dim MakeResult =
                 Function(t As Token) As TreeFormatTokenParseResult
                     Dim Range = MakeTokenRange(StartIndex, Index)
