@@ -3,7 +3,7 @@
 '  File:        TokenParser.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 词法解析器
-'  Version:     2016.05.20.
+'  Version:     2016.05.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -246,7 +246,7 @@ Namespace Texting.TreeFormat
                         If EndOfLine() Then Return MakeResult(Token.CreateSingleLineLiteral(New String(Output.ToArray())))
                         Dim c = Peek1()
                         Select Case c
-                            Case " "c
+                            Case " "c, "("c, ")"c
                                 Return MakeResult(Token.CreateSingleLineLiteral(New String(Output.ToArray())))
                             Case """"c
                                 Output.Add(c)
