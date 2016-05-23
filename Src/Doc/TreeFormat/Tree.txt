@@ -382,6 +382,8 @@ State 2
 State 21
     EndOfLine -> 返回SingleLineLiteral
     Space -> 返回SingleLineLiteral
+    ( -> 返回SingleLineLiteral
+    ) -> 返回SingleLineLiteral
     " -> 加入Output，State 22，前进
     \ -> State 31，前进
     Any -> 加入Output，State 3，前进
