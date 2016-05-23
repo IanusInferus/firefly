@@ -65,17 +65,21 @@ Namespace Texting.TreeFormat
             Return New TreeFormatParseResult With {.Value = Forest, .Text = Text, .Positions = Positions, .RawFunctionCalls = RawFunctionCalls}
         End Function
 
-        Private Function GetRange(ByVal Obj As Object) As TextRange
+        Private Function GetRange(ByVal Obj As Object) As [Optional](Of TextRange)
+            If Not Positions.ContainsKey(Obj) Then Return [Optional](Of TextRange).Empty
             Return Positions(Obj)
         End Function
-        Private Function GetFileRange(ByVal Obj As Object) As FileTextRange
+        Private Function GetFileRange(ByVal Obj As Object) As [Optional](Of FileTextRange)
             If FilePositions.ContainsKey(Obj) Then Return FilePositions(Obj)
+            If Not Positions.ContainsKey(Obj) Then Return [Optional](Of FileTextRange).Empty
             Dim fp = New FileTextRange With {.Text = Text, .Range = Positions(Obj)}
             FilePositions.Add(Obj, fp)
             Return fp
         End Function
-        Private Function Mark(Of T)(ByVal Obj As T, ByVal Range As TextRange) As T
-            Positions.Add(Obj, Range)
+        Private Function Mark(Of T)(ByVal Obj As T, ByVal Range As [Optional](Of TextRange)) As T
+            If Range.OnHasValue Then
+                Positions.Add(Obj, Range.Value)
+            End If
             Return Obj
         End Function
         Private Function Mark(Of T)(ByVal Obj As T, ByVal Range As TextLineRange) As T
@@ -294,11 +298,14 @@ Namespace Texting.TreeFormat
         Private Function ParseFunctionNodes(ByVal Lines As TextLineRange, ByVal FirstLine As TextLine, ByVal ChildLines As TextLineRange, ByVal EndLine As [Optional](Of TextLine), ByVal IndentLevel As Integer, ByVal FirstToken As Token, ByVal RemainingChars As [Optional](Of TextRange)) As FunctionNodes
             Dim FunctionDirective = Mark(New FunctionDirective With {.Text = FirstToken.FunctionDirective}, GetRange(FirstToken))
             Dim l As New List(Of Token)
-            Dim ParametersStart As TextPosition
+            Dim ParametersStart = [Optional](Of TextPosition).Empty
             If RemainingChars.OnHasValue Then
                 ParametersStart = RemainingChars.Value.Start
             Else
-                ParametersStart = GetRange(FirstToken).End
+                Dim TokenRange = GetRange(FirstToken)
+                If TokenRange.OnHasValue Then
+                    ParametersStart = TokenRange.Value.End
+                End If
             End If
             Dim ParameterEnd = ParametersStart
             Dim CurrentRemainingChars As [Optional](Of TextRange) = RemainingChars
@@ -313,16 +320,25 @@ Namespace Texting.TreeFormat
                 Select Case Token._Tag
                     Case TokenTag.SingleLineLiteral, TokenTag.PreprocessDirective, TokenTag.FunctionDirective
                         l.Add(Token)
-                        ParameterEnd = GetRange(Token).End
+                        Dim TokenRange = GetRange(Token)
+                        If TokenRange.OnHasValue Then
+                            ParametersStart = TokenRange.Value.End
+                        End If
                     Case TokenTag.LeftParenthesis
                         Level += 1
                         l.Add(Token)
-                        ParameterEnd = GetRange(Token).End
+                        Dim TokenRange = GetRange(Token)
+                        If TokenRange.OnHasValue Then
+                            ParametersStart = TokenRange.Value.End
+                        End If
                     Case TokenTag.RightParenthesis
                         If Level = 0 Then Exit While
                         Level -= 1
                         l.Add(Token)
-                        ParameterEnd = GetRange(Token).End
+                        Dim TokenRange = GetRange(Token)
+                        If TokenRange.OnHasValue Then
+                            ParametersStart = TokenRange.Value.End
+                        End If
                     Case TokenTag.SingleLineComment
                         Exit While
                     Case Else
@@ -330,7 +346,10 @@ Namespace Texting.TreeFormat
                 End Select
                 CurrentRemainingChars = TokenResult.RemainingChars
             End While
-            Dim ParameterRange As New TextRange With {.Start = ParametersStart, .End = ParameterEnd}
+            Dim ParameterRange = [Optional](Of TextRange).Empty
+            If ParametersStart.OnHasValue AndAlso ParameterEnd.OnHasValue Then
+                ParameterRange = New TextRange With {.Start = ParametersStart.Value, .End = ParameterEnd.Value}
+            End If
             Dim SingleLineComment = ParseSingleLineComment(CurrentRemainingChars)
             Dim EndDirective = ParseEndDirective(EndLine)
             Dim Content As FunctionContent
@@ -470,9 +489,9 @@ Namespace Texting.TreeFormat
         End Class
         Private Function ParseSingleLineNode(ByVal FirstToken As Token, ByVal RemainingChars As [Optional](Of TextRange)) As SyntaxParseResult(Of SingleLineNode)
             Dim FirstTokenRange = GetRange(FirstToken)
-            Dim NodeStart = FirstTokenRange.Start
-            Dim NodeEnd = FirstTokenRange.End
-            Dim CreateRange = Function() New TextRange With {.Start = NodeStart, .End = NodeEnd}
+            Dim NodeStartRange = FirstTokenRange
+            Dim NodeEndRange = FirstTokenRange
+            Dim CreateRange = Function() If(NodeStartRange.OnHasValue AndAlso NodeEndRange.OnHasValue, New TextRange With {.Start = NodeStartRange.Value.Start, .End = NodeEndRange.Value.End}, [Optional](Of TextRange).Empty)
 
             Select Case FirstToken._Tag
                 Case TokenTag.SingleLineLiteral
@@ -505,7 +524,7 @@ Namespace Texting.TreeFormat
                             Case TokenTag.SingleLineLiteral, TokenTag.PreprocessDirective, TokenTag.FunctionDirective
                                 Dim ChildResult = ParseSingleLineNode(FollowingToken, FollowingTokenResult.RemainingChars)
                                 Dim Child = ChildResult.Value
-                                NodeEnd = GetRange(FollowingToken).End
+                                NodeEndRange = GetRange(FollowingToken)
                                 Dim Node = Mark(New SingleLineNodeWithParameters With {.Head = Head, .Children = l.ToArray(), .LastChild = Child}, CreateRange())
                                 Return New SyntaxParseResult(Of SingleLineNode) With {.Value = Mark(SingleLineNode.CreateSingleLineNodeWithParameters(Node), CreateRange()), .RemainingChars = ChildResult.RemainingChars}
                             Case TokenTag.LeftParenthesis
@@ -513,7 +532,7 @@ Namespace Texting.TreeFormat
                                 Dim Child = ChildResult.Value
                                 l.Add(Child)
                                 CurrentRemainingChars = ChildResult.RemainingChars
-                                NodeEnd = GetRange(FollowingToken).End
+                                NodeEndRange = GetRange(FollowingToken)
                             Case TokenTag.RightParenthesis, TokenTag.SingleLineComment
                                 If l.Count = 0 Then
                                     Return New SyntaxParseResult(Of SingleLineNode) With {.Value = Mark(SingleLineNode.CreateSingleLineLiteral(Head), CreateRange()), .RemainingChars = CurrentRemainingChars}
@@ -529,7 +548,7 @@ Namespace Texting.TreeFormat
                 Case TokenTag.LeftParenthesis
                     Dim ParenthesisNodeResult = ParseParenthesisNode(FirstToken, RemainingChars)
                     Dim ParenthesisNode = ParenthesisNodeResult.Value
-                    NodeEnd = GetRange(ParenthesisNode).End
+                    NodeEndRange = GetRange(ParenthesisNode)
                     Return New SyntaxParseResult(Of SingleLineNode) With {.Value = Mark(SingleLineNode.CreateParenthesisNode(ParenthesisNode), CreateRange()), .RemainingChars = ParenthesisNodeResult.RemainingChars}
                 Case TokenTag.RightParenthesis
                     Throw New InvalidSyntaxRuleException("UnexpectedToken", GetFileRange(FirstToken), FirstToken)
@@ -542,7 +561,7 @@ Namespace Texting.TreeFormat
                 Case TokenTag.FunctionDirective
                     Dim SingleLineFunctionNodeResult = ParseSingleLineFunctionNode(FirstToken, RemainingChars)
                     Dim SingleLineFunctionNode = SingleLineFunctionNodeResult.Value
-                    NodeEnd = GetRange(SingleLineFunctionNode).End
+                    NodeEndRange = GetRange(SingleLineFunctionNode)
                     Return New SyntaxParseResult(Of SingleLineNode) With {.Value = Mark(SingleLineNode.CreateSingleLineFunctionNode(SingleLineFunctionNode), CreateRange()), .RemainingChars = SingleLineFunctionNodeResult.RemainingChars}
                 Case TokenTag.SingleLineComment
                     Throw New InvalidSyntaxRuleException("UnexpectedToken", GetFileRange(FirstToken), FirstToken)
@@ -553,9 +572,9 @@ Namespace Texting.TreeFormat
 
         Private Function ParseTableLineNode(ByVal FirstToken As Token, ByVal RemainingChars As [Optional](Of TextRange)) As SyntaxParseResult(Of TableLineNode)
             Dim FirstTokenRange = GetRange(FirstToken)
-            Dim NodeStart = FirstTokenRange.Start
-            Dim NodeEnd = FirstTokenRange.End
-            Dim CreateRange = Function() New TextRange With {.Start = NodeStart, .End = NodeEnd}
+            Dim NodeStartRange = FirstTokenRange
+            Dim NodeEndRange = FirstTokenRange
+            Dim CreateRange = Function() If(NodeStartRange.OnHasValue AndAlso NodeEndRange.OnHasValue, New TextRange With {.Start = NodeStartRange.Value.Start, .End = NodeEndRange.Value.End}, [Optional](Of TextRange).Empty)
 
             Select Case FirstToken._Tag
                 Case TokenTag.SingleLineLiteral
@@ -586,17 +605,20 @@ Namespace Texting.TreeFormat
 
         Private Function ParseSingleLineFunctionNode(ByVal FirstToken As Token, ByVal RemainingChars As [Optional](Of TextRange)) As SyntaxParseResult(Of SingleLineFunctionNode)
             Dim FirstTokenRange = GetRange(FirstToken)
-            Dim NodeStart = FirstTokenRange.Start
-            Dim NodeEnd = FirstTokenRange.End
-            Dim CreateRange = Function() New TextRange With {.Start = NodeStart, .End = NodeEnd}
+            Dim NodeStartRange = FirstTokenRange
+            Dim NodeEndRange = FirstTokenRange
+            Dim CreateRange = Function() If(NodeStartRange.OnHasValue AndAlso NodeEndRange.OnHasValue, New TextRange With {.Start = NodeStartRange.Value.Start, .End = NodeEndRange.Value.End}, [Optional](Of TextRange).Empty)
 
             Dim FunctionDirective = Mark(New FunctionDirective With {.Text = FirstToken.FunctionDirective}, GetRange(FirstToken))
             Dim l As New List(Of Token)
-            Dim ParametersStart As TextPosition
+            Dim ParametersStart = [Optional](Of TextPosition).Empty
             If RemainingChars.OnHasValue Then
                 ParametersStart = RemainingChars.Value.Start
             Else
-                ParametersStart = GetRange(FirstToken).End
+                Dim TokenRange = GetRange(FirstToken)
+                If TokenRange.OnHasValue Then
+                    ParametersStart = TokenRange.Value.End
+                End If
             End If
             Dim ParameterEnd = ParametersStart
             Dim CurrentRemainingChars As [Optional](Of TextRange) = RemainingChars
@@ -611,16 +633,25 @@ Namespace Texting.TreeFormat
                 Select Case Token._Tag
                     Case TokenTag.SingleLineLiteral, TokenTag.PreprocessDirective, TokenTag.FunctionDirective
                         l.Add(Token)
-                        ParameterEnd = GetRange(Token).End
+                        Dim TokenRange = GetRange(Token)
+                        If TokenRange.OnHasValue Then
+                            ParametersStart = TokenRange.Value.End
+                        End If
                     Case TokenTag.LeftParenthesis
                         Level += 1
                         l.Add(Token)
-                        ParameterEnd = GetRange(Token).End
+                        Dim TokenRange = GetRange(Token)
+                        If TokenRange.OnHasValue Then
+                            ParametersStart = TokenRange.Value.End
+                        End If
                     Case TokenTag.RightParenthesis
                         If Level = 0 Then Exit While
                         Level -= 1
                         l.Add(Token)
-                        ParameterEnd = GetRange(Token).End
+                        Dim TokenRange = GetRange(Token)
+                        If TokenRange.OnHasValue Then
+                            ParametersStart = TokenRange.Value.End
+                        End If
                     Case TokenTag.SingleLineComment
                         Exit While
                     Case Else
@@ -628,7 +659,10 @@ Namespace Texting.TreeFormat
                 End Select
                 CurrentRemainingChars = TokenResult.RemainingChars
             End While
-            Dim ParameterRange As New TextRange With {.Start = ParametersStart, .End = ParameterEnd}
+            Dim ParameterRange = [Optional](Of TextRange).Empty
+            If ParametersStart.OnHasValue AndAlso ParameterEnd.OnHasValue Then
+                ParameterRange = New TextRange With {.Start = ParametersStart.Value, .End = ParameterEnd.Value}
+            End If
             Dim FunctionRange = CreateRange()
             Dim F = Mark(New SingleLineFunctionNode With {.FunctionDirective = FunctionDirective, .Parameters = l.ToArray()}, FunctionRange)
 
@@ -673,24 +707,24 @@ Namespace Texting.TreeFormat
 
         Private Function ParseParenthesisNode(ByVal FirstToken As Token, ByVal RemainingChars As [Optional](Of TextRange)) As SyntaxParseResult(Of ParenthesisNode)
             Dim FirstTokenRange = GetRange(FirstToken)
-            Dim NodeStart = FirstTokenRange.Start
-            Dim NodeEnd = FirstTokenRange.End
-            Dim CreateRange = Function() New TextRange With {.Start = NodeStart, .End = NodeEnd}
+            Dim NodeStartRange = FirstTokenRange
+            Dim NodeEndRange = FirstTokenRange
+            Dim CreateRange = Function() If(NodeStartRange.OnHasValue AndAlso NodeEndRange.OnHasValue, New TextRange With {.Start = NodeStartRange.Value.Start, .End = NodeEndRange.Value.End}, [Optional](Of TextRange).Empty)
 
             If Not RemainingChars.OnHasValue Then Throw New InvalidSyntaxRuleException("ParenthesisNotMatched", GetFileRange(FirstToken), FirstToken)
             Dim SecondTokenResult = TreeFormatTokenParser.ReadToken(Text, Positions, RemainingChars.Value)
             If Not SecondTokenResult.Token.OnHasValue Then Throw New InvalidSyntaxRuleException("ParenthesisNotMatched", GetFileRange(FirstToken), FirstToken)
             Dim SecondToken = SecondTokenResult.Token.Value
-            NodeEnd = GetRange(SecondToken).End
+            NodeEndRange = GetRange(SecondToken)
             Dim SingleLineNodeResult = ParseSingleLineNode(SecondToken, SecondTokenResult.RemainingChars)
             If Not SingleLineNodeResult.RemainingChars.OnHasValue Then Throw New InvalidSyntaxRuleException("ParenthesisNotMatched", New FileTextRange With {.Text = Text, .Range = CreateRange()}, FirstToken)
             Dim SingleLineNode = SingleLineNodeResult.Value
-            NodeEnd = GetRange(SingleLineNode).End
+            NodeEndRange = GetRange(SingleLineNode)
             Dim EndTokenResult = TreeFormatTokenParser.ReadToken(Text, Positions, SingleLineNodeResult.RemainingChars.Value)
             If Not EndTokenResult.Token.OnHasValue Then Throw New InvalidSyntaxRuleException("ParenthesisNotMatched", New FileTextRange With {.Text = Text, .Range = CreateRange()}, FirstToken)
             Dim EndToken = EndTokenResult.Token.Value
             If Not EndToken.OnRightParenthesis Then Throw New InvalidSyntaxRuleException("ParenthesisNotMatched", GetFileRange(EndToken), EndToken)
-            NodeEnd = GetRange(EndToken).End
+            NodeEndRange = GetRange(EndToken)
             Return New SyntaxParseResult(Of ParenthesisNode) With {.Value = Mark(New ParenthesisNode With {.SingleLineNode = SingleLineNode}, CreateRange()), .RemainingChars = EndTokenResult.RemainingChars}
         End Function
 
