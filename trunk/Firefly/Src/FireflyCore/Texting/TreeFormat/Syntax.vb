@@ -3,7 +3,7 @@
 '  File:        Syntax.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 文法对象定义
-'  Version:     2016.05.20.
+'  Version:     2016.05.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -16,9 +16,9 @@ Imports Firefly.Mapping.MetaSchema
 Namespace Texting.TreeFormat.Syntax
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Structure TextPosition
-        Public Property CharIndex As Integer
-        Public Property Row As Integer
-        Public Property Column As Integer
+        Public CharIndex As Integer
+        Public Row As Integer
+        Public Column As Integer
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -27,8 +27,8 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Structure TextRange
-        Public Property Start As TextPosition
-        Public Property [End] As TextPosition
+        Public Start As TextPosition
+        Public [End] As TextPosition
 
         Public Overrides Function ToString() As String
             Return String.Format("({0}, {1})-({2}, {3})".Formats(Start.Row, Start.Column, [End].Row, [End].Column))
@@ -37,8 +37,8 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Structure TextLine
-        Public Property Text As String
-        Public Property Range As TextRange
+        Public Text As String
+        Public Range As TextRange
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -47,8 +47,8 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Structure TextLineRange
-        Public Property StartRow As Integer
-        Public Property EndRow As Integer
+        Public StartRow As Integer
+        Public EndRow As Integer
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -57,8 +57,8 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class Text
-        Public Property Path As String
-        Public Property Lines As TextLine()
+        Public Path As String
+        Public Lines As TextLine()
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -67,7 +67,7 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class Forest
-        Public Property MultiNodesList As MultiNodes()
+        Public MultiNodesList As MultiNodes()
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -82,11 +82,11 @@ Namespace Texting.TreeFormat.Syntax
     End Enum
     <TaggedUnion(), DebuggerDisplay("{ToString()}")>
     Public Class MultiNodes
-        <Tag()> Public Property _Tag As MultiNodesTag
-        Public Property Node As Node
-        Public Property ListNodes As ListNodes
-        Public Property TableNodes As TableNodes
-        Public Property FunctionNodes As FunctionNodes
+        <Tag()> Public _Tag As MultiNodesTag
+        Public Node As Node
+        Public ListNodes As ListNodes
+        Public TableNodes As TableNodes
+        Public FunctionNodes As FunctionNodes
 
         Public Shared Function CreateNode(ByVal Value As Node) As MultiNodes
             Return New MultiNodes With {._Tag = MultiNodesTag.Node, .Node = Value}
@@ -136,12 +136,12 @@ Namespace Texting.TreeFormat.Syntax
     End Enum
     <TaggedUnion(), DebuggerDisplay("{ToString()}")>
     Public Class Node
-        <Tag()> Public Property _Tag As NodeTag
-        Public Property SingleLineNodeLine As SingleLineNodeLine
-        Public Property MultiLineLiteral As MultiLineLiteral
-        Public Property SingleLineComment As SingleLineComment
-        Public Property MultiLineComment As MultiLineComment
-        Public Property MultiLineNode As MultiLineNode
+        <Tag()> Public _Tag As NodeTag
+        Public SingleLineNodeLine As SingleLineNodeLine
+        Public MultiLineLiteral As MultiLineLiteral
+        Public SingleLineComment As SingleLineComment
+        Public MultiLineComment As MultiLineComment
+        Public MultiLineNode As MultiLineNode
 
         Public Shared Function CreateSingleLineNodeLine(ByVal Value As SingleLineNodeLine) As Node
             Return New Node With {._Tag = NodeTag.SingleLineNodeLine, .SingleLineNodeLine = Value}
@@ -192,8 +192,8 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class SingleLineNodeLine
-        Public Property SingleLineNode As SingleLineNode
-        Public Property SingleLineComment As [Optional](Of SingleLineComment)
+        Public SingleLineNode As SingleLineNode
+        Public SingleLineComment As [Optional](Of SingleLineComment)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -209,12 +209,12 @@ Namespace Texting.TreeFormat.Syntax
     End Enum
     <TaggedUnion(), DebuggerDisplay("{ToString()}")>
     Public Class SingleLineNode
-        <Tag()> Public Property _Tag As SingleLineNodeTag
-        Public Property EmptyNode As EmptyNode
-        Public Property SingleLineFunctionNode As SingleLineFunctionNode
-        Public Property SingleLineLiteral As SingleLineLiteral
-        Public Property ParenthesisNode As ParenthesisNode
-        Public Property SingleLineNodeWithParameters As SingleLineNodeWithParameters
+        <Tag()> Public _Tag As SingleLineNodeTag
+        Public EmptyNode As EmptyNode
+        Public SingleLineFunctionNode As SingleLineFunctionNode
+        Public SingleLineLiteral As SingleLineLiteral
+        Public ParenthesisNode As ParenthesisNode
+        Public SingleLineNodeWithParameters As SingleLineNodeWithParameters
 
         Public Shared Function CreateEmptyNode(ByVal Value As EmptyNode) As SingleLineNode
             Return New SingleLineNode With {._Tag = SingleLineNodeTag.EmptyNode, .EmptyNode = Value}
@@ -265,9 +265,9 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class SingleLineNodeWithParameters
-        Public Property Head As SingleLineLiteral
-        Public Property Children As ParenthesisNode()
-        Public Property LastChild As [Optional](Of SingleLineNode)
+        Public Head As SingleLineLiteral
+        Public Children As ParenthesisNode()
+        Public LastChild As [Optional](Of SingleLineNode)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -276,10 +276,10 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class MultiLineNode
-        Public Property Head As SingleLineLiteral
-        Public Property SingleLineComment As [Optional](Of SingleLineComment)
-        Public Property Children As MultiNodes()
-        Public Property EndDirective As [Optional](Of EndDirective)
+        Public Head As SingleLineLiteral
+        Public SingleLineComment As [Optional](Of SingleLineComment)
+        Public Children As MultiNodes()
+        Public EndDirective As [Optional](Of EndDirective)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -288,7 +288,7 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class ParenthesisNode
-        Public Property SingleLineNode As SingleLineNode
+        Public SingleLineNode As SingleLineNode
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -297,7 +297,7 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class SingleLineComment
-        Public Property Content As FreeContent
+        Public Content As FreeContent
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -306,9 +306,9 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class MultiLineComment
-        Public Property SingleLineComment As [Optional](Of SingleLineComment)
-        Public Property Content As FreeContent
-        Public Property EndDirective As [Optional](Of EndDirective)
+        Public SingleLineComment As [Optional](Of SingleLineComment)
+        Public Content As FreeContent
+        Public EndDirective As [Optional](Of EndDirective)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -324,8 +324,8 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class SingleLineFunctionNode
-        Public Property FunctionDirective As FunctionDirective
-        Public Property Parameters As Token()
+        Public FunctionDirective As FunctionDirective
+        Public Parameters As Token()
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -334,9 +334,9 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class MultiLineLiteral
-        Public Property SingleLineComment As [Optional](Of SingleLineComment)
-        Public Property Content As FreeContent
-        Public Property EndDirective As [Optional](Of EndDirective)
+        Public SingleLineComment As [Optional](Of SingleLineComment)
+        Public Content As FreeContent
+        Public EndDirective As [Optional](Of EndDirective)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -345,10 +345,10 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class ListNodes
-        Public Property ChildHead As SingleLineLiteral
-        Public Property SingleLineComment As [Optional](Of SingleLineComment)
-        Public Property Children As MultiNodes()
-        Public Property EndDirective As [Optional](Of EndDirective)
+        Public ChildHead As SingleLineLiteral
+        Public SingleLineComment As [Optional](Of SingleLineComment)
+        Public Children As MultiNodes()
+        Public EndDirective As [Optional](Of EndDirective)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -357,11 +357,11 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class TableNodes
-        Public Property ChildHead As SingleLineLiteral
-        Public Property ChildFields As SingleLineLiteral()
-        Public Property SingleLineComment As [Optional](Of SingleLineComment)
-        Public Property Children As TableLine()
-        Public Property EndDirective As [Optional](Of EndDirective)
+        Public ChildHead As SingleLineLiteral
+        Public ChildFields As SingleLineLiteral()
+        Public SingleLineComment As [Optional](Of SingleLineComment)
+        Public Children As TableLine()
+        Public EndDirective As [Optional](Of EndDirective)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -370,8 +370,8 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class TableLine
-        Public Property Nodes As TableLineNode()
-        Public Property SingleLineComment As [Optional](Of SingleLineComment)
+        Public Nodes As TableLineNode()
+        Public SingleLineComment As [Optional](Of SingleLineComment)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -386,11 +386,11 @@ Namespace Texting.TreeFormat.Syntax
     End Enum
     <TaggedUnion(), DebuggerDisplay("{ToString()}")>
     Public Class TableLineNode
-        <Tag()> Public Property _Tag As TableLineNodeTag
-        Public Property EmptyNode As EmptyNode
-        Public Property SingleLineFunctionNode As SingleLineFunctionNode
-        Public Property SingleLineLiteral As SingleLineLiteral
-        Public Property ParenthesisNode As ParenthesisNode
+        <Tag()> Public _Tag As TableLineNodeTag
+        Public EmptyNode As EmptyNode
+        Public SingleLineFunctionNode As SingleLineFunctionNode
+        Public SingleLineLiteral As SingleLineLiteral
+        Public ParenthesisNode As ParenthesisNode
 
         Public Shared Function CreateEmptyNode(ByVal Value As EmptyNode) As TableLineNode
             Return New TableLineNode With {._Tag = TableLineNodeTag.EmptyNode, .EmptyNode = Value}
@@ -433,11 +433,11 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class FunctionNodes
-        Public Property FunctionDirective As FunctionDirective
-        Public Property Parameters As Token()
-        Public Property SingleLineComment As [Optional](Of SingleLineComment)
-        Public Property Content As FunctionContent
-        Public Property EndDirective As [Optional](Of EndDirective)
+        Public FunctionDirective As FunctionDirective
+        Public Parameters As Token()
+        Public SingleLineComment As [Optional](Of SingleLineComment)
+        Public Content As FunctionContent
+        Public EndDirective As [Optional](Of EndDirective)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -446,7 +446,7 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class EndDirective
-        Public Property EndSingleLineComment As [Optional](Of SingleLineComment)
+        Public EndSingleLineComment As [Optional](Of SingleLineComment)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -455,7 +455,7 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class FunctionDirective
-        Public Property Text As String
+        Public Text As String
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -472,13 +472,13 @@ Namespace Texting.TreeFormat.Syntax
     End Enum
     <TaggedUnion(), DebuggerDisplay("{ToString()}")>
     Public Class Token
-        <Tag()> Public Property _Tag As TokenTag
-        Public Property SingleLineLiteral As String
-        Public Property LeftParenthesis As Unit
-        Public Property RightParenthesis As Unit
-        Public Property PreprocessDirective As String
-        Public Property FunctionDirective As String
-        Public Property SingleLineComment As String
+        <Tag()> Public _Tag As TokenTag
+        Public SingleLineLiteral As String
+        Public LeftParenthesis As Unit
+        Public RightParenthesis As Unit
+        Public PreprocessDirective As String
+        Public FunctionDirective As String
+        Public SingleLineComment As String
 
         Public Shared Function CreateSingleLineLiteral(ByVal Value As String) As Token
             Return New Token With {._Tag = TokenTag.SingleLineLiteral, .SingleLineLiteral = Value}
@@ -552,7 +552,7 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class SingleLineLiteral
-        Public Property Text As String
+        Public Text As String
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -561,7 +561,7 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class FreeContent
-        Public Property Text As String
+        Public Text As String
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -570,8 +570,8 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class FunctionContent
-        Public Property Lines As TextLine()
-        Public Property IndentLevel As Integer
+        Public Lines As TextLine()
+        Public IndentLevel As Integer
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -580,10 +580,10 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class RawFunctionCall
-        Public Property Name As FunctionDirective
-        Public Property ReturnValueMode As FunctionCallReturnValueMode
-        Public Property Parameters As RawFunctionCallParameters
-        Public Property Content As [Optional](Of RawFunctionCallContent)
+        Public Name As FunctionDirective
+        Public ReturnValueMode As FunctionCallReturnValueMode
+        Public Parameters As RawFunctionCallParameters
+        Public Content As [Optional](Of RawFunctionCallContent)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -597,10 +597,10 @@ Namespace Texting.TreeFormat.Syntax
     End Enum
     <TaggedUnion(), DebuggerDisplay("{ToString()}")>
     Public Class RawFunctionCallParameters
-        <Tag()> Public Property _Tag As RawFunctionCallParametersTag
-        Public Property TokenParameters As Token()
-        Public Property TreeParameter As [Optional](Of SingleLineNode)
-        Public Property TableParameters As TableLineNode()
+        <Tag()> Public _Tag As RawFunctionCallParametersTag
+        Public TokenParameters As Token()
+        Public TreeParameter As [Optional](Of SingleLineNode)
+        Public TableParameters As TableLineNode()
 
         Public Shared Function CreateTokenParameters(ByVal Value As Token()) As RawFunctionCallParameters
             Return New RawFunctionCallParameters With {._Tag = RawFunctionCallParametersTag.TokenParameters, .TokenParameters = Value}
@@ -640,10 +640,10 @@ Namespace Texting.TreeFormat.Syntax
     End Enum
     <TaggedUnion(), DebuggerDisplay("{ToString()}")>
     Public Class RawFunctionCallContent
-        <Tag()> Public Property _Tag As RawFunctionCallContentTag
-        Public Property LineContent As FunctionContent
-        Public Property TreeContent As MultiNodes()
-        Public Property TableContent As TableLine()
+        <Tag()> Public _Tag As RawFunctionCallContentTag
+        Public LineContent As FunctionContent
+        Public TreeContent As MultiNodes()
+        Public TableContent As TableLine()
 
         Public Shared Function CreateLineContent(ByVal Value As FunctionContent) As RawFunctionCallContent
             Return New RawFunctionCallContent With {._Tag = RawFunctionCallContentTag.LineContent, .LineContent = Value}
@@ -683,10 +683,10 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class FunctionCall
-        Public Property Name As FunctionDirective
-        Public Property ReturnValueMode As FunctionCallReturnValueMode
-        Public Property Parameters As Semantics.Node()
-        Public Property Content As [Optional](Of FunctionCallContent)
+        Public Name As FunctionDirective
+        Public ReturnValueMode As FunctionCallReturnValueMode
+        Public Parameters As Semantics.Node()
+        Public Content As [Optional](Of FunctionCallContent)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -700,10 +700,10 @@ Namespace Texting.TreeFormat.Syntax
     End Enum
     <TaggedUnion(), DebuggerDisplay("{ToString()}")>
     Public Class FunctionCallContent
-        <Tag()> Public Property _Tag As FunctionCallContentTag
-        Public Property LineContent As FunctionContent
-        Public Property TreeContent As Semantics.Node()
-        Public Property TableContent As FunctionCallTableLine()
+        <Tag()> Public _Tag As FunctionCallContentTag
+        Public LineContent As FunctionContent
+        Public TreeContent As Semantics.Node()
+        Public TableContent As FunctionCallTableLine()
 
         Public Shared Function CreateLineContent(ByVal Value As FunctionContent) As FunctionCallContent
             Return New FunctionCallContent With {._Tag = FunctionCallContentTag.LineContent, .LineContent = Value}
@@ -738,7 +738,7 @@ Namespace Texting.TreeFormat.Syntax
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class FunctionCallTableLine
-        Public Property Nodes As Semantics.Node()
+        Public Nodes As Semantics.Node()
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)

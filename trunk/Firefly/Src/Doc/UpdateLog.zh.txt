@@ -1,4 +1,10 @@
-﻿2016.05.21
+﻿2016.05.23
+Firefly.Core.Texting.TreeFormat:
+使得SyntaxParser可以在Text上使用。
+去除所有的结构代码中的属性，改为字段，防止调试信息中重复出现。
+修正Optional。
+
+2016.05.21
 *:
 修正文档。
 修正文档编码。
