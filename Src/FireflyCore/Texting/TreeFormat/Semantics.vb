@@ -3,7 +3,7 @@
 '  File:        Semantics.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 语义对象定义
-'  Version:     2011.07.31.
+'  Version:     2016.05.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -16,7 +16,7 @@ Imports Firefly.Mapping.MetaSchema
 Namespace Texting.TreeFormat.Semantics
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class Forest
-        Public Property Nodes As Node()
+        Public Nodes As Node()
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -30,10 +30,10 @@ Namespace Texting.TreeFormat.Semantics
     End Enum
     <TaggedUnion(), DebuggerDisplay("{ToString()}")>
     Public Class Node
-        <Tag()> Public Property _Tag As NodeTag
-        Public Property Empty As Unit
-        Public Property Leaf As String
-        Public Property Stem As Stem
+        <Tag()> Public _Tag As NodeTag
+        Public Empty As Unit
+        Public Leaf As String
+        Public Stem As Stem
 
         Public Shared Function CreateEmpty() As Node
             Return New Node With {._Tag = NodeTag.Empty, .Empty = New Unit()}
@@ -68,8 +68,8 @@ Namespace Texting.TreeFormat.Semantics
 
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class Stem
-        Public Property Name As String
-        Public Property Children As Node()
+        Public Name As String
+        Public Children As Node()
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)

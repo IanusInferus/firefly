@@ -3,7 +3,7 @@
 '  File:        Evaluator.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 求值器 - 用于执行自定义函数，并将文法树转为语义树
-'  Version:     2016.05.19.
+'  Version:     2016.05.23.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -125,7 +125,7 @@ Namespace Texting.TreeFormat
                 Select Case mn._Tag
                     Case MultiNodesTag.Node
                         Dim n = EvaluateNode(mn.Node)
-                        If n.HasValue Then
+                        If n.OnHasValue Then
                             l.Add(n.Value)
                         End If
                     Case MultiNodesTag.ListNodes
@@ -196,7 +196,7 @@ Namespace Texting.TreeFormat
                     For Each c In slnwp.Children
                         Children.Add(EvaluateSingleLineNode(c.SingleLineNode))
                     Next
-                    If slnwp.LastChild.HasValue Then
+                    If slnwp.LastChild.OnHasValue Then
                         Dim lc = slnwp.LastChild.Value
                         Children.Add(EvaluateSingleLineNode(lc))
                     End If
@@ -240,7 +240,7 @@ Namespace Texting.TreeFormat
                     Parameters = TokenParameterEvaluator(rfc, Me)
                 Case RawFunctionCallParametersTag.TreeParameter
                     Dim tp = rfc.Parameters.TreeParameter
-                    If Not tp.HasValue Then
+                    If Not tp.OnHasValue Then
                         Parameters = New Semantics.Node() {}
                     Else
                         Parameters = New Semantics.Node() {EvaluateSingleLineNode(tp.Value)}
@@ -253,7 +253,7 @@ Namespace Texting.TreeFormat
             End Select
 
             Dim Content = [Optional](Of FunctionCallContent).Empty
-            If rfc.Content.HasValue Then
+            If rfc.Content.OnHasValue Then
                 Dim rfcc = rfc.Content.Value
                 Select Case rfcc._Tag
                     Case RawFunctionCallContentTag.LineContent
