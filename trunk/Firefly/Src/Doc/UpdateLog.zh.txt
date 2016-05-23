@@ -5,6 +5,7 @@ Firefly.Core.Texting.TreeFormat:
 修正Optional。
 将所有位置信息改为可选。
 修正词法分析中解析"")时出错的问题。
+简化代码。
 Firefly.Core.Mapping:
 增加Tree文件序列化器。
 
