@@ -3,7 +3,7 @@
 '  File:        SyntaxWriter.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 文本输出类
-'  Version:     2016.05.23.
+'  Version:     2016.05.26.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -91,7 +91,7 @@ Namespace Texting.TreeFormat
             Else
                 WriteRaw(IndentLevel, Table, ChildHeadLiteral, ChildFields)
             End If
-            Dim NumColumn = (New Integer() {0}).Concat(tn.Children.Select(Function(c) c.Nodes.Length)).Max() + 1
+            Dim NumColumn = (New Integer() {0}).Concat(tn.Children.Select(Function(c) c.Nodes.Count)).Max() + 1
             Dim DataTable As New List(Of String())
             For Each tl In tn.Children
                 Dim l As New List(Of String)
@@ -120,7 +120,7 @@ Namespace Texting.TreeFormat
 
             Dim NodeLines = New List(Of String)()
             For Each Row In DataTable
-                NodeLines.Add(String.Join("", Row.Zip(ColumnLength, Function(v, l) v + New String(" "c, l - CalculateCharWidth(v))).ToArray()))
+                NodeLines.Add(String.Join("", Row.Zip(ColumnLength, Function(v, l) v + New String(" "c, l - CalculateCharWidth(v)))))
             Next
             Return NodeLines.Select(Function(Line) Line.TrimEnd(" "c)).ToArray()
         End Function
@@ -326,10 +326,10 @@ Namespace Texting.TreeFormat
             Next
             l.Add(Values(Values.Length - 1))
 
-            Return String.Join("", l.ToArray())
+            Return String.Join("", l)
         End Function
         Private Function Combine(ByVal ParamArray Values As String()) As String
-            Return String.Join(" ", Values.Where(Function(v) v <> "").ToArray())
+            Return String.Join(" ", Values.Where(Function(v) v <> ""))
         End Function
         Private Sub WriteRaw(ByVal IndentLevel As Integer, ByVal Value1 As String, ByVal Value2 As String, ByVal ParamArray Values As String())
             WriteRaw(IndentLevel, Combine((New String() {Value1, Value2}).Concat(Values).ToArray()))

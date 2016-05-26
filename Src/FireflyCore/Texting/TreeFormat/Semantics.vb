@@ -3,7 +3,7 @@
 '  File:        Semantics.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 语义对象定义
-'  Version:     2016.05.23.
+'  Version:     2016.05.26.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -16,7 +16,7 @@ Imports Firefly.Mapping.MetaSchema
 Namespace Texting.TreeFormat.Semantics
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class Forest
-        Public Nodes As Node()
+        Public Nodes As List(Of Node)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
@@ -69,7 +69,7 @@ Namespace Texting.TreeFormat.Semantics
     <Record(), DebuggerDisplay("{ToString()}")>
     Public Class Stem
         Public Name As String
-        Public Children As Node()
+        Public Children As List(Of Node)
 
         Public Overrides Function ToString() As String
             Return DebuggerDisplayer.ConvertToString(Me)
