@@ -121,7 +121,7 @@ Namespace Mapping.TreeText
         End Function
         Public Function Write(Of T)(ByVal Value As T) As Forest Implements ITreeWriter.Write
             Dim m = WriterCache.ResolveProjector(Of T, Node)()
-            Return New Forest With {.Nodes = New Node() {m(Value)}}
+            Return New Forest With {.Nodes = New List(Of Node) From {m(Value)}}
         End Function
 
         Public ReadOnly Property CurrentReadingNode As Node
@@ -412,7 +412,7 @@ Namespace Mapping.TreeText
             Dim FriendlyName = GetTypeFriendlyName(GetType(D))
             Return Function(v)
                        Dim s = Projector(v)
-                       Return Node.CreateStem(New Stem With {.Name = FriendlyName, .Children = New Node() {Node.CreateLeaf(s)}})
+                       Return Node.CreateStem(New Stem With {.Name = FriendlyName, .Children = New List(Of Node) From {Node.CreateLeaf(s)}})
                    End Function
         End Function
     End Class
@@ -480,9 +480,9 @@ Namespace Mapping.TreeText
                                x = s.Parent
                                x.Stem.Name = FriendlyName
                            ElseIf l.Count = 0 Then
-                               x = Node.CreateStem(New Stem With {.Name = FriendlyName, .Children = New Node() {}})
+                               x = Node.CreateStem(New Stem With {.Name = FriendlyName, .Children = New List(Of Node) From {}})
                            Else
-                               x = Node.CreateStem(New Stem With {.Name = FriendlyName, .Children = l.ToArray()})
+                               x = Node.CreateStem(New Stem With {.Name = FriendlyName, .Children = l})
                            End If
                        Else
                            x = Node.CreateStem(New Stem With {.Name = FriendlyName, .Children = Nothing})

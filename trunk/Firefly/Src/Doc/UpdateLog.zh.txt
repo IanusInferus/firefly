@@ -1,4 +1,8 @@
-﻿2016.05.23
+﻿2016.05.26
+Firefly.Core.Texting.TreeFormat:
+将数组都替换为List。
+
+2016.05.23
 Firefly.Core.Texting.TreeFormat:
 使得SyntaxParser可以在Text上使用。
 去除所有的结构代码中的属性，改为字段，防止调试信息中重复出现。

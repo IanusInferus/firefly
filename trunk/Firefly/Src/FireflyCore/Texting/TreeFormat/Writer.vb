@@ -3,7 +3,7 @@
 '  File:        Writer.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 文本输出类
-'  Version:     2016.05.23.
+'  Version:     2016.05.26.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -53,12 +53,12 @@ Namespace Texting.TreeFormat
                     Dim Name = GetLiteral(ns.Name, True).SingleLine
                     WriteRaw(IndentLevel, Name)
 
-                    If ns.Children.Length = 0 Then
+                    If ns.Children.Count = 0 Then
                         WriteRaw(IndentLevel, EndDirective)
                     Else
-                        If ns.Children.Length > 1 AndAlso ns.Children.All(Function(c) c.OnStem AndAlso c.Stem.Children.Length = 1) Then
-                            Dim ChildNames = ns.Children.Select(Function(c) c.Stem.Name).Distinct.ToArray()
-                            If ChildNames.Length = 1 Then
+                        If ns.Children.Count > 1 AndAlso ns.Children.All(Function(c) c.OnStem AndAlso c.Stem.Children.Count = 1) Then
+                            Dim ChildNames = ns.Children.Select(Function(c) c.Stem.Name).Distinct().ToList()
+                            If ChildNames.Count = 1 Then
                                 Dim ChildName = GetLiteral(ChildNames.Single(), True).SingleLine
                                 WriteRaw(IndentLevel + 1, List & " " & ChildName)
                                 For Each c In ns.Children
@@ -94,7 +94,7 @@ Namespace Texting.TreeFormat
                         Exit While
                     Case NodeTag.Stem
                         Dim ns = n.Stem
-                        If ns.Children.Length <> 1 Then Return [Optional](Of String).Empty
+                        If ns.Children.Count <> 1 Then Return [Optional](Of String).Empty
                         Dim s = GetLiteral(ns.Name, False)
                         If s.OnMultiLine Then Return [Optional](Of String).Empty
                         If Not s.OnSingleLine Then Throw New InvalidOperationException
@@ -105,7 +105,7 @@ Namespace Texting.TreeFormat
                 End Select
             End While
 
-            Return String.Join(" ", l.ToArray)
+            Return String.Join(" ", l)
         End Function
 
         Private Sub WriteValue(ByVal IndentLevel As Integer, ByVal Value As String)
@@ -119,10 +119,10 @@ Namespace Texting.TreeFormat
                     For Each Line In s.MultiLine
                         WriteRaw(IndentLevel + 1, Line)
                     Next
-                    If s.MultiLine.Length > 0 Then
+                    If s.MultiLine.Count > 0 Then
                         Dim LastLine = s.MultiLine.Last()
-                        Dim Chars = LastLine.Distinct.ToArray()
-                        If Chars.Length = 0 OrElse (Chars.Length = 1 AndAlso Chars.Single = " ") Then
+                        Dim Chars = LastLine.Distinct().ToList()
+                        If Chars.Count = 0 OrElse (Chars.Count = 1 AndAlso Chars.Single() = " ") Then
                             WriteRaw(IndentLevel, EndDirective)
                         End If
                     End If

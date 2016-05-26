@@ -3,7 +3,7 @@
 '  File:        Exceptions.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 异常定义
-'  Version:     2016.05.23.
+'  Version:     2016.05.26.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -62,7 +62,7 @@ Namespace Texting.TreeFormat.Syntax
                     End If
                 End If
             End If
-            Return String.Join("", l.ToArray())
+            Return String.Join("", l)
         End Function
     End Class
 

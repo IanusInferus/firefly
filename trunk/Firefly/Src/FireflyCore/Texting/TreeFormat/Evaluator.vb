@@ -3,7 +3,7 @@
 '  File:        Evaluator.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 求值器 - 用于执行自定义函数，并将文法树转为语义树
-'  Version:     2016.05.23.
+'  Version:     2016.05.26.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -34,15 +34,15 @@ Namespace Texting.TreeFormat
         Function GetFileRange(ByVal Obj As Object) As [Optional](Of FileTextRange)
         Function MakeEmptyNode(ByVal Range As [Optional](Of TextRange)) As Semantics.Node
         Function MakeLeafNode(ByVal Value As String, ByVal Range As [Optional](Of TextRange)) As Semantics.Node
-        Function MakeStemNode(ByVal Name As String, ByVal Children As Semantics.Node(), ByVal Range As [Optional](Of TextRange)) As Semantics.Node
+        Function MakeStemNode(ByVal Name As String, ByVal Children As List(Of Semantics.Node), ByVal Range As [Optional](Of TextRange)) As Semantics.Node
         Function MakeEmptyNode(ByVal SyntaxRule As Object) As Semantics.Node
         Function MakeLeafNode(ByVal Value As String, ByVal SyntaxRule As Object) As Semantics.Node
-        Function MakeStemNode(ByVal Name As String, ByVal Children As Semantics.Node(), ByVal SyntaxRule As Object) As Semantics.Node
+        Function MakeStemNode(ByVal Name As String, ByVal Children As List(Of Semantics.Node), ByVal SyntaxRule As Object) As Semantics.Node
     End Interface
 
     Public Class TreeFormatEvaluateSetting
-        Public TokenParameterEvaluator As Func(Of RawFunctionCall, ISyntaxMarker, Semantics.Node())
-        Public FunctionCallEvaluator As Func(Of FunctionCall, ISemanticsNodeMaker, Semantics.Node())
+        Public TokenParameterEvaluator As Func(Of RawFunctionCall, ISyntaxMarker, List(Of Semantics.Node))
+        Public FunctionCallEvaluator As Func(Of FunctionCall, ISemanticsNodeMaker, List(Of Semantics.Node))
     End Class
 
     Public Class TreeFormatEvaluator
@@ -50,8 +50,8 @@ Namespace Texting.TreeFormat
         Implements ISemanticsNodeMaker
 
         Private pr As TreeFormatParseResult
-        Private TokenParameterEvaluator As Func(Of RawFunctionCall, ISyntaxMarker, Semantics.Node())
-        Private FunctionCallEvaluator As Func(Of FunctionCall, ISemanticsNodeMaker, Semantics.Node())
+        Private TokenParameterEvaluator As Func(Of RawFunctionCall, ISyntaxMarker, List(Of Semantics.Node))
+        Private FunctionCallEvaluator As Func(Of FunctionCall, ISemanticsNodeMaker, List(Of Semantics.Node))
 
         Private Positions As Dictionary(Of Object, FileTextRange)
 
@@ -103,7 +103,7 @@ Namespace Texting.TreeFormat
             Dim n = Mark(Semantics.Node.CreateLeaf(Value), Range)
             Return n
         End Function
-        Private Function MakeStemNode(ByVal Name As String, ByVal Children As Semantics.Node(), ByVal Range As [Optional](Of TextRange)) As Semantics.Node Implements ISemanticsNodeMaker.MakeStemNode
+        Private Function MakeStemNode(ByVal Name As String, ByVal Children As List(Of Semantics.Node), ByVal Range As [Optional](Of TextRange)) As Semantics.Node Implements ISemanticsNodeMaker.MakeStemNode
             Dim s = Mark(New Semantics.Stem With {.Name = Name, .Children = Children}, Range)
             Dim n = Mark(Semantics.Node.CreateStem(s), Range)
             Return n
@@ -118,14 +118,14 @@ Namespace Texting.TreeFormat
             Dim n = Mark(Semantics.Node.CreateLeaf(Value), Range)
             Return n
         End Function
-        Private Function MakeStemNode(ByVal Name As String, ByVal Children As Semantics.Node(), ByVal SyntaxRule As Object) As Semantics.Node Implements ISemanticsNodeMaker.MakeStemNode
+        Private Function MakeStemNode(ByVal Name As String, ByVal Children As List(Of Semantics.Node), ByVal SyntaxRule As Object) As Semantics.Node Implements ISemanticsNodeMaker.MakeStemNode
             Dim Range = GetRange(SyntaxRule)
             Dim s = Mark(New Semantics.Stem With {.Name = Name, .Children = Children}, Range)
             Dim n = Mark(Semantics.Node.CreateStem(s), Range)
             Return n
         End Function
 
-        Private Function EvaluateMultiNodesList(ByVal MultiNodesList As MultiNodes()) As Semantics.Node()
+        Private Function EvaluateMultiNodesList(ByVal MultiNodesList As List(Of MultiNodes)) As List(Of Semantics.Node)
             Dim l As New List(Of Semantics.Node)
             For Each mn In MultiNodesList
                 Select Case mn._Tag
@@ -138,18 +138,18 @@ Namespace Texting.TreeFormat
                         Dim ln = mn.ListNodes
                         Dim Children = EvaluateMultiNodesList(ln.Children)
                         For Each c In Children
-                            Dim n = MakeStemNode(ln.ChildHead.Text, {c}, c)
+                            Dim n = MakeStemNode(ln.ChildHead.Text, New List(Of Semantics.Node) From {c}, c)
                             l.Add(n)
                         Next
                     Case MultiNodesTag.TableNodes
                         Dim tn = mn.TableNodes
                         For Each c In tn.Children
-                            If c.Nodes.Length = 0 Then Continue For
-                            If c.Nodes.Length <> tn.ChildFields.Length Then
+                            If c.Nodes.Count = 0 Then Continue For
+                            If c.Nodes.Count <> tn.ChildFields.Count Then
                                 Throw New InvalidEvaluationException("TableLineNodeCountNotMatchHead", New FileTextRange With {.Text = pr.Text, .Range = GetRange(c)}, c)
                             End If
-                            Dim MakeField = Function(TableLineNode As TableLineNode, Field As SingleLineLiteral) MakeStemNode(Field.Text, {EvaluateTableLineNode(TableLineNode)}, TableLineNode)
-                            Dim Fields = c.Nodes.Zip(tn.ChildFields, MakeField).ToArray()
+                            Dim MakeField = Function(TableLineNode As TableLineNode, Field As SingleLineLiteral) MakeStemNode(Field.Text, New List(Of Semantics.Node) From {EvaluateTableLineNode(TableLineNode)}, TableLineNode)
+                            Dim Fields = c.Nodes.Zip(tn.ChildFields, MakeField).ToList()
                             Dim n = MakeStemNode(tn.ChildHead.Text, Fields, c)
                             l.Add(n)
                         Next
@@ -163,7 +163,7 @@ Namespace Texting.TreeFormat
                         Throw New ArgumentException
                 End Select
             Next
-            Return l.ToArray()
+            Return l
         End Function
 
         Private Function EvaluateNode(ByVal Node As Node) As [Optional](Of Semantics.Node)
@@ -206,7 +206,7 @@ Namespace Texting.TreeFormat
                         Dim lc = slnwp.LastChild.Value
                         Children.Add(EvaluateSingleLineNode(lc))
                     End If
-                    Return MakeStemNode(slnwp.Head.Text, Children.ToArray(), slnwp)
+                    Return MakeStemNode(slnwp.Head.Text, Children, slnwp)
                 Case Else
                     Throw New ArgumentException
             End Select
@@ -238,8 +238,8 @@ Namespace Texting.TreeFormat
             Return Nodes.Single
         End Function
 
-        Private Function EvaluateFunction(ByVal rfc As RawFunctionCall) As Semantics.Node()
-            Dim Parameters As Semantics.Node()
+        Private Function EvaluateFunction(ByVal rfc As RawFunctionCall) As List(Of Semantics.Node)
+            Dim Parameters As List(Of Semantics.Node)
             Select Case rfc.Parameters._Tag
                 Case RawFunctionCallParametersTag.TokenParameters
                     If TokenParameterEvaluator Is Nothing Then Throw New InvalidEvaluationException("TokenParameterEvaluatorIsNull", New FileTextRange With {.Text = pr.Text, .Range = GetRange(rfc)}, rfc)
@@ -247,13 +247,13 @@ Namespace Texting.TreeFormat
                 Case RawFunctionCallParametersTag.TreeParameter
                     Dim tp = rfc.Parameters.TreeParameter
                     If Not tp.OnHasValue Then
-                        Parameters = New Semantics.Node() {}
+                        Parameters = New List(Of Semantics.Node) From {}
                     Else
-                        Parameters = New Semantics.Node() {EvaluateSingleLineNode(tp.Value)}
+                        Parameters = New List(Of Semantics.Node) From {EvaluateSingleLineNode(tp.Value)}
                     End If
                 Case RawFunctionCallParametersTag.TableParameters
                     Dim tp = rfc.Parameters.TableParameters
-                    Parameters = tp.Select(Function(p) EvaluateTableLineNode(p)).ToArray()
+                    Parameters = tp.Select(Function(p) EvaluateTableLineNode(p)).ToList()
                 Case Else
                     Throw New ArgumentException
             End Select
@@ -268,7 +268,7 @@ Namespace Texting.TreeFormat
                         Dim TreeContent = EvaluateMultiNodesList(rfcc.TreeContent)
                         Content = Mark(FunctionCallContent.CreateTreeContent(TreeContent), rfcc)
                     Case RawFunctionCallContentTag.TableContent
-                        Dim TableContent = rfcc.TableContent.Select(Function(Line) Mark(New FunctionCallTableLine With {.Nodes = Line.Nodes.Select(Function(LineNode) EvaluateTableLineNode(LineNode)).ToArray()}, Line)).ToArray()
+                        Dim TableContent = rfcc.TableContent.Select(Function(Line) Mark(New FunctionCallTableLine With {.Nodes = Line.Nodes.Select(Function(LineNode) EvaluateTableLineNode(LineNode)).ToList()}, Line)).ToList()
                         Content = Mark(FunctionCallContent.CreateTableContent(TableContent), rfcc)
                     Case Else
                         Throw New ArgumentException

@@ -3,7 +3,7 @@
 '  File:        LiteralWriter.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 字面量输出类
-'  Version:     2016.05.23.
+'  Version:     2016.05.26.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -27,12 +27,12 @@ Namespace Texting.TreeFormat
     Public Class Literal
         <Tag()> Public _Tag As LiteralTag
         Public SingleLine As String
-        Public MultiLine As String()
+        Public MultiLine As List(Of String)
 
         Public Shared Function CreateSingleLine(ByVal Value As String) As Literal
             Return New Literal With {._Tag = LiteralTag.SingleLine, .SingleLine = Value}
         End Function
-        Public Shared Function CreateMultiLine(ByVal Value As String()) As Literal
+        Public Shared Function CreateMultiLine(ByVal Value As List(Of String)) As Literal
             Return New Literal With {._Tag = LiteralTag.MultiLine, .MultiLine = Value}
         End Function
 
@@ -69,20 +69,20 @@ Namespace Texting.TreeFormat
         Public Shared Function GetLiteral(ByVal Value As String, ByVal MustSingleLine As Boolean, ByVal MustMultiLine As Boolean) As Literal
             If Value Is Nothing Then
                 If MustMultiLine Then
-                    Return Literal.CreateMultiLine(New String() {})
+                    Return Literal.CreateMultiLine(New List(Of String) From {})
                 Else
                     Return Literal.CreateSingleLine(Empty)
                 End If
             End If
             If Value = "" Then
                 If MustMultiLine Then
-                    Return Literal.CreateMultiLine(New String() {""})
+                    Return Literal.CreateMultiLine(New List(Of String) From {""})
                 Else
                     Return Literal.CreateSingleLine("""""")
                 End If
             End If
             If MustMultiLine Then
-                Return Literal.CreateMultiLine(rCrLf.Split(Value.UnifyNewLineToCrLf()))
+                Return Literal.CreateMultiLine(rCrLf.Split(Value.UnifyNewLineToCrLf()).ToList())
             End If
             Dim wm = rWildCrOrLf.Match(Value).Success
             Dim cm = rCrLf.Match(Value).Success
@@ -94,7 +94,7 @@ Namespace Texting.TreeFormat
                     Return Literal.CreateSingleLine("""""" & s & """""")
                 End If
             End If
-            If cm Then Return Literal.CreateMultiLine(rCrLf.Split(Value))
+            If cm Then Return Literal.CreateMultiLine(rCrLf.Split(Value).ToList())
 
             Dim CreateQuotationLiteral = Function() Literal.CreateSingleLine("""" & Value.Replace("""", """""") & """")
 
