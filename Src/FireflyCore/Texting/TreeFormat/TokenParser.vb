@@ -3,7 +3,7 @@
 '  File:        TokenParser.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 词法解析器
-'  Version:     2016.05.23.
+'  Version:     2016.05.26.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -31,7 +31,7 @@ Namespace Texting.TreeFormat
 
         Private Shared rLineSeparator As New Regex("\r\n|\n", RegexOptions.ExplicitCapture)
         Private Shared rLineSeparators As New Regex("\r|\n", RegexOptions.ExplicitCapture)
-        Private Shared Function GetLines(ByVal Text As String, ByVal Path As String) As TextLine()
+        Private Shared Function GetLines(ByVal Text As String, ByVal Path As String) As List(Of TextLine)
             Dim l As New List(Of TextLine)
 
             Dim CurrentRow = 1
@@ -46,13 +46,13 @@ Namespace Texting.TreeFormat
                 If mm.Success Then
                     Dim SeparatorStart = New TextPosition With {.CharIndex = CurrentIndex + mm.Index, .Row = CurrentRow, .Column = mm.Index + 1}
                     Dim SeparatorEnd = New TextPosition With {.CharIndex = CurrentIndex + mm.Index + mm.Length, .Row = CurrentRow + 1, .Column = 1}
-                    Throw New InvalidSyntaxException("IllegalLineSeparator", New FileTextRange With {.Text = New Text With {.Path = Path, .Lines = l.ToArray()}, .Range = New TextRange With {.Start = SeparatorStart, .End = SeparatorEnd}})
+                    Throw New InvalidSyntaxException("IllegalLineSeparator", New FileTextRange With {.Text = New Text With {.Path = Path, .Lines = l}, .Range = New TextRange With {.Start = SeparatorStart, .End = SeparatorEnd}})
                 End If
                 CurrentIndex = m.Index + m.Length
                 CurrentRow += 1
             Next
 
-            Return l.ToArray()
+            Return l
         End Function
 
         Public Shared Function IsBlankLine(ByVal Line As TextLine) As Boolean

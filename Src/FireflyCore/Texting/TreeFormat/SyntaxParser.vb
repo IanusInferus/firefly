@@ -3,7 +3,7 @@
 '  File:        SyntaxParser.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 文法解析器 - 用于从符号转到文法树
-'  Version:     2016.05.23.
+'  Version:     2016.05.26.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -59,7 +59,7 @@ Namespace Texting.TreeFormat
         End Sub
 
         Public Function Parse() As TreeFormatParseResult
-            Dim Lines = New TextLineRange With {.StartRow = 1, .EndRow = Text.Lines.Length + 1}
+            Dim Lines = New TextLineRange With {.StartRow = 1, .EndRow = Text.Lines.Count + 1}
             Dim MultiNodesList = ParseMultiNodesList(Lines, 0)
             Dim Forest = Mark(New Forest With {.MultiNodesList = MultiNodesList}, Lines)
             Return New TreeFormatParseResult With {.Value = Forest, .Text = Text, .Positions = Positions, .RawFunctionCalls = RawFunctionCalls}
@@ -85,7 +85,7 @@ Namespace Texting.TreeFormat
         Private Function Mark(Of T)(ByVal Obj As T, ByVal Range As TextLineRange) As T
             Dim Start = Text.GetTextLine(Range.StartRow).Range.Start
             Dim [End] As TextPosition
-            If Range.EndRow >= Text.Lines.Length Then
+            If Range.EndRow >= Text.Lines.Count Then
                 [End] = Text.GetTextLine(Range.EndRow - 1).Range.End
             Else
                 [End] = Text.GetTextLine(Range.EndRow).Range.Start
@@ -93,7 +93,7 @@ Namespace Texting.TreeFormat
             Return Mark(Obj, New TextRange With {.Start = Start, .End = [End]})
         End Function
 
-        Private Function ParseMultiNodesList(ByVal Lines As TextLineRange, ByVal IndentLevel As Integer) As MultiNodes()
+        Private Function ParseMultiNodesList(ByVal Lines As TextLineRange, ByVal IndentLevel As Integer) As List(Of MultiNodes)
             Dim l As New List(Of MultiNodes)
             Dim RemainingLines As [Optional](Of TextLineRange) = Lines
             While RemainingLines.OnHasValue
@@ -101,7 +101,7 @@ Namespace Texting.TreeFormat
                 If Result.MultiNodes.OnHasValue Then l.Add(Result.MultiNodes.Value)
                 RemainingLines = Result.RemainingLines
             End While
-            Return l.ToArray()
+            Return l
         End Function
 
         Private Class MultiNodesParseResult
@@ -293,7 +293,7 @@ Namespace Texting.TreeFormat
                 End If
             Next
             Dim EndDirective = ParseEndDirective(EndLine)
-            Return Mark(New TableNodes With {.ChildHead = ChildHead, .ChildFields = ChildFields.ToArray(), .SingleLineComment = SingleLineComment, .Children = Children.ToArray(), .EndDirective = EndDirective}, Lines)
+            Return Mark(New TableNodes With {.ChildHead = ChildHead, .ChildFields = ChildFields, .SingleLineComment = SingleLineComment, .Children = Children, .EndDirective = EndDirective}, Lines)
         End Function
         Private Function ParseFunctionNodes(ByVal Lines As TextLineRange, ByVal FirstLine As TextLine, ByVal ChildLines As TextLineRange, ByVal EndLine As [Optional](Of TextLine), ByVal IndentLevel As Integer, ByVal FirstToken As Token, ByVal RemainingChars As [Optional](Of TextRange)) As FunctionNodes
             Dim FunctionDirective = Mark(New FunctionDirective With {.Text = FirstToken.FunctionDirective}, GetRange(FirstToken))
@@ -354,7 +354,7 @@ Namespace Texting.TreeFormat
             Dim EndDirective = ParseEndDirective(EndLine)
             Dim Content As FunctionContent
             If EndDirective.OnHasValue Then
-                Content = Mark(New FunctionContent With {.Lines = Text.GetLines(ChildLines).ToArray(), .IndentLevel = IndentLevel + 1}, ChildLines)
+                Content = Mark(New FunctionContent With {.Lines = Text.GetLines(ChildLines).ToList(), .IndentLevel = IndentLevel + 1}, ChildLines)
             Else
                 Dim StartRow = ChildLines.StartRow
                 Dim EndRow = ChildLines.EndRow
@@ -362,9 +362,9 @@ Namespace Texting.TreeFormat
                     EndRow -= 1
                 End While
                 Dim cl = New TextLineRange With {.StartRow = StartRow, .EndRow = EndRow}
-                Content = Mark(New FunctionContent With {.Lines = Text.GetLines(cl).ToArray(), .IndentLevel = IndentLevel + 1}, cl)
+                Content = Mark(New FunctionContent With {.Lines = Text.GetLines(cl).ToList(), .IndentLevel = IndentLevel + 1}, cl)
             End If
-            Dim F = Mark(New FunctionNodes With {.FunctionDirective = FunctionDirective, .Parameters = l.ToArray(), .SingleLineComment = SingleLineComment, .Content = Content, .EndDirective = EndDirective}, Lines)
+            Dim F = Mark(New FunctionNodes With {.FunctionDirective = FunctionDirective, .Parameters = l, .SingleLineComment = SingleLineComment, .Content = Content, .EndDirective = EndDirective}, Lines)
 
             Dim RawFunctionCallParameters As RawFunctionCallParameters
             If IsTreeParameterFunction(FunctionDirective.Text) Then
@@ -395,7 +395,7 @@ Namespace Texting.TreeFormat
                     Nodes.Add(TableLineNodeResult.Value)
                     CurrentRemainingCharsInTable = TableLineNodeResult.RemainingChars
                 End While
-                RawFunctionCallParameters = Mark(RawFunctionCallParameters.CreateTableParameters(Nodes.ToArray()), ParameterRange)
+                RawFunctionCallParameters = Mark(RawFunctionCallParameters.CreateTableParameters(Nodes), ParameterRange)
             Else
                 RawFunctionCallParameters = Mark(RawFunctionCallParameters.CreateTokenParameters(F.Parameters), ParameterRange)
             End If
@@ -412,7 +412,7 @@ Namespace Texting.TreeFormat
                         Children.Add(OptTableLine.Value)
                     End If
                 Next
-                RawFunctionCallContent = Mark(RawFunctionCallContent.CreateTableContent(Children.ToArray()), ChildLines)
+                RawFunctionCallContent = Mark(RawFunctionCallContent.CreateTableContent(Children), ChildLines)
             Else
                 RawFunctionCallContent = Mark(RawFunctionCallContent.CreateLineContent(Content), ChildLines)
             End If
@@ -435,9 +435,9 @@ Namespace Texting.TreeFormat
             Dim EndDirective = ParseEndDirective(EndLine)
             Dim ContentString As String
             If EndDirective.OnHasValue Then
-                ContentString = String.Join(CrLf, ContentLines.ToArray())
+                ContentString = String.Join(CrLf, ContentLines)
             Else
-                ContentString = String.Join(CrLf, ContentLines.Reverse.SkipWhile(Function(Line) Line = "").Reverse.ToArray())
+                ContentString = String.Join(CrLf, ContentLines.Reverse().SkipWhile(Function(Line) Line = "").Reverse())
             End If
             Dim Content = Mark(New FreeContent With {.Text = ContentString}, ChildLines)
             Return Mark(New MultiLineLiteral With {.SingleLineComment = SingleLineComment, .Content = Content, .EndDirective = EndDirective}, Lines)
@@ -448,9 +448,9 @@ Namespace Texting.TreeFormat
             Dim EndDirective = ParseEndDirective(EndLine)
             Dim ContentString As String
             If EndDirective.OnHasValue Then
-                ContentString = String.Join(CrLf, ContentLines.ToArray())
+                ContentString = String.Join(CrLf, ContentLines)
             Else
-                ContentString = String.Join(CrLf, ContentLines.Reverse.SkipWhile(Function(Line) Line = "").Reverse.ToArray())
+                ContentString = String.Join(CrLf, ContentLines.Reverse().SkipWhile(Function(Line) Line = "").Reverse())
             End If
             Dim Content = Mark(New FreeContent With {.Text = ContentString}, ChildLines)
             Return Mark(New MultiLineComment With {.SingleLineComment = SingleLineComment, .Content = Content, .EndDirective = EndDirective}, Lines)
@@ -473,7 +473,7 @@ Namespace Texting.TreeFormat
                 Nodes.Add(TableLineNodeResult.Value)
                 CurrentRemainingChars = TableLineNodeResult.RemainingChars
             End While
-            Return Mark(New TableLine With {.Nodes = Nodes.ToArray(), .SingleLineComment = SingleLineComment}, Line.Range)
+            Return Mark(New TableLine With {.Nodes = Nodes, .SingleLineComment = SingleLineComment}, Line.Range)
         End Function
 
         Private Function ParseSingleLineNodeLine(ByVal Line As TextLine, ByVal FirstToken As Token, ByVal RemainingChars As [Optional](Of TextRange)) As SingleLineNodeLine
@@ -506,7 +506,7 @@ Namespace Texting.TreeFormat
                             If l.Count = 0 Then
                                 Return New SyntaxParseResult(Of SingleLineNode) With {.Value = Mark(SingleLineNode.CreateSingleLineLiteral(Head), CreateRange()), .RemainingChars = CurrentRemainingChars}
                             Else
-                                Dim Node = Mark(New SingleLineNodeWithParameters With {.Head = Head, .Children = l.ToArray(), .LastChild = [Optional](Of SingleLineNode).Empty}, CreateRange())
+                                Dim Node = Mark(New SingleLineNodeWithParameters With {.Head = Head, .Children = l, .LastChild = [Optional](Of SingleLineNode).Empty}, CreateRange())
                                 Return New SyntaxParseResult(Of SingleLineNode) With {.Value = Mark(SingleLineNode.CreateSingleLineNodeWithParameters(Node), CreateRange()), .RemainingChars = CurrentRemainingChars}
                             End If
                         End If
@@ -515,7 +515,7 @@ Namespace Texting.TreeFormat
                             If l.Count = 0 Then
                                 Return New SyntaxParseResult(Of SingleLineNode) With {.Value = Mark(SingleLineNode.CreateSingleLineLiteral(Head), CreateRange()), .RemainingChars = FollowingTokenResult.Value.RemainingChars}
                             Else
-                                Dim Node = Mark(New SingleLineNodeWithParameters With {.Head = Head, .Children = l.ToArray(), .LastChild = [Optional](Of SingleLineNode).Empty}, CreateRange())
+                                Dim Node = Mark(New SingleLineNodeWithParameters With {.Head = Head, .Children = l, .LastChild = [Optional](Of SingleLineNode).Empty}, CreateRange())
                                 Return New SyntaxParseResult(Of SingleLineNode) With {.Value = Mark(SingleLineNode.CreateSingleLineNodeWithParameters(Node), CreateRange()), .RemainingChars = FollowingTokenResult.Value.RemainingChars}
                             End If
                         End If
@@ -525,7 +525,7 @@ Namespace Texting.TreeFormat
                                 Dim ChildResult = ParseSingleLineNode(FollowingToken, FollowingTokenResult.Value.RemainingChars)
                                 Dim Child = ChildResult.Value
                                 NodeEndRange = GetRange(FollowingToken)
-                                Dim Node = Mark(New SingleLineNodeWithParameters With {.Head = Head, .Children = l.ToArray(), .LastChild = Child}, CreateRange())
+                                Dim Node = Mark(New SingleLineNodeWithParameters With {.Head = Head, .Children = l, .LastChild = Child}, CreateRange())
                                 Return New SyntaxParseResult(Of SingleLineNode) With {.Value = Mark(SingleLineNode.CreateSingleLineNodeWithParameters(Node), CreateRange()), .RemainingChars = ChildResult.RemainingChars}
                             Case TokenTag.LeftParenthesis
                                 Dim ChildResult = ParseParenthesisNode(FollowingToken, FollowingTokenResult.Value.RemainingChars)
@@ -537,7 +537,7 @@ Namespace Texting.TreeFormat
                                 If l.Count = 0 Then
                                     Return New SyntaxParseResult(Of SingleLineNode) With {.Value = Mark(SingleLineNode.CreateSingleLineLiteral(Head), CreateRange()), .RemainingChars = CurrentRemainingChars}
                                 Else
-                                    Dim Node = Mark(New SingleLineNodeWithParameters With {.Head = Head, .Children = l.ToArray(), .LastChild = [Optional](Of SingleLineNode).Empty}, CreateRange())
+                                    Dim Node = Mark(New SingleLineNodeWithParameters With {.Head = Head, .Children = l, .LastChild = [Optional](Of SingleLineNode).Empty}, CreateRange())
                                     Return New SyntaxParseResult(Of SingleLineNode) With {.Value = Mark(SingleLineNode.CreateSingleLineNodeWithParameters(Node), CreateRange()), .RemainingChars = CurrentRemainingChars}
                                 End If
                             Case Else
@@ -664,7 +664,7 @@ Namespace Texting.TreeFormat
                 ParameterRange = New TextRange With {.Start = ParametersStart.Value, .End = ParameterEnd.Value}
             End If
             Dim FunctionRange = CreateRange()
-            Dim F = Mark(New SingleLineFunctionNode With {.FunctionDirective = FunctionDirective, .Parameters = l.ToArray()}, FunctionRange)
+            Dim F = Mark(New SingleLineFunctionNode With {.FunctionDirective = FunctionDirective, .Parameters = l}, FunctionRange)
 
             Dim RawFunctionCallParameters As RawFunctionCallParameters
             If IsTreeParameterFunction(FunctionDirective.Text) Then
@@ -695,7 +695,7 @@ Namespace Texting.TreeFormat
                     Nodes.Add(TableLineNodeResult.Value)
                     CurrentRemainingCharsInTable = TableLineNodeResult.RemainingChars
                 End While
-                RawFunctionCallParameters = Mark(RawFunctionCallParameters.CreateTableParameters(Nodes.ToArray()), ParameterRange)
+                RawFunctionCallParameters = Mark(RawFunctionCallParameters.CreateTableParameters(Nodes), ParameterRange)
             Else
                 RawFunctionCallParameters = Mark(RawFunctionCallParameters.CreateTokenParameters(F.Parameters), ParameterRange)
             End If
