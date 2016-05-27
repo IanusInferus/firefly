@@ -3,7 +3,7 @@
 '  File:        LiteralWriter.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 字面量输出类
-'  Version:     2016.05.26.
+'  Version:     2016.05.27.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -65,7 +65,7 @@ Namespace Texting.TreeFormat
         Private Shared rCrLf As New Regex("\r\n", RegexOptions.ExplicitCapture)
         Private Shared rWildCrOrLf As New Regex("\r(?!\n)|(?<!\r)\n", RegexOptions.ExplicitCapture)
         Private Shared rForbiddenChars As New Regex("[()\f\t\v]", RegexOptions.ExplicitCapture)
-        Private Shared rForbiddenHeadChars As New Regex("^[!%&;=?\^`|~]", RegexOptions.ExplicitCapture)
+        Private Shared rForbiddenHeadChars As New Regex("^[!%&;=?\^`|~]|^//", RegexOptions.ExplicitCapture)
         Public Shared Function GetLiteral(ByVal Value As String, ByVal MustSingleLine As Boolean, ByVal MustMultiLine As Boolean) As Literal
             If Value Is Nothing Then
                 If MustMultiLine Then
