@@ -1,4 +1,8 @@
-﻿2016.05.26
+﻿2016.05.27
+Firefly.Core.Texting.TreeFormat:
+修正写入器写入开头为//的字符串，没有使用引用字符串的问题。
+
+2016.05.26
 Firefly.Core.Texting.TreeFormat:
 将数组都替换为List。
 
