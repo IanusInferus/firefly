@@ -1,4 +1,8 @@
-﻿2016.05.27
+﻿2016.06.02
+Firefly.Core.Mapping:
+Tree文件序列化器增加写入时映射携带功能。
+
+2016.05.27
 Firefly.Core.Texting.TreeFormat:
 修正写入器写入开头为//的字符串，没有使用引用字符串的问题。
 
