@@ -3,7 +3,7 @@
 '  File:        TreeSerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Tree序列化类
-'  Version:     2016.05.23.
+'  Version:     2016.06.02.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -28,6 +28,7 @@ Namespace Mapping.TreeText
     End Interface
     Public Interface ITreeWriter
         Function Write(Of T)(ByVal Value As T) As Forest
+        Function Write(Of T)(ByVal Value As KeyValuePair(Of T, Dictionary(Of Object, Object))) As KeyValuePair(Of Forest, Dictionary(Of Object, Object))
     End Interface
     Public Interface ITreeSerializer
         Inherits ITreeReader
@@ -91,7 +92,7 @@ Namespace Mapping.TreeText
         Public Sub PutWriter(Of T)(ByVal Writer As Func(Of T, String))
             WriterResolver.PutWriter(Writer)
         End Sub
-        Public Sub PutReader(Of T)(ByVal Reader As Func(Of Context, T))
+        Public Sub PutReader(Of T)(ByVal Reader As Func(Of NodeContext, T))
             ReaderResolver.PutReader(Reader)
         End Sub
         Public Sub PutWriter(Of T)(ByVal Writer As Func(Of T, Node))
@@ -103,7 +104,7 @@ Namespace Mapping.TreeText
         Public Sub PutWriterTranslator(Of D, M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of D, M))
             WriterResolver.PutWriterTranslator(Translator)
         End Sub
-        Public Sub PutReaderTranslator(Of M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of Context, M))
+        Public Sub PutReaderTranslator(Of M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of NodeContext, M))
             ReaderResolver.PutReaderTranslator(Translator)
         End Sub
         Public Sub PutWriterTranslator(Of M)(ByVal Translator As IProjectorToProjectorRangeTranslator(Of Node, M))
@@ -115,13 +116,18 @@ Namespace Mapping.TreeText
         End Function
         Public Function Read(Of T)(s As KeyValuePair(Of Forest, Dictionary(Of Object, Syntax.FileTextRange))) As KeyValuePair(Of T, Dictionary(Of Object, Syntax.FileTextRange)) Implements ITreeReader.Read
             Dim TargetPositions = New Dictionary(Of Object, Syntax.FileTextRange)
-            Dim m = ReaderCache.ResolveProjector(Of Context, T)()
-            Dim Result = m(New Context With {.Value = s.Key.Nodes.Single(), .SourcePositions = s.Value, .TargetPositions = TargetPositions})
+            Dim m = ReaderCache.ResolveProjector(Of NodeContext, T)()
+            Dim Result = m(New NodeContext With {.Value = s.Key.Nodes.Single(), .SourcePositions = s.Value, .TargetPositions = TargetPositions})
             Return New KeyValuePair(Of T, Dictionary(Of Object, Syntax.FileTextRange))(Result, TargetPositions)
         End Function
         Public Function Write(Of T)(ByVal Value As T) As Forest Implements ITreeWriter.Write
-            Dim m = WriterCache.ResolveProjector(Of T, Node)()
-            Return New Forest With {.Nodes = New List(Of Node) From {m(Value)}}
+            Return Write(Of T)(New KeyValuePair(Of T, Dictionary(Of Object, Object))(Value, New Dictionary(Of Object, Object))).Key
+        End Function
+        Public Function Write(Of T)(ByVal Value As KeyValuePair(Of T, Dictionary(Of Object, Object))) As KeyValuePair(Of Forest, Dictionary(Of Object, Object)) Implements ITreeWriter.Write
+            Dim TargetPositions = New Dictionary(Of Object, Object)
+            Dim m = WriterCache.ResolveProjector(Of Context(Of T), Node)()
+            Dim Result = m(New Context(Of T) With {.Value = Value.Key, .SourceMappings = Value.Value, .TargetMappings = TargetPositions})
+            Return New KeyValuePair(Of Forest, Dictionary(Of Object, Object))(New Forest With {.Nodes = New List(Of Node) From {Result}}, TargetPositions)
         End Function
 
         Public ReadOnly Property CurrentReadingNode As Node
@@ -168,18 +174,18 @@ Namespace Mapping.TreeText
 
             'Reader
             'proj <- proj
-            'PrimitiveResolver: (String|Context proj Primitive) <- null
+            'PrimitiveResolver: (String|NodeContext proj Primitive) <- null
             'EnumResolver: (String proj Enum) <- null
-            'ContextToStringDomainTranslator: (Context proj R) <- (String proj R)
-            'CollectionUnpacker: (Context proj {R}) <- (Context.SubElement proj R)
-            'FieldOrPropertyProjectorResolver: (Dictionary(String, Context) proj R) <- (Context.SubElement proj R.Field)
-            'ContextProjectorToProjectorDomainTranslator: (Context proj R) <- (Dictionary(String, Context) proj R)
+            'ContextToStringDomainTranslator: (NodeContext proj R) <- (String proj R)
+            'CollectionUnpacker: (Context proj {R}) <- (NodeContext.SubElement proj R)
+            'FieldOrPropertyProjectorResolver: (Dictionary(String, Context) proj R) <- (NodeContext.SubElement proj R.Field)
+            'ContextProjectorToProjectorDomainTranslator: (NodeContext proj R) <- (Dictionary(String, Context) proj R)
 
             ProjectorResolverList = New LinkedList(Of IProjectorResolver)({
                 PrimitiveResolver,
                 New EnumResolver,
                 TranslatorResolver.Create(Root.AsRuntimeDomainNoncircular, New ContextToStringDomainTranslator),
-                New CollectionUnpackerTemplate(Of Context)(New CollectionUnpacker(Root.AsRuntimeDomainNoncircular)),
+                New CollectionUnpackerTemplate(Of NodeContext)(New CollectionUnpacker(Root.AsRuntimeDomainNoncircular)),
                 New RecordUnpackerTemplate(Of ElementUnpackerState)(
                     New FieldProjectorResolver(Root.AsRuntimeDomainNoncircular),
                     New AliasFieldProjectorResolver(Root.AsRuntimeDomainNoncircular),
@@ -196,13 +202,13 @@ Namespace Mapping.TreeText
         Public Sub PutReader(Of T)(ByVal Reader As Func(Of String, T))
             PrimitiveResolver.PutProjector(Reader)
         End Sub
-        Public Sub PutReader(Of T)(ByVal Reader As Func(Of Context, T))
+        Public Sub PutReader(Of T)(ByVal Reader As Func(Of NodeContext, T))
             PrimitiveResolver.PutProjector(Reader)
         End Sub
         Public Sub PutReaderTranslator(Of R, M)(ByVal Translator As IProjectorToProjectorRangeTranslator(Of R, M))
             ProjectorResolverList.AddFirst(TranslatorResolver.Create(Root.AsRuntimeDomainNoncircular, Translator))
         End Sub
-        Public Sub PutReaderTranslator(Of M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of Context, M))
+        Public Sub PutReaderTranslator(Of M)(ByVal Translator As IProjectorToProjectorDomainTranslator(Of NodeContext, M))
             ProjectorResolverList.AddFirst(TranslatorResolver.Create(Root.AsRuntimeDomainNoncircular, Translator))
         End Sub
 
@@ -252,22 +258,26 @@ Namespace Mapping.TreeText
             'proj <- proj/aggr
             'PrimitiveResolver: (Primitive proj String|Node) <- null
             'EnumResolver: (Enum proj String) <- null
-            'NodeToStringRangeTranslator: (D proj Node) <- (D proj String)
-            'NodeAggregatorToProjectorRangeTranslator: (D proj Node) <- (D aggr List(Node))
+            'ContextDomainTranslatorProjectorResolver: (Context(D) proj String) <- (D proj String)
+            'NodeToStringRangeTranslator: (Context(D) proj Node) <- (Context(D) proj String)
+            'NodeAggregatorToProjectorRangeTranslator: (Context(D) proj Node) <- (Context(D) aggr List(Node))
             '
             'Writer
             'aggr <- proj/aggr
-            'CollectionPacker: ({D} aggr Collection(Node)) <- (D proj Node)
-            'FieldOrPropertyAggregatorResolver: (D aggr List(Node)) <- (D.Field proj Node)
-            'NodeProjectorToAggregatorRangeTranslator: (D aggr List(Node)) <- (D proj Node)
+            'ContextDomainTranslatorAggregatorResolver: (Context(D) aggr List(Node)) <- (D aggr List(Node))
+            'CollectionPacker: ({D} aggr Collection(Node)) <- (Context(D) proj Node)
+            'FieldOrPropertyAggregatorResolver: (D aggr List(Node)) <- (Context(D.Field) proj Node)
+            'NodeProjectorToAggregatorRangeTranslator: (Context(D) aggr List(Node)) <- (Context(D) proj Node)
 
             ProjectorResolverList = New LinkedList(Of IProjectorResolver)({
                 PrimitiveResolver,
                 New EnumResolver,
+                New ContextDomainTranslatorProjectorResolver(Root.AsRuntimeDomainNoncircular),
                 TranslatorResolver.Create(Root.AsRuntimeDomainNoncircular, New NodeToStringRangeTranslator),
                 TranslatorResolver.Create(Root.AsRuntimeDomainNoncircular, New NodeAggregatorToProjectorRangeTranslator)
             })
             AggregatorResolverList = New LinkedList(Of IAggregatorResolver)({
+                New ContextDomainTranslatorAggregatorResolver(Root.AsRuntimeDomainNoncircular),
                 New CollectionPackerTemplate(Of ElementPackerState)(New CollectionPacker(Root.AsRuntimeDomainNoncircular)),
                 New RecordPackerTemplate(Of ElementPackerState)(
                     New FieldAggregatorResolver(Root.AsRuntimeDomainNoncircular),
@@ -313,20 +323,39 @@ Namespace Mapping.TreeText
         End Function
     End Module
 
-    Public Class Context
+    Public Class NodeContext
         Public Value As Node
         Public SourcePositions As Dictionary(Of Object, Syntax.FileTextRange)
         Public TargetPositions As Dictionary(Of Object, Syntax.FileTextRange)
     End Class
+    Public Interface IContext
+        ReadOnly Property Value As Object
+        Property SourceMappings As Dictionary(Of Object, Object)
+        Property TargetMappings As Dictionary(Of Object, Object)
+    End Interface
+    Public Class Context(Of T)
+        Implements IContext
+        Public Value As T
+        Private ReadOnly Property ContextValue As Object Implements IContext.Value
+            Get
+                Return Value
+            End Get
+        End Property
+
+        Public Property SourceMappings As Dictionary(Of Object, Object) Implements IContext.SourceMappings
+        Public Property TargetMappings As Dictionary(Of Object, Object) Implements IContext.TargetMappings
+    End Class
     Public Class ElementUnpackerState
-        Public Parent As Context
-        Public List As List(Of Context)
-        Public Dict As Dictionary(Of String, Context)
+        Public Parent As NodeContext
+        Public List As List(Of NodeContext)
+        Public Dict As Dictionary(Of String, NodeContext)
     End Class
     Public Class ElementPackerState
         Public UseParent As Boolean
         Public Parent As Node
         Public List As List(Of Node)
+        Public SourceMappings As Dictionary(Of Object, Object)
+        Public TargetMappings As Dictionary(Of Object, Object)
     End Class
 
     Public Class EnumResolver
@@ -357,18 +386,18 @@ Namespace Mapping.TreeText
     End Class
 
     Public Class CollectionUnpacker
-        Implements IGenericCollectionProjectorResolver(Of Context)
+        Implements IGenericCollectionProjectorResolver(Of NodeContext)
 
-        Public Function ResolveProjector(Of R, RCollection As {New, ICollection(Of R)})() As Func(Of Context, RCollection) Implements IGenericCollectionProjectorResolver(Of Context).ResolveProjector
-            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(Context), GetType(R))), Func(Of Context, R))
+        Public Function ResolveProjector(Of R, RCollection As {New, ICollection(Of R)})() As Func(Of NodeContext, RCollection) Implements IGenericCollectionProjectorResolver(Of NodeContext).ResolveProjector
+            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(NodeContext), GetType(R))), Func(Of NodeContext, R))
             Dim F =
-                Function(Key As Context) As RCollection
+                Function(Key As NodeContext) As RCollection
                     If Key.Value.OnEmpty Then Return Nothing
                     If Key.Value.OnLeaf Then Throw New InvalidOperationException
                     If Key.Value.OnStem Then
                         Dim List = New RCollection()
                         For Each k In Key.Value.Stem.Children
-                            List.Add(Mapper(New Context With {.Value = k, .SourcePositions = Key.SourcePositions, .TargetPositions = Key.TargetPositions}))
+                            List.Add(Mapper(New NodeContext With {.Value = k, .SourcePositions = Key.SourcePositions, .TargetPositions = Key.TargetPositions}))
                         Next
                         Return List
                     Else
@@ -387,12 +416,12 @@ Namespace Mapping.TreeText
         Implements IGenericCollectionAggregatorResolver(Of ElementPackerState)
 
         Public Function ResolveAggregator(Of D, DCollection As ICollection(Of D))() As Action(Of DCollection, ElementPackerState) Implements IGenericCollectionAggregatorResolver(Of ElementPackerState).ResolveAggregator
-            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(Node))), Func(Of D, Node))
+            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(Context(Of D)), GetType(Node))), Func(Of Context(Of D), Node))
             Dim F =
                 Sub(c As DCollection, Value As ElementPackerState)
                     Dim k = 0
                     For Each v In c
-                        Value.List.Add(Mapper(v))
+                        Value.List.Add(Mapper(New Context(Of D) With {.Value = v, .SourceMappings = Value.SourceMappings, .TargetMappings = Value.TargetMappings}))
                         k += 1
                     Next
                 End Sub
@@ -409,18 +438,23 @@ Namespace Mapping.TreeText
         Implements IProjectorToProjectorRangeTranslator(Of Node, String)
 
         Public Function TranslateProjectorToProjectorRange(Of D)(ByVal Projector As Func(Of D, String)) As Func(Of D, Node) Implements IProjectorToProjectorRangeTranslator(Of Node, String).TranslateProjectorToProjectorRange
-            Dim FriendlyName = GetTypeFriendlyName(GetType(D))
+            Dim FriendlyName = GetTypeFriendlyName(GetType(D).GetGenericArguments().Single())
             Return Function(v)
+                       Dim c = DirectCast(v, IContext)
                        Dim s = Projector(v)
-                       Return Node.CreateStem(New Stem With {.Name = FriendlyName, .Children = New List(Of Node) From {Node.CreateLeaf(s)}})
+                       Dim x = Node.CreateStem(New Stem With {.Name = FriendlyName, .Children = New List(Of Node) From {Node.CreateLeaf(s)}})
+                       If c.SourceMappings.ContainsKey(c.Value) Then
+                           c.TargetMappings.Add(x, c.SourceMappings(c.Value))
+                       End If
+                       Return x
                    End Function
         End Function
     End Class
 
     Public Class ContextToStringDomainTranslator
-        Implements IProjectorToProjectorDomainTranslator(Of Context, String)
+        Implements IProjectorToProjectorDomainTranslator(Of NodeContext, String)
 
-        Public Function TranslateProjectorToProjectorDomain(Of R)(ByVal Projector As Func(Of String, R)) As Func(Of Context, R) Implements IProjectorToProjectorDomainTranslator(Of Context, String).TranslateProjectorToProjectorDomain
+        Public Function TranslateProjectorToProjectorDomain(Of R)(ByVal Projector As Func(Of String, R)) As Func(Of NodeContext, R) Implements IProjectorToProjectorDomainTranslator(Of NodeContext, String).TranslateProjectorToProjectorDomain
             Return Function(v)
                        If v.Value.OnEmpty Then Return Nothing
                        If v.Value.OnLeaf Then Throw New InvalidOperationException
@@ -432,20 +466,20 @@ Namespace Mapping.TreeText
     End Class
 
     Public Class ContextProjectorToProjectorDomainTranslator
-        Implements IProjectorToProjectorDomainTranslator(Of Context, ElementUnpackerState)
+        Implements IProjectorToProjectorDomainTranslator(Of NodeContext, ElementUnpackerState)
 
-        Public Function TranslateProjectorToProjectorDomain(Of R)(ByVal Projector As Func(Of ElementUnpackerState, R)) As Func(Of Context, R) Implements IProjectorToProjectorDomainTranslator(Of Context, ElementUnpackerState).TranslateProjectorToProjectorDomain
+        Public Function TranslateProjectorToProjectorDomain(Of R)(ByVal Projector As Func(Of ElementUnpackerState, R)) As Func(Of NodeContext, R) Implements IProjectorToProjectorDomainTranslator(Of NodeContext, ElementUnpackerState).TranslateProjectorToProjectorDomain
             Return Function(Element) As R
                        If Element.Value.OnEmpty Then Return Nothing
                        If Element.Value.OnLeaf Then Throw New InvalidOperationException
                        If Element.Value.OnStem Then
-                           Dim l As New List(Of Context)
-                           Dim d As New Dictionary(Of String, Context)(StringComparer.OrdinalIgnoreCase)
+                           Dim l As New List(Of NodeContext)
+                           Dim d As New Dictionary(Of String, NodeContext)(StringComparer.OrdinalIgnoreCase)
                            For Each e In Element.Value.Stem.Children
                                If e.OnEmpty Then Continue For
                                If Not e.OnStem Then Throw New InvalidOperationException
                                Dim LocalName = e.Stem.Name
-                               Dim c = New Context With {.Value = e, .SourcePositions = Element.SourcePositions, .TargetPositions = Element.TargetPositions}
+                               Dim c = New NodeContext With {.Value = e, .SourcePositions = Element.SourcePositions, .TargetPositions = Element.TargetPositions}
                                l.Add(c)
                                If Not d.ContainsKey(LocalName) Then
                                    d.Add(LocalName, c)
@@ -469,12 +503,13 @@ Namespace Mapping.TreeText
         Implements IAggregatorToProjectorRangeTranslator(Of Node, ElementPackerState)
 
         Public Function TranslateAggregatorToProjectorRange(Of D)(ByVal Aggregator As Action(Of D, ElementPackerState)) As Func(Of D, Node) Implements IAggregatorToProjectorRangeTranslator(Of Node, ElementPackerState).TranslateAggregatorToProjectorRange
-            Dim FriendlyName = GetTypeFriendlyName(GetType(D))
+            Dim FriendlyName = GetTypeFriendlyName(GetType(D).GetGenericArguments().Single())
             Return Function(v)
+                       Dim c = DirectCast(v, IContext)
                        Dim x As Node
                        Dim l As New List(Of Node)
                        If v IsNot Nothing Then
-                           Dim s As New ElementPackerState With {.UseParent = False, .Parent = Nothing, .List = l}
+                           Dim s As New ElementPackerState With {.UseParent = False, .Parent = Nothing, .List = l, .SourceMappings = c.SourceMappings, .TargetMappings = c.TargetMappings}
                            Aggregator(v, s)
                            If s.UseParent Then
                                x = s.Parent
@@ -487,6 +522,9 @@ Namespace Mapping.TreeText
                        Else
                            x = Node.CreateStem(New Stem With {.Name = FriendlyName, .Children = Nothing})
                        End If
+                       If c.SourceMappings.ContainsKey(c.Value) Then
+                           c.TargetMappings.Add(x, c.SourceMappings(c.Value))
+                       End If
                        Return x
                    End Function
         End Function
@@ -496,16 +534,71 @@ Namespace Mapping.TreeText
         Implements IProjectorToAggregatorRangeTranslator(Of ElementPackerState, Node)
 
         Public Function TranslateProjectorToAggregatorRange(Of D)(ByVal Projector As Func(Of D, Node)) As Action(Of D, ElementPackerState) Implements IProjectorToAggregatorRangeTranslator(Of ElementPackerState, Node).TranslateProjectorToAggregatorRange
-            Dim FriendlyName = GetTypeFriendlyName(GetType(D))
             Return Sub(v, s) s.List.Add(Projector(v))
         End Function
+    End Class
+
+    Public Class ContextDomainTranslatorProjectorResolver
+        Implements IProjectorResolver
+
+        Public Shared Function ContextUnpack(Of D)(ByVal Inner As Func(Of D, String)) As Func(Of Context(Of D), String)
+            Return Function(ByVal c As Context(Of D)) Inner(c.Value)
+        End Function
+
+        Public Function TryResolveProjector(TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IProjectorResolver.TryResolveProjector
+            Dim DomainType = TypePair.Key
+            Dim RangeType = TypePair.Value
+            If DomainType.IsGenericType() AndAlso DomainType.GetGenericTypeDefinition() Is GetType(Context(Of )) AndAlso RangeType Is GetType(String) Then
+                Dim InnerDomainType = DomainType.GetGenericArguments().Single()
+                Dim Inner = InnerResolver.TryResolveProjector(New KeyValuePair(Of Type, Type)(InnerDomainType, RangeType))
+                If Inner Is Nothing Then Return Nothing
+                Dim DummyMethod = DirectCast(AddressOf ContextUnpack(Of DummyType), Func(Of Func(Of DummyType, String), Func(Of Context(Of DummyType), String)))
+                Dim m = DummyMethod.MakeDelegateMethodFromDummy(InnerDomainType)
+                Dim d = m.StaticDynamicInvoke(Of [Delegate], [Delegate])(Inner)
+                Return d
+            End If
+            Return Nothing
+        End Function
+
+        Private InnerResolver As IProjectorResolver
+        Public Sub New(ByVal Resolver As IProjectorResolver)
+            Me.InnerResolver = Resolver
+        End Sub
+    End Class
+
+    Public Class ContextDomainTranslatorAggregatorResolver
+        Implements IAggregatorResolver
+
+        Public Shared Function ContextUnpack(Of D)(ByVal Inner As Action(Of D, ElementPackerState)) As Action(Of Context(Of D), ElementPackerState)
+            Return Sub(ByVal c As Context(Of D), ByVal s As ElementPackerState) Inner(c.Value, s)
+        End Function
+
+        Public Function TryResolveAggregator(TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IAggregatorResolver.TryResolveAggregator
+            Dim DomainType = TypePair.Key
+            Dim RangeType = TypePair.Value
+            If DomainType.IsGenericType() AndAlso DomainType.GetGenericTypeDefinition() Is GetType(Context(Of )) AndAlso RangeType Is GetType(ElementPackerState) Then
+                Dim InnerDomainType = DomainType.GetGenericArguments().Single()
+                Dim Inner = InnerResolver.TryResolveAggregator(New KeyValuePair(Of Type, Type)(InnerDomainType, RangeType))
+                If Inner Is Nothing Then Return Nothing
+                Dim DummyMethod = DirectCast(AddressOf ContextUnpack(Of DummyType), Func(Of Action(Of DummyType, ElementPackerState), Action(Of Context(Of DummyType), ElementPackerState)))
+                Dim m = DummyMethod.MakeDelegateMethodFromDummy(InnerDomainType)
+                Dim d = m.StaticDynamicInvoke(Of [Delegate], [Delegate])(Inner)
+                Return d
+            End If
+            Return Nothing
+        End Function
+
+        Private InnerResolver As IAggregatorResolver
+        Public Sub New(ByVal Resolver As IAggregatorResolver)
+            Me.InnerResolver = Resolver
+        End Sub
     End Class
 
     Public Class FieldProjectorResolver
         Implements IFieldProjectorResolver(Of ElementUnpackerState)
 
         Private Function Resolve(Of R)(ByVal Name As String) As Func(Of ElementUnpackerState, R)
-            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(Context), GetType(R))), Func(Of Context, R))
+            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(NodeContext), GetType(R))), Func(Of NodeContext, R))
             Dim F =
                 Function(s As ElementUnpackerState) As R
                     Dim d = s.Dict
@@ -550,10 +643,10 @@ Namespace Mapping.TreeText
         Implements IFieldAggregatorResolver(Of ElementPackerState)
 
         Private Function Resolve(Of D)(ByVal Name As String) As Action(Of D, ElementPackerState)
-            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(Node))), Func(Of D, Node))
+            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(Context(Of D)), GetType(Node))), Func(Of Context(Of D), Node))
             Dim F =
                 Sub(k As D, s As ElementPackerState)
-                    Dim e = Mapper(k)
+                    Dim e = Mapper(New Context(Of D) With {.Value = k, .SourceMappings = s.SourceMappings, .TargetMappings = s.TargetMappings})
                     e.Stem.Name = Name
                     s.List.Add(e)
                 End Sub
@@ -584,7 +677,7 @@ Namespace Mapping.TreeText
         Implements IAliasFieldProjectorResolver(Of ElementUnpackerState)
 
         Private Function Resolve(Of R)() As Func(Of ElementUnpackerState, R)
-            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(Context), GetType(R))), Func(Of Context, R))
+            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(NodeContext), GetType(R))), Func(Of NodeContext, R))
             Dim F =
                 Function(s As ElementUnpackerState) As R
                     Return Mapper(s.Parent)
@@ -607,10 +700,10 @@ Namespace Mapping.TreeText
         Implements IAliasFieldAggregatorResolver(Of ElementPackerState)
 
         Private Function Resolve(Of D)() As Action(Of D, ElementPackerState)
-            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(Node))), Func(Of D, Node))
+            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(Context(Of D)), GetType(Node))), Func(Of Context(Of D), Node))
             Dim F =
                 Sub(k As D, s As ElementPackerState)
-                    Dim e = Mapper(k)
+                    Dim e = Mapper(New Context(Of D) With {.Value = k, .SourceMappings = s.SourceMappings, .TargetMappings = s.TargetMappings})
                     s.UseParent = True
                     s.Parent = e
                 End Sub
@@ -680,7 +773,7 @@ Namespace Mapping.TreeText
         Implements ITaggedUnionAlternativeProjectorResolver(Of ElementUnpackerState)
 
         Private Function Resolve(Of R)(ByVal Name As String) As Func(Of ElementUnpackerState, R)
-            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(Context), GetType(R))), Func(Of Context, R))
+            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(NodeContext), GetType(R))), Func(Of NodeContext, R))
             Dim F =
                 Function(s As ElementUnpackerState) As R
                     Dim d = s.Dict
@@ -725,10 +818,10 @@ Namespace Mapping.TreeText
         Implements ITaggedUnionAlternativeAggregatorResolver(Of ElementPackerState)
 
         Private Function Resolve(Of D)(ByVal Name As String) As Action(Of D, ElementPackerState)
-            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(Node))), Func(Of D, Node))
+            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(Context(Of D)), GetType(Node))), Func(Of Context(Of D), Node))
             Dim F =
                 Sub(k As D, s As ElementPackerState)
-                    Dim e = Mapper(k)
+                    Dim e = Mapper(New Context(Of D) With {.Value = k, .SourceMappings = s.SourceMappings, .TargetMappings = s.TargetMappings})
                     e.Stem.Name = Name
                     s.List.Add(e)
                 End Sub
@@ -759,7 +852,7 @@ Namespace Mapping.TreeText
         Implements ITupleElementProjectorResolver(Of ElementUnpackerState)
 
         Private Function Resolve(Of R)(ByVal Index As Integer) As Func(Of ElementUnpackerState, R)
-            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(Context), GetType(R))), Func(Of Context, R))
+            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(NodeContext), GetType(R))), Func(Of NodeContext, R))
             Dim F =
                 Function(s As ElementUnpackerState) As R
                     Dim l = s.List
@@ -790,10 +883,11 @@ Namespace Mapping.TreeText
         Implements ITupleElementAggregatorResolver(Of ElementPackerState)
 
         Private Function Resolve(Of D)(ByVal Index As Integer) As Action(Of D, ElementPackerState)
-            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(D), GetType(Node))), Func(Of D, Node))
+            Dim Mapper = DirectCast(InnerResolver.ResolveProjector(CreatePair(GetType(Context(Of D)), GetType(Node))), Func(Of Context(Of D), Node))
             Dim F =
                 Sub(k As D, s As ElementPackerState)
-                    s.List.Add(Mapper(k))
+                    Dim e = Mapper(New Context(Of D) With {.Value = k, .SourceMappings = s.SourceMappings, .TargetMappings = s.TargetMappings})
+                    s.List.Add(e)
                 End Sub
             Return F
         End Function
@@ -864,7 +958,7 @@ Namespace Mapping.TreeText
         End Sub
 
         Private CurrentReadingNodeValue As Node
-        Private Sub SetCurrentNode(ByVal c As Context)
+        Private Sub SetCurrentNode(ByVal c As NodeContext)
             CurrentReadingNodeValue = c.Value
         End Sub
         Public ReadOnly Property CurrentReadingNode As Node
@@ -875,11 +969,11 @@ Namespace Mapping.TreeText
 
         Public Function TryResolveProjector(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IProjectorResolver.TryResolveProjector
             Dim m = InnerResolver.TryResolveProjector(TypePair)
-            If TypePair.Key IsNot GetType(Context) Then Return m
+            If TypePair.Key IsNot GetType(NodeContext) Then Return m
             If m Is Nothing Then Return Nothing
 
             Dim Parameters = m.GetParameters().Select(Function(p) Expression.Parameter(p.Type, p.Name)).ToArray()
-            Dim DebugDelegate = DirectCast(DirectCast(AddressOf Me.SetCurrentNode, Action(Of Context)), [Delegate])
+            Dim DebugDelegate = DirectCast(DirectCast(AddressOf Me.SetCurrentNode, Action(Of NodeContext)), [Delegate])
             Dim DebugCall = CreatePair(DebugDelegate, New Expression() {Parameters.First})
             Dim OriginalCall = CreatePair(m, Parameters.Select(Function(p) DirectCast(p, Expression)).ToArray())
             Dim Context = CreateDelegateExpressionContext({DebugCall, OriginalCall})
@@ -890,11 +984,11 @@ Namespace Mapping.TreeText
 
         Public Function TryResolveAggregator(ByVal TypePair As KeyValuePair(Of Type, Type)) As [Delegate] Implements IAggregatorResolver.TryResolveAggregator
             Dim m = InnerResolver.TryResolveAggregator(TypePair)
-            If TypePair.Key IsNot GetType(Context) Then Return m
+            If TypePair.Key IsNot GetType(NodeContext) Then Return m
             If m Is Nothing Then Return Nothing
 
             Dim Parameters = m.GetParameters().Select(Function(p) Expression.Parameter(p.Type, p.Name)).ToArray()
-            Dim DebugDelegate = DirectCast(DirectCast(AddressOf Me.SetCurrentNode, Action(Of Context)), [Delegate])
+            Dim DebugDelegate = DirectCast(DirectCast(AddressOf Me.SetCurrentNode, Action(Of NodeContext)), [Delegate])
             Dim DebugCall = CreatePair(DebugDelegate, New Expression() {Parameters.First})
             Dim OriginalCall = CreatePair(m, Parameters.Select(Function(p) DirectCast(p, Expression)).ToArray())
             Dim Context = CreateDelegateExpressionContext({DebugCall, OriginalCall})
