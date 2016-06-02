@@ -31,6 +31,7 @@
     <DefineTrace>true</DefineTrace>
     <OutputPath>..\..\Bin\</OutputPath>
     <DocumentationFile>Firefly.Core.xml</DocumentationFile>
+    <BaseIntermediateOutputPath>..\..\Obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
     <NoWarn>42015</NoWarn>
     <WarningsAsErrors>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036</WarningsAsErrors>
     <RunCodeAnalysis>false</RunCodeAnalysis>
@@ -43,6 +44,7 @@
     <Optimize>true</Optimize>
     <OutputPath>..\..\Bin\</OutputPath>
     <DocumentationFile>Firefly.Core.xml</DocumentationFile>
+    <BaseIntermediateOutputPath>..\..\Obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
     <NoWarn>42015</NoWarn>
     <WarningsAsErrors>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036</WarningsAsErrors>
   </PropertyGroup>

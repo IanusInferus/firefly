@@ -1,12 +1,6 @@
 @rd "FireflyCore\My Project" /S /Q
-@for /d %%a in (*) do @(
-  @if exist %%a\obj @(
-    @rd %%a\obj /S /Q
-  )
-)
-@cd..
-@if exist Bin (
-  @cd Bin
+@if exist ..\Bin (
+  @pushd ..\Bin
   @for %%a in (*.exe;*.dll) do @(
     @echo %%a | findstr /R "Firefly\..*\.dll" > nul
     @if errorlevel 1 @(
@@ -19,8 +13,6 @@
   @del *.CodeAnalysisLog.xml /F /Q
   @del *.lastcodeanalysissucceeded /F /Q
   @del Test.* /F /S /Q
-  @cd..
+  @popd
 )
-@cd Src
-@del *.cache /F /Q
 @pause
