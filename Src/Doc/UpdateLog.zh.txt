@@ -1,6 +1,8 @@
 ﻿2016.06.02
 Firefly.Core.Mapping:
 Tree文件序列化器增加写入时映射携带功能。
+*:
+将obj中间文件夹移出Src文件夹。
 
 2016.05.27
 Firefly.Core.Texting.TreeFormat:
