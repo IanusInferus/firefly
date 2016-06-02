@@ -32,6 +32,7 @@
     <DefineTrace>true</DefineTrace>
     <OutputPath>..\..\Bin\</OutputPath>
     <DocumentationFile>RegexRename.xml</DocumentationFile>
+    <BaseIntermediateOutputPath>..\..\Obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
     <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -41,6 +42,7 @@
     <Optimize>true</Optimize>
     <OutputPath>..\..\Bin\</OutputPath>
     <DocumentationFile>RegexRename.xml</DocumentationFile>
+    <BaseIntermediateOutputPath>..\..\Obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
     <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
   </PropertyGroup>
   <ItemGroup>
