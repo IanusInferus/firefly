@@ -3,7 +3,7 @@
 '  File:        MetaProgramming.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 元编程
-'  Version:     2016.05.20.
+'  Version:     2016.07.25.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -153,7 +153,7 @@ Namespace Mapping.MetaProgramming
             Dim FieldsAndProperties = FieldMembers.Concat(PropertyMembers).OrderBy(Function(f) MemberToIndex(f.Member)).ToArray
             If Type.IsValueType Then
                 If FieldsAndProperties.Length = 0 Then
-                    If Type.GetCustomAttributes(GetType(RecordAttribute), False).Length = 0 Then Return Nothing
+                    If Type.GetCustomAttributes(GetType(RecordAttribute), False).Length = 0 AndAlso Not Type.GetCustomAttributes(False).OfType(Of Attribute)().Any(Function(a) a.GetType().Name = "RecordAttribute") Then Return Nothing
                 End If
             End If
 
@@ -186,7 +186,7 @@ Namespace Mapping.MetaProgramming
             Dim FieldsAndProperties = FieldMembers.Concat(PropertyMembers).OrderBy(Function(f) MemberToIndex(f.Member)).ToArray
             If Type.IsValueType Then
                 If FieldsAndProperties.Length = 0 Then
-                    If Type.GetCustomAttributes(GetType(RecordAttribute), False).Length = 0 Then Return Nothing
+                    If Type.GetCustomAttributes(GetType(RecordAttribute), False).Length = 0 AndAlso Not Type.GetCustomAttributes(False).OfType(Of Attribute)().Any(Function(a) a.GetType().Name = "RecordAttribute") Then Return Nothing
                 End If
             End If
 
@@ -194,7 +194,7 @@ Namespace Mapping.MetaProgramming
         End Function
 
         <Extension()> Public Function TryGetMutableAliasInfo(ByVal Type As Type) As MutableAliasInfo
-            If Type.GetCustomAttributes(GetType(AliasAttribute), False).Length = 0 Then Return Nothing
+            If Type.GetCustomAttributes(GetType(AliasAttribute), False).Length = 0 AndAlso Not Type.GetCustomAttributes(False).OfType(Of Attribute)().Any(Function(a) a.GetType().Name = "AliasAttribute") Then Return Nothing
 
             Dim Info = Type.TryGetMutableRecordInfo()
             If Info.Members.Length <> 1 Then Return Nothing
@@ -202,10 +202,10 @@ Namespace Mapping.MetaProgramming
         End Function
 
         <Extension()> Public Function TryGetMutableTaggedUnionInfo(ByVal Type As Type) As MutableTaggedUnionInfo
-            If Type.GetCustomAttributes(GetType(TaggedUnionAttribute), False).Length = 0 Then Return Nothing
+            If Type.GetCustomAttributes(GetType(TaggedUnionAttribute), False).Length = 0 AndAlso Not Type.GetCustomAttributes(False).OfType(Of Attribute)().Any(Function(a) a.GetType().Name = "TaggedUnionAttribute") Then Return Nothing
 
             Dim Info = Type.TryGetMutableRecordInfo()
-            Dim TagMembers = Info.Members.Where(Function(m) m.Member.GetCustomAttributes(GetType(TagAttribute), False).Length > 0).ToArray()
+            Dim TagMembers = Info.Members.Where(Function(m) (m.Member.GetCustomAttributes(GetType(TagAttribute), False).Length > 0) OrElse (m.Member.GetCustomAttributes(False).OfType(Of Attribute)().Any(Function(a) a.GetType().Name = "TagAttribute"))).ToArray()
             If TagMembers.Length <> 1 Then Return Nothing
             Dim TagMember = TagMembers.Single
             If Not TagMember.Type.IsEnum Then Return Nothing
@@ -217,7 +217,7 @@ Namespace Mapping.MetaProgramming
         End Function
 
         <Extension()> Public Function TryGetMutableTupleInfo(ByVal Type As Type) As MutableTupleInfo
-            If Type.GetCustomAttributes(GetType(TupleAttribute), False).Length = 0 Then Return Nothing
+            If Type.GetCustomAttributes(GetType(TupleAttribute), False).Length = 0 AndAlso Not Type.GetCustomAttributes(False).OfType(Of Attribute)().Any(Function(a) a.GetType().Name = "TupleAttribute") Then Return Nothing
 
             Dim Info = Type.TryGetMutableRecordInfo()
             Return New MutableTupleInfo With {.Members = Info.Members}

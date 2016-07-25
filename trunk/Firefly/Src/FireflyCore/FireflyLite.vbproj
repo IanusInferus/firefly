@@ -1,0 +1,138 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{9A64F9F8-2937-413C-9D89-FD50F66FB4C0}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Firefly</RootNamespace>
+    <AssemblyName>Firefly.Lite</AssemblyName>
+    <FileAlignment>512</FileAlignment>
+    <MyType>Windows</MyType>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <OptionExplicit>On</OptionExplicit>
+    <OptionCompare>Binary</OptionCompare>
+    <OptionStrict>On</OptionStrict>
+    <OptionInfer>On</OptionInfer>
+    <VBRuntime>Embed</VBRuntime>
+    <SignAssembly>false</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(FLTKey)</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" Exists('$(FLTKey)') ">
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <DefineDebug>true</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <OutputPath>..\..\Bin\</OutputPath>
+    <DocumentationFile>Firefly.Lite.xml</DocumentationFile>
+    <BaseIntermediateOutputPath>..\..\Obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+    <NoWarn>42015</NoWarn>
+    <WarningsAsErrors>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036</WarningsAsErrors>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>CodeAnalysisRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <DefineDebug>false</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\Bin\</OutputPath>
+    <DocumentationFile>Firefly.Lite.xml</DocumentationFile>
+    <BaseIntermediateOutputPath>..\..\Obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+    <NoWarn>42015</NoWarn>
+    <WarningsAsErrors>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036</WarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyInfoLite.vb" />
+    <Compile Include="Core\NumericStrings.vb" />
+    <Compile Include="Mapping\BinarySerializer.vb" />
+    <Compile Include="Mapping\DebuggerDisplayer.vb" />
+    <Compile Include="Mapping\MetaSchema.vb" />
+    <Compile Include="Mapping\TreeSerializer.vb" />
+    <Compile Include="Streaming\BitStream.vb" />
+    <Compile Include="Core\CommandLine.vb" />
+    <Compile Include="Core\Counter.vb" />
+    <Compile Include="Core\ListPartStringEx.vb" />
+    <Compile Include="Core\ListPart.vb" />
+    <Compile Include="Core\Enumerators.vb" />
+    <Compile Include="Core\N32.vb" />
+    <Compile Include="Mapping\Mapping.vb" />
+    <Compile Include="Streaming\StreamAdapters.vb" />
+    <Compile Include="Streaming\StreamComplex.vb" />
+    <Compile Include="Streaming\StreamFloats.vb" />
+    <Compile Include="Streaming\StreamInts.vb" />
+    <Compile Include="Core\StringEx.vb" />
+    <Compile Include="Core\CollectionOperations.vb" />
+    <Compile Include="Core\BitOperations.vb" />
+    <Compile Include="Core\ExceptionInfo.vb" />
+    <Compile Include="Core\NumericOperations.vb" />
+    <Compile Include="Streaming\StreamPasser.vb" />
+    <Compile Include="Core\StringDescape.vb" />
+    <Compile Include="Streaming\ArrayStream.vb" />
+    <Compile Include="Streaming\ByteArrayStream.vb" />
+    <Compile Include="Core\ListStringEx.vb" />
+    <Compile Include="Mapping\ResolverTemplates.vb" />
+    <Compile Include="Mapping\TranslatorResolvers.vb" />
+    <Compile Include="Mapping\XmlSerializer.vb" />
+    <Compile Include="GlobalSuppressions.vb" />
+    <Compile Include="Mapping\MetaProgramming.vb" />
+    <Compile Include="Streaming\StreamInterfaces.vb" />
+    <Compile Include="TextEncoding\ControlChars.vb" />
+    <Compile Include="TextEncoding\Encoding.vb" />
+    <Compile Include="TextEncoding\EncodingString.vb" />
+    <Compile Include="Core\CRC32.vb" />
+    <Compile Include="Core\DirectIntConvert.vb" />
+    <Compile Include="Core\Indexer.vb" />
+    <Compile Include="Core\FileLengthUtility.vb" />
+    <Compile Include="Core\FileNameHandling.vb" />
+    <Compile Include="Streaming\PartialStreams.vb" />
+    <Compile Include="Streaming\Streams.vb" />
+    <Compile Include="Texting\HalfWidth.vb" />
+    <Compile Include="TextEncoding\MultiByteEncoding.vb" />
+    <Compile Include="TextEncoding\TblCharMappingFile.vb" />
+    <Compile Include="TextEncoding\Char32.vb" />
+    <Compile Include="TextEncoding\StringCode.vb" />
+    <Compile Include="Core\Tokenizer.vb" />
+    <Compile Include="Texting\StringDiff.vb" />
+    <Compile Include="Texting\TextExceptions.vb" />
+    <Compile Include="Texting\TreeFormat\Evaluator.vb" />
+    <Compile Include="Texting\TreeFormat\Exceptions.vb" />
+    <Compile Include="Texting\TreeFormat\Optional.vb" />
+    <Compile Include="Texting\TreeFormat\Result.vb" />
+    <Compile Include="Texting\TreeFormat\Semantics.vb" />
+    <Compile Include="Texting\TreeFormat\Syntax.vb" />
+    <Compile Include="Texting\TreeFormat\SyntaxParser.vb" />
+    <Compile Include="Texting\TreeFormat\SyntaxWriter.vb" />
+    <Compile Include="Texting\TreeFormat\TokenParser.vb" />
+    <Compile Include="Texting\TreeFormat\LiteralWriter.vb" />
+    <Compile Include="Texting\TreeFormat\TreeFile.vb" />
+    <Compile Include="Texting\TreeFormat\TreeFile1.vb" />
+    <Compile Include="Texting\TreeFormat\Writer.vb" />
+    <Compile Include="Texting\TreeFormat\XmlInterop.vb" />
+    <Compile Include="Texting\Txt.vb" />
+    <Compile Include="Texting\XmlFile.vb" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="My Project\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.VisualBasic.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
