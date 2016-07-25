@@ -94,9 +94,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\FireflyCore\FireflyCore.vbproj">
-      <Project>{1DE5CF1F-2526-4520-87D8-B1B1B8D1F214}</Project>
-      <Name>FireflyCore</Name>
+    <ProjectReference Include="..\FireflyCore\FireflyLite.vbproj">
+      <Project>{9a64f9f8-2937-413c-9d89-fd50f66fb4c0}</Project>
+      <Name>FireflyLite</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.VisualBasic.targets" />

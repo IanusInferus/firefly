@@ -8,17 +8,17 @@ Imports System.Runtime.InteropServices
 
 ' 检查程序集的特性值
 
-<Assembly: AssemblyTitle("Firefly.Core")>
-<Assembly: AssemblyDescription("萤火虫框架核心库")>
-<Assembly: AssemblyCompany("")> 
-<Assembly: AssemblyProduct("Firefly.Core")>
+<Assembly: AssemblyTitle("Firefly.Lite")>
+<Assembly: AssemblyDescription("萤火虫框架核心库精简版")>
+<Assembly: AssemblyCompany("")>
+<Assembly: AssemblyProduct("Firefly.Lite")>
 <Assembly: AssemblyCopyright("Copyright(C) F.R.C., under BSD license")>
 <Assembly: AssemblyTrademark("")>
 
 <Assembly: ComVisible(True)>
 
 '如果该项目向 COM 公开，则下列 GUID 用于类型库的 ID
-<Assembly: Guid("AB9A5E96-6F8E-4EFF-8DA0-8793B0C5613E")>
+<Assembly: Guid("B4117B09-0561-423B-A739-C537E4996ACB")>
 
 ' 程序集的版本信息由下列 4 个值组成：
 '
