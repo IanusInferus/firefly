@@ -1,4 +1,10 @@
-﻿2016.06.02
+﻿2016.07.25
+Firefly.Core.Mapping:
+去除序列化时对Firefly中标记的要求。
+Firefly.Core:
+增加精简版Firefly.Lite，去除不常用功能。
+
+2016.06.02
 Firefly.Core.Mapping:
 Tree文件序列化器增加写入时映射携带功能。
 *:
