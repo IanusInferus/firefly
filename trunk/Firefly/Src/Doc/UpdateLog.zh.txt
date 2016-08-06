@@ -1,4 +1,8 @@
-﻿2016.07.25
+﻿2016.08.06
+Firefly.Core.Mapping:
+增加对不变Tuple的支持。
+
+2016.07.25
 Firefly.Core.Mapping:
 去除序列化时对Firefly中标记的要求。
 Firefly.Core:

@@ -3,7 +3,7 @@
 '  File:        MetaProgramming.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 元编程
-'  Version:     2016.07.25.
+'  Version:     2016.08.06.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -43,6 +43,10 @@ Namespace Mapping.MetaProgramming
     Public Class MutableTaggedUnionInfo
         Public TagMember As FieldOrPropertyInfo
         Public Members As FieldOrPropertyInfo()
+    End Class
+    Public Class ImmutableTupleInfo
+        Public Members As FieldOrPropertyInfo()
+        Public Constructor As ConstructorInfo
     End Class
     Public Class MutableTupleInfo
         Public Members As FieldOrPropertyInfo()
@@ -216,10 +220,18 @@ Namespace Mapping.MetaProgramming
             Return New MutableTaggedUnionInfo With {.TagMember = TagMember, .Members = Members}
         End Function
 
+        <Extension()> Public Function TryGetImmutableTupleInfo(ByVal Type As Type) As ImmutableTupleInfo
+            If Type.GetCustomAttributes(GetType(TupleAttribute), False).Length = 0 AndAlso Not Type.GetCustomAttributes(False).OfType(Of Attribute)().Any(Function(a) a.GetType().Name = "TupleAttribute") AndAlso Not (Type.Namespace = "System" AndAlso Type.Name.StartsWith("Tuple`")) Then Return Nothing
+
+            Dim Info = Type.TryGetImmutableRecordInfo()
+            If Info Is Nothing Then Return Nothing
+            Return New ImmutableTupleInfo With {.Members = Info.Members, .Constructor = Info.Constructor}
+        End Function
         <Extension()> Public Function TryGetMutableTupleInfo(ByVal Type As Type) As MutableTupleInfo
-            If Type.GetCustomAttributes(GetType(TupleAttribute), False).Length = 0 AndAlso Not Type.GetCustomAttributes(False).OfType(Of Attribute)().Any(Function(a) a.GetType().Name = "TupleAttribute") Then Return Nothing
+            If Type.GetCustomAttributes(GetType(TupleAttribute), False).Length = 0 AndAlso Not Type.GetCustomAttributes(False).OfType(Of Attribute)().Any(Function(a) a.GetType().Name = "TupleAttribute") AndAlso Not (Type.Namespace = "System" AndAlso Type.Name.StartsWith("Tuple`")) Then Return Nothing
 
             Dim Info = Type.TryGetMutableRecordInfo()
+            If Info Is Nothing Then Return Nothing
             Return New MutableTupleInfo With {.Members = Info.Members}
         End Function
 
