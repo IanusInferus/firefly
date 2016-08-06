@@ -3,7 +3,7 @@
 '  File:        ResolverTemplates.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Object映射器解析器
-'  Version:     2011.07.31.
+'  Version:     2016.08.06.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -425,6 +425,14 @@ Namespace Mapping
             Dim DomainType = GetType(D)
             If RangeType.IsValueType OrElse RangeType.IsClass Then
                 Dim FieldsAndProperties As FieldOrPropertyInfo() = Nothing
+                Dim Constructor As ConstructorInfo = Nothing
+                If FieldsAndProperties Is Nothing Then
+                    Dim iri = RangeType.TryGetImmutableTupleInfo()
+                    If iri IsNot Nothing Then
+                        FieldsAndProperties = iri.Members
+                        Constructor = iri.Constructor
+                    End If
+                End If
                 If FieldsAndProperties Is Nothing Then
                     Dim mri = RangeType.TryGetMutableTupleInfo()
                     If mri IsNot Nothing Then FieldsAndProperties = mri.Members
@@ -440,14 +448,21 @@ Namespace Mapping
                 Next
                 Dim Context = CreateDelegateExpressionContext(DelegateCalls)
 
-                Dim CreateThis = Expression.[New](RangeType)
-                Dim MemberBindings As New List(Of MemberBinding)
-                For Each Pair In FieldsAndProperties.ZipStrict(Context.DelegateExpressions, Function(m, e) New With {.Member = m.Member, .MapperCall = e})
-                    MemberBindings.Add(Expression.Bind(Pair.Member, Pair.MapperCall))
-                Next
-                Dim FunctionLambda = Expression.Lambda(Expression.MemberInit(CreateThis, MemberBindings.ToArray()), New ParameterExpression() {dParam})
+                If Constructor IsNot Nothing Then
+                    Dim CreateThis = Expression.[New](Constructor, Context.DelegateExpressions)
+                    Dim FunctionLambda = Expression.Lambda(CreateThis, New ParameterExpression() {dParam})
 
-                Return CreateDelegate(Context.ClosureParam, Context.Closure, FunctionLambda)
+                    Return CreateDelegate(Context.ClosureParam, Context.Closure, FunctionLambda)
+                Else
+                    Dim CreateThis = Expression.[New](RangeType)
+                    Dim MemberBindings As New List(Of MemberBinding)
+                    For Each Pair In FieldsAndProperties.ZipStrict(Context.DelegateExpressions, Function(m, e) New With {.Member = m.Member, .MapperCall = e})
+                        MemberBindings.Add(Expression.Bind(Pair.Member, Pair.MapperCall))
+                    Next
+                    Dim FunctionLambda = Expression.Lambda(Expression.MemberInit(CreateThis, MemberBindings.ToArray()), New ParameterExpression() {dParam})
+
+                    Return CreateDelegate(Context.ClosureParam, Context.Closure, FunctionLambda)
+                End If
             End If
             Return Nothing
         End Function
@@ -631,6 +646,10 @@ Namespace Mapping
                 If Not (DomainType.IsValueType OrElse DomainType.IsClass) Then Return Nothing
 
                 Dim FieldsAndProperties As FieldOrPropertyInfo() = Nothing
+                If FieldsAndProperties Is Nothing Then
+                    Dim iri = DomainType.TryGetImmutableTupleInfo()
+                    If iri IsNot Nothing Then FieldsAndProperties = iri.Members
+                End If
                 If FieldsAndProperties Is Nothing Then
                     Dim mri = DomainType.TryGetMutableTupleInfo()
                     If mri IsNot Nothing Then FieldsAndProperties = mri.Members
