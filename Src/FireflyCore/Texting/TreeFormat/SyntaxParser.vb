@@ -3,7 +3,7 @@
 '  File:        SyntaxParser.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 文法解析器 - 用于从符号转到文法树
-'  Version:     2016.05.26.
+'  Version:     2016.08.22.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -313,7 +313,7 @@ Namespace Texting.TreeFormat
             While CurrentRemainingChars.OnHasValue
                 Dim TokenResult = TreeFormatTokenParser.ReadToken(Text, Positions, CurrentRemainingChars.Value)
                 If Not TokenResult.OnHasValue Then
-                    CurrentRemainingChars = TokenResult.Value.RemainingChars
+                    CurrentRemainingChars = [Optional](Of TextRange).Empty
                     Exit While
                 End If
                 Dim Token = TokenResult.Value.Token
@@ -626,7 +626,7 @@ Namespace Texting.TreeFormat
             While CurrentRemainingChars.OnHasValue
                 Dim TokenResult = TreeFormatTokenParser.ReadToken(Text, Positions, CurrentRemainingChars.Value)
                 If Not TokenResult.OnHasValue Then
-                    CurrentRemainingChars = TokenResult.Value.RemainingChars
+                    CurrentRemainingChars = [Optional](Of TextRange).Empty
                     Exit While
                 End If
                 Dim Token = TokenResult.Value.Token
