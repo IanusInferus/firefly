@@ -1,4 +1,8 @@
-﻿2016.08.06
+﻿2016.08.22
+Firefly.Core.Texting.TreeFormat:
+修正一处格式解析错误。
+
+2016.08.06
 Firefly.Core.Mapping:
 增加对不变Tuple的支持。
 
