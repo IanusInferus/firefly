@@ -3,7 +3,7 @@
 '  File:        SyntaxParser.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 文法解析器 - 用于从符号转到文法树
-'  Version:     2016.08.22.
+'  Version:     2016.09.04.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -513,10 +513,10 @@ Namespace Texting.TreeFormat
                         Dim FollowingTokenResult = TreeFormatTokenParser.ReadToken(Text, Positions, CurrentRemainingChars.Value)
                         If Not FollowingTokenResult.OnHasValue Then
                             If l.Count = 0 Then
-                                Return New SyntaxParseResult(Of SingleLineNode) With {.Value = Mark(SingleLineNode.CreateSingleLineLiteral(Head), CreateRange()), .RemainingChars = FollowingTokenResult.Value.RemainingChars}
+                                Return New SyntaxParseResult(Of SingleLineNode) With {.Value = Mark(SingleLineNode.CreateSingleLineLiteral(Head), CreateRange()), .RemainingChars = [Optional](Of TextRange).Empty}
                             Else
                                 Dim Node = Mark(New SingleLineNodeWithParameters With {.Head = Head, .Children = l, .LastChild = [Optional](Of SingleLineNode).Empty}, CreateRange())
-                                Return New SyntaxParseResult(Of SingleLineNode) With {.Value = Mark(SingleLineNode.CreateSingleLineNodeWithParameters(Node), CreateRange()), .RemainingChars = FollowingTokenResult.Value.RemainingChars}
+                                Return New SyntaxParseResult(Of SingleLineNode) With {.Value = Mark(SingleLineNode.CreateSingleLineNodeWithParameters(Node), CreateRange()), .RemainingChars = [Optional](Of TextRange).Empty}
                             End If
                         End If
                         Dim FollowingToken = FollowingTokenResult.Value.Token
