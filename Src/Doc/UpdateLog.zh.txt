@@ -1,4 +1,8 @@
-﻿2016.08.22
+﻿2016.09.04
+Firefly.Core.Texting.TreeFormat:
+修正一处格式解析错误。
+
+2016.08.22
 Firefly.Core.Texting.TreeFormat:
 修正一处格式解析错误。
 
