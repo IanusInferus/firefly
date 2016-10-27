@@ -3,7 +3,7 @@
 '  File:        PackageBase.vb
 '  Location:    Firefly.Packaging <Visual Basic .Net>
 '  Description: 文件包基类
-'  Version:     2011.02.23.
+'  Version:     2016.10.27.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -178,7 +178,7 @@ Namespace Packaging
         Protected Overridable Sub ExtractSingleInner(ByVal File As FileDB, ByVal sp As NewWritingStreamPasser)
             Dim s = sp.GetStream
             With File
-                Using f = Writable.Partialize(.Address, .Length)
+                Using f = Readable.Partialize(.Address, .Length)
                     s.WriteFromStream(f, f.Length)
                 End Using
             End With
