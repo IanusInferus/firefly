@@ -3,7 +3,7 @@
 '  File:        PackageBase.vb
 '  Location:    Firefly.Packaging <Visual Basic .Net>
 '  Description: 文件包基类
-'  Version:     2016.10.27.
+'  Version:     2017.05.21.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -362,9 +362,8 @@ Namespace Packaging
                             lPaths.Add(Path)
                         End If
                     Case FileDB.FileType.Directory
-                        Dim DirectoryPath = File.Path
-                        If IO.Directory.Exists(DirectoryPath) Then
-                            For Each p In GetFilesAndPaths(File, DirectoryPath, True, Mask)
+                        If IO.Directory.Exists(Path) Then
+                            For Each p In GetFilesAndPaths(File, Path, True, Mask)
                                 lFiles.Add(p.Key)
                                 lPaths.Add(p.Value)
                             Next
