@@ -3,7 +3,7 @@
 '  File:        Bmp.vb
 '  Location:    Firefly.Imaging <Visual Basic .Net>
 '  Description: 基本Bmp文件流类
-'  Version:     2013.05.04.
+'  Version:     2018.09.09.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -220,60 +220,64 @@ Namespace Imaging
         Public Shared Function Open(ByVal sp As NewReadingStreamPasser) As Bmp
             Dim s = sp.GetStream
             Dim bf As New Bmp
-            With bf
-                .Readable = s
-                .Readable.Position = 0
-                For n As Integer = 0 To Identifier.Length - 1
-                    If .Readable.ReadByte() <> AscQ(Identifier(n)) Then
-                        bf.Dispose()
-                        Throw New InvalidDataException
-                    End If
-                Next
-                .Readable.ReadInt32() '跳过File Size
-                .Readable.ReadInt32() '跳过Reserved
-                .Readable.ReadInt32() '跳过Bitmap Data Offset
-                .Readable.ReadInt32() '跳过Bitmap Header Size
-                .PicWidth = .Readable.ReadInt32
-                .PicHeight = .Readable.ReadInt32
-                If .PicWidth < 0 OrElse .PicHeight < 0 Then
-                    bf.Dispose()
-                    Throw New InvalidDataException
-                End If
-                .Readable.ReadInt16() '跳过Planes
-                .PicBitsPerPixel = .Readable.ReadInt16
-                .PicCompression = .Readable.ReadInt32
-                .Readable.ReadInt32() '跳过Bitmap Data Size
-                .Readable.ReadInt32() '跳过HResolution
-                .Readable.ReadInt32() '跳过VResolution
-                .Readable.ReadInt32() '跳过Colors
-                .Readable.ReadInt32() '跳过Important Colors
-
-                If .PicCompression <> 0 Then
-                    If (.PicCompression = 3) AndAlso (.PicBitsPerPixel = 16) Then
-                        .r5g6b5 = CBool(.Readable.ReadInt32() And &H8000) '检验红色掩码是否从最高位开始
-                        .Readable.ReadInt32() '跳过绿色掩码
-                        .Readable.ReadInt32() '跳过蓝色掩码
-                        .Readable.ReadInt32()
-                    Else
-                        bf.Dispose()
-                        Throw New InvalidDataException
-                    End If
-                End If
-
-                If (.PicBitsPerPixel = 1) OrElse (.PicBitsPerPixel = 4) OrElse (.PicBitsPerPixel = 8) Then
-                    .PicPalette = New Int32((1 << .PicBitsPerPixel) - 1) {}
-                    For n As Integer = 0 To (1 << .PicBitsPerPixel) - 1
-                        .PicPalette(n) = .Readable.ReadInt32()
+            Dim Success = False
+            Try
+                With bf
+                    .Readable = s
+                    .Readable.Position = 0
+                    For n As Integer = 0 To Identifier.Length - 1
+                        If .Readable.ReadByte() <> AscQ(Identifier(n)) Then
+                            Throw New InvalidDataException
+                        End If
                     Next
-                ElseIf (.PicBitsPerPixel = 16) OrElse (.PicBitsPerPixel = 24) OrElse (.PicBitsPerPixel = 32) Then
-                Else
-                    bf.Dispose()
-                    Throw New NotSupportedException("PicBitsPerPixelNotSupported")
-                End If
+                    .Readable.ReadInt32() '跳过File Size
+                    .Readable.ReadInt32() '跳过Reserved
+                    .Readable.ReadInt32() '跳过Bitmap Data Offset
+                    .Readable.ReadInt32() '跳过Bitmap Header Size
+                    .PicWidth = .Readable.ReadInt32
+                    .PicHeight = .Readable.ReadInt32
+                    If .PicWidth < 0 OrElse .PicHeight < 0 Then
+                        Throw New InvalidDataException
+                    End If
+                    .Readable.ReadInt16() '跳过Planes
+                    .PicBitsPerPixel = .Readable.ReadInt16
+                    .PicCompression = .Readable.ReadInt32
+                    .Readable.ReadInt32() '跳过Bitmap Data Size
+                    .Readable.ReadInt32() '跳过HResolution
+                    .Readable.ReadInt32() '跳过VResolution
+                    .Readable.ReadInt32() '跳过Colors
+                    .Readable.ReadInt32() '跳过Important Colors
 
-                .CalcLineBitLength()
-            End With
-            Return bf
+                    If .PicCompression <> 0 Then
+                        If (.PicCompression = 3) AndAlso (.PicBitsPerPixel = 16) Then
+                            .r5g6b5 = CBool(.Readable.ReadInt32() And &H8000) '检验红色掩码是否从最高位开始
+                            .Readable.ReadInt32() '跳过绿色掩码
+                            .Readable.ReadInt32() '跳过蓝色掩码
+                            .Readable.ReadInt32()
+                        Else
+                            Throw New InvalidDataException
+                        End If
+                    End If
+
+                    If (.PicBitsPerPixel = 1) OrElse (.PicBitsPerPixel = 4) OrElse (.PicBitsPerPixel = 8) Then
+                        .PicPalette = New Int32((1 << .PicBitsPerPixel) - 1) {}
+                        For n As Integer = 0 To (1 << .PicBitsPerPixel) - 1
+                            .PicPalette(n) = .Readable.ReadInt32()
+                        Next
+                    ElseIf (.PicBitsPerPixel = 16) OrElse (.PicBitsPerPixel = 24) OrElse (.PicBitsPerPixel = 32) Then
+                    Else
+                        Throw New NotSupportedException("PicBitsPerPixelNotSupported")
+                    End If
+
+                    .CalcLineBitLength()
+                End With
+                Success = True
+                Return bf
+            Finally
+                If Not Success Then
+                    bf.Dispose()
+                End If
+            End Try
         End Function
         ''' <summary>已重载。从流打开一个位图。</summary>
         Public Shared Function Open(ByVal sp As NewReadingWritingStreamPasser) As Bmp

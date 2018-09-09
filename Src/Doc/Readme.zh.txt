@@ -150,12 +150,10 @@
 
 3 环境要求
 
-本框架使用 Visual Basic 10.0 编写，开发时需要 Microsoft .Net Framework 4.0 编译器 或 Visual Studio 2010 支持。
-本框架运行时需要 Microsoft .Net Framework 4 或 Microsoft .Net Framework 4 Client Profile 运行库支持。
+本框架使用 Visual Basic 10.0 编写，开发时需要 Visual Studio 2017 或 BuildTool 支持。
+本框架运行需要 Microsoft .Net Framework 4 运行时或支持 .Net Standard 2.0 标准的运行时。
 Microsoft .Net Framework 4 (x86/x64，48.1MB)
 http://download.microsoft.com/download/9/5/A/95A9616B-7A37-4AF6-BC36-D6EA96C8DAAE/dotNetFx40_Full_x86_x64.exe
-Microsoft .NET Framework 4 Client Profile (x86，28.8MB)
-http://download.microsoft.com/download/3/1/8/318161B8-9874-48E4-BB38-9EB82C5D6358/dotNetFx40_Client_x86.exe
 
 
 4 用户使用协议

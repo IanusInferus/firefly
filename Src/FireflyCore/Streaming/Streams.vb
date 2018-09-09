@@ -3,7 +3,7 @@
 '  File:        Streams.vb
 '  Location:    Firefly.Streaming <Visual Basic .Net>
 '  Description: 扩展流类
-'  Version:     2011.02.23.
+'  Version:     2018.09.09.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -29,43 +29,56 @@ Namespace Streaming
 
         ''' <summary>初始化新实例。</summary>
         Public Shared Function OpenReadable(ByVal Path As String, Optional ByVal Share As FileShare = FileShare.Read) As IReadableSeekableStream
-            Return New IReadableSeekableStreamAdapter(New FileStream(Path, FileMode.Open, FileAccess.Read, Share))
+            Return SafeWrap(New FileStream(Path, FileMode.Open, FileAccess.Read, Share), Function(fs) New IReadableSeekableStreamAdapter(fs))
         End Function
         ''' <summary>初始化新实例。</summary>
         Public Shared Function CreateWritable(ByVal Path As String, Optional ByVal Share As FileShare = FileShare.Read) As IWritableSeekableStream
-            Return New IWritableSeekableStreamAdapter(New FileStream(Path, FileMode.Create, FileAccess.Write, Share))
+            Return SafeWrap(New FileStream(Path, FileMode.Create, FileAccess.Write, Share), Function(fs) New IWritableSeekableStreamAdapter(fs))
         End Function
         ''' <summary>初始化新实例。</summary>
         Public Shared Function CreateNewWritable(ByVal Path As String, Optional ByVal Share As FileShare = FileShare.Read) As IWritableSeekableStream
-            Return New IWritableSeekableStreamAdapter(New FileStream(Path, FileMode.CreateNew, FileAccess.Write, Share))
+            Return SafeWrap(New FileStream(Path, FileMode.CreateNew, FileAccess.Write, Share), Function(fs) New IWritableSeekableStreamAdapter(fs))
         End Function
         ''' <summary>初始化新实例。</summary>
         Public Shared Function CreateReadableWritable(ByVal Path As String, Optional ByVal Share As FileShare = FileShare.Read) As IReadableWritableSeekableStream
-            Return New IReadableWritableSeekableStreamAdapter(New FileStream(Path, FileMode.Create, FileAccess.ReadWrite, Share))
+            Return SafeWrap(New FileStream(Path, FileMode.Create, FileAccess.ReadWrite, Share), Function(fs) New IReadableWritableSeekableStreamAdapter(fs))
         End Function
         ''' <summary>初始化新实例。</summary>
         Public Shared Function OpenReadableWritable(ByVal Path As String, Optional ByVal Share As FileShare = FileShare.Read) As IReadableWritableSeekableStream
-            Return New IReadableWritableSeekableStreamAdapter(New FileStream(Path, FileMode.Open, FileAccess.ReadWrite, Share))
+            Return SafeWrap(New FileStream(Path, FileMode.Open, FileAccess.ReadWrite, Share), Function(fs) New IReadableWritableSeekableStreamAdapter(fs))
         End Function
         ''' <summary>初始化新实例。</summary>
         Public Shared Function OpenOrCreateReadableWritable(ByVal Path As String, Optional ByVal Share As FileShare = FileShare.Read) As IReadableWritableSeekableStream
-            Return New IReadableWritableSeekableStreamAdapter(New FileStream(Path, FileMode.OpenOrCreate, FileAccess.ReadWrite, Share))
+            Return SafeWrap(New FileStream(Path, FileMode.OpenOrCreate, FileAccess.ReadWrite, Share), Function(fs) New IReadableWritableSeekableStreamAdapter(fs))
         End Function
         ''' <summary>已重载。初始化新实例。</summary>
         Public Shared Function CreateMemoryStream() As IStream
-            Return New IStreamAdapter(New MemoryStream)
+            Return SafeWrap(New MemoryStream, Function(fs) New IStreamAdapter(fs))
         End Function
         ''' <summary>已重载。初始化新实例。</summary>
         Public Shared Function CreateResizable(ByVal Path As String, Optional ByVal Share As FileShare = FileShare.Read) As IStream
-            Return New IStreamAdapter(New FileStream(Path, FileMode.Create, FileAccess.ReadWrite, Share))
+            Return SafeWrap(New FileStream(Path, FileMode.Create, FileAccess.ReadWrite, Share), Function(fs) New IStreamAdapter(fs))
         End Function
         ''' <summary>已重载。初始化新实例。</summary>
         Public Shared Function OpenResizable(ByVal Path As String, Optional ByVal Share As FileShare = FileShare.Read) As IStream
-            Return New IStreamAdapter(New FileStream(Path, FileMode.Open, FileAccess.ReadWrite, Share))
+            Return SafeWrap(New FileStream(Path, FileMode.Open, FileAccess.ReadWrite, Share), Function(fs) New IStreamAdapter(fs))
         End Function
         ''' <summary>已重载。初始化新实例。</summary>
         Public Shared Function OpenOrCreateResizable(ByVal Path As String, Optional ByVal Share As FileShare = FileShare.Read) As IStream
-            Return New IStreamAdapter(New FileStream(Path, FileMode.OpenOrCreate, FileAccess.ReadWrite, Share))
+            Return SafeWrap(New FileStream(Path, FileMode.OpenOrCreate, FileAccess.ReadWrite, Share), Function(fs) New IStreamAdapter(fs))
+        End Function
+
+        Private Shared Function SafeWrap(Of T)(ByVal Stream As Stream, ByVal Factory As Func(Of Stream, T)) As T
+            Dim Success = False
+            Try
+                Dim a = Factory(Stream)
+                Success = True
+                Return a
+            Finally
+                If Not Success Then
+                    Stream.Dispose()
+                End If
+            End Try
         End Function
     End Class
 End Namespace

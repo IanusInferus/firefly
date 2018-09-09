@@ -1,4 +1,11 @@
-﻿2017.05.21
+﻿2018.09.09
+Firefly.Lite:
+增加.Net Standard 2.0支持，仍然支持.Net Framework 4.0。
+增加对VS2017编译环境的要求。
+Firefly.Core:
+修正一些代码分析错误。
+
+2017.05.21
 Firefly.Core.Packing:
 修正导入文件夹会被忽略的问题。
 
