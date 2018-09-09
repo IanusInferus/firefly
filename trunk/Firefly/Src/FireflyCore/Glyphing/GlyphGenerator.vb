@@ -3,7 +3,7 @@
 '  File:        GlyphGenerator.vb
 '  Location:    Firefly.Glyphing <Visual Basic .Net>
 '  Description: 字形生成器
-'  Version:     2011.07.09.
+'  Version:     2018.09.09.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -51,6 +51,7 @@ Namespace Glyphing
         Private AnchorLeft As Boolean
         Private ChannelPatterns As ChannelPattern()
 
+        Private FontFamily As FontFamily
         Private Font As Font
         Private GlyphPiece As Bitmap
         Private g As Graphics
@@ -72,7 +73,7 @@ Namespace Glyphing
             Me.AnchorLeft = AnchorLeft
             Me.ChannelPatterns = ChannelPatterns
 
-            Dim FontFamily = New FontFamily(FontName)
+            FontFamily = New FontFamily(FontName)
             If FontFamily.IsStyleAvailable(FontStyle) Then
                 Font = New Font(FontFamily, FontSize, FontStyle, GraphicsUnit.Pixel)
             Else
@@ -150,17 +151,21 @@ Namespace Glyphing
 
         ''' <summary>释放流的资源。</summary>
         Public Sub Dispose() Implements IDisposable.Dispose
-            If Font IsNot Nothing Then
-                Font.Dispose()
-                Font = Nothing
+            If g IsNot Nothing Then
+                g.Dispose()
+                g = Nothing
             End If
             If GlyphPiece IsNot Nothing Then
                 GlyphPiece.Dispose()
                 GlyphPiece = Nothing
             End If
-            If g IsNot Nothing Then
-                g.Dispose()
-                g = Nothing
+            If Font IsNot Nothing Then
+                Font.Dispose()
+                Font = Nothing
+            End If
+            If FontFamily IsNot Nothing Then
+                FontFamily.Dispose()
+                FontFamily = Nothing
             End If
         End Sub
     End Class
