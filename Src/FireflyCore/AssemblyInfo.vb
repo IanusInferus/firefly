@@ -30,4 +30,4 @@ Imports System.Runtime.InteropServices
 ' 您可以指定所有这些值，也可以使用“内部版本号”和“修订号”的默认值，方法是按
 ' 如下所示使用 '*':
 
-<Assembly: System.Reflection.AssemblyVersion("2017.05.21.0")>
+<Assembly: System.Reflection.AssemblyVersion("2018.09.09.0")>
