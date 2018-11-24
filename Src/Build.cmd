@@ -8,7 +8,7 @@ for %%p in (Enterprise Professional Community BuildTools) do (
 set VSDir=%VSDir:"=%
 echo VSDir=%VSDir%
 
-"%VSDir%\MSBuild\15.0\Bin\MSBuild.exe" Firefly.sln /t:Rebuild /p:Configuration=Release
+"%VSDir%\MSBuild\15.0\Bin\MSBuild.exe" Firefly.sln /restore /t:Rebuild /p:Configuration=Release
 
 copy Doc\Readme.*.txt ..\Bin\
 copy Doc\UpdateLog.*.txt ..\Bin\
