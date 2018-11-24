@@ -159,7 +159,7 @@ http://download.microsoft.com/download/9/5/A/95A9616B-7A37-4AF6-BC36-D6EA96C8DAA
 4 用户使用协议
 
 以下协议不针对示例(Examples文件夹)：
-本框架是免费自由软件，所有源代码和可执行程序按照BSD许可证授权，详见License.zh.txt。
+本框架是免费自由软件，所有源代码和可执行程序按照三条款BSD许可证授权，详见License.zh.txt。
 本框架的所有文档不按照BSD许可证授权，你可以不经修改的复制、传播这些文档，你还可以引用、翻译这些文档，其他一切权利保留。
 
 以下协议针对示例(Examples文件夹)：
