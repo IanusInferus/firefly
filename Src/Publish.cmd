@@ -1,7 +1,7 @@
 @echo off
 @PATH %ProgramFiles%\WinRar;%PATH%
 
-@pushd ..
+@pushd ..\..
 @for %%* in (.) do set PackName=%%~n*
 @popd
 
@@ -9,7 +9,5 @@
 
 @call Clear.cmd
 @cd ..
-@del %PackName%.rar
-@rar a -av- -m5 -md4096 -tsm -tsc -s -k -t %PackName%.rar -x*\.*\ -x*.user -x*.suo Src Bin Manual Examples
-@if not exist Versions\ md Versions\
-@copy %PackName%.rar Versions\
+@if not exist ..\Versions\ md ..\Versions\
+@rar a -av- -m5 -md4096 -tsm -tsc -s -k -t ..\Versions\%PackName%.rar -x*\.*\ -x*.user -x*.suo Src Bin Manual Examples
