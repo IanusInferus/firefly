@@ -3,7 +3,7 @@
 '  File:        TreeSerializer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: Tree序列化类
-'  Version:     2016.06.02.
+'  Version:     2019.04.28.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -607,7 +607,7 @@ Namespace Mapping.TreeText
                         If s.Parent.SourcePositions.ContainsKey(s.Parent) Then
                             Dim p = s.Parent.SourcePositions(s.Parent)
                             i.Path = p.Text.Path
-                            If p.Range.OnHasValue Then
+                            If p.Range.OnSome Then
                                 Dim Range = p.Range.Value
                                 i.LineNumber = Range.Start.Row
                                 i.ColumnNumber = Range.Start.Column
@@ -782,7 +782,7 @@ Namespace Mapping.TreeText
                         If s.Parent.SourcePositions.ContainsKey(s.Parent) Then
                             Dim p = s.Parent.SourcePositions(s.Parent)
                             i.Path = p.Text.Path
-                            If p.Range.OnHasValue Then
+                            If p.Range.OnSome Then
                                 Dim Range = p.Range.Value
                                 i.LineNumber = Range.Start.Row
                                 i.ColumnNumber = Range.Start.Column

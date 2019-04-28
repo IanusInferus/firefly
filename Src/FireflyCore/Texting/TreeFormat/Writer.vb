@@ -3,7 +3,7 @@
 '  File:        Writer.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 文本输出类
-'  Version:     2016.05.26.
+'  Version:     2019.04.28.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -38,7 +38,7 @@ Namespace Texting.TreeFormat
 
         Private Sub WriteNode(ByVal IndentLevel As Integer, ByVal Node As Node)
             Dim s = TryGetNodeAsSingleLineString(Node)
-            If s.OnHasValue Then
+            If s.OnSome Then
                 WriteRaw(IndentLevel, s.Value)
                 Return
             End If
