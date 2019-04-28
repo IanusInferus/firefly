@@ -3,7 +3,7 @@
 '  File:        SyntaxWriter.vb
 '  Location:    Firefly.Texting.TreeFormat <Visual Basic .Net>
 '  Description: 文本输出类
-'  Version:     2016.05.26.
+'  Version:     2019.04.28.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -71,7 +71,7 @@ Namespace Texting.TreeFormat
         End Sub
         Private Sub WriteListNodes(ByVal IndentLevel As Integer, ByVal ln As ListNodes)
             Dim ChildHeadLiteral = GetLiteral(ln.ChildHead.Text, True).SingleLine
-            If ln.SingleLineComment.OnHasValue Then
+            If ln.SingleLineComment.OnSome Then
                 Dim slc = GetSingleLineComment(ln.SingleLineComment.Value)
                 WriteRaw(IndentLevel, List, ChildHeadLiteral, slc)
             Else
@@ -85,7 +85,7 @@ Namespace Texting.TreeFormat
         Private Sub WriteTableNodes(ByVal IndentLevel As Integer, ByVal tn As TableNodes)
             Dim ChildHeadLiteral = GetLiteral(tn.ChildHead.Text, True).SingleLine
             Dim ChildFields = Combine(tn.ChildFields.Select(Function(f) GetSingleLineLiteral(f)).ToArray())
-            If tn.SingleLineComment.OnHasValue Then
+            If tn.SingleLineComment.OnSome Then
                 Dim slc = GetSingleLineComment(tn.SingleLineComment.Value)
                 WriteRaw(IndentLevel, Table, ChildHeadLiteral, ChildFields, slc)
             Else
@@ -98,7 +98,7 @@ Namespace Texting.TreeFormat
                 For Each n In tl.Nodes
                     l.Add(GetTableLineNode(n))
                 Next
-                If tl.SingleLineComment.OnHasValue Then
+                If tl.SingleLineComment.OnSome Then
                     l.Add(GetSingleLineComment(tl.SingleLineComment.Value))
                 End If
                 While l.Count < NumColumn
@@ -129,7 +129,7 @@ Namespace Texting.TreeFormat
         End Function
         Private Sub WriteFunctionNodes(ByVal IndentLevel As Integer, ByVal fn As FunctionNodes)
             Dim Tokens = CombineTokens(fn.Parameters.Select(Function(t) GetToken(t)).ToArray())
-            If fn.SingleLineComment.OnHasValue Then
+            If fn.SingleLineComment.OnSome Then
                 Dim slc = GetSingleLineComment(fn.SingleLineComment.Value)
                 WriteRaw(IndentLevel, GetFunctionDirective(fn.FunctionDirective), Tokens, slc)
             Else
@@ -147,7 +147,7 @@ Namespace Texting.TreeFormat
 
         Private Sub WriteSingleLineNodeLine(ByVal IndentLevel As Integer, ByVal slnl As SingleLineNodeLine)
             Dim sln = GetSingleLineNode(slnl.SingleLineNode)
-            If slnl.SingleLineComment.OnHasValue Then
+            If slnl.SingleLineComment.OnSome Then
                 Dim slc = GetSingleLineComment(slnl.SingleLineComment.Value)
                 WriteRaw(IndentLevel, sln, slc)
             Else
@@ -155,7 +155,7 @@ Namespace Texting.TreeFormat
             End If
         End Sub
         Private Sub WriteMultiLineLiteral(ByVal IndentLevel As Integer, ByVal mll As MultiLineLiteral)
-            If mll.SingleLineComment.OnHasValue Then
+            If mll.SingleLineComment.OnSome Then
                 Dim slc = GetSingleLineComment(mll.SingleLineComment.Value)
                 WriteRaw(IndentLevel, StringDirective, slc)
             Else
@@ -171,7 +171,7 @@ Namespace Texting.TreeFormat
             WriteRaw(IndentLevel, GetSingleLineComment(slc))
         End Sub
         Private Sub WriteMultiLineComment(ByVal IndentLevel As Integer, ByVal mlc As MultiLineComment)
-            If mlc.SingleLineComment.OnHasValue Then
+            If mlc.SingleLineComment.OnSome Then
                 Dim slc = GetSingleLineComment(mlc.SingleLineComment.Value)
                 WriteRaw(IndentLevel, Comment, slc)
             Else
@@ -185,7 +185,7 @@ Namespace Texting.TreeFormat
         End Sub
         Private Sub WriteMultiLineNode(ByVal IndentLevel As Integer, ByVal mln As MultiLineNode)
             Dim HeadLiteral = GetLiteral(mln.Head.Text, True).SingleLine
-            If mln.SingleLineComment.OnHasValue Then
+            If mln.SingleLineComment.OnSome Then
                 Dim slc = GetSingleLineComment(mln.SingleLineComment.Value)
                 WriteRaw(IndentLevel, HeadLiteral, slc)
             Else
@@ -243,7 +243,7 @@ Namespace Texting.TreeFormat
             For Each c In slnp.Children
                 l.Add(GetParenthesisNode(c))
             Next
-            If slnp.LastChild.OnHasValue Then
+            If slnp.LastChild.OnSome Then
                 l.Add(GetSingleLineNode(slnp.LastChild.Value))
             End If
             Return Combine(GetSingleLineLiteral(slnp.Head), Combine(l.ToArray()))
@@ -301,8 +301,8 @@ Namespace Texting.TreeFormat
         End Function
 
         Private Sub WriteEndDirective(ByVal IndentLevel As Integer, ByVal ed As [Optional](Of EndDirective))
-            If ed.OnHasValue Then
-                If ed.Value.EndSingleLineComment.OnHasValue Then
+            If ed.OnSome Then
+                If ed.Value.EndSingleLineComment.OnSome Then
                     Dim eslc = GetSingleLineComment(ed.Value.EndSingleLineComment.Value)
                     WriteRaw(IndentLevel, EndDirective, eslc)
                 Else

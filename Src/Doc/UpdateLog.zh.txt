@@ -1,4 +1,8 @@
-﻿2018.11.24
+﻿2019.04.28
+Firefly.Core.Texting.TreeFormat, Firefly.Core.Mapping:
+将所有Optional中的NotHasValue改为None，HasValue改为Some。
+
+2018.11.24
 *:
 更新构建脚本，只支持VS2017。
 从SourceForge迁移到github。
