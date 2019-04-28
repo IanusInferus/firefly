@@ -10,7 +10,7 @@
     <Authors>F.R.C.</Authors>
     <Copyright>Copyright(C) F.R.C., under BSD license</Copyright>
     <AssemblyName>Firefly.Lite</AssemblyName>
-    <AssemblyVersion>2018.9.9.0</AssemblyVersion>
+    <AssemblyVersion>2019.04.28.0</AssemblyVersion>
     <SignAssembly>false</SignAssembly>
     <AssemblyOriginatorKeyFile>$(FLTKey)</AssemblyOriginatorKeyFile>
     <BaseIntermediateOutputPath>..\..\Obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
