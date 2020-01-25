@@ -3,7 +3,7 @@
 '  File:        PackageManager.vb
 '  Location:    Firefly.GUI <Visual Basic .Net>
 '  Description: Package文件管理器
-'  Version:     2010.03.11.
+'  Version:     2020.01.25.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -25,6 +25,13 @@ Public Class PackageManager
     <System.Diagnostics.DebuggerStepThrough()> _
     Public Sub New()
         MyBase.New()
+
+        If IO.Directory.Exists("..\Ini") Then
+            Opt = New Ini(String.Format("..\Ini\{0}.ini", ExceptionInfo.AssemblyProduct))
+        Else
+            Opt = New Ini(String.Format("{0}.ini", ExceptionInfo.AssemblyProduct))
+        End If
+        LoadOpt()
 
         '该调用是 Windows 窗体设计器所必需的。
         InitializeComponent()
@@ -127,24 +134,24 @@ Public Class PackageManager
         '
         'FileName
         '
-        Me.FileName.Text = "文件名"
+        Me.FileName.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "文件名", "File Name")
         Me.FileName.Width = 268
         '
         'FileLength
         '
-        Me.FileLength.Text = "文件长度"
+        Me.FileLength.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "文件长度", "File Length")
         Me.FileLength.TextAlign = System.Windows.Forms.HorizontalAlignment.Right
         Me.FileLength.Width = 98
         '
         'Offset
         '
-        Me.Offset.Text = "偏移量"
+        Me.Offset.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "偏移量", "Offset")
         Me.Offset.TextAlign = System.Windows.Forms.HorizontalAlignment.Right
         Me.Offset.Width = 76
         '
         'FileType
         '
-        Me.FileType.Text = "文件类型"
+        Me.FileType.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "文件类型", "File Type")
         Me.FileType.Width = 69
         '
         'MainMenu
@@ -155,32 +162,32 @@ Public Class PackageManager
         '
         Me.Menu_File.Index = 0
         Me.Menu_File.MenuItems.AddRange(New System.Windows.Forms.MenuItem() {Me.Menu_File_OpenPackage, Me.Menu_File_ReplacePackage, Me.Menu_File_Create, Me.Menu_File_Log, Me.Menu_File_Close, Me.Menu_File_Spliter, Me.Menu_File_RecentFiles, Me.Menu_File_Exit})
-        Me.Menu_File.Text = "文件(&F)"
+        Me.Menu_File.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "文件(&F)", "&File")
         '
         'Menu_File_OpenPackage
         '
         Me.Menu_File_OpenPackage.Index = 0
-        Me.Menu_File_OpenPackage.Text = "打开包文件(&O)..."
+        Me.Menu_File_OpenPackage.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "打开包文件(&O)...", "&Open Package File...")
         '
         'Menu_File_ReplacePackage
         '
         Me.Menu_File_ReplacePackage.Index = 1
-        Me.Menu_File_ReplacePackage.Text = "替换文件(&R)..."
+        Me.Menu_File_ReplacePackage.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "替换文件(&R)...", "&Replace File...")
         '
         'Menu_File_Create
         '
         Me.Menu_File_Create.Index = 2
-        Me.Menu_File_Create.Text = "创建包文件(&E)..."
+        Me.Menu_File_Create.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "创建包文件(&E)...", "Cr&eate Package File...")
         '
         'Menu_File_Log
         '
         Me.Menu_File_Log.Index = 3
-        Me.Menu_File_Log.Text = "生成日志(&L)..."
+        Me.Menu_File_Log.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "生成日志(&L)...", "Generate &Log...")
         '
         'Menu_File_Close
         '
         Me.Menu_File_Close.Index = 4
-        Me.Menu_File_Close.Text = "关闭(&C)"
+        Me.Menu_File_Close.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "关闭(&C)", "&Close")
         '
         'Menu_File_Spliter
         '
@@ -191,23 +198,23 @@ Public Class PackageManager
         '
         Me.Menu_File_RecentFiles.Enabled = False
         Me.Menu_File_RecentFiles.Index = 6
-        Me.Menu_File_RecentFiles.Text = "最近的文件(&F)"
+        Me.Menu_File_RecentFiles.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "最近的文件(&F)", "Recent &Files")
         '
         'Menu_File_Exit
         '
         Me.Menu_File_Exit.Index = 7
-        Me.Menu_File_Exit.Text = "退出(&X)"
+        Me.Menu_File_Exit.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "退出(&X)", "E&xit")
         '
         'Menu_About
         '
         Me.Menu_About.Index = 1
         Me.Menu_About.MenuItems.AddRange(New System.Windows.Forms.MenuItem() {Me.Menu_About_About})
-        Me.Menu_About.Text = "关于(&A)"
+        Me.Menu_About.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "关于(&A)", "&About")
         '
         'Menu_About_About
         '
         Me.Menu_About_About.Index = 0
-        Me.Menu_About_About.Text = "关于(&A)..."
+        Me.Menu_About_About.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "关于(&A)...", "&About...")
         '
         'Path
         '
@@ -277,22 +284,22 @@ Public Class PackageManager
         'ContextMenu_Extract
         '
         Me.ContextMenu_Extract.Index = 0
-        Me.ContextMenu_Extract.Text = "解压(&E)..."
+        Me.ContextMenu_Extract.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "解压(&E)...", "&Extract...")
         '
         'ContextMenu_CopyPath
         '
         Me.ContextMenu_CopyPath.Index = 1
-        Me.ContextMenu_CopyPath.Text = "复制文件路径(&P)" & Global.Microsoft.VisualBasic.ChrW(9) & "Ctrl+Q"
+        Me.ContextMenu_CopyPath.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "复制文件路径(&P)", "Copy File &Path") & Global.Microsoft.VisualBasic.ChrW(9) & "Ctrl+Q"
         '
         'ContextMenu_CopyLength
         '
         Me.ContextMenu_CopyLength.Index = 2
-        Me.ContextMenu_CopyLength.Text = "复制文件长度(&L)" & Global.Microsoft.VisualBasic.ChrW(9) & "Ctrl+W"
+        Me.ContextMenu_CopyLength.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "复制文件长度(&L)", "Copy File &Length") & Global.Microsoft.VisualBasic.ChrW(9) & "Ctrl+W"
         '
         'ContextMenu_CopyAddress
         '
         Me.ContextMenu_CopyAddress.Index = 3
-        Me.ContextMenu_CopyAddress.Text = "复制偏移量(&A)" & Global.Microsoft.VisualBasic.ChrW(9) & "Ctrl+E"
+        Me.ContextMenu_CopyAddress.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "复制偏移量(&O)", "Copy &Offset") & Global.Microsoft.VisualBasic.ChrW(9) & "Ctrl+E"
         '
         'PackageManager
         '
@@ -303,7 +310,7 @@ Public Class PackageManager
         Me.Menu = Me.MainMenu
         Me.Name = "PackageManager"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
-        Me.Text = "文件包管理器"
+        Me.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "文件包管理器", "PackageManager")
         Me.Spliter.Panel1.ResumeLayout(False)
         Me.Spliter.Panel2.ResumeLayout(False)
         Me.Spliter.ResumeLayout(False)
@@ -322,7 +329,7 @@ Public Class PackageManager
     Protected LanFull As String
     Protected Title As String = ExceptionInfo.AssemblyProduct
     Protected Readme As String = "{0}\r\n{1}\r\n".Descape.Formats(ExceptionInfo.AssemblyProduct, ExceptionInfo.AssemblyCopyright)
-    Protected INISettingNotice As String = "包文件管理器初始化配置文件" & Environment.NewLine & "在不了解此文件用法的时候请不要编辑此文件。"
+    Protected INISettingNotice As String = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "包文件管理器初始化配置文件" & Environment.NewLine & "在不了解此文件用法的时候请不要编辑此文件。", "Package Manager Initialization File" & Environment.NewLine & "Please don't edit this file unless you know the usage exactly.")
     Protected RecentFiles(5) As String
     Public Property ProgramTitle() As String
         Get
@@ -350,12 +357,6 @@ Public Class PackageManager
     End Property
 
     Protected Sub PackageManager_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
-        If IO.Directory.Exists("..\Ini") Then
-            Opt = New Ini(String.Format("..\Ini\{0}.ini", ExceptionInfo.AssemblyProduct))
-        Else
-            Opt = New Ini(String.Format("{0}.ini", ExceptionInfo.AssemblyProduct))
-        End If
-        LoadOpt()
         Me.Text = Title
 
         Dim ImageList As New ImageList()
@@ -383,6 +384,10 @@ Public Class PackageManager
         Opt.ReadValue("Option", "Recent3", RecentFiles(3))
         Opt.ReadValue("Option", "Recent4", RecentFiles(4))
         Opt.ReadValue("Option", "Recent5", RecentFiles(5))
+
+        If (LanFull <> "") Then
+            Threading.Thread.CurrentThread.CurrentCulture = New Globalization.CultureInfo(LanFull)
+        End If
     End Sub
     Protected Sub SaveOpt()
         Opt.WriteValue("Option", "CurrentCulture", LanFull)
@@ -531,7 +536,11 @@ Public Class PackageManager
     Protected Sub Menu_File_OpenPackage_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Menu_File_OpenPackage.Click
         Dim Filter As String = PackageRegister.GetFilter
         If Filter = "" Then
-            PopupInfo("不存在可以打开的包类型。")
+            If Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN" Then
+                PopupInfo("不存在可以打开的包类型。")
+            Else
+                PopupInfo("No available package types to open.")
+            End If
             Return
         End If
 
@@ -547,7 +556,11 @@ Public Class PackageManager
 
     Protected Sub Menu_File_ReplacePackage_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Menu_File_ReplacePackage.Click
         If pf Is Nothing Then
-            PopupInfo("当前没有打开的包。")
+            If Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN" Then
+                PopupInfo("当前没有打开的包。")
+            Else
+                PopupInfo("No current open package.")
+            End If
             Return
         End If
 
@@ -557,7 +570,7 @@ Public Class PackageManager
         d.ModeSelection = FilePicker.ModeSelectionEnum.FileWithFolder
         d.Multiselect = True
         If d.ShowDialog() = Windows.Forms.DialogResult.OK Then
-            If pfClosed Then Throw New InvalidDataException("包文件未打开")
+            If pfClosed Then Throw New InvalidDataException(If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "包文件未打开", "Package file not open"))
             Dim l As New System.Text.StringBuilder
             Dim Files As New List(Of FileDB)
             Dim Paths As New List(Of String)
@@ -573,7 +586,11 @@ Public Class PackageManager
             If l.Length <> 0 Then
                 Throw New Exception(l.ToString)
             Else
-                PopupInfo("完成")
+                If Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN" Then
+                    PopupInfo("完成")
+                Else
+                    PopupInfo("Completed.")
+                End If
             End If
             RefreshList()
         End If
@@ -582,7 +599,11 @@ Public Class PackageManager
     Protected Sub Menu_File_Create_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Menu_File_Create.Click
         Dim WritableFilter As String = PackageRegister.GetWritableFilter
         If WritableFilter = "" Then
-            PopupInfo("不存在可以创建的包类型。")
+            If Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN" Then
+                PopupInfo("不存在可以创建的包类型。")
+            Else
+                PopupInfo("No available package types to create.")
+            End If
             Return
         End If
 
@@ -604,13 +625,21 @@ Public Class PackageManager
 
     Protected Sub Menu_File_Log_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Menu_File_Log.Click
         If pfClosed Then
-            PopupInfo("没有打开的文件。")
+            If Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN" Then
+                PopupInfo("当前没有打开的包。")
+            Else
+                PopupInfo("No current open package.")
+            End If
             Return
         End If
 
         Static d As FilePicker
         If d Is Nothing Then d = New FilePicker(True)
-        d.Filter = "文本文件(*.txt)|*.txt"
+        If Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN" Then
+            d.Filter = "文本文件(*.txt)|*.txt"
+        Else
+            d.Filter = "Text files(*.txt)|*.txt"
+        End If
         d.ModeSelection = FilePicker.ModeSelectionEnum.File
         If d.ShowDialog() = Windows.Forms.DialogResult.OK Then
             Dim sl As New List(Of String)
@@ -751,7 +780,11 @@ Public Class PackageManager
     Private Sub FileListView_DragDrop(ByVal sender As Object, ByVal e As System.Windows.Forms.DragEventArgs) Handles FileListView.DragDrop
         Try
             If pf Is Nothing Then
-                PopupInfo("当前没有打开的包。")
+                If Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN" Then
+                    PopupInfo("当前没有打开的包。")
+                Else
+                    PopupInfo("No current open package.")
+                End If
                 Return
             End If
             Dim Names As New Dictionary(Of String, Integer)

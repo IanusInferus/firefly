@@ -3,7 +3,7 @@
 '  File:        ExceptionHandler.vb
 '  Location:    Firefly.Core <Visual Basic .Net>
 '  Description: 异常处理器
-'  Version:     2010.09.23.
+'  Version:     2020.01.25.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -39,11 +39,21 @@ Public NotInheritable Class ExceptionHandler
         MessageDialog.Show(DebugTip, Info, Title, MessageBoxButtons.OK, MessageBoxIcon.Error)
     End Sub
 
-    Public Shared DebugTip As String = "程序出现错误"
+    Public Shared ReadOnly Property DebugTip As String
+        Get
+            If Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN" Then
+                Return "程序出现错误"
+            Else
+                Return "An Error Occurred"
+            End If
+        End Get
+    End Property
+
     Public Shared LogPath As String = AssemblyName & ".log"
     Public Shared CurrentFilePath As String = ""
     Public Shared CurrentSection As String = ""
     Private Shared sw As TextWriter
+
     Private Shared Sub WriteLineDirect(ByVal s As String)
         System.Diagnostics.Debug.WriteLine(s)
         If sw Is Nothing Then sw = TextWriter.Synchronized(Texting.Txt.CreateTextWriter(LogPath))

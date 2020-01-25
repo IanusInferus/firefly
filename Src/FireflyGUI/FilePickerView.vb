@@ -3,7 +3,7 @@
 '  File:        FilePickerView.vb
 '  Location:    Firefly.GUI <Visual Basic .Net>
 '  Description: 文件选取对话框 - 界面
-'  Version:     2010.09.23.
+'  Version:     2020.01.25.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -27,7 +27,11 @@ Public Class FilePicker
         DirectoryList.Clear()
         ComboBox_Directory.Items.Clear()
         DirectoryList.Add(Environment.GetFolderPath(Environment.SpecialFolder.Desktop))
-        ComboBox_Directory.Items.Add("桌面")
+        If Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN" Then
+            ComboBox_Directory.Items.Add("桌面")
+        Else
+            ComboBox_Directory.Items.Add("Desktop")
+        End If
         For Each DrivePath In Environment.GetLogicalDrives
 
             DirectoryList.Add(DrivePath)
@@ -175,12 +179,41 @@ Public Class FilePicker
         InitializeComponent()
 
         ' 在 InitializeComponent() 调用之后添加任何初始化。
+        If Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN" Then
+            Me.Button_Select.Text = "选定(&S)"
+            Me.Button_Cancel.Text = "取消"
+            Me.Button_Enter.Text = "进入(&E)"
+            Me.ColumnHeader_Name.Text = "名称"
+            Me.ColumnHeader_Length.Text = "大小"
+            Me.ColumnHeader_Type.Text = "类型"
+            Me.ColumnHeader_ModifyTime.Text = "修改时间"
+            Me.ColumnHeader_CreateTime.Text = "创建时间"
+            Me.Label_FileName.Text = "文件名(&N):"
+            Me.Label_Filter.Text = "文件类型(&T):"
+            Me.Label_Directory.Text = "查找范围(&I):"
+        Else
+            Me.Button_Select.Text = "&Select"
+            Me.Button_Cancel.Text = "Cancel"
+            Me.Button_Enter.Text = "&Enter"
+            Me.ColumnHeader_Name.Text = "Name"
+            Me.ColumnHeader_Length.Text = "Length"
+            Me.ColumnHeader_Type.Text = "Type"
+            Me.ColumnHeader_ModifyTime.Text = "Modify Time"
+            Me.ColumnHeader_CreateTime.Text = "Create Time"
+            Me.Label_FileName.Text = "File &Name:"
+            Me.Label_Filter.Text = "File &Type:"
+            Me.Label_Directory.Text = "&In:"
+        End If
 
         'FileListView.ContextMenu = ContextMenu
 
         InitialDirectory = System.Environment.CurrentDirectory
         CurrentDirectory = InitialDirectory
-        Filter = "所有文件(*.*)|*.*"
+        If Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN" Then
+            Filter = "所有文件(*.*)|*.*"
+        Else
+            Filter = "All files(*.*)|*.*"
+        End If
         Me.IsSaveDialog = IsSaveDialog
         ModeSelection = ModeSelectionEnum.File
         Multiselect = False
@@ -249,7 +282,7 @@ Public Class FilePicker
             If IsSaveDialog Then
                 If ExistNode(Path) Then
                     If PopCheckFileExistBox Then
-                        Dim dr = MessageBox.Show("{0} 已存在。\r\n要替换吗？".Descape.Formats(Path), "确认另存为", MessageBoxButtons.YesNo, MessageBoxIcon.Warning)
+                        Dim dr = MessageBox.Show(If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "{0} 已存在。\r\n要替换吗？", "{0} exists.\r\nDo you want to overwrite?").Descape.Formats(Path), If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "确认另存为", "Confirm Save"), MessageBoxButtons.YesNo, MessageBoxIcon.Warning)
                         If dr <> Windows.Forms.DialogResult.Yes Then Return False
                     End If
                 Else

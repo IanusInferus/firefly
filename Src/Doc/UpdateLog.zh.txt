@@ -1,4 +1,8 @@
-﻿2019.04.28
+﻿2020.01.25
+Firefly.GUI:
+增加基本国际化，非中文界面时使用英文。
+
+2019.04.28
 Firefly.Core.Texting.TreeFormat, Firefly.Core.Mapping:
 将所有Optional中的NotHasValue改为None，HasValue改为Some。
 *:

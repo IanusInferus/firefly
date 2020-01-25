@@ -3,7 +3,7 @@
 '  File:        FilePicker.vb
 '  Location:    Firefly.GUI <Visual Basic .Net>
 '  Description: 文件选取对话框
-'  Version:     2009.12.04.
+'  Version:     2020.01.25.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -43,7 +43,11 @@ Partial Public Class FilePicker
                     ComboBox_Directory.Text = Value
                     RefreshList()
                 Catch ex As UnauthorizedAccessException
-                    MessageBox.Show("无法访问{0}。\r\n拒绝访问。".Descape.Formats(CurrentDirectoryValue), "位置不可用", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    If Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN" Then
+                        MessageBox.Show("无法访问{0}。\r\n拒绝访问。".Descape.Formats(CurrentDirectoryValue), "位置不可用", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    Else
+                        MessageBox.Show("Can not access {0}.\r\nAccess unauthorized.".Descape.Formats(CurrentDirectoryValue), "Location Unavailable", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                    End If
                     CurrentDirectoryValue = Previous
                     ComboBox_Directory.Text = Previous
                     RefreshList()
@@ -91,10 +95,18 @@ Partial Public Class FilePicker
         Set(ByVal Value As Boolean)
             IsSaveDialogValue = Value
             If Me.Title <> Me.Name Then Return
-            If Value Then
-                Me.Title = "另存为.."
+            If Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN" Then
+                If Value Then
+                    Me.Title = "另存为.."
+                Else
+                    Me.Title = "打开"
+                End If
             Else
-                Me.Title = "打开"
+                If Value Then
+                    Me.Title = "Save As.."
+                Else
+                    Me.Title = "Open"
+                End If
             End If
         End Set
     End Property

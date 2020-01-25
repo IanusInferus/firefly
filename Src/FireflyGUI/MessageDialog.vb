@@ -3,7 +3,7 @@
 '  File:        MessageDialog.vb
 '  Location:    Firefly.GUI <Visual Basic .Net>
 '  Description: 进度显示框
-'  Version:     2010.12.27.
+'  Version:     2020.01.25.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -232,45 +232,87 @@ Public Class MessageDialog
         Button3.Text = ""
         CancelButton = Nothing
 
-        Select Case Buttons
-            Case MessageBoxButtons.OK
-                Button3.Show()
-                Button3.Text = "确定(&O)"
-            Case MessageBoxButtons.OKCancel
-                Button2.Show()
-                Button2.Text = "确定(&O)"
-                Button3.Show()
-                Button3.Text = "取消"
-                CancelButton = Button3
-            Case MessageBoxButtons.AbortRetryIgnore
-                Button1.Show()
-                Button1.Text = "中止(&A)"
-                Button2.Show()
-                Button2.Text = "重试(&R)"
-                Button3.Show()
-                Button3.Text = "忽略(&I)"
-            Case MessageBoxButtons.YesNoCancel
-                Button1.Show()
-                Button1.Text = "是(&Y)"
-                Button2.Show()
-                Button2.Text = "否(&N)"
-                Button3.Show()
-                Button3.Text = "取消"
-                CancelButton = Button3
-            Case MessageBoxButtons.YesNo
-                Button2.Show()
-                Button2.Text = "是(&Y)"
-                Button3.Show()
-                Button3.Text = "否(&N)"
-            Case MessageBoxButtons.RetryCancel
-                Button2.Show()
-                Button2.Text = "重试(&R)"
-                Button3.Show()
-                Button3.Text = "取消"
-                CancelButton = Button3
-            Case Else
-                Throw New InvalidOperationException
-        End Select
+        If Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN" Then
+            Select Case Buttons
+                Case MessageBoxButtons.OK
+                    Button3.Show()
+                    Button3.Text = "确定(&O)"
+                Case MessageBoxButtons.OKCancel
+                    Button2.Show()
+                    Button2.Text = "确定(&O)"
+                    Button3.Show()
+                    Button3.Text = "取消"
+                    CancelButton = Button3
+                Case MessageBoxButtons.AbortRetryIgnore
+                    Button1.Show()
+                    Button1.Text = "中止(&A)"
+                    Button2.Show()
+                    Button2.Text = "重试(&R)"
+                    Button3.Show()
+                    Button3.Text = "忽略(&I)"
+                Case MessageBoxButtons.YesNoCancel
+                    Button1.Show()
+                    Button1.Text = "是(&Y)"
+                    Button2.Show()
+                    Button2.Text = "否(&N)"
+                    Button3.Show()
+                    Button3.Text = "取消"
+                    CancelButton = Button3
+                Case MessageBoxButtons.YesNo
+                    Button2.Show()
+                    Button2.Text = "是(&Y)"
+                    Button3.Show()
+                    Button3.Text = "否(&N)"
+                Case MessageBoxButtons.RetryCancel
+                    Button2.Show()
+                    Button2.Text = "重试(&R)"
+                    Button3.Show()
+                    Button3.Text = "取消"
+                    CancelButton = Button3
+                Case Else
+                    Throw New InvalidOperationException
+            End Select
+        Else
+            Select Case Buttons
+                Case MessageBoxButtons.OK
+                    Button3.Show()
+                    Button3.Text = "&OK"
+                Case MessageBoxButtons.OKCancel
+                    Button2.Show()
+                    Button2.Text = "&OK"
+                    Button3.Show()
+                    Button3.Text = "Cancel"
+                    CancelButton = Button3
+                Case MessageBoxButtons.AbortRetryIgnore
+                    Button1.Show()
+                    Button1.Text = "&Abort"
+                    Button2.Show()
+                    Button2.Text = "&Retry"
+                    Button3.Show()
+                    Button3.Text = "&Ignore"
+                Case MessageBoxButtons.YesNoCancel
+                    Button1.Show()
+                    Button1.Text = "&Yes"
+                    Button2.Show()
+                    Button2.Text = "&No"
+                    Button3.Show()
+                    Button3.Text = "Cancel"
+                    CancelButton = Button3
+                Case MessageBoxButtons.YesNo
+                    Button2.Show()
+                    Button2.Text = "&Yes"
+                    Button3.Show()
+                    Button3.Text = "&No"
+                Case MessageBoxButtons.RetryCancel
+                    Button2.Show()
+                    Button2.Text = "&Retry"
+                    Button3.Show()
+                    Button3.Text = "Cancel"
+                    CancelButton = Button3
+                Case Else
+                    Throw New InvalidOperationException
+            End Select
+        End If
 
         Select Case DefaultButton
             Case MessageBoxDefaultButton.Button1
