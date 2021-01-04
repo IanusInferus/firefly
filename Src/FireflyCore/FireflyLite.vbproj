@@ -11,6 +11,7 @@
     <Copyright>Copyright(C) F.R.C., under BSD license</Copyright>
     <AssemblyName>Firefly.Lite</AssemblyName>
     <AssemblyVersion>2019.04.28.0</AssemblyVersion>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <SignAssembly>false</SignAssembly>
     <AssemblyOriginatorKeyFile>$(FLTKey)</AssemblyOriginatorKeyFile>
     <BaseIntermediateOutputPath>..\..\Obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
@@ -27,7 +28,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net40|AnyCPU'">
     <DefineDebug>true</DefineDebug>
     <DefineTrace>true</DefineTrace>
-    <DocumentationFile>Firefly.Lite.xml</DocumentationFile>
     <RemoveIntegerChecks>false</RemoveIntegerChecks>
     <NoWarn />
     <WarningsAsErrors>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036</WarningsAsErrors>
@@ -37,7 +37,6 @@
     <DefineDebug>false</DefineDebug>
     <DefineTrace>true</DefineTrace>
     <Optimize>true</Optimize>
-    <DocumentationFile>Firefly.Lite.xml</DocumentationFile>
     <RemoveIntegerChecks>false</RemoveIntegerChecks>
     <NoWarn />
     <WarningsAsErrors>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036</WarningsAsErrors>
@@ -46,7 +45,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
     <DefineDebug>true</DefineDebug>
     <DefineTrace>true</DefineTrace>
-    <DocumentationFile>Firefly.Lite.xml</DocumentationFile>
     <RemoveIntegerChecks>false</RemoveIntegerChecks>
     <NoWarn />
     <WarningsAsErrors>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036</WarningsAsErrors>
@@ -57,7 +55,6 @@
     <DefineTrace>true</DefineTrace>
     <Optimize>true</Optimize>
     <OutputPath>..\..\Bin\$(TargetFramework)\</OutputPath>
-    <DocumentationFile>Firefly.Lite.xml</DocumentationFile>
     <RemoveIntegerChecks>false</RemoveIntegerChecks>
     <NoWarn />
     <WarningsAsErrors>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036</WarningsAsErrors>
