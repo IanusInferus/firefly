@@ -1,10 +1,16 @@
 ﻿# 萤火虫框架(Firefly)
 
+![Icon](Firefly.png)
+
 本框架的原本目标是为汉化的整个生命周期中的每一件没有已有工具或已有工具不完善的重复劳动提供工具或框架支持，但目前已不限于此。
 
 ## 用法
 
-详见[Src\Doc\Readme.zh.txt](Src/Doc/Readme.zh.txt)。
+说明详见[Src\Doc\Readme.zh.txt](Src/Doc/Readme.zh.txt)。
+
+示例说明详见[Examples\示例说明.txt](Examples/示例说明.txt)。
+
+![FontGen](Examples/FontGen.png)
 
 ## 用户使用协议
 
