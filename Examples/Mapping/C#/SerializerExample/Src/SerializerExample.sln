@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{39F93C4C-2E85-4025-9634-35B6E727B3B8}") = "SerializerExample", "SerializerExample.csproj", "{D6879D26-CB54-4291-95B1-D6462A152607}"
 EndProject

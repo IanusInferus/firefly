@@ -1,6 +1,7 @@
 ﻿2021.12.17
 *:
 去除文档生成。
+.Net Framework升级到4.8，但Firefly.Core和Firefly.GUI为4.6.1。
 
 2021.04.10
 *:

@@ -1,6 +1,6 @@
 ﻿<Project>
   <PropertyGroup>
-    <TargetFrameworks>net40;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <RootNamespace>Firefly</RootNamespace>
     <OptionStrict>On</OptionStrict>
     <PackageId>Firefly.Lite</PackageId>
