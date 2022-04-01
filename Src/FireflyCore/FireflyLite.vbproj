@@ -10,7 +10,7 @@
     <Authors>F.R.C.</Authors>
     <Copyright>Copyright(C) F.R.C., under BSD license</Copyright>
     <AssemblyName>Firefly.Lite</AssemblyName>
-    <AssemblyVersion>2019.04.28.0</AssemblyVersion>
+    <AssemblyVersion>2022.04.01.0</AssemblyVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <SignAssembly>false</SignAssembly>
     <AssemblyOriginatorKeyFile>$(FLTKey)</AssemblyOriginatorKeyFile>

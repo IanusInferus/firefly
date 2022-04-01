@@ -1,4 +1,8 @@
-﻿2021.12.17
+﻿2022.04.01
+Firefly.Core.TextEncoding, Firefly.TransEncoding:
+修正比较编码时其中一个为自定义编码会抛出异常的问题。
+
+2021.12.17
 *:
 去除文档生成。
 .Net Framework升级到4.8，但Firefly.Core和Firefly.GUI为4.6.1。

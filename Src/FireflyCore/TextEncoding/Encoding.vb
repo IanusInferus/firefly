@@ -3,7 +3,7 @@
 '  File:        Encoding.vb
 '  Location:    Firefly.TextEncoding <Visual Basic .Net>
 '  Description: 编码
-'  Version:     2013.03.18.
+'  Version:     2022.04.01.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -195,8 +195,16 @@ Namespace TextEncoding
         Public Function IsSameIntrinsic(ByVal Left As Encoding, ByVal Right As Encoding) As Boolean
             If Left Is Right Then Return True
             If Left Is Nothing OrElse Right Is Nothing Then Return False
-            If Left.WebName = Right.WebName Then Return True
-            If Left.CodePage = Right.CodePage Then Return True
+            Try
+                If Left.CodePage = Right.CodePage Then Return True
+            Catch
+                Return False
+            End Try
+            Try
+                If Left.WebName = Right.WebName Then Return True
+            Catch
+                Return False
+            End Try
             Return False
         End Function
 
