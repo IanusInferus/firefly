@@ -3,7 +3,7 @@
 '  File:        FdGlyphDescriptionFile.vb
 '  Location:    Firefly.TextEncoding <Visual Basic .Net>
 '  Description: fd字形描述文件
-'  Version:     2011.03.05.
+'  Version:     2025.06.29.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -49,9 +49,17 @@ Namespace Glyphing
                     Dim Code = Values(1)
                     Dim c As StringCode
                     If Code <> "" Then
-                        c = StringCode.FromUnicodeStringAndCodeString(Unicodes.ToUTF16B, Code)
+                        If Unicodes.Count > 0 Then
+                            c = StringCode.FromUnicodeStringAndCodeString(Unicodes.ToUTF16B, Code)
+                        Else
+                            c = StringCode.FromCodeString(Code)
+                        End If
                     Else
-                        c = StringCode.FromUnicodeString(Unicodes.ToUTF16B)
+                        If Unicodes.Count > 0 Then
+                            c = StringCode.FromUnicodeString(Unicodes.ToUTF16B)
+                        Else
+                            c = StringCode.FromNothing()
+                        End If
                     End If
 
                     Dim PhysicalBox As New Rectangle(Integer.Parse(Values(2), Globalization.NumberStyles.Integer), Integer.Parse(Values(3), Globalization.NumberStyles.Integer), Integer.Parse(Values(4), Globalization.NumberStyles.Integer), Integer.Parse(Values(5), Globalization.NumberStyles.Integer))

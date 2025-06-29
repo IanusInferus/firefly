@@ -1,4 +1,8 @@
-﻿2022.04.01
+﻿2025.06.29
+Firefly.Core.Glyphing:
+修正FdGlyphDescriptionFile读取时无法准确还原无Unicode字符的问题。
+
+2022.04.01
 Firefly.Core.TextEncoding, Firefly.TransEncoding:
 修正比较编码时其中一个为自定义编码会抛出异常的问题。
 
