@@ -3,7 +3,7 @@
 '  File:        StreamComplex.vb
 '  Location:    Firefly.Streaming <Visual Basic .Net>
 '  Description: 流 - 复杂
-'  Version:     2010.12.01.
+'  Version:     2025.07.31.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -70,11 +70,11 @@ Namespace Streaming
         End Function
         ''' <summary>读取ASCII字符串。</summary>
         <Extension()> Public Function ReadSimpleString(ByVal This As IReadableStream, ByVal Count As Integer) As String
-            Return This.ReadString(Count, ASCII)
+            Return This.ReadString(Count, TextEncoding.ASCII)
         End Function
         ''' <summary>读取ASCII字符串(包括\0)。</summary>
         <Extension()> Public Function ReadSimpleStringWithNull(ByVal This As IReadableStream, ByVal Count As Integer) As String
-            Return This.ReadStringWithNull(Count, ASCII)
+            Return This.ReadStringWithNull(Count, TextEncoding.ASCII)
         End Function
     End Module
 
@@ -114,7 +114,7 @@ Namespace Streaming
         End Sub
         ''' <summary>写入ASCII字符串。</summary>
         <Extension()> Public Sub WriteSimpleString(ByVal This As IWritableStream, ByVal s As String, ByVal Count As Integer)
-            This.WriteString(s, Count, ASCII)
+            This.WriteString(s, Count, TextEncoding.ASCII)
         End Sub
         ''' <summary>写入ASCII字符串。</summary>
         <Extension()> Public Sub WriteSimpleString(ByVal This As IWritableStream, ByVal s As String)

@@ -3,7 +3,7 @@
 '  File:        FileSelectBox.vb
 '  Location:    Firefly.GUI <Visual Basic .Net>
 '  Description: 文件选取框
-'  Version:     2010.08.28.
+'  Version:     2025.07.31.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -12,7 +12,6 @@ Imports System
 Imports System.Windows.Forms
 Imports System.ComponentModel
 Imports Firefly
-Imports Firefly.GUI.FilePicker
 
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()> _
 Public Class FileSelectBox
@@ -140,10 +139,10 @@ Public Class FileSelectBox
 
             Dim dir As String = GetFileDirectory(.Text)
             If IO.Directory.Exists(dir) Then
-                d.FilePath = .Text.TrimEnd("\").TrimEnd("/")
+                d.FilePath = .Text.TrimEnd("\"c).TrimEnd("/"c)
             End If
             d.Filter = FilterValue
-            If d.ShowDialog() = Windows.Forms.DialogResult.OK Then
+            If d.ShowDialog() = System.Windows.Forms.DialogResult.OK Then
                 Dim T As String = GetRelativePath(d.FilePath, CurrentDirectory)
                 If T <> "" AndAlso d.FilePath <> "" AndAlso T.Length < d.FilePath.Length Then
                     .Text = T
@@ -231,15 +230,15 @@ Public Class FileSelectBox
         End Set
     End Property
 
-    Protected ModeSelectionValue As ModeSelectionEnum = ModeSelectionEnum.FileWithFolder
-    <Category("Behavior"), DefaultValue(GetType(ModeSelectionEnum), "FileWithFolder")> _
-    Public Property ModeSelection() As ModeSelectionEnum
+    Protected ModeSelectionValue As FilePicker.ModeSelectionEnum = FilePicker.ModeSelectionEnum.FileWithFolder
+    <Category("Behavior"), DefaultValue(GetType(FilePicker.ModeSelectionEnum), "FileWithFolder")>
+    Public Property ModeSelection() As FilePicker.ModeSelectionEnum
         Get
             Return ModeSelectionValue
         End Get
-        Set(ByVal Value As ModeSelectionEnum)
+        Set(ByVal Value As FilePicker.ModeSelectionEnum)
             Select Case Value
-                Case ModeSelectionEnum.File, ModeSelectionEnum.Folder, ModeSelectionEnum.FileWithFolder
+                Case FilePicker.ModeSelectionEnum.File, FilePicker.ModeSelectionEnum.Folder, FilePicker.ModeSelectionEnum.FileWithFolder
                     ModeSelectionValue = Value
                 Case Else
                     Throw New IO.InvalidDataException

@@ -3,7 +3,7 @@
 '  File:        FilePickerView.vb
 '  Location:    Firefly.GUI <Visual Basic .Net>
 '  Description: 文件选取对话框 - 界面
-'  Version:     2020.01.25.
+'  Version:     2025.07.31.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -283,7 +283,7 @@ Public Class FilePicker
                 If ExistNode(Path) Then
                     If PopCheckFileExistBox Then
                         Dim dr = MessageBox.Show(If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "{0} 已存在。\r\n要替换吗？", "{0} exists.\r\nDo you want to overwrite?").Descape.Formats(Path), If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "确认另存为", "Confirm Save"), MessageBoxButtons.YesNo, MessageBoxIcon.Warning)
-                        If dr <> Windows.Forms.DialogResult.Yes Then Return False
+                        If dr <> System.Windows.Forms.DialogResult.Yes Then Return False
                     End If
                 Else
                     If ValidateNames Then
@@ -310,7 +310,7 @@ Public Class FilePicker
                 Dim Path = GetAbsolutePath(ComboBox_FileName.Text, CurrentDirectory)
                 FilePathValue = Path
                 FileNamesValue = New String() {GetRelativePath(Path, CurrentDirectory)}
-                DialogResult = Windows.Forms.DialogResult.OK
+                DialogResult = System.Windows.Forms.DialogResult.OK
                 Me.HideSelf()
             End If
         ElseIf LastSourceControl Is FileListView Then
@@ -339,7 +339,7 @@ Public Class FilePicker
             If f = "" AndAlso l.Count > 0 Then f = l(0)
             FilePathValue = GetAbsolutePath(f, CurrentDirectory)
             FileNamesValue = l.ToArray
-            DialogResult = Windows.Forms.DialogResult.OK
+            DialogResult = System.Windows.Forms.DialogResult.OK
             Me.HideSelf()
         End If
     End Sub

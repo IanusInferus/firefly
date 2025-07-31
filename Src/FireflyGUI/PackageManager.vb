@@ -3,7 +3,7 @@
 '  File:        PackageManager.vb
 '  Location:    Firefly.GUI <Visual Basic .Net>
 '  Description: Package文件管理器
-'  Version:     2020.01.25.
+'  Version:     2025.07.31.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -16,7 +16,6 @@ Imports System.Windows.Forms
 Imports Firefly
 Imports Firefly.Packaging
 Imports Firefly.Setting
-Imports Firefly.GUI.ExceptionHandler
 
 Public Class PackageManager
     Inherits System.Windows.Forms.Form
@@ -60,27 +59,27 @@ Public Class PackageManager
     Public WithEvents FileLength As System.Windows.Forms.ColumnHeader
     Public WithEvents Offset As System.Windows.Forms.ColumnHeader
     Public WithEvents FileType As System.Windows.Forms.ColumnHeader
-    Public WithEvents MainMenu As System.Windows.Forms.MainMenu
-    Public WithEvents Menu_File As System.Windows.Forms.MenuItem
-    Public WithEvents Menu_File_OpenPackage As System.Windows.Forms.MenuItem
-    Public WithEvents Menu_File_Spliter As System.Windows.Forms.MenuItem
-    Public WithEvents Menu_File_Exit As System.Windows.Forms.MenuItem
-    Public WithEvents Menu_About As System.Windows.Forms.MenuItem
-    Public WithEvents Menu_About_About As System.Windows.Forms.MenuItem
-    Public WithEvents Menu_File_RecentFiles As System.Windows.Forms.MenuItem
+    Public WithEvents MainMenu As System.Windows.Forms.MenuStrip
+    Public WithEvents Menu_File As System.Windows.Forms.ToolStripMenuItem
+    Public WithEvents Menu_File_OpenPackage As System.Windows.Forms.ToolStripMenuItem
+    Public WithEvents Menu_File_Spliter As System.Windows.Forms.ToolStripMenuItem
+    Public WithEvents Menu_File_Exit As System.Windows.Forms.ToolStripMenuItem
+    Public WithEvents Menu_About As System.Windows.Forms.ToolStripMenuItem
+    Public WithEvents Menu_About_About As System.Windows.Forms.ToolStripMenuItem
+    Public WithEvents Menu_File_RecentFiles As System.Windows.Forms.ToolStripMenuItem
     Public WithEvents Path As System.Windows.Forms.TextBox
     Public WithEvents Spliter As System.Windows.Forms.SplitContainer
     Public WithEvents Spliter2 As System.Windows.Forms.SplitContainer
     Public WithEvents Mask As System.Windows.Forms.TextBox
-    Public Shadows WithEvents ContextMenu As System.Windows.Forms.ContextMenu
-    Public WithEvents ContextMenu_Extract As System.Windows.Forms.MenuItem
-    Public WithEvents Menu_File_Close As System.Windows.Forms.MenuItem
-    Public WithEvents Menu_File_ReplacePackage As System.Windows.Forms.MenuItem
-    Public WithEvents ContextMenu_CopyLength As System.Windows.Forms.MenuItem
-    Public WithEvents ContextMenu_CopyAddress As System.Windows.Forms.MenuItem
-    Public WithEvents Menu_File_Create As System.Windows.Forms.MenuItem
-    Friend WithEvents Menu_File_Log As System.Windows.Forms.MenuItem
-    Public WithEvents ContextMenu_CopyPath As System.Windows.Forms.MenuItem
+    Public Shadows WithEvents ContextMenu As System.Windows.Forms.ContextMenuStrip
+    Public WithEvents ContextMenu_Extract As System.Windows.Forms.ToolStripMenuItem
+    Public WithEvents Menu_File_Close As System.Windows.Forms.ToolStripMenuItem
+    Public WithEvents Menu_File_ReplacePackage As System.Windows.Forms.ToolStripMenuItem
+    Public WithEvents ContextMenu_CopyLength As System.Windows.Forms.ToolStripMenuItem
+    Public WithEvents ContextMenu_CopyAddress As System.Windows.Forms.ToolStripMenuItem
+    Public WithEvents Menu_File_Create As System.Windows.Forms.ToolStripMenuItem
+    Friend WithEvents Menu_File_Log As System.Windows.Forms.ToolStripMenuItem
+    Public WithEvents ContextMenu_CopyPath As System.Windows.Forms.ToolStripMenuItem
     <System.Diagnostics.DebuggerStepThrough()> _
     Protected Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container
@@ -90,27 +89,27 @@ Public Class PackageManager
         Me.FileLength = New System.Windows.Forms.ColumnHeader
         Me.Offset = New System.Windows.Forms.ColumnHeader
         Me.FileType = New System.Windows.Forms.ColumnHeader
-        Me.MainMenu = New System.Windows.Forms.MainMenu(Me.components)
-        Me.Menu_File = New System.Windows.Forms.MenuItem
-        Me.Menu_File_OpenPackage = New System.Windows.Forms.MenuItem
-        Me.Menu_File_ReplacePackage = New System.Windows.Forms.MenuItem
-        Me.Menu_File_Create = New System.Windows.Forms.MenuItem
-        Me.Menu_File_Log = New System.Windows.Forms.MenuItem
-        Me.Menu_File_Close = New System.Windows.Forms.MenuItem
-        Me.Menu_File_Spliter = New System.Windows.Forms.MenuItem
-        Me.Menu_File_RecentFiles = New System.Windows.Forms.MenuItem
-        Me.Menu_File_Exit = New System.Windows.Forms.MenuItem
-        Me.Menu_About = New System.Windows.Forms.MenuItem
-        Me.Menu_About_About = New System.Windows.Forms.MenuItem
+        Me.MainMenu = New System.Windows.Forms.MenuStrip
+        Me.Menu_File = New System.Windows.Forms.ToolStripMenuItem
+        Me.Menu_File_OpenPackage = New System.Windows.Forms.ToolStripMenuItem
+        Me.Menu_File_ReplacePackage = New System.Windows.Forms.ToolStripMenuItem
+        Me.Menu_File_Create = New System.Windows.Forms.ToolStripMenuItem
+        Me.Menu_File_Log = New System.Windows.Forms.ToolStripMenuItem
+        Me.Menu_File_Close = New System.Windows.Forms.ToolStripMenuItem
+        Me.Menu_File_Spliter = New System.Windows.Forms.ToolStripMenuItem
+        Me.Menu_File_RecentFiles = New System.Windows.Forms.ToolStripMenuItem
+        Me.Menu_File_Exit = New System.Windows.Forms.ToolStripMenuItem
+        Me.Menu_About = New System.Windows.Forms.ToolStripMenuItem
+        Me.Menu_About_About = New System.Windows.Forms.ToolStripMenuItem
         Me.Path = New System.Windows.Forms.TextBox
         Me.Spliter = New System.Windows.Forms.SplitContainer
         Me.Spliter2 = New System.Windows.Forms.SplitContainer
         Me.Mask = New System.Windows.Forms.TextBox
-        Me.ContextMenu = New System.Windows.Forms.ContextMenu
-        Me.ContextMenu_Extract = New System.Windows.Forms.MenuItem
-        Me.ContextMenu_CopyPath = New System.Windows.Forms.MenuItem
-        Me.ContextMenu_CopyLength = New System.Windows.Forms.MenuItem
-        Me.ContextMenu_CopyAddress = New System.Windows.Forms.MenuItem
+        Me.ContextMenu = New System.Windows.Forms.ContextMenuStrip
+        Me.ContextMenu_Extract = New System.Windows.Forms.ToolStripMenuItem
+        Me.ContextMenu_CopyPath = New System.Windows.Forms.ToolStripMenuItem
+        Me.ContextMenu_CopyLength = New System.Windows.Forms.ToolStripMenuItem
+        Me.ContextMenu_CopyAddress = New System.Windows.Forms.ToolStripMenuItem
         Me.Spliter.Panel1.SuspendLayout()
         Me.Spliter.Panel2.SuspendLayout()
         Me.Spliter.SuspendLayout()
@@ -156,64 +155,64 @@ Public Class PackageManager
         '
         'MainMenu
         '
-        Me.MainMenu.MenuItems.AddRange(New System.Windows.Forms.MenuItem() {Me.Menu_File, Me.Menu_About})
+        Me.MainMenu.Items.AddRange(New System.Windows.Forms.ToolStripMenuItem() {Me.Menu_File, Me.Menu_About})
         '
         'Menu_File
         '
-        Me.Menu_File.Index = 0
-        Me.Menu_File.MenuItems.AddRange(New System.Windows.Forms.MenuItem() {Me.Menu_File_OpenPackage, Me.Menu_File_ReplacePackage, Me.Menu_File_Create, Me.Menu_File_Log, Me.Menu_File_Close, Me.Menu_File_Spliter, Me.Menu_File_RecentFiles, Me.Menu_File_Exit})
+        Me.Menu_File.MergeIndex = 0
+        Me.Menu_File.DropDownItems.AddRange(New System.Windows.Forms.ToolStripMenuItem() {Me.Menu_File_OpenPackage, Me.Menu_File_ReplacePackage, Me.Menu_File_Create, Me.Menu_File_Log, Me.Menu_File_Close, Me.Menu_File_Spliter, Me.Menu_File_RecentFiles, Me.Menu_File_Exit})
         Me.Menu_File.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "文件(&F)", "&File")
         '
         'Menu_File_OpenPackage
         '
-        Me.Menu_File_OpenPackage.Index = 0
+        Me.Menu_File_OpenPackage.MergeIndex = 0
         Me.Menu_File_OpenPackage.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "打开包文件(&O)...", "&Open Package File...")
         '
         'Menu_File_ReplacePackage
         '
-        Me.Menu_File_ReplacePackage.Index = 1
+        Me.Menu_File_ReplacePackage.MergeIndex = 1
         Me.Menu_File_ReplacePackage.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "替换文件(&R)...", "&Replace File...")
         '
         'Menu_File_Create
         '
-        Me.Menu_File_Create.Index = 2
+        Me.Menu_File_Create.MergeIndex = 2
         Me.Menu_File_Create.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "创建包文件(&E)...", "Cr&eate Package File...")
         '
         'Menu_File_Log
         '
-        Me.Menu_File_Log.Index = 3
+        Me.Menu_File_Log.MergeIndex = 3
         Me.Menu_File_Log.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "生成日志(&L)...", "Generate &Log...")
         '
         'Menu_File_Close
         '
-        Me.Menu_File_Close.Index = 4
+        Me.Menu_File_Close.MergeIndex = 4
         Me.Menu_File_Close.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "关闭(&C)", "&Close")
         '
         'Menu_File_Spliter
         '
-        Me.Menu_File_Spliter.Index = 5
+        Me.Menu_File_Spliter.MergeIndex = 5
         Me.Menu_File_Spliter.Text = "-"
         '
         'Menu_File_RecentFiles
         '
         Me.Menu_File_RecentFiles.Enabled = False
-        Me.Menu_File_RecentFiles.Index = 6
+        Me.Menu_File_RecentFiles.MergeIndex = 6
         Me.Menu_File_RecentFiles.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "最近的文件(&F)", "Recent &Files")
         '
         'Menu_File_Exit
         '
-        Me.Menu_File_Exit.Index = 7
+        Me.Menu_File_Exit.MergeIndex = 7
         Me.Menu_File_Exit.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "退出(&X)", "E&xit")
         '
         'Menu_About
         '
-        Me.Menu_About.Index = 1
-        Me.Menu_About.MenuItems.AddRange(New System.Windows.Forms.MenuItem() {Me.Menu_About_About})
+        Me.Menu_About.MergeIndex = 1
+        Me.Menu_About.DropDownItems.AddRange(New System.Windows.Forms.ToolStripMenuItem() {Me.Menu_About_About})
         Me.Menu_About.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "关于(&A)", "&About")
         '
         'Menu_About_About
         '
-        Me.Menu_About_About.Index = 0
+        Me.Menu_About_About.MergeIndex = 0
         Me.Menu_About_About.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "关于(&A)...", "&About...")
         '
         'Path
@@ -279,26 +278,26 @@ Public Class PackageManager
         '
         'ContextMenu
         '
-        Me.ContextMenu.MenuItems.AddRange(New System.Windows.Forms.MenuItem() {Me.ContextMenu_Extract, Me.ContextMenu_CopyPath, Me.ContextMenu_CopyLength, Me.ContextMenu_CopyAddress})
+        Me.ContextMenu.Items.AddRange(New System.Windows.Forms.ToolStripMenuItem() {Me.ContextMenu_Extract, Me.ContextMenu_CopyPath, Me.ContextMenu_CopyLength, Me.ContextMenu_CopyAddress})
         '
         'ContextMenu_Extract
         '
-        Me.ContextMenu_Extract.Index = 0
+        Me.ContextMenu_Extract.MergeIndex = 0
         Me.ContextMenu_Extract.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "解压(&E)...", "&Extract...")
         '
         'ContextMenu_CopyPath
         '
-        Me.ContextMenu_CopyPath.Index = 1
+        Me.ContextMenu_CopyPath.MergeIndex = 1
         Me.ContextMenu_CopyPath.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "复制文件路径(&P)", "Copy File &Path") & Global.Microsoft.VisualBasic.ChrW(9) & "Ctrl+Q"
         '
         'ContextMenu_CopyLength
         '
-        Me.ContextMenu_CopyLength.Index = 2
+        Me.ContextMenu_CopyLength.MergeIndex = 2
         Me.ContextMenu_CopyLength.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "复制文件长度(&L)", "Copy File &Length") & Global.Microsoft.VisualBasic.ChrW(9) & "Ctrl+W"
         '
         'ContextMenu_CopyAddress
         '
-        Me.ContextMenu_CopyAddress.Index = 3
+        Me.ContextMenu_CopyAddress.MergeIndex = 3
         Me.ContextMenu_CopyAddress.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "复制偏移量(&O)", "Copy &Offset") & Global.Microsoft.VisualBasic.ChrW(9) & "Ctrl+E"
         '
         'PackageManager
@@ -306,8 +305,9 @@ Public Class PackageManager
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 12.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(543, 417)
+        Me.Controls.Add(Me.MainMenu)
         Me.Controls.Add(Me.Spliter)
-        Me.Menu = Me.MainMenu
+        Me.MainMenuStrip = Me.MainMenu
         Me.Name = "PackageManager"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Me.Text = If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "文件包管理器", "PackageManager")
@@ -364,7 +364,7 @@ Public Class PackageManager
         ImageList.Images.Add(My.Resources.Directory)
         ImageList.ColorDepth = ColorDepth.Depth32Bit
         FileListView.SmallImageList = ImageList
-        FileListView.ContextMenu = ContextMenu
+        FileListView.ContextMenuStrip = ContextMenu
 
         RefreshRecent()
     End Sub
@@ -537,9 +537,9 @@ Public Class PackageManager
         Dim Filter As String = PackageRegister.GetFilter
         If Filter = "" Then
             If Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN" Then
-                PopupInfo("不存在可以打开的包类型。")
+                ExceptionHandler.PopupInfo("不存在可以打开的包类型。")
             Else
-                PopupInfo("No available package types to open.")
+                ExceptionHandler.PopupInfo("No available package types to open.")
             End If
             Return
         End If
@@ -549,7 +549,7 @@ Public Class PackageManager
         d.Filter = Filter
         d.ModeSelection = FilePicker.ModeSelectionEnum.File
         d.CheckFileExists = True
-        If d.ShowDialog() = Windows.Forms.DialogResult.OK Then
+        If d.ShowDialog() = System.Windows.Forms.DialogResult.OK Then
             DoOpenPackage(d.CurrentFilterIndex, d.FilePath)
         End If
     End Sub
@@ -557,9 +557,9 @@ Public Class PackageManager
     Protected Sub Menu_File_ReplacePackage_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Menu_File_ReplacePackage.Click
         If pf Is Nothing Then
             If Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN" Then
-                PopupInfo("当前没有打开的包。")
+                ExceptionHandler.PopupInfo("当前没有打开的包。")
             Else
-                PopupInfo("No current open package.")
+                ExceptionHandler.PopupInfo("No current open package.")
             End If
             Return
         End If
@@ -569,7 +569,7 @@ Public Class PackageManager
         d.Filter = "*.*(*.*)|*.*"
         d.ModeSelection = FilePicker.ModeSelectionEnum.FileWithFolder
         d.Multiselect = True
-        If d.ShowDialog() = Windows.Forms.DialogResult.OK Then
+        If d.ShowDialog() = System.Windows.Forms.DialogResult.OK Then
             If pfClosed Then Throw New InvalidDataException(If(Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN", "包文件未打开", "Package file not open"))
             Dim l As New System.Text.StringBuilder
             Dim Files As New List(Of FileDB)
@@ -587,9 +587,9 @@ Public Class PackageManager
                 Throw New Exception(l.ToString)
             Else
                 If Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN" Then
-                    PopupInfo("完成")
+                    ExceptionHandler.PopupInfo("完成")
                 Else
-                    PopupInfo("Completed.")
+                    ExceptionHandler.PopupInfo("Completed.")
                 End If
             End If
             RefreshList()
@@ -600,9 +600,9 @@ Public Class PackageManager
         Dim WritableFilter As String = PackageRegister.GetWritableFilter
         If WritableFilter = "" Then
             If Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN" Then
-                PopupInfo("不存在可以创建的包类型。")
+                ExceptionHandler.PopupInfo("不存在可以创建的包类型。")
             Else
-                PopupInfo("No available package types to create.")
+                ExceptionHandler.PopupInfo("No available package types to create.")
             End If
             Return
         End If
@@ -611,13 +611,13 @@ Public Class PackageManager
         If d2 Is Nothing Then d2 = New FilePicker(True)
         d2.Filter = WritableFilter
         d2.ModeSelection = FilePicker.ModeSelectionEnum.File
-        If d2.ShowDialog() = Windows.Forms.DialogResult.OK Then
+        If d2.ShowDialog() = System.Windows.Forms.DialogResult.OK Then
             Static d As FilePicker
             If d Is Nothing Then
                 d = New FilePicker(False)
                 d.ModeSelection = FilePicker.ModeSelectionEnum.Folder
             End If
-            If d.ShowDialog() = Windows.Forms.DialogResult.OK Then
+            If d.ShowDialog() = System.Windows.Forms.DialogResult.OK Then
                 DoCreatePackage(d2.CurrentFilterIndex, d2.FilePath, d.FilePath)
             End If
         End If
@@ -626,9 +626,9 @@ Public Class PackageManager
     Protected Sub Menu_File_Log_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles Menu_File_Log.Click
         If pfClosed Then
             If Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN" Then
-                PopupInfo("当前没有打开的包。")
+                ExceptionHandler.PopupInfo("当前没有打开的包。")
             Else
-                PopupInfo("No current open package.")
+                ExceptionHandler.PopupInfo("No current open package.")
             End If
             Return
         End If
@@ -641,7 +641,7 @@ Public Class PackageManager
             d.Filter = "Text files(*.txt)|*.txt"
         End If
         d.ModeSelection = FilePicker.ModeSelectionEnum.File
-        If d.ShowDialog() = Windows.Forms.DialogResult.OK Then
+        If d.ShowDialog() = System.Windows.Forms.DialogResult.OK Then
             Dim sl As New List(Of String)
             Dim Count = 20
             For Each i As ListViewItem In FileListView.Items
@@ -674,7 +674,7 @@ Public Class PackageManager
                 d = New FilePicker(True)
                 d.ModeSelection = FilePicker.ModeSelectionEnum.Folder
             End If
-            If d.ShowDialog() = Windows.Forms.DialogResult.OK Then
+            If d.ShowDialog() = System.Windows.Forms.DialogResult.OK Then
                 Dim Files As New List(Of FileDB)
                 Dim Paths As New List(Of String)
                 For Each Item As ListViewItem In FileListView.SelectedItems
@@ -712,7 +712,7 @@ Public Class PackageManager
             d = New FilePicker(True)
             d.ModeSelection = FilePicker.ModeSelectionEnum.Folder
         End If
-        If d.ShowDialog() = Windows.Forms.DialogResult.OK Then
+        If d.ShowDialog() = System.Windows.Forms.DialogResult.OK Then
             Dim Files As New List(Of FileDB)
             Dim Paths As New List(Of String)
             For Each Item As ListViewItem In FileListView.SelectedItems
@@ -781,9 +781,9 @@ Public Class PackageManager
         Try
             If pf Is Nothing Then
                 If Threading.Thread.CurrentThread.CurrentCulture.Name = "zh-CN" Then
-                    PopupInfo("当前没有打开的包。")
+                    ExceptionHandler.PopupInfo("当前没有打开的包。")
                 Else
-                    PopupInfo("No current open package.")
+                    ExceptionHandler.PopupInfo("No current open package.")
                 End If
                 Return
             End If
@@ -803,7 +803,7 @@ Public Class PackageManager
             Next
             pf.Replace(Files, Paths, Mask.Text)
             If l.Length <> 0 Then
-                PopupException(New Exception(l.ToString))
+                ExceptionHandler.PopupException(New Exception(l.ToString))
             End If
             RefreshList()
             FileListView.Focus()
@@ -815,7 +815,7 @@ Public Class PackageManager
                 End If
             Next
         Catch ex As Exception
-            PopupException(ex)
+            ExceptionHandler.PopupException(ex)
         End Try
     End Sub
 
@@ -857,13 +857,13 @@ Public Class PackageManager
         RefreshRecent()
     End Sub
     Protected Sub RefreshRecent()
-        Dim c As Menu.MenuItemCollection = Menu_File_RecentFiles.MenuItems
+        Dim c = Menu_File_RecentFiles.DropDownItems
         c.Clear()
         For n As Integer = 0 To 5
             If RecentFiles(n) = Nothing Then
                 Exit For
             End If
-            Dim i As New MenuItem("&" & n & " " & RecentFiles(n))
+            Dim i As New ToolStripMenuItem("&" & n & " " & RecentFiles(n))
             c.Add(i)
             AddHandler i.Click, AddressOf RecentFilesHandler
         Next
@@ -871,7 +871,7 @@ Public Class PackageManager
     End Sub
     Protected Sub RecentFilesHandler(ByVal sender As Object, ByVal e As EventArgs)
         Dim Success = False
-        Dim r As MenuItem = CType(sender, MenuItem)
+        Dim r As ToolStripMenuItem = CType(sender, ToolStripMenuItem)
         Try
             Dim Path As String = r.Text.Substring(3)
             If Not r.Text.Contains(",") Then RemoveRecent(r.Text.Substring(1, 1))

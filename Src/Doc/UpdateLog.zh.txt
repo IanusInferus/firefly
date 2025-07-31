@@ -1,4 +1,8 @@
-﻿2025.06.29
+﻿2025.07.31
+Firefly.Core, Firefly.GUI:
+.Net Framework升级到4.8，增加.Net 8.0 Windows支持。
+
+2025.06.29
 Firefly.Core.Glyphing:
 修正FdGlyphDescriptionFile读取时无法准确还原无Unicode字符的问题。
 

@@ -3,7 +3,7 @@
 '  File:        DebuggerDisplayer.vb
 '  Location:    Firefly.Mapping <Visual Basic .Net>
 '  Description: 调试序列化器
-'  Version:     2011.07.31.
+'  Version:     2025.07.31.
 '  Copyright(C) F.R.C.
 '
 '==========================================================================
@@ -186,7 +186,7 @@ Namespace Mapping.MetaSchema
                     Dim Domain = TypePair.Key
                     If Domain.IsGenericType AndAlso Not Domain.IsGenericTypeDefinition Then
                         If Domain.GetGenericTypeDefinition Is GetType(Nullable(Of )) Then
-                            Dim UnderlyingDomain = Domain.GetGenericArguments(0)
+                            Dim UnderlyingDomain = Domain.GetGenericArguments()(0)
                             Dim m = InnerResolver.TryResolveProjector(CreatePair(UnderlyingDomain, TypePair.Value))
                             If m Is Nothing Then Return Nothing
                             Dim md = DirectCast(AddressOf GetConvertToStringFunc(Of Integer), Func(Of [Delegate], [Delegate]))
