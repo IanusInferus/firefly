@@ -276,9 +276,9 @@ Namespace TextEncoding
         ''' <summary>从当前 String 对象移除数组中指定的一个字符的所有前导匹配项。</summary>
         <Extension()> Public Function TrimStart(ByVal s As String, ByVal c As Char32) As String
             Dim s32 = s.ToUTF32
-            For n = s32.Length - 1 To 0 Step -1
+            For n = 0 To s32.Length - 1
                 If s32(n) <> c Then
-                    Return s32.Take(n + 1).ToUTF16B
+                    Return s32.Skip(n).ToUTF16B
                 End If
             Next
             Return ""
@@ -287,9 +287,9 @@ Namespace TextEncoding
         ''' <summary>从当前 String 对象移除数组中指定的一个字符的所有尾部匹配项。</summary>
         <Extension()> Public Function TrimEnd(ByVal s As String, ByVal c As Char32) As String
             Dim s32 = s.ToUTF32
-            For n = 0 To s32.Length - 1
+            For n = s32.Length - 1 To 0 Step -1
                 If s32(n) <> c Then
-                    Return s32.Skip(n).ToUTF16B
+                    Return s32.Take(n + 1).ToUTF16B
                 End If
             Next
             Return ""

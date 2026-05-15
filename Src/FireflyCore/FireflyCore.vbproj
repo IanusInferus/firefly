@@ -11,7 +11,7 @@
     <Authors>F.R.C.</Authors>
     <Copyright>Copyright(C) F.R.C., under BSD license</Copyright>
     <AssemblyName>Firefly.Core</AssemblyName>
-    <AssemblyVersion>2025.07.31.0</AssemblyVersion>
+    <AssemblyVersion>2026.05.15.0</AssemblyVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <SignAssembly>false</SignAssembly>
     <AssemblyOriginatorKeyFile>$(FLTKey)</AssemblyOriginatorKeyFile>
