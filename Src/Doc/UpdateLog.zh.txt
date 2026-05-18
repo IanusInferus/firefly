@@ -1,4 +1,8 @@
-﻿2026.05.15
+﻿2026.05.18
+Test:
+修正测试用例bug。
+
+2026.05.15
 Firefly.Core.TextEncoding:
 修正TrimStart和TrimEnd写反的bug。
 

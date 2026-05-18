@@ -11,7 +11,7 @@ Imports Firefly.GUI
 Public Module Test
     Public Sub TestUnicode()
         Dim c As String = Firefly.TextEncoding.Char32.ToString(&H20C30)
-        Assert(Microsoft.VisualBasic.AscW(c(0)) = &HD883)
+        Assert(Microsoft.VisualBasic.AscW(c(0)) = &HD843)
         Assert(Microsoft.VisualBasic.AscW(c(1)) = &HDC30)
         Dim code As Int32 = Firefly.TextEncoding.Char32.FromString(c)
         Assert(AscQ(c) = &H20C30)
